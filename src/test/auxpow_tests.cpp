@@ -75,7 +75,7 @@ public:
    * @param index Index to use in the merkle tree.
    * @return The root hash, with reversed endian.
    */
-   std::vector<unsigned char> buildAuxpowChain (const uint256& hashAux, unsigned h, int index);
+  std::vector<unsigned char> buildAuxpowChain (const uint256& hashAux, unsigned h, int index);
 
   /**
    * Build the finished CAuxPow object.  We assume that the auxpowChain
@@ -342,7 +342,7 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
   block.nNonce = 0;
   while (true)
     {
-      const bool nowOk = (UintToArith256 (block.GetHash ()) <= target);
+      const bool nowOk = (UintToArith256 (block.GetPowHash ()) <= target);
       if ((ok && nowOk) || (!ok && !nowOk))
         break;
 
@@ -350,9 +350,9 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
     }
 
   if (ok)
-    BOOST_CHECK (CheckProofOfWork (block.GetHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (CheckProofOfWork (block.GetPowHash (), nBits, Params().GetConsensus()));
   else
-    BOOST_CHECK (!CheckProofOfWork (block.GetHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (!CheckProofOfWork (block.GetPowHash (), nBits, Params().GetConsensus()));
 }
 
 BOOST_AUTO_TEST_CASE (auxpow_pow)

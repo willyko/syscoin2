@@ -1,11 +1,11 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Syscoin developers
+// Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 Daniel Kraft
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef SYSCOIN_AUXPOW_H
-#define SYSCOIN_AUXPOW_H
+#ifndef BITCOIN_AUXPOW_H
+#define BITCOIN_AUXPOW_H
 
 #include "consensus/params.h"
 #include "primitives/pureheader.h"
@@ -146,20 +146,7 @@ public:
   inline uint256
   getParentBlockHash () const
   {
-	// SYSCOIN pow hash of parent
-    return parentBlock.GetHash();
-  }
-
-  /**
-   * Return parent block.  This is only used for the temporary parentblock
-   * auxpow version check.
-   * @return The parent block.
-   */
-  /* FIXME: Remove after the hardfork.  */
-  inline const CPureBlockHeader&
-  getParentBlock () const
-  {
-    return parentBlock;
+    return parentBlock.GetHash ();
   }
 
   /**
@@ -182,4 +169,4 @@ public:
 
 };
 
-#endif // SYSCOIN_AUXPOW_H
+#endif // BITCOIN_AUXPOW_H

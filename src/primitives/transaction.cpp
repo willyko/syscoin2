@@ -66,6 +66,7 @@ uint256 CMutableTransaction::GetHash() const
 {
     return SerializeHash(*this);
 }
+// SYSCOIN get hash without data
 uint256 CMutableTransaction::GetAuxHash() const
 {
     return SerializeHash(*this, SER_GETHASHWITHOUTDATA | SER_GETHASH);
