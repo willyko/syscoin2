@@ -455,6 +455,7 @@ void static SyscoinMiner(const CChainParams& chainparams)
                     {
                         // Found a solution
                         pblock->nNonce = nNonce;
+						// SYSCOIN use powhash because of scrypt
                         assert(hash == pblock->GetPoWHash());
 
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);

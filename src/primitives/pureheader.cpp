@@ -22,6 +22,7 @@ uint256 CPureBlockHeader::GetHash() const
 {
     return SerializeHash(*this);
 }
+// SYSCOIN use powhash because of scrypt
 uint256 CPureBlockHeader::GetPoWHash() const
 {
     uint256 thash;

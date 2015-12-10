@@ -342,13 +342,14 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
   block.nNonce = 0;
   while (true)
     {
+	  // SYSCOIN use powhash because of scrypt
       const bool nowOk = (UintToArith256 (block.GetPowHash ()) <= target);
       if ((ok && nowOk) || (!ok && !nowOk))
         break;
 
       ++block.nNonce;
     }
-
+  // SYSCOIN use powhash because of scrypt
   if (ok)
     BOOST_CHECK (CheckProofOfWork (block.GetPowHash (), nBits, Params().GetConsensus()));
   else

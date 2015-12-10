@@ -146,7 +146,8 @@ public:
   inline uint256
   getParentBlockHash () const
   {
-    return parentBlock.GetHash ();
+	// SYSCOIN use powhash because of scrypt
+    return parentBlock.GetPoWHash ();
   }
 
   /**
