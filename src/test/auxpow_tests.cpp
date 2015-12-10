@@ -343,7 +343,7 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
   while (true)
     {
 	  // SYSCOIN use powhash because of scrypt
-      const bool nowOk = (UintToArith256 (block.GetPowHash ()) <= target);
+      const bool nowOk = (UintToArith256 (block.GetPowHash()) <= target);
       if ((ok && nowOk) || (!ok && !nowOk))
         break;
 
@@ -351,9 +351,9 @@ mineBlock (CBlockHeader& block, bool ok, int nBits = -1)
     }
   // SYSCOIN use powhash because of scrypt
   if (ok)
-    BOOST_CHECK (CheckProofOfWork (block.GetPowHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (CheckProofOfWork (block.GetPowHash(), nBits, Params().GetConsensus()));
   else
-    BOOST_CHECK (!CheckProofOfWork (block.GetPowHash (), nBits, Params().GetConsensus()));
+    BOOST_CHECK (!CheckProofOfWork (block.GetPowHash(), nBits, Params().GetConsensus()));
 }
 
 BOOST_AUTO_TEST_CASE (auxpow_pow)
