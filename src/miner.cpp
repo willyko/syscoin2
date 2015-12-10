@@ -25,6 +25,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "validationinterface.h"
+#include "utilstrencodings.h"
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
