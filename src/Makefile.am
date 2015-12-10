@@ -275,7 +275,7 @@ crypto_libsyscoin_crypto_a_SOURCES = \
   crypto/ripemd160.cpp \
   crypto/ripemd160.h \
   crypto/scrypt.cpp \
-  crypto/scrypt.h \ 
+  crypto/scrypt.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
   crypto/sha256.cpp \
