@@ -40,7 +40,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     return genesis;
 }
 // SYSCOIN generate block
-static bool GenerateGenesisBlock(CBlock &genesisBlock, uint256 *phash)
+static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
 {
     // Write the first 76 bytes of the block header to a double-SHA256 state.
     CHash256 hasher;
