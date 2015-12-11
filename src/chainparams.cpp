@@ -65,9 +65,9 @@ static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
         if (((uint16_t*)phash)[15] == 0 && UintToArith256(*phash) <= hashTarget)
             return true;
 		genesisBlock.nNonce++;
-		if (genesis.nNonce == 0) {
+		if (genesisBlock.nNonce == 0) {
 			LogPrintf("NONCE WRAPPED, incrementing time\n");
-			++genesis.nTime;
+			++genesisBlock.nTime;
 		}
         // If nothing found after trying for a while, return -1
         if ((genesisBlock.nNonce & 0xfff) == 0)
