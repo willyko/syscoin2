@@ -294,7 +294,9 @@ bool CSyscoinAddress::IsValid() const
 bool CSyscoinAddress::IsValid(const CChainParams& params) const
 {
     bool fCorrectSize = vchData.size() == 20;
-    bool fKnownVersion = vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS) ||
+	// SYSCOIN allow old SYSCOIN address scheme
+    bool fKnownVersion = vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS)     ||
+						 vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS) ||
                          vchVersion == params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
     return fCorrectSize && fKnownVersion;
 }
@@ -305,7 +307,9 @@ CTxDestination CSyscoinAddress::Get() const
         return CNoDestination();
     uint160 id;
     memcpy(&id, &vchData[0], 20);
-    if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))
+	// SYSCOIN allow old SYSCOIN address scheme
+    if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS) ||
+		vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS))
         return CKeyID(id);
     else if (vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS))
         return CScriptID(id);
@@ -315,7 +319,8 @@ CTxDestination CSyscoinAddress::Get() const
 
 bool CSyscoinAddress::GetKeyID(CKeyID& keyID) const
 {
-    if (!IsValid() || vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))
+	// SYSCOIN allow old SYSCOIN address scheme
+    if (!IsValid() || (vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS) && vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS)))
         return false;
     uint160 id;
     memcpy(&id, &vchData[0], 20);
@@ -347,7 +352,9 @@ CKey CSyscoinSecret::GetKey()
 bool CSyscoinSecret::IsValid() const
 {
     bool fExpectedFormat = vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1);
-    bool fCorrectVersion = vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY);
+	// SYSCOIN allow old SYSCOIN address scheme
+    bool fCorrectVersion = vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY) ||
+                               vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY_SYS);
     return fExpectedFormat && fCorrectVersion;
 }
 

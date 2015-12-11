@@ -1562,15 +1562,30 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
+   // SYSCOIN snapshot block 700k
+   nHeight += 700000;
+   CAmount nSubsidy = 96 * COIN;
+	else if(nHeight == 700000)
+		nSubsidy = 1024 * COIN; // SYSCOIN genesis amount on shade
+	else if(nHeight == 700001)
+		nSubsidy = 439724938 * COIN; // SYSCOIN shade snapshot amount to old syscoin blockchain
+    else if(nHeight > 777840 && nHeight <= 1814640)
+        nSubsidy = 80 * COIN;
+    else if(nHeight > 1814640 && nHeight <= 3369840)
+        nSubsidy = 64 * COIN;
+    else if(nHeight > 3369840 && nHeight <= 5443440)
+        nSubsidy = 48 * COIN;
+    else if(nHeight > 5443440 && nHeight <= 8035440)
+        nSubsidy = 40 * COIN;
+    else if(nHeight > 8035440 && nHeight <= 35913640)
+        nSubsidy = 32 * COIN;
+    else if(  ChainNameFromCommandLine() == CBaseChainParams::MAIN && ( nHeight > 35913640 || nHeight < 241 ) )
+        nSubsidy = 0;
+    else if(  ChainNameFromCommandLine() != CBaseChainParams::MAIN && nHeight > 35913640  )
+        nSubsidy = 0;
 
-    CAmount nSubsidy = 50 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
     return nSubsidy;
+
 }
 
 bool IsInitialBlockDownload()
