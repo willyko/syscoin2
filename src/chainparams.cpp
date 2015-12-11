@@ -296,10 +296,10 @@ public:
         nDefaultPort = 18444;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1449871559, 544398, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
-        assert(consensus.hashGenesisBlock == uint256S("0x0000059397f9261913313874463586ac92a48abdab1ccd59c75682b14ede9ce5"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000ea12f71c8dd530ce9e229d6ccb24548c7dcf62f776ff6396165540f460c"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
