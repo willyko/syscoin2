@@ -205,13 +205,13 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
 
-        /*checkpointData = (CCheckpointData) {
+        checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            ( 546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
-            1337966069,
-            1488,
-            300
-        };*/
+            ( 0, uint256S("00002d98737d035f40efc39fc390561f26e284dd57148d91089413fb81fd1b6")),
+            1449870592,
+            0,
+            0
+        };
 
     }
 };
@@ -258,13 +258,13 @@ public:
         fMineBlocksOnDemand = true;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-       /* checkpointData = (CCheckpointData){
+        checkpointData = (CCheckpointData){
             boost::assign::map_list_of
-            ( 0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")),
-            0,
+            ( 0, uint256S("c953c74d6cc0014d618ba4366ab1d229f08050cd207252eb8ed70e11a7ca7dc8")),
+            1449871559,
             0,
             0
-        };*/
+        };
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
