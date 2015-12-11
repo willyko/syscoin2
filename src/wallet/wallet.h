@@ -39,13 +39,12 @@ extern bool fSendFreeTransactions;
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;
-// SYSCOIN change min fee variables
 //! -paytxfee will warn if called with a higher fee than this amount (in satoshis) per KB
-static const CAmount nHighTransactionFeeWarning = 50 * COIN;
+static const CAmount nHighTransactionFeeWarning = 0.01 * COIN;
 //! -mintxfee default
-static const CAmount DEFAULT_TRANSACTION_MINFEE = (5 * CENT);
+static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 //! -maxtxfee default
-static const CAmount DEFAULT_TRANSACTION_MAXFEE = 50 * COIN;
+static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 //! minimum change amount
 static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
@@ -53,8 +52,7 @@ static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
 //! Default for -sendfreetransactions
 static const bool DEFAULT_SEND_FREE_TRANSACTIONS = false;
 //! -txconfirmtarget default
-// SYSCOIN set to 1 as when services are stored in db they should be usable
-static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 1;
+static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
@@ -253,8 +251,7 @@ public:
     {
         Init(NULL);
     }
-	// SYSCOIN tx with data and syscoin service version
-	CWalletTx(std::string txData);
+
     CWalletTx(const CWallet* pwalletIn)
     {
         Init(pwalletIn);
@@ -387,6 +384,7 @@ public:
     // True if only scriptSigs are different
     bool IsEquivalentTo(const CWalletTx& tx) const;
 
+    bool InMempool() const;
     bool IsTrusted() const;
 
     bool WriteToDisk(CWalletDB *pwalletdb);
@@ -661,9 +659,8 @@ public:
      * Create a new transaction paying the recipients with a set of coins
      * selected by SelectCoins(); Also create the change output, when needed
      */
-	// SYSCOIN add data and input tx for syscoin service calls
     bool CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet,
-                           std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true, const std::string& txData = "", const CWalletTx* wtxIn = NULL);
+                           std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true);
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);
 
     bool AddAccountingEntry(const CAccountingEntry&, CWalletDB & pwalletdb);

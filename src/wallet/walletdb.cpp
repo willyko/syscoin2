@@ -374,15 +374,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> wtx;
             CValidationState state;
             if (!(CheckTransaction(wtx, state) && (wtx.GetHash() == hash) && state.IsValid()))
-			{
-				// SYSCOIN error reporting
-				strErr = "Error reading wallet database. CheckTransaction failed, validation state: " + FormatStateMessage(state);
                 return false;
-			}
 
             // Undo serialize changes in 31600
-			// SYSCOIN doesnt need this
-            /*if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
+            if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
             {
                 if (!ssValue.empty())
                 {
@@ -399,7 +394,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                     wtx.fTimeReceivedIsTxTime = 0;
                 }
                 wss.vWalletUpgrade.push_back(hash);
-            }*/
+            }
 
             if (wtx.nOrderPos == -1)
                 wss.fAnyUnordered = true;

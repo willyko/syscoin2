@@ -1061,9 +1061,6 @@ public:
              SerializeOutput(s, nOutput, nType, nVersion);
         // Serialize nLockTime
         ::Serialize(s, txTo.nLockTime, nType, nVersion);
-        // SYSCOIN serialize data
-		::Serialize(s, txTo.data, nType, nVersion);
-		
     }
 };
 

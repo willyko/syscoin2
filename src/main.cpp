@@ -42,12 +42,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
-// SYSCOIN service's
-#include "alias.h"
-#include "offer.h"
-#include "cert.h"
-#include "escrow.h"
-#include "message.h"
+
 using namespace std;
 
 #if defined(NDEBUG)
@@ -67,7 +62,6 @@ int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
-bool fInit = false;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
@@ -187,7 +181,7 @@ namespace {
      * million to make it highly unlikely for users to have issues with this
      * filter.
      *
-     * Memory used: 1.7MB
+     * Memory used: 1.3 MB
      */
     boost::scoped_ptr<CRollingBloomFilter> recentRejects;
     uint256 hashRecentRejectsChainTip;
@@ -791,126 +785,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
     }
-	// SYSCOIN tx structure check
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return true;
 
-    vector<vector<unsigned char> > vvch;
-    int op;
-    int nOut;
-	string err = "";
-
-    if(DecodeAliasTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("alias transaction with alias too long");
-		}
-		switch (op) {
-			case OP_ALIAS_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("aliasactivate tx with rand too big");
-				break;
-			case OP_ALIAS_UPDATE:
-				if (vvch[1].size() > MAX_VALUE_LENGTH)
-					err = error("aliasupdate tx with value too long");
-				break;
-			default:
-				err = error("alias transaction has unknown op");
-		}
-		
-    }
-    else if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("offer transaction with offer guid too long");
-		}
-		switch (op) {
-			case OP_OFFER_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offeractivate tx with rand too big");
-				break;
-			case OP_OFFER_UPDATE:
-				if (vvch[1].size() > MAX_VALUE_LENGTH)
-					err = error("offerupdate tx with value too long");
-				break;
-			case OP_OFFER_ACCEPT: 
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offeraccept tx with accept rand too big");
-				break;
-			case OP_OFFER_REFUND: 
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offerrefund tx with accept rand too big");
-				if (vvch[2].size() > MAX_ID_LENGTH)
-					err = error("offerrefund tx with refund status too long");
-				break;
-			default:
-				err = error("offer transaction has unknown op");
-		
-        }
-    }
-    else if(DecodeCertTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("cert transaction with cert title too long");
-		}
-		switch (op) {
-
-			case OP_CERT_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("cert tx with rand too big");
-				if (vvch[2].size() > MAX_NAME_LENGTH)
-					err = error("cert tx with value too long");
-				break;
-			case OP_CERT_UPDATE:
-				if (vvch[1].size() > MAX_NAME_LENGTH)
-					err = error("cert tx with value too long");
-				break;
-			case OP_CERT_TRANSFER:
-        		if (vvch[0].size() > MAX_ID_LENGTH)
-					err = error("cert transfer tx with cert rand too big");
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("cert transfer tx with invalid hash length");
-				break;
-			default:
-				err = error("cert transaction has unknown op");
-		}
-        
-	}  
-   else if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("escrow tx with GUID too big");
-		}
-		if (vvch[1].size() > MAX_ID_LENGTH) {
-			err = error("escrow tx rand too big");
-		}
-		switch (op) {
-			case OP_ESCROW_ACTIVATE:
-				break;
-			case OP_ESCROW_RELEASE:
-				break;
-			case OP_ESCROW_REFUND:
-				break;
-			case OP_ESCROW_COMPLETE:
-				break;			
-			default:
-				err = error("escrow transaction has unknown op");
-		}
-	} 
-   else if(DecodeMessageTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("message tx with GUID too big");
-		}
-		if (vvch[1].size() > MAX_ID_LENGTH) {
-			err = error("message tx rand too big");
-		}
-		switch (op) {
-			case OP_MESSAGE_ACTIVATE:
-				break;		
-			default:
-				err = error("message transaction has unknown op");
-		}
-	} 
-    if(err != "")
-	{
-		return state.DoS(10,error(err.c_str()));
-	}
     return true;
 }
 
@@ -969,43 +844,27 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         *pfMissingInputs = false;
 
     if (!CheckTransaction(tx, state))
-	{
-		// SYSCOIN verbose logging
-		printf("CheckTransaction failed, validation state: %s\n", FormatStateMessage(state).c_str());
         return false;
-	}
 
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
-	{
-		printf("tx.IsCoinBase\n");
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
-	}
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
     if (fRequireStandard && !IsStandardTx(tx, reason))
-	{
-		printf("IsStandardTx\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
-	}
 
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
     if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-	{
-		printf("CheckFinalTx\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
-	}
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
-	{
-		printf("xn-already-in-mempool\n");
         return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-in-mempool");
-	}
 
     // Check for conflicts with in-memory transactions
     set<uint256> setConflicts;
@@ -1040,10 +899,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
                     }
                 }
                 if (fReplacementOptOut)
-				{
-					printf("txn-mempool-conflict\n");
                     return state.Invalid(false, REJECT_CONFLICT, "txn-mempool-conflict");
-				}
 
                 setConflicts.insert(ptxConflicting->GetHash());
             }
@@ -1066,7 +922,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         if (view.HaveCoins(hash)) {
             if (!fHadTxInCache)
                 vHashTxnToUncache.push_back(hash);
-			printf("txn-already-known\n");
             return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-known");
         }
 
@@ -1079,17 +934,13 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
-				printf("pfMissingInputs\n");
                 return false; // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
             }
         }
 
         // are the actual inputs available?
         if (!view.HaveInputs(tx))
-		{
-			printf("bad-txns-inputs-spent\n");
             return state.Invalid(false, REJECT_DUPLICATE, "bad-txns-inputs-spent");
-		}
 
         // Bring the best block into scope
         view.GetBestBlock();
@@ -1102,10 +953,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
 
         // Check for non-standard pay-to-script-hash in inputs
         if (fRequireStandard && !AreInputsStandard(tx, view))
-		{
-			printf("bad-txns-nonstandard-inputs\n");
             return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
-		}
 
         // Check that the transaction doesn't have an excessive number of
         // sigops, making it impossible to mine. Since the coinbase transaction
@@ -1115,11 +963,8 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
-		{
-			printf("bad-txns-too-many-sigops\n");
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d > %d", nSigOps, MAX_STANDARD_TX_SIGOPS));
-		}
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
@@ -1143,18 +988,13 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         // Don't accept it if it can't get into a block
         CAmount txMinFee = GetMinRelayFee(tx, pool, nSize, true);
         if (fLimitFree && nFees < txMinFee)
-		{
-			printf("insufficient fee\n");
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient fee", false,
                 strprintf("%d < %d", nFees, txMinFee));
-		}
 
         CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nFees < mempoolRejectFee) {
-			printf("mempool min fee not met\n");
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
         } else if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(entry.GetPriority(chainActive.Height() + 1))) {
-			printf("insufficient priority\n");
             // Require that free transactions have sufficient priority to be mined in the next block.
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
@@ -1183,12 +1023,9 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
-		{
-			printf("absurdly-high-fee\n");
             return state.Invalid(false,
                 REJECT_HIGHFEE, "absurdly-high-fee",
                 strprintf("%d > %d", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
-		}
 
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
@@ -1210,7 +1047,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             const uint256 &hashAncestor = ancestorIt->GetTx().GetHash();
             if (setConflicts.count(hashAncestor))
             {
-				printf("spends conflicting transaction\n");
                 return state.DoS(10, error("AcceptToMemoryPool: %s spends conflicting transaction %s",
                                            hash.ToString(),
                                            hashAncestor.ToString()),
@@ -1251,7 +1087,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
                 // that we don't spend too much time walking descendants.
                 // This should be rare.
                 if (mi->IsDirty()) {
-					printf("with untracked descendants\n");
                     return state.DoS(0,
                             error("AcceptToMemoryPool: rejecting replacement %s; cannot replace tx %s with untracked descendants",
                                 hash.ToString(),
@@ -1278,7 +1113,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
                 CFeeRate oldFeeRate(mi->GetFee(), mi->GetTxSize());
                 if (newFeeRate <= oldFeeRate)
                 {
-					printf("rejecting replacement\n");
                     return state.DoS(0,
                             error("AcceptToMemoryPool: rejecting replacement %s; new feerate %s <= old feerate %s",
                                   hash.ToString(),
@@ -1308,7 +1142,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
                     nConflictingSize += it->GetTxSize();
                 }
             } else {
-				printf("too many potential replacements\n");
                 return state.DoS(0,
                         error("AcceptToMemoryPool: rejecting replacement %s; too many potential replacements (%d > %d)\n",
                             hash.ToString(),
@@ -1362,10 +1195,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!CheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true))
-		{
-			printf("ConnectInputs failed against STANDARD_SCRIPT_VERIFY_FLAGS\n");
             return false;
-		}
 
         // Check again against just the consensus-critical mandatory script
         // verification flags, in case of bugs in the standard flags that cause
@@ -1378,7 +1208,6 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         // can be exploited as a DoS attack.
         if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true))
         {
-			printf("ConnectInputs failed against MANDATORY\n");
             return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
         }
@@ -1770,8 +1599,7 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
 }
 
 namespace Consensus {
-// SYSCOIN 3 params added for syscoin check inputs
-bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, bool bCheckInputs, bool fBlock, bool fMiner, int nHeight)
+bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight)
 {
         // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
         // for an attacker to attempt to split the network.
@@ -1800,39 +1628,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
-		// SYSCOIN check inputs
-		vector<vector<unsigned char> > vvchArgs;
-		int op;
-		int nOut;
-		if(HasReachedMainNetForkB2() && tx.nVersion == SYSCOIN_TX_VERSION)
-		{
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
-			{
-				if (!CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;
-				
-			}
-			else if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
-			{	
-				if (!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;		 
-			}
-			else if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
-			{
-				if (!CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
-			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
-			{
-				if (!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
-			}
-			else if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
-			{
-				if (!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
-			}
-		}
+
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
                 strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
@@ -1847,13 +1643,12 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
     return true;
 }
 }// namespace Consensus
-// SYSCOIN checkinputs add's 3 bools for syscoin check input functions
-bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, std::vector<CScriptCheck> *pvChecks, bool bCheckInputs, bool fBlock, bool fMiner, int nHeight)
+
+bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
-		// SYSCOIN pass in 3 params to CheckTxInputs
-        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), bCheckInputs, fBlock, fMiner, nHeight))
+        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
             return false;
 
         if (pvChecks)
@@ -2014,192 +1809,7 @@ static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const CO
 
     return fClean;
 }
-// SYSCOIN disconnect service related blocks
-bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
-	
-	TRY_LOCK(cs_main, cs_maintry);
-	string opName = aliasFromOp(op);
-	vector<CAliasIndex> vtxPos;
-	if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to read from alias DB for %s %s\n",
-				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if (vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
-	}
-	
-	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to alias DB");
-	if(fDebug)
-		printf("DISCONNECTED ALIAS TXN: alias=%s op=%s hash=%s  height=%d\n",
-		stringFromVch(vvchArgs[0]).c_str(),
-		aliasFromOp(op).c_str(),
-		tx.GetHash().ToString().c_str(),
-		pindex->nHeight);
-
-	return true;
-}
-
-bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
-    string opName = offerFromOp(op);
-	
-	COffer theOffer(tx);
-	if (theOffer.IsNull())
-		error("CheckOfferInputs() : null offer object");
-
-	TRY_LOCK(cs_main, cs_maintry);
-    // make sure a DB record exists for this offer
-    vector<COffer> vtxPos;
-    if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-        return error("DisconnectBlock() : failed to read from offer DB for %s %s\n",
-        		opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
-
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
-	}
-
-    if(op == OP_OFFER_ACCEPT ) {
-    	vector<unsigned char> vvchOfferAccept = vvchArgs[1];
-    	COfferAccept theOfferAccept;
-
-    	// make sure the offeraccept is also in the serialized offer in the txn
-    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept))
-            return error("DisconnectBlock() : not found in offer for offer accept %s %s\n",
-            		opName.c_str(), HexStr(vvchOfferAccept).c_str());
-		
-		
-        // make sure offer accept db record already exists
-        if (pofferdb->ExistsOfferAccept(vvchOfferAccept))
-        	pofferdb->EraseOfferAccept(vvchOfferAccept);
-		
-    }
-
-    // write new offer state to db
-	if(!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to offer DB");
-	
-	if(fDebug)
-		printf("DISCONNECTED offer TXN: offer=%s op=%s hash=%s  height=%d\n",
-			stringFromVch(vvchArgs[0]).c_str(),
-			aliasFromOp(op).c_str(),
-			tx.GetHash().ToString().c_str(),
-			pindex->nHeight);
-
-	return true;
-}
-
-bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
-	string opName = certFromOp(op);
-	
-	CCert theCert(tx);
-	if (theCert.IsNull())
-		error("CheckOfferInputs() : null  object");
-
-
-	TRY_LOCK(cs_main, cs_maintry);
-	// make sure a DB record exists for this cert
-	vector<CCert> vtxPos;
-	if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to read from certificate DB for %s %s\n",
-				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
-
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
-	}
-
-	// write new offer state to db
-	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to offer DB");
-	if(fDebug)
-		printf("DISCONNECTED CERT TXN: title=%s hash=%s height=%d\n",
-		   stringFromVch(vvchArgs[0]).c_str(),
-			tx.GetHash().ToString().c_str(),
-			pindex->nHeight);
-
-	return true;
-}
-
-bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
-	string opName = escrowFromOp(op);
-	
-	CEscrow theEscrow(tx);
-	if (theEscrow.IsNull())
-		error("CheckOfferInputs() : null  object");
-
-
-	TRY_LOCK(cs_main, cs_maintry);
-	// make sure a DB record exists for this cert
-	vector<CEscrow> vtxPos;
-	if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to read from escrow DB for %s %s\n",
-				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
-
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
-	}
-
-	// write new escrow state to db
-	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to escrow DB");
-	if(fDebug)
-		printf("DISCONNECTED ESCROW TXN: escrow=%s hash=%s height=%d\n",
-		   stringFromVch(vvchArgs[0]).c_str(),
-			tx.GetHash().ToString().c_str(),
-			pindex->nHeight);
-
-	return true;
-}
-
-bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
-	string opName = messageFromOp(op);
-	
-	CMessage theMessage(tx);
-	if (theMessage.IsNull())
-		error("CheckOfferInputs() : null  object");
-
-
-	TRY_LOCK(cs_main, cs_maintry);
-	// make sure a DB record exists for this cert
-	vector<CMessage> vtxPos;
-	if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to read from message DB for %s %s\n",
-				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
-
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
-	}
-
-	// write new message state to db
-	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to message DB");
-	if(fDebug)
-		printf("DISCONNECTED MESSAGE TXN: message=%s hash=%s height=%d\n",
-		   stringFromVch(vvchArgs[0]).c_str(),
-			tx.GetHash().ToString().c_str(),
-			pindex->nHeight);
-
-	return true;
-}
 bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockIndex* pindex, CCoinsViewCache& view, bool* pfClean)
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
@@ -2242,32 +1852,7 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
         // remove outputs
         outs->Clear();
         }
-		// SYSCOIN disconnect syscoin related block
-		if (tx.nVersion == SYSCOIN_TX_VERSION && HasReachedMainNetForkB2()) {
-		    vector<vector<unsigned char> > vvchArgs;
-		    int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
-			{
-				DisconnectAlias(pindex, tx, op, vvchArgs);	
-			}
-			else if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
-			{
-				DisconnectOffer(pindex, tx, op, vvchArgs); 
-			}
-			else if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
-			{
-				DisconnectCertificate(pindex, tx, op, vvchArgs);
-				
-			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
-			{
-				DisconnectEscrow(pindex, tx, op, vvchArgs);	
-			}
-			else if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
-			{
-				DisconnectMessage(pindex, tx, op, vvchArgs);	
-			}
-		}
+
         // restore inputs
         if (i > 0) { // not coinbases
             const CTxUndo &txundo = blockUndo.vtxundo[i-1];
@@ -2528,8 +2113,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-			// SYSCOIN pass in 3 params for syscoin check inputs
-            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, nScriptCheckThreads ? &vChecks : NULL, fJustCheck, true, false, pindex->nHeight))
+            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -4603,8 +4187,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                             // however we MUST always provide at least what the remote peer needs
                             typedef std::pair<unsigned int, uint256> PairType;
                             BOOST_FOREACH(PairType& pair, merkleBlock.vMatchedTxn)
-                                if (!pfrom->setInventoryKnown.count(CInv(MSG_TX, pair.second)))
-                                    pfrom->PushMessage("tx", block.vtx[pair.first]);
+                                pfrom->PushMessage("tx", block.vtx[pair.first]);
                         }
                         // else
                             // no response
@@ -5241,7 +4824,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 pfrom->id,
                 FormatStateMessage(state));
             if (state.GetRejectCode() < REJECT_INTERNAL) // Never send AcceptToMemoryPool's internal codes over P2P
-                pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
+                pfrom->PushMessage("reject", strCommand, (unsigned char)state.GetRejectCode(),
                                    state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), inv.hash);
             if (nDoS > 0)
                 Misbehaving(pfrom->GetId(), nDoS);
@@ -5371,7 +4954,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             assert (state.GetRejectCode() < REJECT_INTERNAL); // Blocks are never rejected with internal reject codes
-            pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
+            pfrom->PushMessage("reject", strCommand, (unsigned char)state.GetRejectCode(),
                                state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), inv.hash);
             if (nDoS > 0) {
                 LOCK(cs_main);
@@ -5398,6 +4981,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     else if (strCommand == "mempool")
     {
+        if (CNode::OutboundTargetReached(false) && !pfrom->fWhitelisted)
+        {
+            LogPrint("net", "mempool request with bandwidth limit reached, disconnect peer=%d\n", pfrom->GetId());
+            pfrom->fDisconnect = true;
+            return true;
+        }
         LOCK2(cs_main, pfrom->cs_filter);
 
         std::vector<uint256> vtxid;
@@ -5405,12 +4994,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CInv> vInv;
         BOOST_FOREACH(uint256& hash, vtxid) {
             CInv inv(MSG_TX, hash);
-            CTransaction tx;
-            bool fInMemPool = mempool.lookup(hash, tx);
-            if (!fInMemPool) continue; // another thread removed since queryHashes, maybe...
-            if ((pfrom->pfilter && pfrom->pfilter->IsRelevantAndUpdate(tx)) ||
-               (!pfrom->pfilter))
-                vInv.push_back(inv);
+            if (pfrom->pfilter) {
+                CTransaction tx;
+                bool fInMemPool = mempool.lookup(hash, tx);
+                if (!fInMemPool) continue; // another thread removed since queryHashes, maybe...
+                if (!pfrom->pfilter->IsRelevantAndUpdate(tx)) continue;
+            }
+            vInv.push_back(inv);
             if (vInv.size() == MAX_INV_SZ) {
                 pfrom->PushMessage("inv", vInv);
                 vInv.clear();
@@ -5978,7 +5568,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             vInvWait.reserve(pto->vInventoryToSend.size());
             BOOST_FOREACH(const CInv& inv, pto->vInventoryToSend)
             {
-                if (pto->setInventoryKnown.count(inv))
+                if (inv.type == MSG_TX && pto->filterInventoryKnown.contains(inv.hash))
                     continue;
 
                 // trickle out tx inv to protect privacy
@@ -5999,15 +5589,13 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     }
                 }
 
-                // returns true if wasn't already contained in the set
-                if (pto->setInventoryKnown.insert(inv).second)
+                pto->filterInventoryKnown.insert(inv.hash);
+
+                vInv.push_back(inv);
+                if (vInv.size() >= 1000)
                 {
-                    vInv.push_back(inv);
-                    if (vInv.size() >= 1000)
-                    {
-                        pto->PushMessage("inv", vInv);
-                        vInv.clear();
-                    }
+                    pto->PushMessage("inv", vInv);
+                    vInv.clear();
                 }
             }
             pto->vInventoryToSend = vInvWait;

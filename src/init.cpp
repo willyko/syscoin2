@@ -42,12 +42,7 @@
 #endif
 #include <stdint.h>
 #include <stdio.h>
-// SYSCOIN services
-#include "alias.h"
-#include "offer.h"
-#include "cert.h"
-#include "escrow.h"
-#include "message.h"
+
 #ifndef WIN32
 #include <signal.h>
 #endif
@@ -66,12 +61,7 @@
 #endif
 
 using namespace std;
-// SYSCOIN rescan functions
-void rescanforaliases(CBlockIndex *pindexRescan);
-void rescanforoffers(CBlockIndex *pindexRescan);
-void rescanforcerts(CBlockIndex *pindexRescan);
-void rescanforescrows(CBlockIndex *pindexRescan);
-void rescanformessages(CBlockIndex *pindexRescan);
+
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
 #endif
@@ -232,16 +222,6 @@ void Shutdown()
         pcoinsdbview = NULL;
         delete pblocktree;
         pblocktree = NULL;
-        delete paliasdb;
-		paliasdb = NULL;
-        delete pofferdb;
-		pofferdb = NULL;
-        delete pcertdb;
-		pcertdb = NULL;
-        delete pescrowdb;
-		pescrowdb = NULL;
-        delete pmessagedb;
-		pmessagedb = NULL;
     }
 #ifdef ENABLE_WALLET
     if (pwalletMain)
@@ -784,7 +764,6 @@ void InitLogging()
  */
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
-	fInit = true;
     // ********************************************************* Step 1: setup
 #ifdef _MSC_VER
     // Turn off Microsoft heap dump noise
@@ -1305,22 +1284,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinsdbview;
                 delete pcoinscatcher;
                 delete pblocktree;
-				// SYSCOIN service db's
-				delete paliasdb;
-                delete pofferdb;
-                delete pcertdb;
-				delete pescrowdb;
-				delete pmessagedb;
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
-                paliasdb = new CAliasDB(nCoinCacheUsage*2, false, fReindex);
-                pofferdb = new COfferDB(nCoinCacheUsage*2, false, fReindex);
-                pcertdb = new CCertDB(nCoinCacheUsage*2, false, fReindex);
-				pescrowdb = new CEscrowDB(nCoinCacheUsage*2, false, fReindex);
-				pmessagedb = new CMessageDB(nCoinCacheUsage*2, false, fReindex);
+
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
@@ -1542,12 +1511,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
             nStart = GetTimeMillis();
             pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-			// SYSCOIN rescan sys tx's
-			rescanforaliases(pindexRescan);
-    		rescanforoffers(pindexRescan);
-    		rescanforcerts(pindexRescan);
-			rescanforescrows(pindexRescan);
-			rescanformessages(pindexRescan);
             LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
             pwalletMain->SetBestChain(chainActive.GetLocator());
             nWalletDBUpdated++;
@@ -1667,6 +1630,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(boost::bind(&ThreadFlushWalletDB, boost::ref(pwalletMain->strWalletFile)));
     }
 #endif
-	fInit = false;
+
     return !fRequestShutdown;
 }

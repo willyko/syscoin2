@@ -563,22 +563,13 @@ UniValue verifychain(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-	// SYSCOIN fInit controls syscoin tx's that get created in checkinputs, don't do this if we are verifying or reindexing
-	bool ret = false;
+
     if (params.size() > 0)
         nCheckLevel = params[0].get_int();
     if (params.size() > 1)
         nCheckDepth = params[1].get_int();
 
-	fInit = true;
-	try
-	{
-		ret = CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
-	}
-	catch(...)
-	{
-	}
-	fInit = false;
+    return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
 /** Implementation of IsSuperMajority with better feedback */
