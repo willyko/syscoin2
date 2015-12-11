@@ -1562,10 +1562,10 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-   // SYSCOIN snapshot block 700k
-   nHeight += 700000;
-   CAmount nSubsidy = 96 * COIN;
-	else if(nHeight == 700000)
+    // SYSCOIN snapshot block 700k
+    nHeight += 700000;
+    CAmount nSubsidy = 96 * COIN;
+	if(nHeight == 700000)
 		nSubsidy = 1024 * COIN; // SYSCOIN genesis amount on shade
 	else if(nHeight == 700001)
 		nSubsidy = 439724938 * COIN; // SYSCOIN shade snapshot amount to old syscoin blockchain
