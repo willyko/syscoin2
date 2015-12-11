@@ -51,7 +51,7 @@ static bool GenerateGenesisBlock(CBlock &genesisBlock, uint256 *phash)
 
         // Write the last 4 bytes of the block header (the nonce) to a copy of
         // the double-SHA256 state, and compute the result.
-        CHash256(hasher).Write((unsigned char*)&nNonce, 4).Finalize((unsigned char*)phash);
+        CHash256(hasher).Write((unsigned char*)&genesisBlock.nNonce, 4).Finalize((unsigned char*)phash);
 
         // Return the nonce if the hash has at least some zero bits,
         // caller will check if it has enough to reach the target
@@ -123,7 +123,7 @@ public:
 
         genesis = CreateGenesisBlock(1449865391, 2083236893, 0x1d00ffff, 1, 50 * COIN);
 		uint256 hash;
-		if(GenerateGenesisBlock(genesis, hash))
+		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
@@ -208,7 +208,7 @@ public:
 
         genesis = CreateGenesisBlock(1449865391, 414098458, 0x1d00ffff, 1, 50 * COIN);
 		uint256 hash;
-		if(GenerateGenesisBlock(genesis, hash))
+		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
@@ -280,7 +280,7 @@ public:
 
         genesis = CreateGenesisBlock(1449865391, 2, 0x207fffff, 1, 50 * COIN);
 		uint256 hash;
-		if(GenerateGenesisBlock(genesis, hash))
+		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
