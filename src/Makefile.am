@@ -130,7 +130,6 @@ SYSCOIN_CORE_H = \
   memusage.h \
   merkleblock.h \
   miner.h \
-  mruset.h \
   net.h \
   netbase.h \
   noui.h \
