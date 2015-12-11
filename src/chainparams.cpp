@@ -50,20 +50,26 @@ static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
     hasher.Write((unsigned char*)&ss[0], 76);
 	arith_uint256 hashTarget = arith_uint256().SetCompact(genesisBlock.nBits);
     while (true) {
-        genesisBlock.nNonce++;
+        
 
         // Write the last 4 bytes of the block header (the nonce) to a copy of
         // the double-SHA256 state, and compute the result.
         CHash256(hasher).Write((unsigned char*)&genesisBlock.nNonce, 4).Finalize((unsigned char*)phash);
 
         // Return the nonce if the hash has at least some zero bits,
-        // caller will check if it has enough to reach the target
+        // check if it has enough to reach the target
         if (((uint16_t*)phash)[15] == 0 && UintToArith256(*phash) <= hashTarget)
             return true;
-
+		genesisBlock.nNonce++;
+		if (genesis.nNonce == 0) {
+			LogPrintf("NONCE WRAPPED, incrementing time\n");
+			++genesis.nTime;
+		}
         // If nothing found after trying for a while, return -1
         if ((genesisBlock.nNonce & 0xfff) == 0)
-            return false;
+            LogPrintf("nonce %08X: hash = %s (target = %s)\n",
+					genesisBlock.nNonce, (*phash).ToString().c_str(),
+					hashTarget.ToString().c_str());
     }
 }
 /**
