@@ -75,11 +75,11 @@ static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
 					genesisBlock.nNonce, (*phash).ToString().c_str(),
 					hashTarget.ToString().c_str());
     }
-	printf("genesis.nTime = %u \n", genesis.nTime);
-	printf("genesis.nNonce = %u \n", genesis.nNonce);
-	printf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
+	printf("genesis.nTime = %u \n", genesisBlock.nTime);
+	printf("genesis.nNonce = %u \n", genesisBlock.nNonce);
+	printf("genesis.GetHash = %s\n", genesisBlock.GetHash().ToString().c_str());
 	printf("Generate hash = %s\n", (*phash).ToString().c_str());
-	printf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+	printf("genesis.hashMerkleRoot = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
 }
 /**
  * Build the genesis block. Note that the output of its generation
