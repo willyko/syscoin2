@@ -1569,6 +1569,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 		nSubsidy = 50 * COIN; // SYSCOIN genesis amount on shade
 	else if(nHeight == 700001)
 		nSubsidy = 439725912 * COIN; // SYSCOIN shade snapshot amount to old syscoin blockchain
+	else if(nHeight < 701000)
+		nSubsidy = 1 * COIN; // SYSCOIN shade 1 coin per block until retargetting is finished (10k blocks)
     else if(nHeight > 777840 && nHeight <= 1814640)
         nSubsidy = 80 * COIN;
     else if(nHeight > 1814640 && nHeight <= 3369840)
