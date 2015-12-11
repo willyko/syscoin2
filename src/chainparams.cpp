@@ -134,7 +134,7 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1449865391, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1231006505, 173639, 0x1e0ffff0, 1, 50 * COIN);
 		uint256 hash;
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
@@ -221,7 +221,7 @@ public:
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449865391, 414098458, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1296688602, 1551807, 0x1e0ffff0, 1, 50 * COIN);
 		uint256 hash;
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
@@ -296,7 +296,7 @@ public:
         nDefaultPort = 18444;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449865391, 2, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1296688602, 3, 0x207fffff, 1, 50 * COIN);
 		uint256 hash;
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
