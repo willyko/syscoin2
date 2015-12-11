@@ -11,6 +11,8 @@
 #include "utilstrencodings.h"
 #include "uint256.h"
 #include "arith_uint256.h"
+#include "hash.h"
+#include "streams.h"
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
