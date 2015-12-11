@@ -143,7 +143,7 @@ public:
 		uint256 hash;
 		//GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
-		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.GetHash().ToString().c_str());
+		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(consensus.hashGenesisBlock == uint256S("0x00000c8fd1eaf50d158b232dcbf035abc93805ef75ce0f2eff52de19dd663eeb"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
 
@@ -228,7 +228,7 @@ public:
 		uint256 hash;
 		//GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
-		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.GetHash().ToString().c_str());
+		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(consensus.hashGenesisBlock == uint256S("0x00002d98737d035f40efc39fc390561f26e284dd57148d91089413fb81fd1b6"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
 
@@ -298,7 +298,7 @@ public:
 
         genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.GetHash().ToString().c_str());
+		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(consensus.hashGenesisBlock == uint256S("0x0000059397f9261913313874463586ac92a48abdab1ccd59c75682b14ede9ce5"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
 
