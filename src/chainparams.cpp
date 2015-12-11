@@ -66,12 +66,12 @@ static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
             return true;
 		genesisBlock.nNonce++;
 		if (genesisBlock.nNonce == 0) {
-			LogPrintf("NONCE WRAPPED, incrementing time\n");
+			printf("NONCE WRAPPED, incrementing time\n");
 			++genesisBlock.nTime;
 		}
         // If nothing found after trying for a while, return -1
         if ((genesisBlock.nNonce & 0xfff) == 0)
-            LogPrintf("nonce %08X: hash = %s (target = %s)\n",
+            printf("nonce %08X: hash = %s (target = %s)\n",
 					genesisBlock.nNonce, (*phash).ToString().c_str(),
 					hashTarget.ToString().c_str());
     }
@@ -139,8 +139,8 @@ public:
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
         consensus.hashGenesisBlock = genesis.GetHash();
-		LogPrintf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
-		LogPrintf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+		printf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
+		printf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
         assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
@@ -226,8 +226,8 @@ public:
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
         consensus.hashGenesisBlock = genesis.GetHash();
-		LogPrintf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
-		LogPrintf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+		printf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
+		printf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
 
         assert(consensus.hashGenesisBlock == uint256S("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
@@ -300,8 +300,8 @@ public:
 		uint256 hash;
 		if(GenerateGenesisBlock(genesis, &hash))
 			LogPrintf("proof-of-work found  \n  hash: %s\n", hash.GetHex());
-		LogPrintf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
-		LogPrintf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
+		printf("genesis.GetHash = %s\n", genesis.GetHash().ToString().c_str());
+		printf("genesis.hashMerkleRoot = %s\n", genesis.hashMerkleRoot.ToString().c_str());
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
