@@ -13,6 +13,7 @@
 #include "arith_uint256.h"
 #include "hash.h"
 #include "streams.h"
+#include <time.h>
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
@@ -40,9 +41,12 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     return genesis;
 }
 // SYSCOIN generate block
+	// This will figure out a valid hash and Nonce if you're
+	// creating a different genesis block:
 static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
 {
     // Write the first 76 bytes of the block header to a double-SHA256 state.
+	genesisBlock.nTime    = time(NULL);
     CHash256 hasher;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << genesisBlock;
