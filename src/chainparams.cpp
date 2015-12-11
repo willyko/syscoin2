@@ -297,6 +297,7 @@ public:
         nPruneAfterHeight = 1000;
 
         genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
+		uint256 hash;
 		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
 		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
