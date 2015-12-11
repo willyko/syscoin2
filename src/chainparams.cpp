@@ -139,7 +139,7 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1449870675, 1248186, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1449870675, 2083236893, 0x1d00ffff, 1, 50 * COIN);
 		uint256 hash;
 		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -224,7 +224,7 @@ public:
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449870592, 896505, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1449870592, 414098458, 0x1d00ffff, 1, 50 * COIN);
 		uint256 hash;
 		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -296,7 +296,7 @@ public:
         nDefaultPort = 18444;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1449870472, 2, 0x207fffff, 1, 50 * COIN);
 		uint256 hash;
 		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
