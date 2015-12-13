@@ -97,7 +97,7 @@ bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
 
     vector<unsigned char> txData(ParseHex(strHexTx));
 	// SYSCOIN do not account for syscoin data field
-    CDataStream ssData(txData, SER_NETWORK | SER_GETHASHWITHOUTDATAK, PROTOCOL_VERSION);
+    CDataStream ssData(txData, SER_NETWORK | SER_GETHASHWITHOUTDATA, PROTOCOL_VERSION);
     try {
         ssData >> tx;
     }
