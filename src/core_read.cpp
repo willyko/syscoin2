@@ -96,7 +96,8 @@ bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx)
         return false;
 
     vector<unsigned char> txData(ParseHex(strHexTx));
-    CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+	// SYSCOIN do not account for syscoin data field
+    CDataStream ssData(txData, SER_NETWORK | SER_GETHASHWITHOUTDATAK, PROTOCOL_VERSION);
     try {
         ssData >> tx;
     }
@@ -113,7 +114,8 @@ bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)
         return false;
 
     std::vector<unsigned char> blockData(ParseHex(strHexBlk));
-    CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
+	// SYSCOIN do not account for syscoin data field
+    CDataStream ssBlock(blockData, SER_NETWORK | SER_GETHASHWITHOUTDATA, PROTOCOL_VERSION);
     try {
         ssBlock >> block;
     }
