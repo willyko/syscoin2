@@ -259,7 +259,7 @@ public:
 	void ClearOffer()
 	{
 		accepts.clear();
-		linkWhitelist.clear();
+		linkWhitelist.SetNull();
 		offerLinks.clear();
 		vchLinkOffer.clear();
 		sCurrencyCode.clear();

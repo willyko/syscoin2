@@ -125,7 +125,7 @@ string certFromOp(int op) {
 }
 bool CCert::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
-	if(!GetSyscoinData(const CTransaction &tx, vchData);
+	if(!GetSyscoinData(const CTransaction &tx, vchData))
 		return false;
     try {
         CDataStream dsCert(vchData, SER_NETWORK, PROTOCOL_VERSION);

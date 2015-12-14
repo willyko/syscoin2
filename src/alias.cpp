@@ -399,7 +399,7 @@ string aliasFromOp(int op) {
 }
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
-   For(unsigned int i = 0; i<tx.vout.size();i++) {
+   for(int i = 0; i<tx.vout.size();i++) {
         if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
             continue;
         if (whichType == TX_NULL_DATA)
@@ -668,7 +668,7 @@ bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
 }
 bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
-	if(!GetSyscoinData(const CTransaction &tx, vchData);
+	if(!GetSyscoinData(const CTransaction &tx, vchData))
 		return false;
     try {
         CDataStream dsAlias(vchData, SER_NETWORK, PROTOCOL_VERSION);
