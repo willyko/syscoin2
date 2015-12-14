@@ -477,9 +477,8 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		int nIn=-1;
 		// Strict check - bug disallowed
-		for (int i = 0; i < (int) tx.vin.size(); i++) {
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			prevOutput = &tx.vin[i].prevout;
 			inputs.GetCoins(prevOutput->hash, prevCoins);
 			if (DecodeAliasScript(prevCoins.vout[prevOutput->n].scriptPubKey,

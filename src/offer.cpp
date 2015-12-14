@@ -759,7 +759,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		vvchPrevArgs.clear();
 		int nIn = -1;
 		// Strict check - bug disallowed, find 2 inputs max
-		for (int i = 0; i < (int) tx.vin.size(); i++) {
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			prevOutput = &tx.vin[i].prevout;
 			inputs.GetCoins(prevOutput->hash, prevCoins);
 			vector<vector<unsigned char> > vvch, vvch2, vvch3;

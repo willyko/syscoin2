@@ -483,7 +483,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
         // Strict check - bug disallowed
-		for (int i = 0; i < (int) tx.vin.size(); i++) {
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			prevOutput = &tx.vin[i].prevout;
 			inputs.GetCoins(prevOutput->hash, prevCoins);
