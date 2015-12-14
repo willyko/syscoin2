@@ -1569,7 +1569,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		vecSend.push_back(recipient);
 
 		CScript scriptData;
-		scriptFee << OP_RETURN << theCert.Serialize;
+		scriptData << OP_RETURN << theCert.Serialize;
 		CRecipient fee = {scriptData, nNetFee, false};
 		vecSend.push_back(fee);
 		SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxCertIn);
