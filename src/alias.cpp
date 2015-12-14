@@ -17,6 +17,7 @@
 #include "txmempool.h"
 #include "txdb.h"
 #include "chainparams.h"
+#include "policy/policy.h"
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
