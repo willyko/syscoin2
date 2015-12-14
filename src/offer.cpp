@@ -2450,7 +2450,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		}
 	}
 	COfferLinkWhitelistEntry foundCert;
-	const CWalletTx *wtxCertIn;
+	const CWalletTx *wtxCertIn = NULL;
 	// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		CTransaction txCert;
@@ -2556,7 +2556,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!foundCert.IsNull())
 	{
-		if(escrow.IsNull())
+		if(escrow.IsNull() && wtxCertIn != NULL)
 		{
 			SendMoneySyscoin(vecSend, MIN_AMOUNT+nTotalValue, false, wtx, wtxCertIn);
 		}

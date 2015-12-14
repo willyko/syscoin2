@@ -468,7 +468,6 @@ bool CheckMessageInputs(const CTransaction &tx,
         bool good = DecodeMessageTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckMessageInputs() : could not decode a syscoin tx");
-        int nDepth;
         int64_t nNetFee;
         // unserialize message UniValue from txn, check for valid
         CMessage theMessage;
@@ -769,9 +768,6 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
 
 	vector<CMessage> vtxPos;
 
-	int expired = 0;
-	int expires_in = 0;
-	int expired_block = 0;
     UniValue oMessage(UniValue::VOBJ);
     vector<unsigned char> vchValue;
 
@@ -820,7 +816,6 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
     CTransaction tx, dbtx;
 
     vector<unsigned char> vchValue;
-    int nHeight;
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
         // get txn hash, read txn index
@@ -835,9 +830,6 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
 			continue;
-		// get the txn height
-		nHeight = GetTxHashHeight(hash);
-
 		// get the txn message name
 		if (!GetNameOfMessageTx(wtx, vchName))
 			continue;
