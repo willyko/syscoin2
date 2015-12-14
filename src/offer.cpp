@@ -848,7 +848,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer links are not allowed in tx data");
 		}
-		if(theOffer.linkWhitelist.size() > 1)
+		if(theOffer.linkWhitelist.entries.size() > 1)
 		{
 			return error("offer has too many whitelist entries, only one allowed per tx");
 		}
@@ -1569,7 +1569,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		vecSend.push_back(recipient);
 
 		CScript scriptData;
-		scriptData << OP_RETURN << theCert.Serialize;
+		scriptData << OP_RETURN << theCert.Serialize();
 		CRecipient fee = {scriptData, nNetFee, false};
 		vecSend.push_back(fee);
 		SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxCertIn);
@@ -1591,7 +1591,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	// gather inputs
 	string baSig;
-	unsigned int nQty;
 	CWalletTx *wtxCertIn;
 	COfferLinkWhitelistEntry whiteListEntry;
 
@@ -1609,7 +1608,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	}
 
 	int commissionInteger = atoi(params[1].get_str().c_str());
-	if(commissionInteger < 0 || commissionInteger > MAX_NAME_LENGTH)
+	if(commissionInteger < 0 || commissionInteger > 255)
 	{
 		throw JSONRPCError(RPC_INVALID_PARAMETER, "commission must positive and less than 256!");
 	}

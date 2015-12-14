@@ -400,7 +400,7 @@ string aliasFromOp(int op) {
 }
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
-   for(int i = 0; i<tx.vout.size();i++) {
+   for(unsigned int i = 0; i<tx.vout.size();i++) {
         if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
             continue;
         if (whichType == TX_NULL_DATA)
