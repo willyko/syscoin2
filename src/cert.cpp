@@ -240,7 +240,7 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
                 return error("ReconstructCertIndex() : failed to write to cert DB");
 
           
-            printf( "RECONSTRUCT CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
+            LogPrintf( "RECONSTRUCT CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
                     certFromOp(op).c_str(),
                     stringFromVch(vvchArgs[0]).c_str(),
                     stringFromVch(txCert.vchTitle).c_str(),
@@ -381,7 +381,7 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
     if (nHeight + GetCertExpirationDepth()
             < chainActive.Tip()->nHeight) {
         string cert = stringFromVch(vchCert);
-        printf("GetTxOfCert(%s) : expired", cert.c_str());
+        LogPrintf("GetTxOfCert(%s) : expired", cert.c_str());
         return false;
     }
 
@@ -504,7 +504,7 @@ bool CheckCertInputs(const CTransaction &tx,
         bool fJustCheck, int nHeight) {
 
     if (!tx.IsCoinBase()) {
-			printf("*** %d %d %s %s %s %s\n", nHeight,
+			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
@@ -705,7 +705,7 @@ bool CheckCertInputs(const CTransaction &tx,
               			
                 // debug
 				if(fDebug)
-					printf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
+					LogPrintf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
                         certFromOp(op).c_str(),
                         stringFromVch(vvchArgs[0]).c_str(),
                         stringFromVch(theCert.vchTitle).c_str(),
@@ -721,7 +721,7 @@ bool CheckCertInputs(const CTransaction &tx,
 
 
 void rescanforcerts(CBlockIndex *pindexRescan) {
-    printf("Scanning blockchain for certs to create fast index...\n");
+    LogPrintf("Scanning blockchain for certs to create fast index...\n");
     pcertdb->ReconstructCertIndex(pindexRescan);
 }
 

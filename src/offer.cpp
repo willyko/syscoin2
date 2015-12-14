@@ -116,7 +116,7 @@ string makeOfferLinkAcceptTX(COfferAccept& theOfferAccept, const vector<unsigned
 	if(foundOfferLinkInWallet(vchOffer, vchOfferAcceptLink))
 	{
 		if(fDebug)
-			printf("makeOfferLinkAcceptTX() offer linked transaction already exists\n");
+			LogPrintf("makeOfferLinkAcceptTX() offer linked transaction already exists\n");
 		return "";
 	}
 
@@ -420,7 +420,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             	vector<unsigned char> vchOfferAccept = vvchArgs[1];
 	            if (ExistsOfferAccept(vchOfferAccept)) {
 	                if (!ReadOfferAccept(vchOfferAccept, vchOffer))
-	                    printf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
+	                    LogPrintf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
 	                else bReadOffer = true;
 	            }
 				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
@@ -442,7 +442,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             	vector<unsigned char> vchOfferAccept = vvchArgs[1];
 	            if (ExistsOfferAccept(vchOfferAccept)) {
 	                if (!ReadOfferAccept(vchOfferAccept, vchOffer))
-	                    printf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
+	                    LogPrintf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
 	                else bReadOffer = true;
 	            }
 				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
@@ -473,7 +473,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 	                return error("ReconstructOfferIndex() : failed to write to offer DB");
 			
 			if(fDebug)
-				printf( "RECONSTRUCT OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
+				LogPrintf( "RECONSTRUCT OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
 					offerFromOp(op).c_str(),
 					stringFromVch(vvchArgs[0]).c_str(),
 					stringFromVch(txOffer.sTitle).c_str(),
@@ -618,7 +618,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 			< chainActive.Tip()->nHeight) {
 		string offer = stringFromVch(vchOffer);
 		if(fDebug)
-			printf("GetTxOfOffer(%s) : expired", offer.c_str());
+			LogPrintf("GetTxOfOffer(%s) : expired", offer.c_str());
 		return false;
 	}
 
@@ -641,7 +641,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 			< chainActive.Tip()->nHeight) {
 		string offer = stringFromVch(vchOfferAccept);
 		if(fDebug)
-			printf("GetTxOfOfferAccept(%s) : expired", offer.c_str());
+			LogPrintf("GetTxOfOfferAccept(%s) : expired", offer.c_str());
 		return false;
 	}
 
@@ -747,7 +747,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		bool fJustCheck, int nHeight) {
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
-			printf("*** %d %d %s %s %s %s\n", nHeight,
+			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
@@ -1074,7 +1074,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							string strError = makeOfferRefundTX(tx, theOffer, theOfferAccept, OFFER_REFUND_COMPLETE);
 							if (strError != "" && fDebug)
 							{
-								printf("CheckOfferInputs() - OFFER_REFUND_COMPLETE %s\n", strError.c_str());
+								LogPrintf("CheckOfferInputs() - OFFER_REFUND_COMPLETE %s\n", strError.c_str());
 							}
 
 						}
@@ -1091,7 +1091,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							{
 								string strError = makeOfferRefundTX(myOfferTx, activateOffer, myAccept, OFFER_REFUND_PAYMENT_INPROGRESS);
 								if (strError != "" && fDebug)							
-									printf("CheckOfferInputs() - OFFER_REFUND_PAYMENT_INPROGRESS %s\n", strError.c_str());
+									LogPrintf("CheckOfferInputs() - OFFER_REFUND_PAYMENT_INPROGRESS %s\n", strError.c_str());
 									
 							}
 						}
@@ -1140,7 +1140,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(tx.vout[nOut].nValue != nPrice)
 					{
 						if(fDebug)
-							printf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %llu\n", nPrice);
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
 						return true;
 					}
 						
@@ -1169,11 +1169,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 						{	
 							string strError = makeOfferRefundTX(offerTx, theOffer, theOfferAccept, OFFER_REFUND_PAYMENT_INPROGRESS);
 							if (strError != "" && fDebug)
-								printf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
 							
 						}
 						if(fDebug)
-							printf("txn %s accepted but offer not fulfilled because desired"
+							LogPrintf("txn %s accepted but offer not fulfilled because desired"
 							" qty %u is more than available qty %u for offer accept %s\n", 
 							tx.GetHash().GetHex().c_str(), 
 							theOfferAccept.nQty, 
@@ -1192,7 +1192,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							{
 								if(fDebug)
 								{
-									printf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
+									LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
 								}
 							}
 						}
@@ -1227,12 +1227,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 						{
 							if(fDebug)
 							{
-								printf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());
 							}
 							// if there is a problem refund this accept
 							strError = makeOfferRefundTX(offerTx, theOffer, theOfferAccept, OFFER_REFUND_PAYMENT_INPROGRESS);
 							if (strError != "" && fDebug)
-								printf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX(makeOfferRefundTX) %s\n", strError.c_str());
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX(makeOfferRefundTX) %s\n", strError.c_str());
 
 						}
 					}
@@ -1333,7 +1333,7 @@ bool CheckOfferInputs(const CTransaction &tx,
                				
 				// debug
 				if (fDebug)
-					printf( "CONNECTED OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
+					LogPrintf( "CONNECTED OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
 						offerFromOp(op).c_str(),
 						stringFromVch(vvchArgs[0]).c_str(),
 						stringFromVch(theOffer.sTitle).c_str(),
@@ -1349,7 +1349,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 
 void rescanforoffers(CBlockIndex *pindexRescan) {
-    printf("Scanning blockchain for offers to create fast index...\n");
+    LogPrintf("Scanning blockchain for offers to create fast index...\n");
     pofferdb->ReconstructOfferIndex(pindexRescan);
 }
 
@@ -1539,15 +1539,11 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
-	if(fDebug)
-		printf("SENT:OFFERACTIVATE: title=%s, guid=%s, tx=%s\n",
-			stringFromVch(newOffer.sTitle).c_str(),
-			stringFromVch(vchOffer).c_str(), wtx.GetHash().GetHex().c_str());
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
-	if(!theCert.IsNull())
+	if(!theCert.IsNull() && wtxCertIn != NULL)
 	{
 		// get a key from our wallet set dest as ourselves
 		CPubKey newDefaultKey;

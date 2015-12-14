@@ -264,13 +264,13 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
 	{
 		if(fDebug)
-			printf("getCurrencyToSYSFromAlias() Could not find SYS_RATES alias\n");
+			LogPrintf("getCurrencyToSYSFromAlias() Could not find SYS_RATES alias\n");
 		return "1";
 	}
 	if (vtxPos.size() < 1)
 	{
 		if(fDebug)
-			printf("getCurrencyToSYSFromAlias() Could not find SYS_RATES alias (vtxPos.size() == 0)\n");
+			LogPrintf("getCurrencyToSYSFromAlias() Could not find SYS_RATES alias (vtxPos.size() == 0)\n");
 		return "1";
 	}
 	CAliasIndex foundAlias;
@@ -291,7 +291,7 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
 	{
 		if(fDebug)
-			printf("getCurrencyToSYSFromAlias() Failed to read transaction from disk\n");
+			LogPrintf("getCurrencyToSYSFromAlias() Failed to read transaction from disk\n");
 		return "1";
 	}
 
@@ -346,13 +346,13 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	else
 	{
 		if(fDebug)
-			printf("getCurrencyToSYSFromAlias() Failed to get value from alias\n");
+			LogPrintf("getCurrencyToSYSFromAlias() Failed to get value from alias\n");
 		return "1";
 	}
 	if(!found)
 	{
 		if(fDebug)
-			printf("getCurrencyToSYSFromAlias() currency not found in SYS_RATES alias\n");
+			LogPrintf("getCurrencyToSYSFromAlias() currency not found in SYS_RATES alias\n");
 		return "0";
 	}
 	return "";
@@ -467,7 +467,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
-			printf("*** %d %d %s %s %s %s\n", nHeight,
+			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
@@ -492,7 +492,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			if (found)
 				return error(
 						"CheckAliasInputs() : a non-syscoin transaction with a syscoin input");
-			printf("CheckAliasInputs() : non-syscoin transaction\n");
+			LogPrintf("CheckAliasInputs() : non-syscoin transaction\n");
 			return true;
 		}
 
@@ -611,7 +611,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
 				
 				if(fDebug)
-					printf(
+					LogPrintf(
 						"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
 						stringFromVch(vvchArgs[0]).c_str(),
 						aliasFromOp(op).c_str(),
@@ -721,7 +721,7 @@ bool CAliasDB::ScanNames(const std::vector<unsigned char>& vchName,
 }
 
 void rescanforaliases(CBlockIndex *pindexRescan) {
-	printf("Scanning blockchain for names to create fast index...\n");
+	LogPrintf("Scanning blockchain for names to create fast index...\n");
 	paliasdb->ReconstructAliasIndex(pindexRescan);
 }
 
@@ -778,7 +778,7 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 							"ReconstructAliasIndex() : failed to write to alias DB");
 
 			
-				printf(
+				LogPrintf(
 						"RECONSTRUCT ALIAS: op=%s alias=%s value=%s hash=%s height=%d\n",
 						aliasFromOp(op).c_str(), stringFromVch(vchName).c_str(),
 						stringFromVch(vchValue).c_str(),
@@ -861,7 +861,7 @@ bool GetTxOfAlias(const vector<unsigned char> &vchName,
 	if (nHeight + GetAliasExpirationDepth()
 			< chainActive.Tip()->nHeight) {
 		string name = stringFromVch(vchName);
-		printf("GetTxOfAlias(%s) : expired", name.c_str());
+		LogPrintf("GetTxOfAlias(%s) : expired", name.c_str());
 		return false;
 	}
 

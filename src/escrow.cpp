@@ -224,7 +224,7 @@ bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
                 return error("ReconstructEscrowIndex() : failed to write to escrow DB");
 
           
-            printf( "RECONSTRUCT ESCROW: op=%s escrow=%s hash=%s height=%d\n",
+            LogPrintf( "RECONSTRUCT ESCROW: op=%s escrow=%s hash=%s height=%d\n",
                     escrowFromOp(op).c_str(),
                     stringFromVch(vvchArgs[0]).c_str(),
                     tx.GetHash().ToString().c_str(),
@@ -365,7 +365,7 @@ bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
     if (nHeight + GetEscrowExpirationDepth()
             < chainActive.Tip()->nHeight) {
         string escrow = stringFromVch(vchEscrow);
-        printf("GetTxOfEscrow(%s) : expired", escrow.c_str());
+        LogPrintf("GetTxOfEscrow(%s) : expired", escrow.c_str());
         return false;
     }
 
@@ -470,7 +470,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         bool fJustCheck, int nHeight) {
 
     if (!tx.IsCoinBase()) {
-			printf("*** %d %d %s %s %s %s\n", nHeight,
+			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
@@ -502,7 +502,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
             if (found)
                 return error(
                         "CheckEscrowInputs() : a non-syscoin transaction with a syscoin input");
-			printf("CheckEscrowInputs() : non-syscoin transaction\n");
+			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
             return true;
         }
         vector<vector<unsigned char> > vvchArgs;
@@ -616,7 +616,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 					}
 					if(fDebug && escrowChanged)
 					{
-						printf("CheckEscrowInputs(): Escrow UniValue changed outside of activate, not allowed!\n");
+						LogPrintf("CheckEscrowInputs(): Escrow UniValue changed outside of activate, not allowed!\n");
 						return true;
 					}
 				}
@@ -636,7 +636,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
               			
                 // debug
 				if(fDebug)
-					printf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
+					LogPrintf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
                         escrowFromOp(op).c_str(),
                         stringFromVch(vvchArgs[0]).c_str(),
                         tx.GetHash().ToString().c_str(),
@@ -650,7 +650,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 }
 
 void rescanforescrows(CBlockIndex *pindexRescan) {
-    printf("Scanning blockchain for escrows to create fast index...\n");
+    LogPrintf("Scanning blockchain for escrows to create fast index...\n");
     pescrowdb->ReconstructEscrowIndex(pindexRescan);
 }
 
@@ -1631,7 +1631,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
 		hex_str = hex_value.get_str();
-	printf("after signing final %s\n", hex_str.c_str());
+	LogPrintf("after signing final %s\n", hex_str.c_str());
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())

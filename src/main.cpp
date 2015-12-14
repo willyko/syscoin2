@@ -973,7 +973,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
     if (!CheckTransaction(tx, state))
 	{
 		// SYSCOIN verbose logging
-		printf("CheckTransaction failed, validation state: %s\n", FormatStateMessage(state).c_str());
+		LogPrintf("CheckTransaction failed, validation state: %s\n", FormatStateMessage(state).c_str());
         return false;
 	}
 
@@ -2064,7 +2064,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
 	if(fDebug)
-		printf("DISCONNECTED ALIAS TXN: alias=%s op=%s hash=%s  height=%d\n",
+		LogPrintf("DISCONNECTED ALIAS TXN: alias=%s op=%s hash=%s  height=%d\n",
 		stringFromVch(vvchArgs[0]).c_str(),
 		aliasFromOp(op).c_str(),
 		tx.GetHash().ToString().c_str(),
@@ -2116,7 +2116,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		return error("DisconnectBlock() : failed to write to offer DB");
 	
 	if(fDebug)
-		printf("DISCONNECTED offer TXN: offer=%s op=%s hash=%s  height=%d\n",
+		LogPrintf("DISCONNECTED offer TXN: offer=%s op=%s hash=%s  height=%d\n",
 			stringFromVch(vvchArgs[0]).c_str(),
 			aliasFromOp(op).c_str(),
 			tx.GetHash().ToString().c_str(),
@@ -2152,7 +2152,7 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to offer DB");
 	if(fDebug)
-		printf("DISCONNECTED CERT TXN: title=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED CERT TXN: title=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
@@ -2187,7 +2187,7 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to escrow DB");
 	if(fDebug)
-		printf("DISCONNECTED ESCROW TXN: escrow=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED ESCROW TXN: escrow=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
@@ -2222,7 +2222,7 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to message DB");
 	if(fDebug)
-		printf("DISCONNECTED MESSAGE TXN: message=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED MESSAGE TXN: message=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);

@@ -191,7 +191,7 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
                 return error("ReconstructMessageIndex() : failed to write to message DB");
 
           
-            printf( "RECONSTRUCT MESSAGE: op=%s message=%s hash=%s height=%d\n",
+            LogPrintf( "RECONSTRUCT MESSAGE: op=%s message=%s hash=%s height=%d\n",
                     messageFromOp(op).c_str(),
                     stringFromVch(vvchArgs[0]).c_str(),
                     tx.GetHash().ToString().c_str(),
@@ -326,7 +326,7 @@ bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessa
     if (nHeight + GetMessageExpirationDepth()
             < chainActive.Tip()->nHeight) {
         string message = stringFromVch(vchMessage);
-        printf("GetTxOfMessage(%s) : expired", message.c_str());
+        LogPrintf("GetTxOfMessage(%s) : expired", message.c_str());
         return false;
     }
 
@@ -428,7 +428,7 @@ bool CheckMessageInputs(const CTransaction &tx,
         bool fJustCheck, int nHeight) {
 
     if (!tx.IsCoinBase()) {
-			printf("*** %d %d %s %s %s %s\n", nHeight,
+			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
@@ -460,7 +460,7 @@ bool CheckMessageInputs(const CTransaction &tx,
             if (found)
                 return error(
                         "CheckMessageInputs() : a non-syscoin transaction with a syscoin input");
-			printf("CheckMessageInputs() : non-syscoin transaction\n");
+			LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
             return true;
         }
         vector<vector<unsigned char> > vvchArgs;
@@ -557,7 +557,7 @@ bool CheckMessageInputs(const CTransaction &tx,
               			
                 // debug
 				if(fDebug)
-					printf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
+					LogPrintf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
                         messageFromOp(op).c_str(),
                         stringFromVch(vvchArgs[0]).c_str(),
                         tx.GetHash().ToString().c_str(),
@@ -571,7 +571,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 }
 
 void rescanformessages(CBlockIndex *pindexRescan) {
-    printf("Scanning blockchain for messages to create fast index...\n");
+    LogPrintf("Scanning blockchain for messages to create fast index...\n");
     pmessagedb->ReconstructMessageIndex(pindexRescan);
 }
 
