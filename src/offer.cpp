@@ -1265,7 +1265,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						{
 							COfferLinkWhitelistEntry entry;
 							// special case we use to remove all entries
-							if(serializedOffer.linkWhitelist.nDiscountPct == -1)
+							if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == -1)
 							{
 								theOffer.linkWhitelist.SetNull();
 							}
