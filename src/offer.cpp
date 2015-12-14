@@ -2773,7 +2773,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
         uint256 blockHash;
         uint256 hash;
         CTransaction tx;
-        int nHeight;
 		
         BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
@@ -2794,9 +2793,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT))
                 continue;
-
-            // get the txn height
-            nHeight = GetTxHashHeight(hash);
 
             // get the txn alias name
             if(!GetNameOfOfferTx(wtx, vchName))

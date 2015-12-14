@@ -892,7 +892,6 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
     CTransaction tx, dbtx;
 
     vector<unsigned char> vchValue;
-    int nHeight;
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
         // get txn hash, read txn index
@@ -905,9 +904,6 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
 			continue;
-		// get the txn height
-		nHeight = GetTxHashHeight(hash);
-
 		// get the txn message name
 		if (!GetNameOfMessageTx(wtx, vchName))
 			continue;
