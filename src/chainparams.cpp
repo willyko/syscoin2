@@ -9,6 +9,11 @@
 #include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "uint256.h"
+#include "arith_uint256.h"
+#include "hash.h"
+#include "streams.h"
+#include <time.h>
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
@@ -34,6 +39,47 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
     return genesis;
+}
+// SYSCOIN generate block
+	// This will figure out a valid hash and Nonce if you're
+	// creating a different genesis block:
+static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
+{
+    // Write the first 76 bytes of the block header to a double-SHA256 state.
+	genesisBlock.nTime    = time(NULL);
+    CHash256 hasher;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << genesisBlock;
+    assert(ss.size() == 80);
+    hasher.Write((unsigned char*)&ss[0], 76);
+	arith_uint256 hashTarget = arith_uint256().SetCompact(genesisBlock.nBits);
+    while (true) {
+        
+
+        // Write the last 4 bytes of the block header (the nonce) to a copy of
+        // the double-SHA256 state, and compute the result.
+        CHash256(hasher).Write((unsigned char*)&genesisBlock.nNonce, 4).Finalize((unsigned char*)phash);
+
+        // Return the nonce if the hash has at least some zero bits,
+        // check if it has enough to reach the target
+        if (((uint16_t*)phash)[15] == 0 && UintToArith256(*phash) <= hashTarget)
+            break;
+		genesisBlock.nNonce++;
+		if (genesisBlock.nNonce == 0) {
+			printf("NONCE WRAPPED, incrementing time\n");
+			++genesisBlock.nTime;
+		}
+        // If nothing found after trying for a while, return -1
+        if ((genesisBlock.nNonce & 0xfff) == 0)
+            printf("nonce %08X: hash = %s (target = %s)\n",
+					genesisBlock.nNonce, (*phash).ToString().c_str(),
+					hashTarget.ToString().c_str());
+    }
+	printf("genesis.nTime = %u \n", genesisBlock.nTime);
+	printf("genesis.nNonce = %u \n", genesisBlock.nNonce);
+	printf("genesis.GetHash = %s\n", genesisBlock.GetHash().ToString().c_str());
+	printf("Generate hash = %s\n", (*phash).ToString().c_str());
+	printf("genesis.hashMerkleRoot = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
 }
 /**
  * Build the genesis block. Note that the output of its generation
@@ -79,8 +125,6 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
-		consensus.nAuxpowChainId = 0x1000;
-
         /** 
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -96,6 +140,8 @@ public:
         nPruneAfterHeight = 100000;
 
         genesis = CreateGenesisBlock(1449870675, 1248186, 0x1e0ffff0, 1, 50 * COIN);
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00000c8fd1eaf50d158b232dcbf035abc93805ef75ce0f2eff52de19dd663eeb"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
@@ -125,13 +171,7 @@ public:
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
-        checkpointData = (CCheckpointData) {
-            boost::assign::map_list_of
-            ( 0, uint256S("00000c8fd1eaf50d158b232dcbf035abc93805ef75ce0f2eff52de19dd663eeb")),
-            1449870675,
-            0,
-            0
-        };
+
        /* checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             ( 11111, uint256S("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d"))
@@ -174,7 +214,6 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
-		consensus.nAuxpowChainId = 0x1000;
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
         pchMessageStart[2] = 0x09;
@@ -185,6 +224,8 @@ public:
         nPruneAfterHeight = 1000;
 
         genesis = CreateGenesisBlock(1449870592, 896505, 0x1e0ffff0, 1, 50 * COIN);
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00002d98737d035f40efc39fc390561f26e284dd57148d91089413fb81fd1b6"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
@@ -214,13 +255,13 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
 
-        checkpointData = (CCheckpointData) {
+        /*checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            ( 0, uint256S("00002d98737d035f40efc39fc390561f26e284dd57148d91089413fb81fd1b6")),
-            1449870592,
-            0,
-            0
-        };
+            ( 546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
+            1337966069,
+            1488,
+            300
+        };*/
 
     }
 };
@@ -244,7 +285,6 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
-		consensus.nAuxpowChainId = 0x1000;
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;
@@ -254,9 +294,12 @@ public:
         nDefaultPort = 18444;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449871559, 544398, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0xc953c74d6cc0014d618ba4366ab1d229f08050cd207252eb8ed70e11a7ca7dc8"));
+		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
+        assert(consensus.hashGenesisBlock == uint256S("0x0000059397f9261913313874463586ac92a48abdab1ccd59c75682b14ede9ce5"));
         assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
@@ -268,13 +311,13 @@ public:
         fMineBlocksOnDemand = true;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-        checkpointData = (CCheckpointData){
+       /* checkpointData = (CCheckpointData){
             boost::assign::map_list_of
-            ( 0, uint256S("c953c74d6cc0014d618ba4366ab1d229f08050cd207252eb8ed70e11a7ca7dc8")),
-            1449871559,
+            ( 0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")),
+            0,
             0,
             0
-        };
+        };*/
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
