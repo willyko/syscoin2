@@ -1908,7 +1908,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	entry.certLinkVchRand = vchCert;
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 
-	if(!theOffer.linkWhitelist.GetWhitelistEntry(vchCert, entry))
+	if(!theOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry))
 	{
 		throw runtime_error("could not find this whitelist entry to remove");
 	}
