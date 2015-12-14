@@ -9,11 +9,6 @@
 #include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "uint256.h"
-#include "arith_uint256.h"
-#include "hash.h"
-#include "streams.h"
-#include <time.h>
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
@@ -40,47 +35,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
     return genesis;
 }
-// SYSCOIN generate block
-	// This will figure out a valid hash and Nonce if you're
-	// creating a different genesis block:
-static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
-{
-    // Write the first 76 bytes of the block header to a double-SHA256 state.
-	genesisBlock.nTime    = time(NULL);
-    CHash256 hasher;
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << genesisBlock;
-    assert(ss.size() == 80);
-    hasher.Write((unsigned char*)&ss[0], 76);
-	arith_uint256 hashTarget = arith_uint256().SetCompact(genesisBlock.nBits);
-    while (true) {
-        
 
-        // Write the last 4 bytes of the block header (the nonce) to a copy of
-        // the double-SHA256 state, and compute the result.
-        CHash256(hasher).Write((unsigned char*)&genesisBlock.nNonce, 4).Finalize((unsigned char*)phash);
-
-        // Return the nonce if the hash has at least some zero bits,
-        // check if it has enough to reach the target
-        if (((uint16_t*)phash)[15] == 0 && UintToArith256(*phash) <= hashTarget)
-            break;
-		genesisBlock.nNonce++;
-		if (genesisBlock.nNonce == 0) {
-			printf("NONCE WRAPPED, incrementing time\n");
-			++genesisBlock.nTime;
-		}
-        // If nothing found after trying for a while, return -1
-        if ((genesisBlock.nNonce & 0xfff) == 0)
-            printf("nonce %08X: hash = %s (target = %s)\n",
-					genesisBlock.nNonce, (*phash).ToString().c_str(),
-					hashTarget.ToString().c_str());
-    }
-	printf("genesis.nTime = %u \n", genesisBlock.nTime);
-	printf("genesis.nNonce = %u \n", genesisBlock.nNonce);
-	printf("genesis.GetHash = %s\n", genesisBlock.GetHash().ToString().c_str());
-	printf("Generate hash = %s\n", (*phash).ToString().c_str());
-	printf("genesis.hashMerkleRoot = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
-}
 /**
  * Build the genesis block. Note that the output of its generation
  * transaction cannot be spent since it did not originally exist in the
@@ -125,6 +80,7 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
+		consensus.nAuxpowChainId = 0x1000;
         /** 
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -139,12 +95,10 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1449870675, 1248186, 0x1e0ffff0, 1, 50 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450135860, 2106885, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000c8fd1eaf50d158b232dcbf035abc93805ef75ce0f2eff52de19dd663eeb"));
-        assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000dd5ed1cfbbd92073e1e7f1c6d3c579c04fde569cb5a1a304e24b458a1d8"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
        /* vSeeds.push_back(CDNSSeedData("syscoin.sipa.be", "seed.syscoin.sipa.be")); // Pieter Wuille
         vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me")); // Matt Corallo
@@ -214,6 +168,8 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
+		consensus.nAuxpowChainId = 0x1000;
+
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
         pchMessageStart[2] = 0x09;
@@ -223,12 +179,10 @@ public:
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449870592, 896505, 0x1e0ffff0, 1, 50 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450135956, 2483448, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00002d98737d035f40efc39fc390561f26e284dd57148d91089413fb81fd1b6"));
-        assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000003e32114d8824244e2892c1d72a61513e95c4f9cd4fb3bd7eaa89ff1646d"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -285,6 +239,7 @@ public:
         consensus.nPowTargetSpacing = 1 * 60; // 1 minute
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
+		consensus.nAuxpowChainId = 0x1000;
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;
@@ -294,13 +249,10 @@ public:
         nDefaultPort = 18444;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1449870472, 574578, 0x207fffff, 1, 50 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450136017, 4176314, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-		printf("consensus.hashGenesisBlock = %s\n", consensus.hashGenesisBlock.ToString().c_str());
-        assert(consensus.hashGenesisBlock == uint256S("0x0000059397f9261913313874463586ac92a48abdab1ccd59c75682b14ede9ce5"));
-        assert(genesis.hashMerkleRoot == uint256S("0x509063d1580636225e73f65d82c87bfd5c2d20b76986e1745d31cb396e1e2115"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000a18e7a322f71a1857cf8b929e4c5dd139874b04d204b7ff522933add491"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();  //! Regtest mode doesn't have any DNS seeds.
