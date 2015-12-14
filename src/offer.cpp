@@ -2859,9 +2859,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             	|| !IsEscrowOp(op))
                 continue;
 
-            // get the txn height
-            nHeight = GetTxHashHeight(hash);
-
             // get the txn alias name
             if(!GetNameOfEscrowTx(tx, vchName))
                 continue;
