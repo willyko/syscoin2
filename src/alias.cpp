@@ -666,6 +666,7 @@ bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
 		return false;
 	if (!scriptPubKey.GetOp(pc, opcode, vchData))
 		return false;
+	return true;
 }
 bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
