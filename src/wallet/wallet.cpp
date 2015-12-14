@@ -1914,7 +1914,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     wtxNew.BindWallet(this);
     CMutableTransaction txNew;
 	// SYSCOIN: set syscoin tx version if its a syscoin service call
-	if(!txData.empty())
+	if(wtxIn != NULL)
 		txNew.nVersion = GetSyscoinTxVersion();
     // Discourage fee sniping.
     //
