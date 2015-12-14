@@ -668,7 +668,7 @@ bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
 }
 bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
-	if(!GetSyscoinData(const CTransaction &tx, vchData))
+	if(!GetSyscoinData(tx, vchData))
 		return false;
     try {
         CDataStream dsAlias(vchData, SER_NETWORK, PROTOCOL_VERSION);

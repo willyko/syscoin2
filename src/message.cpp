@@ -78,7 +78,7 @@ string messageFromOp(int op) {
 }
 bool CMessage::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
-	if(!GetSyscoinData(const CTransaction &tx, vchData))
+	if(!GetSyscoinData(tx, vchData))
 		return false;
     try {
         CDataStream dsMessage(vchData, SER_NETWORK, PROTOCOL_VERSION);

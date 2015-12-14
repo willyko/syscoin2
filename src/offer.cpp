@@ -302,7 +302,7 @@ string offerFromOp(int op) {
 }
 bool COffer::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
-	if(!GetSyscoinData(const CTransaction &tx, vchData))
+	if(!GetSyscoinData(tx, vchData))
 		return false;
     try {
         CDataStream dsOffer(vchData, SER_NETWORK, PROTOCOL_VERSION);
