@@ -229,7 +229,8 @@ string makeOfferRefundTX(const CTransaction& prevTx, COffer& theOffer, const COf
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
-	CScript scriptData = OP_RETURN << offerCopy.Serialize();
+	CScript scriptData;
+	scriptData << OP_RETURN << offerCopy.Serialize();
 	CRecipient data = {scriptData, 0, false};
 	vecSend.push_back(data);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxPrevIn);
@@ -757,7 +758,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 		int prevOp, prevOp1;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevArgs1;
 		vvchPrevArgs.clear();
-		int nIn = -1;
 		// Strict check - bug disallowed, find 2 inputs max
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			prevOutput = &tx.vin[i].prevout;
@@ -1114,7 +1114,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					COffer myOffer,linkOffer;
 					CTransaction offerTx, linkedTx;			
 					// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-					bool foundPayment = false;
 					uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
 					COfferLinkWhitelistEntry entry;
 					if(IsCertOp(prevOp) && found)
@@ -1591,7 +1590,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	// gather inputs
 	string baSig;
-	CWalletTx *wtxCertIn;
 	COfferLinkWhitelistEntry whiteListEntry;
 
 	vector<unsigned char> vchLinkOffer = vchFromValue(params[0]);
