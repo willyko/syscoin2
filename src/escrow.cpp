@@ -120,7 +120,7 @@ bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
     }
     return true;
 }
-const vector<unsigned char>& CEscrow::Serialize() {
+const vector<unsigned char> CEscrow::Serialize() {
     CDataStream dsEscrow(SER_NETWORK, PROTOCOL_VERSION);
     dsEscrow << *this;
     const vector<unsigned char> vchData(dsEscrow.begin(), dsEscrow.end());

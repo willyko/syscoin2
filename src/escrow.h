@@ -130,7 +130,7 @@ public:
     void SetNull() { nHeight = 0; txHash.SetNull(); arbiter = ""; seller = ""; escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchRand.clear(); vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
     bool IsNull() const { return (txHash.IsNull() && escrowInputTxHash.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0 && vchRand.size() == 0); }
     bool UnserializeFromTx(const CTransaction &tx);
-	const std::vector<unsigned char>& Serialize();
+	const std::vector<unsigned char> Serialize();
 };
 
 

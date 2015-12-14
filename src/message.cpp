@@ -88,7 +88,7 @@ bool CMessage::UnserializeFromTx(const CTransaction &tx) {
     }
     return true;
 }
-const vector<unsigned char>& CMessage::Serialize() {
+const vector<unsigned char> CMessage::Serialize() {
     CDataStream dsMessage(SER_NETWORK, PROTOCOL_VERSION);
     dsMessage << *this;
     const vector<unsigned char> vchData(dsMessage.begin(), dsMessage.end());

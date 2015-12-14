@@ -51,7 +51,7 @@ public:
     void SetNull() { txHash.IsNull(); nHeight = 0; vValue.clear(); vchPubKey.clear(); }
     bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
-	const std::vector<unsigned char>&  Serialize();
+	const std::vector<unsigned char> Serialize();
 };
 
 class CAliasDB : public CDBWrapper {

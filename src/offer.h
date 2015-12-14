@@ -412,7 +412,7 @@ public:
     bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false); }
 
     bool UnserializeFromTx(const CTransaction &tx);
-	const std::vector<unsigned char>& Serialize();
+	const std::vector<unsigned char> Serialize();
 };
 
 class COfferDB : public CDBWrapper {

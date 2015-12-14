@@ -135,7 +135,7 @@ bool CCert::UnserializeFromTx(const CTransaction &tx) {
     }
     return true;
 }
-const vector<unsigned char>& CCert::Serialize() {
+const vector<unsigned char> CCert::Serialize() {
     CDataStream dsCert(SER_NETWORK, PROTOCOL_VERSION);
     dsCert << *this;
     const vector<unsigned char> vchData(dsCert.begin(), dsCert.end());

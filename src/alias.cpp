@@ -680,7 +680,7 @@ bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
     }
     return true;
 }
-const vector<unsigned char>& CAliasIndex::Serialize() {
+const vector<unsigned char> CAliasIndex::Serialize() {
     CDataStream dsAlias(SER_NETWORK, PROTOCOL_VERSION);
     dsAlias << *this;
     const vector<unsigned char> vchData(dsAlias.begin(), dsAlias.end());

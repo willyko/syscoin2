@@ -312,7 +312,7 @@ bool COffer::UnserializeFromTx(const CTransaction &tx) {
     }
     return true;
 }
-const vector<unsigned char>& COffer::Serialize() {
+const vector<unsigned char> COffer::Serialize() {
     CDataStream dsOffer(SER_NETWORK, PROTOCOL_VERSION);
     dsOffer << *this;
     const vector<unsigned char> vchData(dsOffer.begin(), dsOffer.end());
@@ -1260,26 +1260,24 @@ bool CheckOfferInputs(const CTransaction &tx,
 					theOffer.txHash = tx.GetHash();
 					if(op == OP_OFFER_UPDATE)
 					{
-						COfferLinkWhitelistEntry entry;
-						entry.certLinkVchRand = vchCert;
-						theOffer.linkWhitelist.PutWhitelistEntry(entry);
 						// if the txn whitelist entry exists (meaning we want to remove or add)
-						if(serializedOffer.linkWhitelist.size() == 1)
+						if(serializedOffer.linkWhitelist.entries.size() == 1)
 						{
+							COfferLinkWhitelistEntry entry;
 							// special case we use to remove all entries
 							if(serializedOffer.linkWhitelist.nDiscountPct == -1)
 							{
-								theOffer.linkWhitelist.clear();
+								theOffer.linkWhitelist.SetNull();
 							}
 							// the stored offer has this entry meaning we want to remove this entry
-							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist[0].certLinkVchRand, entry))
+							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
 							{
-								theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist[0].certLinkVchRand);
+								theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
 							}
 							// we want to add it to the whitelist
 							else
 							{
-								theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist[0]);
+								theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist.entries[0]);
 							}
 						}
 						// if this offer is linked to a parent update it with parent information
