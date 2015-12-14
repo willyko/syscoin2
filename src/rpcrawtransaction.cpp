@@ -605,8 +605,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VARR)(UniValue::VARR)(UniValue::VSTR), true);
 
     vector<unsigned char> txData(ParseHexV(params[0], "argument 1"));
-	// SYSCOIN do not account for syscoin data field
-    CDataStream ssData(txData, SER_NETWORK | SER_GETHASHWITHOUTDATA, PROTOCOL_VERSION);
+    CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
     vector<CMutableTransaction> txVariants;
     while (!ssData.empty()) {
         try {

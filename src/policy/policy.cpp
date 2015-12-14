@@ -49,13 +49,13 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
             return false;
         if (m < 1 || m > n)
             return false;
+	// SYSCOIN check for size of sys tx, normal tx size is checked in isstandardtx now
     } else if (whichType == TX_NULL_DATA &&
-               (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes))
+               (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes*20))
           return false;
 
     return whichType != TX_NONSTANDARD;
 }
-
 bool IsStandardTx(const CTransaction& tx, std::string& reason)
 {
 	// SYSCOIN check for syscoin or bitcoin tx
@@ -102,7 +102,17 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason)
         }
 
         if (whichType == TX_NULL_DATA)
+		{
+			// SYSCOIN if not syscoin tx and opreturn size is bigger than maxcarrier bytes, return false
+			// we need this because if it is a sys tx then we allow 20x maxcarrier bytes.
+			if(tx.nVersion != GetSyscoinTxVersion() && txout.scriptPubKey.size() > nMaxDatacarrierBytes)
+			{
+				reason = "scriptpubkey";
+				return false;
+			}
+
             nDataOut++;
+		}
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;

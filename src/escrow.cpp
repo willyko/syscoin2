@@ -17,7 +17,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const string& txData="", const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
 void PutToEscrowList(std::vector<CEscrow> &escrowList, CEscrow& index) {
 	int i = escrowList.size() - 1;
 	BOOST_REVERSE_FOREACH(CEscrow &o, escrowList) {
@@ -108,25 +108,25 @@ string escrowFromOp(int op) {
         return "<unknown escrow op>";
     }
 }
-
 bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
+	vector<unsigned char> vchData;
+	if(!GetSyscoinData(const CTransaction &tx, vchData);
+		return false;
     try {
-        CDataStream dsEscrow(vchFromString(DecodeBase64(stringFromVch(tx.data))), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream dsEscrow(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsEscrow >> *this;
     } catch (std::exception &e) {
         return false;
     }
     return true;
 }
-
-string CEscrow::SerializeToString() {
-    // serialize escrow UniValue
+const vector<unsigned char>& CEscrow::Serialize() {
     CDataStream dsEscrow(SER_NETWORK, PROTOCOL_VERSION);
     dsEscrow << *this;
-    vector<unsigned char> vchData(dsEscrow.begin(), dsEscrow.end());
-    return EncodeBase64(vchData.data(), vchData.size());
-}
+    const vector<unsigned char> vchData(dsEscrow.begin(), dsEscrow.end());
+    return vchData;
 
+}
 //TODO implement
 bool CEscrowDB::ScanEscrows(const std::vector<unsigned char>& vchEscrow, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CEscrow> >& escrowScan) {
@@ -818,24 +818,23 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nQty = nQty;
 	newEscrow.escrowInputTxHash = escrowWtx.GetHash();
 	newEscrow.nPricePerUnit = nPricePerUnit;
-    string bdata = newEscrow.SerializeToString();
 	// send the tranasction
 	vecSend.clear();
 	CRecipient recipientSeller = {scriptPubKeySeller, MIN_AMOUNT, false};
 	vecSend.push_back(recipientSeller);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << newEscrow.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 
 	vecSend.clear();
 	CRecipient recipientArbiter = {scriptPubKeyArbiter, MIN_AMOUNT, false};
 	vecSend.push_back(recipientArbiter);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -1012,7 +1011,6 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		throw runtime_error("This is not a multisignature escrow!");
 
 	escrow.rawTx = vchFromString(hex_str);
-	string bdata = escrow.SerializeToString();
 
     CScript scriptPubKey, scriptPubKeySeller;
 	scriptPubKeySeller= GetScriptForDestination(sellerKey.GetID());
@@ -1024,12 +1022,12 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << escrow.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	return wtx.GetHash().GetHex();
 }
 UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
@@ -1287,7 +1285,6 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	pwalletMain->GetKeyFromPool(newDefaultKey); 
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
 	escrow.rawTx.clear();
-	string bdata = escrow.SerializeToString();
 
     CScript scriptPubKey,scriptPubKeyOrig;
 	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
@@ -1300,12 +1297,12 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << escrow.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	return wtx.GetHash().GetHex();
 }
 UniValue escrowrefund(const UniValue& params, bool fHelp) {
@@ -1476,7 +1473,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
 
 	escrow.rawTx = vchFromString(hex_str);
-	string bdata = escrow.SerializeToString();
+
 
     CScript scriptPubKey, scriptPubKeyBuyer;
 	scriptPubKeyBuyer= GetScriptForDestination(buyerKey.GetID());
@@ -1487,12 +1484,12 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << escrow.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	return wtx.GetHash().GetHex();
 }
 UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {

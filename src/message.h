@@ -103,7 +103,7 @@ public:
     void SetNull() { txHash.SetNull(); nHeight = 0;vchRand.clear(); vchFrom.clear(); vchTo.clear(); vchPubKeyTo.clear(); vchPubKeyFrom.clear(); vchSubject.clear(); vchMessageTo.clear();vchMessageFrom.clear();}
     bool IsNull() const { return txHash.IsNull() && nHeight == 0 && vchRand.empty(); }
     bool UnserializeFromTx(const CTransaction &tx);
-    std::string SerializeToString();
+	const std::vector<unsigned char>& Serialize();
 };
 
 

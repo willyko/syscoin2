@@ -26,7 +26,7 @@ COfferDB *pofferdb = NULL;
 CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const string& txData="", const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
 unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind)
 {
 	unsigned int nQty = 0;
@@ -397,14 +397,23 @@ string aliasFromOp(int op) {
 		return "<unknown alias op>";
 	}
 }
-
-int64_t GetAliasNetFee(const CTransaction& tx) {
-	int64_t nFee = 0;
-	for (unsigned int i = 0; i < tx.vout.size(); i++) {
-		const CTxOut& out = tx.vout[i];
-		if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-			nFee += out.nValue;
+int GetSyscoinDataOutput(const CTransaction& tx) {
+   txnouttype whichType;
+   For(unsigned int i = 0; i<tx.vout.size();i++) {
+        if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
+            continue;
+        if (whichType == TX_NULL_DATA)
+		{
+			return i;
+		}
 	}
+   return -1;
+}
+int64_t GetAliasNetFee(const CTransaction& tx) {
+   int64_t nFee = 0;
+   int nOut = GetSyscoinDataOutput(tx);
+   if(nOut != -1)
+	   nFee = tx.vout[nOut].nValue;
 	return nFee;
 }
 
@@ -501,7 +510,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CAliasIndex theAlias(tx);
 		if (theAlias.IsNull())
 			return error("CheckAliasInputs() : null alias");
-		if(theAlias.vValue.size() > MAX_VALUE_LENGTH)
+		if(theAlias.vValue.size() > MAX_NAME_LENGTH)
 		{
 			return error("alias value too big");
 		}
@@ -522,7 +531,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			// validate inputs
 			if (vvchArgs[1].size() > MAX_ID_LENGTH)
 				return error("aliasactivate tx with rand too big");
-			if (vvchArgs[2].size() > MAX_VALUE_LENGTH)
+			if (vvchArgs[2].size() > MAX_NAME_LENGTH)
 				return error("aliasactivate tx with value too long");
 			if (fBlock && !fJustCheck) {
 
@@ -543,7 +552,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
 				return error("aliasupdate tx without correct previous alias tx");
 
-			if (vvchArgs[1].size() > MAX_VALUE_LENGTH)
+			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("aliasupdate tx with value too long");
 
 			// Check name
@@ -640,23 +649,41 @@ string stringFromVch(const vector<unsigned char> &vch) {
 	}
 	return res;
 }
+bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
+{
+	int nOut = GetSyscoinDataOutput(tx);
+    if(nOut != -1)
+	   return false;
+
+	const CScript &scriptPubKey = tx.vout[nOut].scriptPubKey;
+	CScript::const_iterator pc = scriptPubKey.begin();
+	opcodetype opcode;
+	
+	if (!scriptPubKey.GetOp(pc, opcode))
+		return false;
+	if(opcode != OP_RETURN)
+		return false;
+	if (!scriptPubKey.GetOp(pc, opcode, vchData))
+		return false;
+}
 bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
-	printf("data string len %d\n", tx.data.size());
+	vector<unsigned char> vchData;
+	if(!GetSyscoinData(const CTransaction &tx, vchData);
+		return false;
     try {
-        CDataStream dsAlias(vchFromString(DecodeBase64(stringFromVch(tx.data))), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream dsAlias(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsAlias >> *this;
     } catch (std::exception &e) {
         return false;
     }
     return true;
 }
-
-
-string CAliasIndex::SerializeToString() {
+const vector<unsigned char>& CAliasIndex::Serialize() {
     CDataStream dsAlias(SER_NETWORK, PROTOCOL_VERSION);
     dsAlias << *this;
-    vector<unsigned char> vchData(dsAlias.begin(), dsAlias.end());
-    return EncodeBase64(vchData.data(), vchData.size());
+    const vector<unsigned char> vchData(dsAlias.begin(), dsAlias.end());
+    return vchData;
+
 }
 bool CAliasDB::ScanNames(const std::vector<unsigned char>& vchName,
 		unsigned int nMax,
@@ -1008,7 +1035,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 		throw runtime_error(
 				"aliasnew <aliasname> <value>\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 1023 chars max.\n"
+						"<value> alias value, 255 chars max.\n"
 						"Perform a first update after an aliasnew reservation.\n"
 						"Note that the first update will go into a block 12 blocks after the aliasnew, at the soonest."
 						+ HelpRequiringPassphrase());
@@ -1020,8 +1047,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
 	vchValue = vchFromValue(params[1]);
 
-	if (vchValue.size() > MAX_VALUE_LENGTH)
-		throw runtime_error("alias value cannot exceed 1023 bytes!");
+	if (vchValue.size() > MAX_NAME_LENGTH)
+		throw runtime_error("alias value cannot exceed 255 bytes!");
 
 
 	CSyscoinAddress myAddress = CSyscoinAddress(stringFromVch(vchName));
@@ -1060,19 +1087,18 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
     CAliasIndex newAlias;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchFromString(strPubKey);
-    string bdata = newAlias.SerializeToString();
 	// calculate network fees
 	int64_t nNetFee = GetAliasNetworkFee(OP_ALIAS_ACTIVATE, chainActive.Tip()->nHeight);
 
     vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << newAlias.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 	// send the tranasction
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	return wtx.GetHash().GetHex();
 }
 
@@ -1082,14 +1108,14 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 				"aliasupdate <aliasname> <value> [<toalias>]\n"
 						"Update and possibly transfer an alias.\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 1023 chars max.\n"
+						"<value> alias value, 255 chars max.\n"
                         "<toalias> receiver syscoin alias, if transferring alias.\n"
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromValue(params[0]);
 	vector<unsigned char> vchValue = vchFromValue(params[1]);
-	if (vchValue.size() > MAX_VALUE_LENGTH)
-		throw runtime_error("alias value cannot exceed 1023 bytes!");
+	if (vchValue.size() > MAX_NAME_LENGTH)
+		throw runtime_error("alias value cannot exceed 255 bytes!");
 	CWalletTx wtx;
 	const CWalletTx* wtxIn;
 	CScript scriptPubKeyOrig;
@@ -1151,7 +1177,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
     CAliasIndex updateAlias;
 	updateAlias.nHeight = chainActive.Tip()->nHeight;
 	updateAlias.vchPubKey = vchFromString(strPubKey);
-    string bdata = updateAlias.SerializeToString();
+
 	int64_t nNetFee = GetAliasNetworkFee(OP_ALIAS_UPDATE, chainActive.Tip()->nHeight);
 	// SYS_RATES update is free
 	if(stringFromVch(vchName) == "SYS_RATES")
@@ -1160,12 +1186,12 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
     vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << updateAlias.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata, wtxIn);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 	return wtx.GetHash().GetHex();
 }
 

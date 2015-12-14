@@ -17,7 +17,7 @@
 using namespace std;
 
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const string& txData="", const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
 bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchMessage, string &strCipherText)
 {
 	CMessageCrypter crypter;
@@ -123,23 +123,24 @@ string certFromOp(int op) {
         return "<unknown cert op>";
     }
 }
-
 bool CCert::UnserializeFromTx(const CTransaction &tx) {
+	vector<unsigned char> vchData;
+	if(!GetSyscoinData(const CTransaction &tx, vchData);
+		return false;
     try {
-        CDataStream dsCert(vchFromString(DecodeBase64(stringFromVch(tx.data))), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream dsCert(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsCert >> *this;
     } catch (std::exception &e) {
         return false;
     }
     return true;
 }
-
-string CCert::SerializeToString() {
-    // serialize cert object
+const vector<unsigned char>& CCert::Serialize() {
     CDataStream dsCert(SER_NETWORK, PROTOCOL_VERSION);
     dsCert << *this;
-    vector<unsigned char> vchData(dsCert.begin(), dsCert.end());
-    return EncodeBase64(vchData.data(), vchData.size());
+    const vector<unsigned char> vchData(dsCert.begin(), dsCert.end());
+    return vchData;
+
 }
 
 //TODO implement
@@ -808,7 +809,6 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	newCert.nHeight = chainActive.Tip()->nHeight;
 	newCert.vchPubKey = vchFromString(strPubKey);
 	newCert.bPrivate = bPrivate;
-    string bdata = newCert.SerializeToString();
 
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_ACTIVATE) << vchCert
             << vchRand << newCert.vchTitle << OP_2DROP << OP_2DROP;
@@ -820,12 +820,12 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << newCert.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 
 	return wtx.GetHash().GetHex();
 }
@@ -927,18 +927,16 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	theCert.vchPubKey = vchFromString(strPubKey);
 
 
-    // serialize cert object
-    string bdata = theCert.SerializeToString();
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << theCert.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata, wtxIn);	
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);	
     return wtx.GetHash().GetHex();
 }
 
@@ -1081,12 +1079,12 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << theCert.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
-	string bdata = theCert.SerializeToString();
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata, wtxIn);
+
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
 	return wtx.GetHash().GetHex();
 }

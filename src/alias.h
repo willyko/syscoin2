@@ -51,7 +51,7 @@ public:
     void SetNull() { txHash.IsNull(); nHeight = 0; vValue.clear(); vchPubKey.clear(); }
     bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
-    std::string SerializeToString();
+	const std::vector<unsigned char>&  Serialize();
 };
 
 class CAliasDB : public CDBWrapper {
@@ -103,7 +103,7 @@ static const int64_t MIN_AMOUNT = COIN;
 static const unsigned int MAX_NAME_LENGTH = 255;
 static const unsigned int MAX_VALUE_LENGTH = 1023;
 static const unsigned int MAX_ID_LENGTH = 20;
-static const unsigned int MAX_MSG_LENGTH = 16383;
+static const unsigned int MAX_MSG_LENGTH = 1023;
 
 static const unsigned int MIN_ACTIVATE_DEPTH = 1;
 static const unsigned int MIN_ACTIVATE_DEPTH_TESTNET = 1;
@@ -138,7 +138,7 @@ std::string aliasFromOp(int op);
 bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
 CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
-
+bool GetSyscoinData(const CTransaction &tx, std::vector<unsigned char> &vchData);
 bool GetValueOfAliasTxHash(const uint256 &txHash,
 						   std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 #endif // ALIAS_H

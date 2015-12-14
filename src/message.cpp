@@ -15,7 +15,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const string& txData="", const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
 void PutToMessageList(std::vector<CMessage> &messageList, CMessage& index) {
 	int i = messageList.size() - 1;
 	BOOST_REVERSE_FOREACH(CMessage &o, messageList) {
@@ -76,25 +76,25 @@ string messageFromOp(int op) {
         return "<unknown message op>";
     }
 }
-
 bool CMessage::UnserializeFromTx(const CTransaction &tx) {
+	vector<unsigned char> vchData;
+	if(!GetSyscoinData(const CTransaction &tx, vchData);
+		return false;
     try {
-        CDataStream dsMessage(vchFromString(DecodeBase64(stringFromVch(tx.data))), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream dsMessage(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsMessage >> *this;
     } catch (std::exception &e) {
         return false;
     }
     return true;
 }
-
-string CMessage::SerializeToString() {
-    // serialize message UniValue
+const vector<unsigned char>& CMessage::Serialize() {
     CDataStream dsMessage(SER_NETWORK, PROTOCOL_VERSION);
     dsMessage << *this;
-    vector<unsigned char> vchData(dsMessage.begin(), dsMessage.end());
-    return EncodeBase64(vchData.data(), vchData.size());
-}
+    const vector<unsigned char> vchData(dsMessage.begin(), dsMessage.end());
+    return vchData;
 
+}
 //TODO implement
 bool CMessageDB::ScanMessages(const std::vector<unsigned char>& vchMessage, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CMessage> >& messageScan) {
@@ -739,18 +739,17 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	newMessage.vchPubKeyFrom = vchFromPubKey;
 	newMessage.vchPubKeyTo = vchToPubKey;
 	
-    string bdata = newMessage.SerializeToString();
 	// send the tranasction
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
-	CScript scriptFee;
-	scriptFee << OP_RETURN;
-	CRecipient fee = {scriptFee, nNetFee, false};
+	CScript scriptData;
+	scriptData << OP_RETURN << newMessage.Serialize();
+	CRecipient fee = {scriptData, nNetFee, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, bdata);
+	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

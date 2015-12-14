@@ -110,8 +110,7 @@ CAuxPow::check (const uint256& hashAuxBlock, int nChainId,
     std::reverse (vchRootHash.begin (), vchRootHash.end ()); // correct endian
 
     // Check that we are in the parent block merkle tree
-	// SYSCOIN getauxhash gets hash without data field for auxpow checking
-    if (CheckMerkleBranch(GetAuxHash(), vMerkleBranch, nIndex)
+    if (CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex)
           != parentBlock.hashMerkleRoot)
         return error("Aux POW merkle root incorrect");
 

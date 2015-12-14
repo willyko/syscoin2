@@ -146,7 +146,6 @@ public:
   inline uint256
   getParentBlockHash () const
   {
-	// SYSCOIN pow hash of parent
     return parentBlock.GetHash();
   }
 

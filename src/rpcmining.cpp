@@ -936,7 +936,7 @@ UniValue getauxblock(const UniValue& params, bool fHelp)
     CBlock& block = *mit->second;
 
     const std::vector<unsigned char> vchAuxPow = ParseHex(params[1].get_str());
-    CDataStream ss(vchAuxPow, SER_GETHASH | SER_GETHASHWITHOUTDATA, PROTOCOL_VERSION);
+    CDataStream ss(vchAuxPow, SER_GETHASH, PROTOCOL_VERSION);
     CAuxPow pow;
     ss >> pow;
     block.SetAuxpow(new CAuxPow(pow));

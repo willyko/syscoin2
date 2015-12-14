@@ -255,6 +255,21 @@ public:
         SetNull();
         UnserializeFromTx(tx);
     }
+	// clear everything but the necessary information for an offer to prepare it to go into a txn
+	void ClearOffer()
+	{
+		accepts.clear();
+		linkWhitelist.clear();
+		offerLinks.clear();
+		vchLinkOffer.clear();
+		sCurrencyCode.clear();
+		vchCert.clear();
+		sCategory.clear();
+		sTitle.clear();
+		sDescription.clear();
+		vchPubKey.clear();
+		aliasName = "";
+	}
 
  	ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
@@ -397,9 +412,8 @@ public:
     bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false); }
 
     bool UnserializeFromTx(const CTransaction &tx);
-    std::string SerializeToString();
+	const std::vector<unsigned char>& Serialize();
 };
-
 
 class COfferDB : public CDBWrapper {
 public:
