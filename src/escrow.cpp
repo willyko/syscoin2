@@ -510,7 +510,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
         bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckEscrowInputs() : could not decode a syscoin tx");
-        int nDepth;
         int64_t nNetFee;
         // unserialize escrow UniValue from txn, check for valid
         CEscrow theEscrow;
@@ -1659,9 +1658,6 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 
 	vector<CEscrow> vtxPos;
 
-	int expired = 0;
-	int expires_in = 0;
-	int expired_block = 0;
     UniValue oEscrow(UniValue::VOBJ);
     vector<unsigned char> vchValue;
 
@@ -1819,8 +1815,9 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			int expired = 0;
             UniValue oEscrow(UniValue::VOBJ);
             int nHeight;
-            uint256 hash;
-           
+           	// get the txn height
+			nHeight = GetTxHashHeight(txHash);
+
 			oEscrow.push_back(Pair("escrow", escrow));
 			string sTime;
 			CBlockIndex *pindex = chainActive[txPos2.nHeight];
