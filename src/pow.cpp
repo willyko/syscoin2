@@ -15,14 +15,15 @@
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-
+	printf("GetNextWorkRequired\n");
     // Genesis block
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
-
+	printf("GetNextWorkRequired1\n");	
     // Only change once per difficulty adjustment interval
     if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
     {
+		printf("GetNextWorkRequired normal\n");
         if (params.fPowAllowMinDifficultyBlocks)
         {
             // Special difficulty rule for testnet:
@@ -41,6 +42,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         return pindexLast->nBits;
     }
+	printf("GetNextWorkRequired adjust\n");
 	// SYSCOIN adapt retargeting interval because of merge-mining
     int nBlocksBack = params.DifficultyAdjustmentInterval() - 1;
     if (pindexLast->nHeight + 1 > params.DifficultyAdjustmentInterval())
