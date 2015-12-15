@@ -893,31 +893,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckOfferInputs() : offerupdate offer mismatch");
 			if (fBlock && !fJustCheck) {
-				if(vvchPrevArgs.size() > 0)
-				{
-					nDepth = CheckTransactionAtRelativeDepth(
-							prevCoins, GetCertExpirationDepth());
-					if ((fBlock || fMiner) && nDepth < 0)
-						return error(
-								"CheckOfferInputs() : offerupdate on an expired offer, or there is a pending transaction on the offer");	
-	  
-				}
-				else
-				{
-					nDepth = CheckTransactionAtRelativeDepth(
-							prevCoins, GetOfferExpirationDepth());
-					if ((fBlock || fMiner) && nDepth < 0)
-						return error(
-								"CheckOfferInputs() : offerupdate on an expired cert previous tx, or there is a pending transaction on the cert");		  
-				}
-
-				// TODO CPU intensive
-				nDepth = CheckTransactionAtRelativeDepth(
-						prevCoins, GetOfferExpirationDepth());
-				if ((fBlock || fMiner) && nDepth < 0)
-					return error(
-							"CheckOfferInputs() : offerupdate on an expired offer, or there is a pending transaction on the offer");
-					// check for enough fees
+				// check for enough fees
 				nNetFee = GetOfferNetFee(tx);
 				if (nNetFee < GetOfferNetworkFee(OP_OFFER_UPDATE, theOffer.nHeight))
 					return error(
@@ -942,17 +918,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 			if (fBlock && !fJustCheck) {
 				// Check hash
 				const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
-				
 				// check for existence of offeraccept in txn offer obj
 				if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
 					return error("OP_OFFER_REFUND could not read accept from offer txn");
-				// TODO CPU intensive
-				nDepth = CheckTransactionAtRelativeDepth(
-						prevCoins, GetOfferExpirationDepth());
-				if ((fBlock || fMiner) && nDepth < 0)
-					return error(
-							"CheckOfferInputs() : offerrefund on an expired offer, or there is a pending transaction on the offer");
-		
 			}
 			break;
 		case OP_OFFER_ACCEPT:

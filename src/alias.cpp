@@ -199,17 +199,6 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 	return false;
 
 }
-// get the depth of transaction txnindex relative to block at index pIndexBlock, looking
-// up to maxdepth. Return relative depth if found, or -1 if not found and maxdepth reached.
-int CheckTransactionAtRelativeDepth(
-		CCoins &txindex, int maxDepth) {
-	for (CBlockIndex* pindex = chainActive.Tip();
-			pindex && chainActive.Tip()->nHeight - pindex->nHeight < maxDepth;
-			pindex = pindex->pprev)
-		if (pindex->nHeight == (int) txindex.nHeight)
-			return chainActive.Tip()->nHeight - pindex->nHeight;
-	return -1;
-}
 int64_t GetBlockHeight(const uint256 blockHash) {
 	const CBlockIndex* pIndex;
     BlockMap::const_iterator t = mapBlockIndex.find(blockHash);
@@ -484,7 +473,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 		// decode alias info from transaction
 		vector<vector<unsigned char> > vvchArgs;
 		int op, nOut;
-		int64_t nDepth;
 		if (!DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
 			return error(
 					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
@@ -545,12 +533,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				return error("CheckAliasInputs() : aliasupdate alias mismatch");
 
 			if (fBlock && !fJustCheck) {
-				// TODO CPU intensive
-				nDepth = CheckTransactionAtRelativeDepth( prevCoins,
-						GetAliasExpirationDepth());
-				if ((fBlock || fMiner) && nDepth < 0)
-					return error(
-							"CheckAliasInputs() : aliasupdate on an expired alias, or there is a pending transaction on the alias");
 				// verify enough fees with this txn
 				nNetFee = GetAliasNetFee(tx);
 				if (stringFromVch(vvchArgs[0]) != "SYS_RATES" && nNetFee < GetAliasNetworkFee(OP_ALIAS_UPDATE, theAlias.nHeight))

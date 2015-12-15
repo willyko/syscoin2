@@ -549,7 +549,6 @@ bool CheckCertInputs(const CTransaction &tx,
         bool good = DecodeCertTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckCertInputs() : could not decode a syscoin tx");
-        int nDepth;
         int64_t nNetFee;
         // unserialize cert object from txn, check for valid
         CCert theCert(tx);
@@ -604,22 +603,6 @@ bool CheckCertInputs(const CTransaction &tx,
                 return error("certupdate tx title too long");
 
 			if (fBlock && !fJustCheck) {
-				if(vvchPrevArgs.size() > 0)
-				{
-					nDepth = CheckTransactionAtRelativeDepth(
-							prevCoins, GetOfferExpirationDepth());
-					if ((fBlock || fMiner) && nDepth < 0)
-						return error(
-								"CheckCertInputs() : certupdate on an expired offer previous tx, or there is a pending transaction on the offer");		  
-				}
-				else
-				{
-					nDepth = CheckTransactionAtRelativeDepth(
-							prevCoins, GetCertExpirationDepth());
-					if ((fBlock || fMiner) && nDepth < 0)
-						return error(
-								"CheckCertInputs() : certupdate on an expired cert, or there is a pending transaction on the cert");		  
-				}
 				// check for enough fees
 				nNetFee = GetCertNetFee(tx);
 				if (nNetFee < GetCertNetworkFee(OP_CERT_UPDATE, theCert.nHeight))
@@ -645,14 +628,6 @@ bool CheckCertInputs(const CTransaction &tx,
             if (fBlock && !fJustCheck) {
                 // Check hash
                 const vector<unsigned char> &vchCert = vvchArgs[0];
-
-                // check for previous Cert
-                nDepth = CheckTransactionAtRelativeDepth(
-                        prevCoins, GetCertExpirationDepth());
-                if ((fBlock || fMiner) && nDepth < 0)
-                    return error(
-                            "CheckCertInputs() : certtransfer cannot be mined if Cert/certtransfer is not already in chain");
-
                 // check for enough fees
                 int64_t expectedFee = GetCertNetworkFee(OP_CERT_TRANSFER, theCert.nHeight);
                 nNetFee = GetCertNetFee(tx);
