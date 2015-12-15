@@ -30,6 +30,7 @@ CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
 unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind)
 {
+	LOCK(mempool.cs);
 	unsigned int nQty = 0;
 	for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
@@ -49,9 +50,6 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 					COfferAccept theOfferAccept;
 					if (theOffer.IsNull())
 						continue;
-					// if offer is already confirmed dont account for it in the mempool
-					if (GetTxHashHeight(tx.GetHash()) > 0) 
-						continue;
 					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept))
 					{
 						nQty += theOfferAccept.nQty;
@@ -65,6 +63,7 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 }
 bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 {
+	LOCK(mempool.cs);
 	for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
@@ -83,16 +82,14 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 					string vvchFirstStr = stringFromVch(vvch[0]);
 					if(vvchFirstStr == vchToFindStr)
 					{
-						if (GetTxHashHeight(tx.GetHash()) <= 0) 
-							return true;
+						return true;
 					}
 					if(vvch.size() > 1)
 					{
 						string vvchSecondStr = HexStr(vvch[1]);
 						if(vvchSecondStr == vchToFindStr)
 						{
-							if (GetTxHashHeight(tx.GetHash()) <= 0) 
-								return true;
+							return true;
 						}
 					}
 				}
@@ -110,16 +107,14 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 					string vvchFirstStr = stringFromVch(vvch[0]);
 					if(vvchFirstStr == vchToFindStr)
 					{
-						if (GetTxHashHeight(tx.GetHash()) <= 0) 
-							return true;
+						return true;
 					}
 					if(vvch.size() > 1)
 					{
 						string vvchSecondStr = HexStr(vvch[1]);
 						if(vvchSecondStr == vchToFindStr)
 						{
-							if (GetTxHashHeight(tx.GetHash()) <= 0)
-								return true;
+							return true;
 						}
 					}
 				}
@@ -137,16 +132,14 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 					string vvchFirstStr = stringFromVch(vvch[0]);
 					if(vvchFirstStr == vchToFindStr)
 					{
-						if (GetTxHashHeight(tx.GetHash()) <= 0)
-								return true;
+						return true;
 					}
 					if(vvch.size() > 1)
 					{
 						string vvchSecondStr = HexStr(vvch[1]);
 						if(vvchSecondStr == vchToFindStr)
 						{
-							if (GetTxHashHeight(tx.GetHash()) <= 0) 
-								return true;
+							return true;
 						}
 					}
 				}
@@ -164,16 +157,14 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 					string vvchFirstStr = stringFromVch(vvch[0]);
 					if(vvchFirstStr == vchToFindStr)
 					{
-						if (GetTxHashHeight(tx.GetHash()) <= 0)
-								return true;
+						return true;
 					}
 					if(vvch.size() > 1)
 					{
 						string vvchSecondStr = HexStr(vvch[1]);
 						if(vvchSecondStr == vchToFindStr)
 						{
-							if (GetTxHashHeight(tx.GetHash()) <= 0) 
-								return true;
+							return true;
 						}
 					}
 				}
@@ -191,16 +182,14 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
 					string vvchFirstStr = stringFromVch(vvch[0]);
 					if(vvchFirstStr == vchToFindStr)
 					{
-						if (GetTxHashHeight(tx.GetHash()) <= 0)
-								return true;
+						return true;
 					}
 					if(vvch.size() > 1)
 					{
 						string vvchSecondStr = HexStr(vvch[1]);
 						if(vvchSecondStr == vchToFindStr)
 						{
-							if (GetTxHashHeight(tx.GetHash()) <= 0) 
-								return true;
+							return true;
 						}
 					}
 				}
@@ -221,13 +210,8 @@ int CheckTransactionAtRelativeDepth(
 			return chainActive.Tip()->nHeight - pindex->nHeight;
 	return -1;
 }
-
-int64_t GetTxHashHeight(const uint256 txHash) {
-	CDiskTxPos postx;
+int64_t GetBlockHeight(const uint256 blockHash) {
 	const CBlockIndex* pIndex;
-	pblocktree->ReadTxIndex(txHash, postx);
-    CBlock block;
-    ReadBlockFromDisk(block, postx, Params().GetConsensus());
     BlockMap::const_iterator t = mapBlockIndex.find(block.GetHash());
     if (t == mapBlockIndex.end())
         return -1;
@@ -837,13 +821,13 @@ CScript RemoveAliasScriptPrefix(const CScript& scriptIn) {
 	return CScript(pc, scriptIn.end());
 }
 bool GetValueOfAliasTxHash(const uint256 &txHash, vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-	nHeight = GetTxHashHeight(txHash);
 	CTransaction tx;
 	uint256 blockHash;
 
 	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
 		return error("GetValueOfAliasTxHash() : could not read tx from disk");
 
+	nHeight = GetBlockHeight(blockHash);
 	if (!GetValueOfAliasTx(tx, vchValue))
 		return error("GetValueOfAliasTxHash() : could not decode value from tx");
 
@@ -1255,8 +1239,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			if(!IsAliasMine(tx))
 				continue;
 			GetValueOfAliasTx(tx, vchValue);
-			// get the txn height
-			nHeight = GetTxHashHeight(hash);
+			nHeight = GetBlockHeight(blockHash);
 		
 			int expired = 0;
 			int expires_in = 0;

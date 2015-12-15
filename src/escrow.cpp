@@ -332,11 +332,11 @@ bool IsEscrowMine(const CTransaction& tx) {
 
 bool GetValueOfEscrowTxHash(const uint256 &txHash,
         vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-    nHeight = GetTxHashHeight(txHash);
     CTransaction tx;
     uint256 blockHash;
     if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
         return error("GetValueOfEscrowTxHash() : could not read tx from disk");
+	nHeight = GetBlockHeight(blockHash);
     if (!GetValueOfEscrowTx(tx, vchValue))
         return error("GetValueOfEscrowTxHash() : could not decode value from tx");
     hash = tx.GetHash();
@@ -1740,8 +1740,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		if (!GetTransaction(escrow.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
-		// get the txn height
-		nHeight = GetTxHashHeight(hash);
+		nHeight = GetBlockHeight(blockHash);
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("escrow", stringFromVch(vchName)));
@@ -1814,9 +1813,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			int expired = 0;
             UniValue oEscrow(UniValue::VOBJ);
             int nHeight;
-           	// get the txn height
-			nHeight = GetTxHashHeight(txHash);
-
+			nHeight = GetBlockHeight(blockHash);
 			oEscrow.push_back(Pair("escrow", escrow));
 			string sTime;
 			CBlockIndex *pindex = chainActive[txPos2.nHeight];

@@ -348,11 +348,11 @@ bool IsCertMine(const CTransaction& tx) {
 
 bool GetValueOfCertTxHash(const uint256 &txHash,
         vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-    nHeight = GetTxHashHeight(txHash);
     CTransaction tx;
     uint256 blockHash;
     if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
         return error("GetValueOfCertTxHash() : could not read tx from disk");
+	nHeight = GetBlockHeight(blockHash);
     if (!GetValueOfCertTx(tx, vchValue))
         return error("GetValueOfCertTxHash() : could not decode value from tx");
     hash = tx.GetHash();
@@ -1223,8 +1223,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		
 		if(!IsCertMine(tx))
 			continue;
-			// get the txn height
-		nHeight = GetTxHashHeight(hash);
+		nHeight = GetBlockHeight(blockHash);
         // build the output object
 		UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("cert", stringFromVch(vchName)));

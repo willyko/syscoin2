@@ -584,11 +584,11 @@ bool IsOfferMine(const CTransaction& tx) {
 
 bool GetValueOfOfferTxHash(const uint256 &txHash,
 		vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-	nHeight = GetTxHashHeight(txHash);
 	CTransaction tx;
 	uint256 blockHash;
 	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
 		return error("GetValueOfOfferTxHash() : could not read tx from disk");
+	nHeight = GetBlockHeight(blockHash);
 	if (!GetValueOfOfferTx(tx, vchValue))
 		return error("GetValueOfOfferTxHash() : could not decode value from tx");
 	hash = tx.GetHash();
@@ -2014,7 +2014,7 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 		CTransaction txCert;
 		CCert theCert;
 		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
-		uint256 hashBlock;
+		uint256 blockHash;
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
 			UniValue oList(UniValue::VOBJ);
@@ -2025,7 +2025,9 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			GetCertAddress(txCert, strAddress);
 			oList.push_back(Pair("cert_address", strAddress));
 			int expires_in = 0;
-			int64_t nHeight = GetTxHashHeight(txCert.GetHash());
+			if (!GetTransaction(txCert.GetHash(), txCert, Params().GetConsensus(), blockHash, true))
+				continue;
+			int64_t nHeight = GetBlockHeight(blockHash);
             if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight > 0)
 			{
 				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
@@ -2982,10 +2984,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 				continue;
 			// get last active name only
 			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
-				continue;
-	        // get the txn height
-            nHeight = GetTxHashHeight(hash);
-		
+				continue;		
 			vector<COffer> vtxPos;
 			COffer theOfferA;
 			if (!pofferdb->ReadOffer(vchName, vtxPos))
@@ -3002,7 +3001,10 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			{
 				theOfferA = vtxPos.back();
 			}
-			
+			uint256 blockHash;
+			if (!GetTransaction(theOfferA.txHash, tx, Params().GetConsensus(), blockHash, true))
+				continue;
+			nHeight = GetBlockHeight(blockHash);
             // build the output UniValue
             UniValue oName(UniValue::VOBJ);
             oName.push_back(Pair("offer", stringFromVch(vchName)));

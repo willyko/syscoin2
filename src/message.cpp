@@ -293,11 +293,11 @@ bool IsMessageMine(const CTransaction& tx) {
 
 bool GetValueOfMessageTxHash(const uint256 &txHash,
         vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-    nHeight = GetTxHashHeight(txHash);
     CTransaction tx;
     uint256 blockHash;
     if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
         return error("GetValueOfMessageTxHash() : could not read tx from disk");
+	nHeight = GetBlockHeight(blockHash);
     if (!GetValueOfMessageTx(tx, vchValue))
         return error("GetValueOfMessageTxHash() : could not decode value from tx");
     hash = tx.GetHash();
