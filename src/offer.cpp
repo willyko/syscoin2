@@ -768,11 +768,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch)) {
 					found = true; 
 					vvchPrevArgs = vvch;
+					break;
 				}
 				else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
 				{
 					found = true; 
 					vvchPrevArgs = vvch2;
+					break;
 				}
 			}
 			else
@@ -780,11 +782,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch)) {
 					found = true; 
 					vvchPrevArgs1 = vvch;
+					break;
 				}
 				else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch2))
 				{
 					found = true; 
 					vvchPrevArgs1 = vvch2;
+					break;
 				}
 			}
 			if(!found)vvchPrevArgs.clear();

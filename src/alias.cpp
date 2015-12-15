@@ -484,6 +484,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			if (DecodeAliasScript(prevCoins.vout[prevOutput->n].scriptPubKey,
 					prevOp, vvchPrevArgs)) {
 				found = true;
+				break;
 			}
 		}
 		if(!found)vvchPrevArgs.clear();
@@ -658,16 +659,12 @@ bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
 	const CScript &scriptPubKey = tx.vout[nOut].scriptPubKey;
 	CScript::const_iterator pc = scriptPubKey.begin();
 	opcodetype opcode;
-	printf("GetOp\n");
 	if (!scriptPubKey.GetOp(pc, opcode))
 		return false;
-	printf("GetOp1\n");
 	if(opcode != OP_RETURN)
 		return false;
-	printf("GetOpReturn\n");
 	if (!scriptPubKey.GetOp(pc, opcode, vchData))
 		return false;
-	printf("GetOpRetData\n");
 	return true;
 }
 bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
@@ -678,7 +675,6 @@ bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
         CDataStream dsAlias(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsAlias >> *this;
     } catch (std::exception &e) {
-		printf("exception %s\n", e.what());
         return false;
     }
     return true;
