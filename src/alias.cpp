@@ -401,13 +401,10 @@ string aliasFromOp(int op) {
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
    for(unsigned int i = 0; i<tx.vout.size();i++) {
-	    printf("checking %d, size %d\n", i, tx.vout[i].scriptPubKey.size());
-        if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
-            continue;
-		printf("isstd\n");
-        if (whichType == TX_NULL_DATA)
+		if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
+			continue;
+		if (whichType == TX_NULL_DATA)
 		{
-			printf("found null data\n");
 			return i;
 		}
 	}
@@ -655,7 +652,7 @@ string stringFromVch(const vector<unsigned char> &vch) {
 bool GetSyscoinData(const CTransaction &tx, vector<unsigned char> &vchData)
 {
 	int nOut = GetSyscoinDataOutput(tx);
-    if(nOut != -1)
+    if(nOut == -1)
 	   return false;
 
 	const CScript &scriptPubKey = tx.vout[nOut].scriptPubKey;
