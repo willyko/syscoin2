@@ -1868,7 +1868,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 }
 
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxIn)
+                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxIn, bool sysTx)
 {
     CAmount nValue = 0;
 	// SYSCOIN: get output amount of input transaction for syscoin service calls
@@ -1914,7 +1914,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     wtxNew.BindWallet(this);
     CMutableTransaction txNew;
 	// SYSCOIN: set syscoin tx version if its a syscoin service call
-	if(wtxIn != NULL)
+	if(sysTx)
 		txNew.nVersion = GetSyscoinTxVersion();
     // Discourage fee sniping.
     //
