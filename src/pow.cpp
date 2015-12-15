@@ -19,7 +19,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Genesis block
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
-	printf("GetNextWorkRequired1\n");	
+	printf("GetNextWorkRequired1: lastheight %d vs interval %d\n", (pindexLast->nHeight+1), params.DifficultyAdjustmentInterval());	
     // Only change once per difficulty adjustment interval
     if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
     {
