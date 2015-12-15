@@ -1200,8 +1200,6 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!DecodeCertTx(wtx, op, nOut, vvch, -1) || !IsCertOp(op))
 			continue;
 		
-		// get the txn height
-		nHeight = GetTxHashHeight(hash);
 
 		// get the txn cert name
 		if (!GetNameOfCertTx(wtx, vchName))
@@ -1225,7 +1223,8 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		
 		if(!IsCertMine(tx))
 			continue;
-	
+			// get the txn height
+		nHeight = GetTxHashHeight(hash);
         // build the output object
 		UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("cert", stringFromVch(vchName)));

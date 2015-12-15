@@ -2973,9 +2973,6 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
             	|| (op == OP_OFFER_ACCEPT))
                 continue;
 
-            // get the txn height
-            nHeight = GetTxHashHeight(hash);
-
             // get the txn alias name
             if(!GetNameOfOfferTx(wtx, vchName))
                 continue;
@@ -2986,7 +2983,9 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			// get last active name only
 			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 				continue;
-			
+	        // get the txn height
+            nHeight = GetTxHashHeight(hash);
+		
 			vector<COffer> vtxPos;
 			COffer theOfferA;
 			if (!pofferdb->ReadOffer(vchName, vtxPos))

@@ -1234,8 +1234,6 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			int op, nOut;
 			if (!DecodeAliasTx(wtx, op, nOut, vvch, -1) || !IsAliasOp(op))
 				continue;
-			// get the txn height
-			nHeight = GetTxHashHeight(hash);
 
 			// get the txn alias name
 			if (!GetAliasOfTx(wtx, vchName))
@@ -1247,7 +1245,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// get last active name only
 			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 				continue;
-		
+
 			vector<CAliasIndex> vtxPos;
 			if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
 				continue;
@@ -1257,7 +1255,9 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			if(!IsAliasMine(tx))
 				continue;
 			GetValueOfAliasTx(tx, vchValue);
-			
+			// get the txn height
+			nHeight = GetTxHashHeight(hash);
+		
 			int expired = 0;
 			int expires_in = 0;
 			int expired_block = 0;
@@ -1265,7 +1265,6 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			UniValue oName(UniValue::VOBJ);
 			oName.push_back(Pair("name", stringFromVch(vchName)));
 			oName.push_back(Pair("value", stringFromVch(vchValue)));
-			oName.push_back(Pair("lastupdate_height", nHeight));
 			expired_block = nHeight + GetAliasExpirationDepth();
 			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 			{
@@ -1273,7 +1272,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			}  
 			if(expired == 0)
 			{
-				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
+				expires_in = nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight;
 			}
 			oName.push_back(Pair("expires_in", expires_in));
 			oName.push_back(Pair("expires_on", expired_block));

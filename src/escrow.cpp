@@ -1720,8 +1720,6 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
 		// decode txn, skip non-alias txns
-		// get the txn height
-		nHeight = GetTxHashHeight(hash);
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
 		if (!DecodeEscrowTx(wtx, op, nOut, vvch, -1) || !IsEscrowOp(op))
@@ -1742,7 +1740,8 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		if (!GetTransaction(escrow.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
-
+		// get the txn height
+		nHeight = GetTxHashHeight(hash);
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("escrow", stringFromVch(vchName)));
