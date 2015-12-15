@@ -212,7 +212,7 @@ int CheckTransactionAtRelativeDepth(
 }
 int64_t GetBlockHeight(const uint256 blockHash) {
 	const CBlockIndex* pIndex;
-    BlockMap::const_iterator t = mapBlockIndex.find(block.GetHash());
+    BlockMap::const_iterator t = mapBlockIndex.find(blockHash);
     if (t == mapBlockIndex.end())
         return -1;
 	pIndex = t->second;
