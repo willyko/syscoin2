@@ -107,23 +107,23 @@ SyscoinTestingSetup::SyscoinTestingSetup()
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
-	FILE *lsofFile_p = popen(cmd.c_str(), "r");
+	FILE *fp = popen(cmd.c_str(), "r");
 	std::string response;
-	if (!lsofFile_p)
+	if (!fp)
 	{
 		return response;
 	}
-	while (!feof(lsofFile_p))
+	while (!feof(fp))
 	{
 		char buffer[500];
 		// read in the line and make sure it was successful
-		if (fgets(buffer,500,lsofFile_p) != NULL)
+		if (fgets(buffer,500,fp) != NULL)
 		{
 			response += std::string(buffer);
 		}
 
 	}
-	pclose(lsofFile_p);
+	pclose(fp);
 	return response;
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
