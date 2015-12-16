@@ -111,7 +111,7 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 	std::string response;
 	if (!lsofFile_p)
 	{
-		return -1;
+		return response;
 	}
 	while (!feof(lsofFile_p))
 	{
