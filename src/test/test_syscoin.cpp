@@ -98,9 +98,12 @@ TestingSetup::~TestingSetup()
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
-	CallExternal(std::string("../syscoind -datadir=node1 -regtest"));
-	CallExternal(std::string("../syscoind -datadir=node2 -regtest"));
-	CallExternal(std::string("../syscoind -datadir=node3 -regtest"));
+	std::string node1Path = std::string("../syscoind -datadir=node1 -regtest");
+	std::string node2Path = std::string("../syscoind -datadir=node2 -regtest");
+	std::string node3Path = std::string("../syscoind -datadir=node3 -regtest");
+	CallExternal(node1Path);
+	CallExternal(node2Path);
+	CallExternal(node3Path);
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
@@ -125,7 +128,8 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
-	CallExternal(std::string("../syscoin-cli stop"));
+	std::string cliStop = std::string("../syscoind -datadir=node1 -regtest");
+	CallExternal(cliStop);
     boost::filesystem::remove_all(boost::filesystem::path("node1/regtest"));
 	boost::filesystem::remove_all(boost::filesystem::path("node2/regtest"));
 	boost::filesystem::remove_all(boost::filesystem::path("node3/regtest"));
