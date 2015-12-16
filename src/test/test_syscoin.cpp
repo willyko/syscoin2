@@ -104,7 +104,7 @@ SyscoinTestingSetup::SyscoinTestingSetup()
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
-	FILE *lsofFile_p = popen(cmd, "r");
+	FILE *lsofFile_p = popen(cmd.c_str(), "r");
 	std::string response;
 	if (!lsofFile_p)
 	{
