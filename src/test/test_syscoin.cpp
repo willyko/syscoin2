@@ -125,10 +125,10 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
-	CallExternal("../syscoin-cli stop");
-    boost::filesystem::remove_all("node1/regtest");
-	boost::filesystem::remove_all("node2/regtest");
-	boost::filesystem::remove_all("node3/regtest");
+	CallExternal(std::string("../syscoin-cli stop"));
+    boost::filesystem::remove_all(boost::filesystem::path("node1/regtest"));
+	boost::filesystem::remove_all(boost::filesystem::path("node2/regtest"));
+	boost::filesystem::remove_all(boost::filesystem::path("node3/regtest"));
 
 }
 TestChain100Setup::TestChain100Setup() : TestingSetup(CBaseChainParams::REGTEST)
