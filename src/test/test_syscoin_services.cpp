@@ -26,8 +26,8 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
 UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& commandWithArgs)
 {
 	UniValue val;
-	string path = string("../syscoin-cli -datadir=") + dataDir + string(" -regtest ");
-	string rawJson = CallExternal(path + commandWithArgs);
+	string path = string("../syscoin-cli -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
+	string rawJson = CallExternal(path);
     val.read(rawJson);
 	return val;
 }
@@ -60,5 +60,4 @@ SyscoinTestingSetup::~SyscoinTestingSetup()
     boost::filesystem::remove_all(boost::filesystem::path("node1/regtest"));
 	boost::filesystem::remove_all(boost::filesystem::path("node2/regtest"));
 	boost::filesystem::remove_all(boost::filesystem::path("node3/regtest"));
-
 }

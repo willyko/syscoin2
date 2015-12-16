@@ -11,7 +11,7 @@ struct SyscoinTestingSetup {
     SyscoinTestingSetup();
     ~SyscoinTestingSetup();
 	string CallExternal(string &cmd);
-	UniValue CallRPC(const string &dataDir, const string& commandWithArgs);
+	UniValue CallRPC(const string &dataDir, string& commandWithArgs);
 	void StartNode(const string &dataDir);
 };
 
