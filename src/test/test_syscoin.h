@@ -5,7 +5,7 @@
 #include "key.h"
 #include "pubkey.h"
 #include "txdb.h"
-
+#include <stdio.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
