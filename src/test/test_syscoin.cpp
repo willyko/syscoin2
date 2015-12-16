@@ -98,9 +98,9 @@ TestingSetup::~TestingSetup()
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
-	CallExternal(string("../syscoind -datadir=node1 -regtest"));
-	CallExternal(string("../syscoind -datadir=node2 -regtest"));
-	CallExternal(string("../syscoind -datadir=node3 -regtest"));
+	CallExternal(std::string("../syscoind -datadir=node1 -regtest"));
+	CallExternal(std::string("../syscoind -datadir=node2 -regtest"));
+	CallExternal(std::string("../syscoind -datadir=node3 -regtest"));
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
