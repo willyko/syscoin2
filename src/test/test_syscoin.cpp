@@ -128,7 +128,7 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
-	std::string cliStop = std::string("../syscoind -datadir=node1 -regtest");
+	std::string cliStop = std::string("../syscoin-cli stop");
 	CallExternal(cliStop);
     boost::filesystem::remove_all(boost::filesystem::path("node1/regtest"));
 	boost::filesystem::remove_all(boost::filesystem::path("node2/regtest"));
