@@ -53,6 +53,7 @@ BasicTestingSetup::~BasicTestingSetup()
 TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
 	LogPrintf("TestingSetup before\n");
+	SelectParams(chainName);
     const CChainParams& chainparams = Params();
 	LogPrintf("TestingSetup after\n");
 #ifdef ENABLE_WALLET
