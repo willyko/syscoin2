@@ -95,7 +95,42 @@ TestingSetup::~TestingSetup()
 #endif
         boost::filesystem::remove_all(pathTemp);
 }
+// SYSCOIN testing setup
+SyscoinTestingSetup::SyscoinTestingSetup()
+{
+	CallExternal("../syscoind -datadir=node1 -regtest");
+	CallExternal("../syscoind -datadir=node2 -regtest");
+	CallExternal("../syscoind -datadir=node3 -regtest");
+}
+std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
+{
+	FILE *lsofFile_p = popen(cmd, "r");
+	std::string response;
+	if (!lsofFile_p)
+	{
+		return -1;
+	}
+	while (!feof(lsofFile_p))
+	{
+		char buffer[500];
+		// read in the line and make sure it was successful
+		if (fgets(buffer,500,lsofFile_p) != NULL)
+		{
+			response += std::string(buffer);
+		}
 
+	}
+	pclose(lsofFile_p);
+	return response;
+}
+SyscoinTestingSetup::~SyscoinTestingSetup()
+{
+	CallExternal("../syscoin-cli stop");
+    boost::filesystem::remove_all("node1/regtest");
+	boost::filesystem::remove_all("node2/regtest");
+	boost::filesystem::remove_all("node3/regtest");
+
+}
 TestChain100Setup::TestChain100Setup() : TestingSetup(CBaseChainParams::REGTEST)
 {
     // Generate a 100-block chain:
