@@ -5,7 +5,7 @@
 #include "key.h"
 #include "pubkey.h"
 #include "txdb.h"
-#include <stdio.h>
+
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
@@ -31,18 +31,7 @@ struct TestingSetup: public BasicTestingSetup {
     TestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
     ~TestingSetup();
 };
-/** Testing syscoin services setup that configures a complete environment with 3 nodes.
- */
-// SYSCOIN testing setup
-struct SyscoinTestingSetup {
-	boost::filesystem::path pathTemp;
-	boost::filesystem::path node1Path;
-	boost::filesystem::path node2Path;
-	boost::filesystem::path node3Path;
-    SyscoinTestingSetup();
-    ~SyscoinTestingSetup();
-	std::string CallExternal(std::string &cmd);
-};
+
 class CBlock;
 struct CMutableTransaction;
 class CScript;

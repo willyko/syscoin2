@@ -1,4 +1,4 @@
-#include "test/test_syscoin.h"
+#include "test/test_syscoin_services.h"
 
 #include <boost/test/unit_test.hpp>
 
