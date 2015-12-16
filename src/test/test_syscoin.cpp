@@ -40,6 +40,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
         SetupNetworking();
         fPrintToDebugLog = false; // don't want to write to debug.log file
         fCheckBlockIndex = true;
+		printf("BasicTestingSetup select\n");
         SelectParams(chainName);
         noui_connect();
 }
@@ -51,7 +52,9 @@ BasicTestingSetup::~BasicTestingSetup()
 
 TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
+	printf("TestingSetup before\n");
     const CChainParams& chainparams = Params();
+	printf("TestingSetup after\n");
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
 #endif
@@ -116,6 +119,7 @@ TestChain100Setup::TestChain100Setup() : TestingSetup(CBaseChainParams::REGTEST)
 CBlock
 TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>& txns, const CScript& scriptPubKey)
 {
+	printf("CreateAndProcessBlock before\n");
     const CChainParams& chainparams = Params();
     CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, scriptPubKey);
     CBlock& block = pblocktemplate->block;
