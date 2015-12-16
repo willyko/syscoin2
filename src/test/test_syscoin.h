@@ -39,8 +39,9 @@ struct SyscoinTestingSetup {
 	boost::filesystem::path node1Path;
 	boost::filesystem::path node2Path;
 	boost::filesystem::path node3Path;
-    SyscoinTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
+    SyscoinTestingSetup();
     ~SyscoinTestingSetup();
+	std::string CallExternal(std::string &cmd);
 };
 class CBlock;
 struct CMutableTransaction;
