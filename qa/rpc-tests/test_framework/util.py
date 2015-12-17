@@ -131,7 +131,7 @@ def initialize_chain(test_dir):
         # Create cache directories, run syscoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
-            args = [ os.getenv("SYSCOIND", "syscoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args = [ os.getenv("SYSCOIND", "syscoind"), "-server", "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             syscoind_processes[i] = subprocess.Popen(args)
@@ -219,7 +219,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if binary is None:
         binary = os.getenv("SYSCOIND", "syscoind")
     # RPC tests still depend on free transactions
-    args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest", "-blockprioritysize=50000" ]
+    args = [ binary, "-datadir="+datadir, "-server", "-keypool=1", "-discover=0", "-rest", "-blockprioritysize=50000" ]
     if extra_args is not None: args.extend(extra_args)
     syscoind_processes[i] = subprocess.Popen(args)
     devnull = open(os.devnull, "w")

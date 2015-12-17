@@ -5,6 +5,7 @@
 
 #ifndef SYSCOIN_PRIMITIVES_BLOCK_H
 #define SYSCOIN_PRIMITIVES_BLOCK_H
+
 // SYSCOIN auxpow
 #include "auxpow.h"
 #include "primitives/transaction.h"
