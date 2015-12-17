@@ -92,7 +92,9 @@ public:
         pchMessageStart[3] = 0xd9;
         vAlertPubKey = ParseHex("04a0a5a88b2cebf0d6a7d20214e6bd51c903645505f72d05d536c9f3b996ec428150931cc6e9943f8603f756907b8793d715cb3b4fcca2735110c324c98158f456");
         nDefaultPort = 8369;
-        nMaxTipAge = 24 * 60 * 60;
+		// SYSCOIN todo fix for now
+		nMaxTipAge = 0x7fffffff;
+        //nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
         genesis = CreateGenesisBlock(1450135860, 2106885, 0x1e0ffff0, 1, 50 * COIN);
