@@ -625,6 +625,7 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 	{
 	}
 	fInit = false;
+	return ret;
 }
 
 /** Implementation of IsSuperMajority with better feedback */
