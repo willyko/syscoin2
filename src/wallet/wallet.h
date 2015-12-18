@@ -53,16 +53,14 @@ static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
 //! Default for -sendfreetransactions
-// SYSCOIN allow free tx's in each block
-static const bool DEFAULT_SEND_FREE_TRANSACTIONS = true;
+static const bool DEFAULT_SEND_FREE_TRANSACTIONS = false;
 //! -txconfirmtarget default
 // SYSCOIN set to 1 as when services are stored in db they should be usable
 static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 1;
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
-// SYSCOIN max free tx size
-static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 3145;
+static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 static const bool DEFAULT_WALLETBROADCAST = true;
 
 class CAccountingEntry;
