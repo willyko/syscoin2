@@ -1570,8 +1570,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 		std::string chain = ChainNameFromCommandLine();
 		if (chain == CBaseChainParams::MAIN)
 		{
-			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 440k coins
-			return 440000 * COIN;
+			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 4.4M coins
+			return 4400000 * COIN;
 		}
 	}
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
