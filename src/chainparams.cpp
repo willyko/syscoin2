@@ -224,12 +224,10 @@ public:
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1450135956, 2483448, 0x1e0ffff0, 1, 2.5 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450470135, 3161522, 0x1e0ffff0, 1, 2.5 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000003e32114d8824244e2892c1d72a61513e95c4f9cd4fb3bd7eaa89ff1646d"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4e605acfa4fa6c4c35ae79b9c6752911bec33157ce04cd951b0f0c258408e546"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000008113f038c81fcccb06fba03ac17f9dac9a38f659555e17e6b8252f6ec4b"));
+        assert(genesis.hashMerkleRoot == uint256S("0x5215c5a2af9b63f2550b635eb2b354bb13645fd8fa31275394eb161944303065"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
