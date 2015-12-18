@@ -636,7 +636,8 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     l7->setStyleSheet((fDust) ? "color:red;" : "");                                     // Dust = "yes"
 
     // tool tips
-    QString toolTip1 = tr("This label turns red if the transaction size is greater than 1000 bytes.") + "<br /><br />";
+	// SYSCOIN changed max free tx size
+    QString toolTip1 = tr("This label turns red if the transaction size is greater than %1 bytes.").arg(MAX_FREE_TRANSACTION_CREATE_SIZE) + "<br /><br />";
     toolTip1 += tr("This means a fee of at least %1 per kB is required.").arg(SyscoinUnits::formatWithUnit(nDisplayUnit, CWallet::GetRequiredFee(1000))) + "<br /><br />";
     toolTip1 += tr("Can vary +/- 1 byte per input.");
 

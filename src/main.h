@@ -151,7 +151,8 @@ extern bool fPruneMode;
 /** Number of MiB of block files that we're trying to stay below. */
 extern uint64_t nPruneTarget;
 /** Block files containing a block-height within MIN_BLOCKS_TO_KEEP of chainActive.Tip() will not be pruned. */
-static const unsigned int MIN_BLOCKS_TO_KEEP = 288;
+// SYSCOIN multiply by 10x because sys blocks are 100k max not 1M
+static const unsigned int MIN_BLOCKS_TO_KEEP = 2880;
 
 static const signed int DEFAULT_CHECKBLOCKS = MIN_BLOCKS_TO_KEEP;
 // SYSCOIN needs either check level 2 or 4, because 3 disconnects services
