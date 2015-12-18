@@ -35,32 +35,6 @@ bool IsMessageOp(int op) {
     return op == OP_MESSAGE_ACTIVATE;
 }
 
-int64_t GetMessageNetworkFee(opcodetype seed, unsigned int nHeight) {
-
-	int64_t nFee = 0;
-	int64_t nRate = 0;
-	const vector<unsigned char> &vchCurrency = vchFromString("USD");
-	vector<string> rateList;
-	int precision;
-	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, nHeight, rateList, precision) != "")
-		{
-		if(seed==OP_MESSAGE_ACTIVATE) 
-		{
-			nFee = 150 * COIN;
-		}
-	}
-	else
-	{
-		// 1000 pips USD (1 cent), 10k pips = $1USD
-		nFee = nRate/10;
-	}
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
-	return nFee;
-}
-
-
 // Increase expiration to 36000 gradually starting at block 24000.
 // Use for validation purposes and pass the chain height.
 int GetMessageExpirationDepth() {
@@ -202,18 +176,6 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
     }
     }
     return true;
-}
-
-
-
-int64_t GetMessageNetFee(const CTransaction& tx) {
-    int64_t nFee = 0;
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& out = tx.vout[i];
-        if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-            nFee += out.nValue;
-    }
-    return nFee;
 }
 
 int GetMessageHeight(vector<unsigned char> vchMessage) {
@@ -468,7 +430,6 @@ bool CheckMessageInputs(const CTransaction &tx,
         bool good = DecodeMessageTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckMessageInputs() : could not decode a syscoin tx");
-        int64_t nNetFee;
         // unserialize message UniValue from txn, check for valid
         CMessage theMessage;
         theMessage.UnserializeFromTx(tx);
@@ -512,16 +473,6 @@ bool CheckMessageInputs(const CTransaction &tx,
 		}
         switch (op) {
         case OP_MESSAGE_ACTIVATE:
-			if (fBlock && !fJustCheck) {
-
-					// check for enough fees
-				nNetFee = GetMessageNetFee(tx);
-				if (nNetFee < GetMessageNetworkFee(OP_MESSAGE_ACTIVATE, theMessage.nHeight))
-					return error(
-							"CheckMessageInputs() : OP_MESSAGE_ACTIVATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
             break;
         default:
             return error( "CheckMessageInputs() : message transaction has unknown op");
@@ -576,17 +527,6 @@ void rescanformessages(CBlockIndex *pindexRescan) {
 }
 
 
-UniValue getmessagefees(const UniValue& params, bool fHelp) {
-    if (fHelp || 0 != params.size())
-        throw runtime_error(
-                "getmessagefees\n"
-                        "get current service fees for message transactions\n");
-    UniValue oRes(UniValue::VARR);
-    oRes.push_back(Pair("height", chainActive.Tip()->nHeight ));
-    oRes.push_back(Pair("activate_fee", ValueFromAmount(GetMessageNetworkFee(OP_MESSAGE_ACTIVATE, chainActive.Tip()->nHeight) )));
-    return oRes;
-
-}
 
 UniValue messagenew(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 4 )
@@ -718,8 +658,6 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
     if (strCipherTextTo.size() > MAX_MSG_LENGTH)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Message data cannot exceed 16383 bytes!");
 
-	int64_t nNetFee = GetMessageNetworkFee(OP_MESSAGE_ACTIVATE, chainActive.Tip()->nHeight);
- 
     // build message UniValue
     CMessage newMessage;
     newMessage.vchRand = vchMessage;
@@ -745,7 +683,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << newMessage.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);

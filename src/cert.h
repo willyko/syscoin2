@@ -19,10 +19,6 @@ bool DecodeCertScript(const CScript& script, int& op, std::vector<std::vector<un
 bool IsCertOp(int op);
 int IndexOfCertOutput(const CTransaction& tx);
 bool GetValueOfCertTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
-int64_t GetCertNetworkFee(opcodetype seed, unsigned int nHeight);
-int64_t GetCertNetFee(const CTransaction& tx);
-bool InsertCertFee(CBlockIndex *pindex, uint256 hash, uint64_t nValue);
-
 bool EncryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchMessage, std::string &strCipherText);
 bool DecryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchCipherText, std::string &strMessage);
 std::string certFromOp(int op);

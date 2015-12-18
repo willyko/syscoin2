@@ -1562,29 +1562,24 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    // SYSCOIN snapshot block 700k
-    nHeight += 700000;
-    CAmount nSubsidy = 96 * COIN;
-	if(nHeight == 700000)
-		nSubsidy = 50 * COIN; // SYSCOIN genesis amount on shade
-	else if(nHeight == 700001)
-		nSubsidy = 439725912 * COIN; // SYSCOIN shade snapshot amount to old syscoin blockchain
-	else if(nHeight < 701000)
-		nSubsidy = 1 * COIN; // SYSCOIN shade 1 coin per block until retargetting is finished (10k blocks)
-    else if(nHeight > 777840 && nHeight <= 1814640)
-        nSubsidy = 80 * COIN;
-    else if(nHeight > 1814640 && nHeight <= 3369840)
-        nSubsidy = 64 * COIN;
-    else if(nHeight > 3369840 && nHeight <= 5443440)
-        nSubsidy = 48 * COIN;
-    else if(nHeight > 5443440 && nHeight <= 8035440)
-        nSubsidy = 40 * COIN;
-    else if(nHeight > 8035440 && nHeight <= 35913640)
-        nSubsidy = 32 * COIN;
-    else if(  ChainNameFromCommandLine() == CBaseChainParams::MAIN && ( nHeight > 35913640 || nHeight < 241 ) )
-        nSubsidy = 0;
-    else if(  ChainNameFromCommandLine() != CBaseChainParams::MAIN && nHeight > 35913640  )
-        nSubsidy = 0;
+    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
+    if (halvings >= 64)
+        return 0;
+	// SYSCOIN default 2.5 coins to start
+    CAmount nSubsidy = 2.5 * COIN;
+    // SYSCOIN Subsidy is cut in half approximately every 7 months.
+    nSubsidy >>= halvings;
+
+    // SYSCOIN shade genesis, old sys snapshot block 700k
+	if(nHeight == 0)
+	{
+		std::string chain = ChainNameFromCommandLine();
+		if (chain == CBaseChainParams::MAIN)
+		{
+			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 440k coins
+			nSubsidy = 440000 * COIN;
+		}
+	}
 
     return nSubsidy;
 

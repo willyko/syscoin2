@@ -252,37 +252,6 @@ bool IsOfferOp(int op) {
 }
 
 
-
-int64_t GetOfferNetworkFee(opcodetype seed, unsigned int nHeight) {
-
-	int64_t nFee = 0;
-	int64_t nRate = 0;
-	const vector<unsigned char> &vchCurrency = vchFromString("USD");
-	vector<string> rateList;
-	int precision;
-	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, nHeight, rateList,precision) != "")
-	{
-		if(seed==OP_OFFER_ACTIVATE) {
-    		nFee = 50 * COIN;
-		}
-		else if(seed==OP_OFFER_UPDATE) {
-    		nFee = 100 * COIN;
-		}
-	}
-	else
-	{
-		// 10 pips USD, 10k pips = $1USD
-		nFee = nRate/1000;
-	}
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
-	return nFee;
-}
-
-
-
-
 int GetOfferExpirationDepth() {
     return 525600;
 }
@@ -486,17 +455,6 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
     }
     }
     return true;
-}
-
-
-int64_t GetOfferNetFee(const CTransaction& tx) {
-	int64_t nFee = 0;
-	for (unsigned int i = 0; i < tx.vout.size(); i++) {
-		const CTxOut& out = tx.vout[i];
-		if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-			nFee += out.nValue;
-	}
-	return nFee;
 }
 
 int GetOfferHeight(vector<unsigned char> vchOffer) {
@@ -809,8 +767,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 		if (!good)
 			return error("CheckOfferInputs() : could not decode a syscoin tx");
 		int nDepth;
-		int64_t nNetFee;
-
 		// unserialize offer UniValue from txn, check for valid
 		COffer theOffer(tx);
 		COfferAccept theOfferAccept;
@@ -868,17 +824,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("CheckOfferInputs() : offernew cert mismatch");
 			if (vvchArgs[1].size() > MAX_ID_LENGTH)
 				return error("offeractivate tx with guid too big");
-
-			if (fBlock && !fJustCheck) {
-
-					// check for enough fees
-				nNetFee = GetOfferNetFee(tx);
-				if (nNetFee < GetOfferNetworkFee(OP_OFFER_ACTIVATE, theOffer.nHeight))
-					return error(
-							"CheckOfferInputs() : OP_OFFER_ACTIVATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
 			break;
 
 
@@ -892,15 +837,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 			
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckOfferInputs() : offerupdate offer mismatch");
-			if (fBlock && !fJustCheck) {
-				// check for enough fees
-				nNetFee = GetOfferNetFee(tx);
-				if (nNetFee < GetOfferNetworkFee(OP_OFFER_UPDATE, theOffer.nHeight))
-					return error(
-							"CheckOfferInputs() : OP_OFFER_UPDATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
 			break;
 		case OP_OFFER_REFUND:
 			int nDepth;
@@ -1326,18 +1262,6 @@ void rescanforoffers(CBlockIndex *pindexRescan) {
 }
 
 
-UniValue getofferfees(const UniValue& params, bool fHelp) {
-	if (fHelp || 0 != params.size())
-		throw runtime_error(
-				"getaliasfees\n"
-						"get current service fees for alias transactions\n");
-	UniValue oRes(UniValue::VARR);
-	oRes.push_back(Pair("height", chainActive.Tip()->nHeight ));
-	oRes.push_back(Pair("activate_fee", ValueFromAmount(GetOfferNetworkFee(OP_OFFER_ACTIVATE, chainActive.Tip()->nHeight) )));
-	oRes.push_back(Pair("update_fee", ValueFromAmount(GetOfferNetworkFee(OP_OFFER_UPDATE, chainActive.Tip()->nHeight) )));
-	return oRes;
-
-}
 
 UniValue offernew(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() < 7 || params.size() > 10)
@@ -1477,8 +1401,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 
   	CPubKey newDefaultKey;
 	CScript scriptPubKeyOrig;
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_ACTIVATE, chainActive.Tip()->nHeight);	
 	// unserialize offer UniValue from txn, serialize back
 	// build offer UniValue
 	COffer newOffer;
@@ -1508,7 +1430,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << newOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
 
@@ -1528,7 +1450,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 				<< OP_2DROP << OP_DROP;
 		scriptPubKey += scriptPubKeyOrig;
 
-		int64_t nNetFee = GetCertNetworkFee(OP_CERT_UPDATE, chainActive.Tip()->nHeight);
 		theCert.nHeight = chainActive.Tip()->nHeight;
 		theCert.vchOfferLink = vchOffer;
 		vector<CRecipient> vecSend;
@@ -1537,7 +1458,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 
 		CScript scriptData;
 		scriptData << OP_RETURN << theCert.Serialize();
-		CRecipient fee = {scriptData, nNetFee, false};
+		CRecipient fee = {scriptData, 0, false};
 		vecSend.push_back(fee);
 		SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxCertIn);
 
@@ -1651,8 +1572,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	price = (float)atof(priceStr.c_str());
 
 	EnsureWalletIsUnlocked();
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_ACTIVATE, chainActive.Tip()->nHeight);	
+	
 	// unserialize offer UniValue from txn, serialize back
 	// build offer UniValue
 	COffer newOffer;
@@ -1691,7 +1611,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << newOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -1786,9 +1706,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << theOffer.sTitle
 			<< OP_2DROP << OP_DROP;
 	scriptPubKey += scriptPubKeyOrig;
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_UPDATE, chainActive.Tip()->nHeight);
-	
 
 	COfferLinkWhitelistEntry entry;
 	entry.certLinkVchRand = theCert.vchRand;
@@ -1800,7 +1717,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
@@ -1864,9 +1781,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << theOffer.sTitle
 			<< OP_2DROP << OP_DROP;
 	scriptPubKey += scriptPubKeyOrig;
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_UPDATE, chainActive.Tip()->nHeight);
-	
+
 	COfferLinkWhitelistEntry entry;
 	entry.certLinkVchRand = vchCert;
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
@@ -1881,7 +1796,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
@@ -1944,9 +1859,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << theOffer.sTitle
 			<< OP_2DROP << OP_DROP;
 	scriptPubKey += scriptPubKeyOrig;
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_UPDATE, chainActive.Tip()->nHeight);
-	
+
 	COfferLinkWhitelistEntry entry;
 	// special case to clear all entries for this offer
 	entry.nDiscountPct = -1;
@@ -1957,7 +1870,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
@@ -2101,8 +2014,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 	theOffer = vtxPos.back();
 	theOffer.ClearOffer();	
-	// calculate network fees
-	int64_t nNetFee = GetOfferNetworkFee(OP_OFFER_UPDATE, chainActive.Tip()->nHeight);
 	int precision = 2;
 	// get precision
 	convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
@@ -2178,7 +2089,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		scriptPubKey += scriptPubKeyOrig;
 
 
-		int64_t nNetFee = GetCertNetworkFee(OP_CERT_UPDATE, chainActive.Tip()->nHeight);
 		theCert.nHeight = chainActive.Tip()->nHeight;
 		if(vchCert.empty())
 		{
@@ -2194,7 +2104,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 		CScript scriptData;
 		scriptData << OP_RETURN << theCert.Serialize();
-		CRecipient fee = {scriptData, nNetFee, false};
+		CRecipient fee = {scriptData, 0, false};
 		vecSend.push_back(fee);
 		SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxCertIn);
 
@@ -2234,7 +2144,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 			CScript scriptData;
 			scriptData << OP_RETURN << theOldCert.Serialize();
-			CRecipient fee = {scriptData, nNetFee, false};
+			CRecipient fee = {scriptData, 0, false};
 			vecSend.push_back(fee);
 			SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtxold, wtxCertOldIn);
 		}
@@ -2251,7 +2161,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
@@ -2550,7 +2460,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << cert.vchRand << cert.vchTitle
 				<< OP_2DROP << OP_DROP;
 		scriptPubKey += scriptPubKeyOrig;
-		int64_t nNetFee = GetCertNetworkFee(OP_CERT_UPDATE, chainActive.Tip()->nHeight);
 		cert.nHeight = chainActive.Tip()->nHeight;
 
 		vector<CRecipient> vecSend;
@@ -2559,7 +2468,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 		CScript scriptData;
 		scriptData << OP_RETURN << cert.Serialize();
-		CRecipient fee = {scriptData, nNetFee, false};
+		CRecipient fee = {scriptData, 0, false};
 		vecSend.push_back(fee);
 		const CWalletTx* wtxIn = &wtx;
 		SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtxCert, wtxIn);

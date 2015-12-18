@@ -383,13 +383,6 @@ int GetSyscoinDataOutput(const CTransaction& tx) {
 	}
    return -1;
 }
-int64_t GetAliasNetFee(const CTransaction& tx) {
-   int64_t nFee = 0;
-   int nOut = GetSyscoinDataOutput(tx);
-   if(nOut != -1)
-	   nFee = tx.vout[nOut].nValue;
-	return nFee;
-}
 
 int GetAliasHeight(vector<unsigned char> vchName) {
 	vector<CAliasIndex> vtxPos;
@@ -477,8 +470,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 			return error(
 					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
 					tx.GetHash().GetHex().c_str());
-		int64_t nNetFee;
-
 		// unserialize alias UniValue from txn, check for valid
 		CAliasIndex theAlias(tx);
 		if (theAlias.IsNull())
@@ -506,16 +497,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				return error("aliasactivate tx with rand too big");
 			if (vvchArgs[2].size() > MAX_NAME_LENGTH)
 				return error("aliasactivate tx with value too long");
-			if (fBlock && !fJustCheck) {
-
-					// check for enough fees
-				nNetFee = GetAliasNetFee(tx);
-				if (nNetFee < GetAliasNetworkFee(OP_ALIAS_ACTIVATE, theAlias.nHeight))
-					return error(
-							"CheckAliasInputs() : OP_ALIAS_ACTIVATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
 			break;
 
 		case OP_ALIAS_UPDATE:
@@ -531,16 +512,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 			// Check name
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckAliasInputs() : aliasupdate alias mismatch");
-
-			if (fBlock && !fJustCheck) {
-				// verify enough fees with this txn
-				nNetFee = GetAliasNetFee(tx);
-				if (stringFromVch(vvchArgs[0]) != "SYS_RATES" && nNetFee < GetAliasNetworkFee(OP_ALIAS_UPDATE, theAlias.nHeight))
-					return error(
-							"CheckAliasInputs() : OP_ALIAS_UPDATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);
-			}
 
 			break;
 
@@ -756,35 +727,6 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 	} /* LOCK */
 	return true;
 }
-
-int64_t GetAliasNetworkFee(opcodetype seed, unsigned int nHeight) {
-	int64_t nFee = 0;
-	int64_t nRate = 0;
-	const vector<unsigned char> &vchCurrency = vchFromString("USD");
-	vector<string> rateList;
-	int precision;
-	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, nHeight, rateList, precision) != "")
-	{
-		if(seed==OP_ALIAS_ACTIVATE)
-		{
-			nFee = 100 * COIN;
-		}
-		else if(seed==OP_ALIAS_UPDATE)
-		{
-			nFee = 100 * COIN;
-		}
-	}
-	else
-	{
-		// 50 pips USD, 10k pips = $1USD
-		nFee = nRate/200;
-	}
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
-	return nFee;
-}
-
 
 int GetAliasExpirationDepth() {
 	return 525600;
@@ -1054,15 +996,13 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
     CAliasIndex newAlias;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchFromString(strPubKey);
-	// calculate network fees
-	int64_t nNetFee = GetAliasNetworkFee(OP_ALIAS_ACTIVATE, chainActive.Tip()->nHeight);
 
     vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << newAlias.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	// send the tranasction
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -1145,17 +1085,12 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	updateAlias.nHeight = chainActive.Tip()->nHeight;
 	updateAlias.vchPubKey = vchFromString(strPubKey);
 
-	int64_t nNetFee = GetAliasNetworkFee(OP_ALIAS_UPDATE, chainActive.Tip()->nHeight);
-	// SYS_RATES update is free
-	if(stringFromVch(vchName) == "SYS_RATES")
-		nNetFee = 0;
-
     vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << updateAlias.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
@@ -1574,23 +1509,3 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
-
-/**
- * [aliasscan description]
- * @param  params [description]
- * @param  fHelp  [description]
- * @return        [description]
- */
-UniValue getaliasfees(const UniValue& params, bool fHelp) {
-	if (fHelp || 0 != params.size())
-		throw runtime_error(
-				"getaliasfees\n"
-						"get current service fees for alias transactions\n");
-	UniValue oRes(UniValue::VARR);
-	oRes.push_back(Pair("height", chainActive.Tip()->nHeight ));
-	oRes.push_back(Pair("activate_fee", ValueFromAmount(GetAliasNetworkFee(OP_ALIAS_ACTIVATE, chainActive.Tip()->nHeight) )));
-	oRes.push_back(Pair("update_fee", ValueFromAmount(GetAliasNetworkFee(OP_ALIAS_UPDATE, chainActive.Tip()->nHeight) )));
-	return oRes;
-
-}
-

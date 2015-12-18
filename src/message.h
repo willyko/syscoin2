@@ -21,9 +21,6 @@ bool IsMessageOp(int op);
 int IndexOfMessageOutput(const CTransaction& tx);
 bool GetValueOfMessageTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 int GetMessageExpirationDepth();
-int64_t GetMessageNetworkFee(opcodetype seed, unsigned int nHeight);
-int64_t GetMessageNetFee(const CTransaction& tx);
-bool InsertMessageFee(CBlockIndex *pindex, uint256 hash, uint64_t nValue);
 bool ExtractMessageAddress(const CScript& script, std::string& address);
 CScript RemoveMessageScriptPrefix(const CScript& scriptIn);
 bool DecodeMessageScript(const CScript& script, int& op,

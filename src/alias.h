@@ -125,8 +125,6 @@ bool DecodeAliasScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch, CScript::const_iterator& pc);
 bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);
 void GetAliasValue(const std::string& strName, std::string& strAddress);
-int64_t GetAliasNetworkFee(opcodetype seed, unsigned int nHeight);
-int64_t GetAliasNetFee(const CTransaction& tx);
 int64_t convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const double &nPrice, const unsigned int &nHeight, int &precision);
 bool HasReachedMainNetForkB2();
 bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type);

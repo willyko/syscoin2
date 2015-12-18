@@ -65,45 +65,6 @@ bool IsCertOp(int op) {
         || op == OP_CERT_TRANSFER;
 }
 
-// 10080 blocks = 1 week
-// certificate  expiration time is ~ 6 months or 26 weeks
-// expiration blocks is 262080 (final)
-// expiration starts at 87360, increases by 1 per block starting at
-// block 174721 until block 349440
-int64_t GetCertNetworkFee(opcodetype seed, unsigned int nHeight) {
-
-	int64_t nFee = 0;
-	int64_t nRate = 0;
-	const vector<unsigned char> &vchCurrency = vchFromString("USD");
-	vector<string> rateList;
-	int precision;
-	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, nHeight, rateList, precision) != "")
-		{
-		if(seed==OP_CERT_ACTIVATE) 
-		{
-			nFee = 150 * COIN;
-		}
-		else if(seed==OP_CERT_UPDATE) 
-		{
-			nFee = 100 * COIN;
-		} 
-		else if(seed==OP_CERT_TRANSFER) 
-		{
-			nFee = 25 * COIN;
-		}
-	}
-	else
-	{
-		// 10 pips USD, 10k pips = $1USD
-		nFee = nRate/1000;
-	}
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
-	return nFee;
-}
-
-
 // Increase expiration to 36000 gradually starting at block 24000.
 // Use for validation purposes and pass the chain height.
 int GetCertExpirationDepth() {
@@ -252,18 +213,6 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
     }
     }
     return true;
-}
-
-
-
-int64_t GetCertNetFee(const CTransaction& tx) {
-    int64_t nFee = 0;
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& out = tx.vout[i];
-        if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-            nFee += out.nValue;
-    }
-    return nFee;
 }
 
 int GetCertHeight(vector<unsigned char> vchCert) {
@@ -549,7 +498,6 @@ bool CheckCertInputs(const CTransaction &tx,
         bool good = DecodeCertTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckCertInputs() : could not decode a syscoin tx");
-        int64_t nNetFee;
         // unserialize cert object from txn, check for valid
         CCert theCert(tx);
         if (theCert.IsNull())
@@ -581,16 +529,7 @@ bool CheckCertInputs(const CTransaction &tx,
 				return error("cert tx with rand too big");
 			if (vvchArgs[2].size() > MAX_NAME_LENGTH)
                 return error("certactivate tx title too long");
-			if (fBlock && !fJustCheck) {
 
-					// check for enough fees
-				nNetFee = GetCertNetFee(tx);
-				if (nNetFee < GetCertNetworkFee(OP_CERT_ACTIVATE, theCert.nHeight))
-					return error(
-							"CheckCertInputs() : OP_CERT_ACTIVATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
             break;
 
         case OP_CERT_UPDATE:
@@ -602,15 +541,6 @@ bool CheckCertInputs(const CTransaction &tx,
             if (vvchArgs[1].size() > MAX_NAME_LENGTH)
                 return error("certupdate tx title too long");
 
-			if (fBlock && !fJustCheck) {
-				// check for enough fees
-				nNetFee = GetCertNetFee(tx);
-				if (nNetFee < GetCertNetworkFee(OP_CERT_UPDATE, theCert.nHeight))
-					return error(
-							"CheckCertInputs() : OP_CERT_UPDATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);
-			}
             break;
 
         
@@ -628,15 +558,6 @@ bool CheckCertInputs(const CTransaction &tx,
             if (fBlock && !fJustCheck) {
                 // Check hash
                 const vector<unsigned char> &vchCert = vvchArgs[0];
-                // check for enough fees
-                int64_t expectedFee = GetCertNetworkFee(OP_CERT_TRANSFER, theCert.nHeight);
-                nNetFee = GetCertNetFee(tx);
-                if (nNetFee < expectedFee)
-                    return error(
-                            "CheckCertInputs() : OP_CERT_TRANSFER got tx %s with fee too low %lu",
-                            tx.GetHash().GetHex().c_str(),
-                            (long unsigned int) nNetFee);
-
                 if(theCert.vchRand != vchCert)
                     return error("Cert txn contains invalid txnCert hash");
 
@@ -701,19 +622,6 @@ void rescanforcerts(CBlockIndex *pindexRescan) {
 }
 
 
-UniValue getcertfees(const UniValue& params, bool fHelp) {
-    if (fHelp || 0 != params.size())
-        throw runtime_error(
-                "getaliasfees\n"
-                        "get current service fees for alias transactions\n");
-	UniValue oRes(UniValue::VOBJ);
-    oRes.push_back(Pair("height", chainActive.Tip()->nHeight ));
-    oRes.push_back(Pair("activate_fee", ValueFromAmount(GetCertNetworkFee(OP_CERT_ACTIVATE, chainActive.Tip()->nHeight) )));
-    oRes.push_back(Pair("update_fee", ValueFromAmount(GetCertNetworkFee(OP_CERT_UPDATE, chainActive.Tip()->nHeight) )));
-    oRes.push_back(Pair("transfer_fee", ValueFromAmount(GetCertNetworkFee(OP_CERT_TRANSFER, chainActive.Tip()->nHeight) )));
-    return oRes;
-
-}
 
 UniValue certnew(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -762,8 +670,6 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     CScript scriptPubKey;
 
     
-	// calculate network fees
-	int64_t nNetFee = GetCertNetworkFee(OP_CERT_ACTIVATE, chainActive.Tip()->nHeight);
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
 	string strPubKey = HexStr(vchPubKey);
 	if(bPrivate)
@@ -797,7 +703,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << newCert.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -879,8 +785,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << vchTitle
             << OP_2DROP << OP_DROP;
     scriptPubKey += scriptPubKeyOrig;
-    // calculate network fees
-    int64_t nNetFee = GetCertNetworkFee(OP_CERT_UPDATE, chainActive.Tip()->nHeight);
 	// if we want to make data private, encrypt it
 	if(bPrivate)
 	{
@@ -908,7 +812,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << theCert.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);	
@@ -1010,8 +914,6 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read cert from DB");
 	theCert = vtxPos.back();
 
-    // calculate network fees
-    int64_t nNetFee = GetCertNetworkFee(OP_CERT_TRANSFER, chainActive.Tip()->nHeight);
 
 	// if cert is private, decrypt the data
 	if(theCert.bPrivate)
@@ -1056,7 +958,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << theCert.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);

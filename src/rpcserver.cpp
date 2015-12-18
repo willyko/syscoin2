@@ -383,8 +383,6 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet", "aliashistory",      &aliashistory,      false },
     { "wallet", "aliasfilter",       &aliasfilter,       false },
     { "wallet", "aliasscan",         &aliasscan,         false },
-    { "wallet", "getaliasfees",      &getaliasfees,         false },
-
 
     // use the blockchain as a distributed marketplace
     { "wallet", "offernew",         &offernew,       false },
@@ -402,7 +400,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet", "offerhistory",     &offerhistory,   false },
     { "wallet", "offerscan",        &offerscan,      false },
     { "wallet", "offerfilter",      &offerfilter,    false },
-    { "wallet", "getofferfees",      &getofferfees,         false },
+
 
   // use the blockchain as a certificate issuance platform
   { "wallet", "certnew",         &certnew,     false },
@@ -413,7 +411,6 @@ static const CRPCCommand vRPCCommands[] =
   { "wallet", "certhistory",     &certhistory, false },
   { "wallet", "certscan",        &certscan,    false },
   { "wallet", "certfilter",      &certfilter,  false },
-  { "wallet", "getcertfees",           &getcertfees,        false },
 
   // use the blockchain for escrow linked to offers
   { "wallet", "escrownew",         &escrownew,     false },
@@ -427,7 +424,6 @@ static const CRPCCommand vRPCCommands[] =
   { "wallet", "escrowhistory",     &escrowhistory, false },
   { "wallet", "escrowscan",        &escrowscan,    false },
   { "wallet", "escrowfilter",      &escrowfilter,  false },
-  { "wallet", "getescrowfees",           &getescrowfees,        false },
 
   // use the blockchain for encrypted messaging
   { "wallet", "messagenew",         &messagenew,     false },
@@ -435,7 +431,6 @@ static const CRPCCommand vRPCCommands[] =
   { "wallet", "messagesentlist",              &messagesentlist,          false },
   { "wallet", "messageinfo",              &messageinfo,          false },
   { "wallet", "messagehistory",     &messagehistory, false },
-  { "wallet", "getmessagefees",           &getmessagefees,        false },
 #endif // ENABLE_WALLET
 };
 

@@ -49,44 +49,6 @@ int64_t GetEscrowArbiterFee(int64_t escrowValue) {
 	nFee = (nFee / CENT) * CENT;
 	return nFee;
 }
-int64_t GetEscrowNetworkFee(opcodetype seed, unsigned int nHeight) {
-
-	int64_t nFee = 0;
-	int64_t nRate = 0;
-	const vector<unsigned char> &vchCurrency = vchFromString("USD");
-	vector<string> rateList;
-	int precision;
-	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, nHeight, rateList, precision) != "")
-		{
-		if(seed==OP_ESCROW_ACTIVATE) 
-		{
-			nFee = 150 * COIN;
-		}
-		else if(seed==OP_ESCROW_RELEASE) 
-		{
-			nFee = 100 * COIN;
-		} 
-		else if(seed==OP_ESCROW_REFUND) 
-		{
-			nFee = 25 * COIN;
-		}
-		else if(seed==OP_ESCROW_COMPLETE)
-		{
-			nFee = 25 * COIN;
-		}
-	}
-	else
-	{
-		// 10 pips USD, 10k pips = $1USD
-		nFee = nRate/1000;
-	}
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
-	return nFee;
-}
-
-
 // Increase expiration to 36000 gradually starting at block 24000.
 // Use for validation purposes and pass the chain height.
 int GetEscrowExpirationDepth() {
@@ -237,17 +199,6 @@ bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
     return true;
 }
 
-
-
-int64_t GetEscrowNetFee(const CTransaction& tx) {
-    int64_t nFee = 0;
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& out = tx.vout[i];
-        if (out.scriptPubKey.size() == 1 && out.scriptPubKey[0] == OP_RETURN)
-            nFee += out.nValue;
-    }
-    return nFee;
-}
 
 int GetEscrowHeight(vector<unsigned char> vchEscrow) {
     vector<CEscrow> vtxPos;
@@ -510,7 +461,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
         bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
             return error("CheckEscrowInputs() : could not decode a syscoin tx");
-        int64_t nNetFee;
         // unserialize escrow UniValue from txn, check for valid
         CEscrow theEscrow;
         theEscrow.UnserializeFromTx(tx);
@@ -526,57 +476,13 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			return error("escrow tx rand too big");
         switch (op) {
         case OP_ESCROW_ACTIVATE:
-			if (fBlock && !fJustCheck) {
-
-					// check for enough fees
-				nNetFee = GetEscrowNetFee(tx);
-				if (nNetFee < GetEscrowNetworkFee(OP_ESCROW_ACTIVATE, theEscrow.nHeight))
-					return error(
-							"CheckEscrowInputs() : OP_ESCROW_ACTIVATE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);		
-			}
             break;
 
         case OP_ESCROW_RELEASE:
-			if (fBlock && !fJustCheck) {
-				// check for enough fees
-				nNetFee = GetEscrowNetFee(tx);
-				if (nNetFee < GetEscrowNetworkFee(OP_ESCROW_RELEASE, theEscrow.nHeight))
-					return error(
-							"CheckEscrowInputs() : OP_ESCROW_RELEASE got tx %s with fee too low %lu",
-							tx.GetHash().GetHex().c_str(),
-							(long unsigned int) nNetFee);
-			}
             break;
         case OP_ESCROW_REFUND:
-
-            if (fBlock && !fJustCheck) {		
-                // check for enough fees
-                int64_t expectedFee = GetEscrowNetworkFee(OP_ESCROW_REFUND, theEscrow.nHeight);
-                nNetFee = GetEscrowNetFee(tx);
-                if (nNetFee < expectedFee)
-                    return error(
-                            "CheckEscrowInputs() : OP_ESCROW_REFUND got tx %s with fee too low %lu",
-                            tx.GetHash().GetHex().c_str(),
-                            (long unsigned int) nNetFee);
-
-            }
-
             break;
         case OP_ESCROW_COMPLETE:
-            if (fBlock && !fJustCheck) {
-                // check for enough fees
-                int64_t expectedFee = GetEscrowNetworkFee(OP_ESCROW_COMPLETE, theEscrow.nHeight);
-                nNetFee = GetEscrowNetFee(tx);
-                if (nNetFee < expectedFee)
-                    return error(
-                            "CheckEscrowInputs() : OP_ESCROW_COMPLETE got tx %s with fee too low %lu",
-                            tx.GetHash().GetHex().c_str(),
-                            (long unsigned int) nNetFee);
-
-            }
-
             break;
         default:
             return error( "CheckEscrowInputs() : escrow transaction has unknown op");
@@ -654,20 +560,6 @@ void rescanforescrows(CBlockIndex *pindexRescan) {
 }
 
 
-UniValue getescrowfees(const UniValue& params, bool fHelp) {
-    if (fHelp || 0 != params.size())
-        throw runtime_error(
-                "getescrowfees\n"
-                        "get current service fees for escrow transactions\n");
-    UniValue oRes(UniValue::VARR);
-    oRes.push_back(Pair("height", chainActive.Tip()->nHeight ));
-    oRes.push_back(Pair("activate_fee", ValueFromAmount(GetEscrowNetworkFee(OP_ESCROW_ACTIVATE, chainActive.Tip()->nHeight) )));
-    oRes.push_back(Pair("release_fee", ValueFromAmount(GetEscrowNetworkFee(OP_ESCROW_RELEASE, chainActive.Tip()->nHeight) )));
-    oRes.push_back(Pair("refund_fee", ValueFromAmount(GetEscrowNetworkFee(OP_ESCROW_REFUND, chainActive.Tip()->nHeight) )));
-	oRes.push_back(Pair("complete_fee", ValueFromAmount(GetEscrowNetworkFee(OP_ESCROW_COMPLETE, chainActive.Tip()->nHeight) )));
-    return oRes;
-
-}
 
 UniValue escrownew(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 4 )
@@ -751,8 +643,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CSyscoinAddress arbaddy(ArbiterPubKey.GetID());
 
 
-	// calculate network fees
-	int64_t nNetFee = GetEscrowNetworkFee(OP_ESCROW_ACTIVATE, chainActive.Tip()->nHeight);
 	std::vector<unsigned char> vchBuyerKey(newDefaultKey.begin(), newDefaultKey.end());
 	string strBuyerKey = HexStr(vchBuyerKey);
 
@@ -824,7 +714,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 
 	CScript scriptData;
 	scriptData << OP_RETURN << newEscrow.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -1016,14 +906,13 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_RELEASE) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
     scriptPubKey += scriptPubKeySeller;
 
-	int64_t nNetFee = GetEscrowNetworkFee(OP_ESCROW_RELEASE, chainActive.Tip()->nHeight);
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
 	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -1291,14 +1180,13 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
     scriptPubKey += scriptPubKeyOrig;
 
 
-	int64_t nNetFee = GetEscrowNetworkFee(OP_ESCROW_COMPLETE, chainActive.Tip()->nHeight);
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
 	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
@@ -1478,14 +1366,13 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	scriptPubKeyBuyer= GetScriptForDestination(buyerKey.GetID());
     scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_REFUND) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
     scriptPubKey += scriptPubKeyBuyer;
-	int64_t nNetFee = GetEscrowNetworkFee(OP_ESCROW_REFUND, chainActive.Tip()->nHeight);
 	vector<CRecipient> vecSend;
 	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
 	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, nNetFee, false};
+	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);

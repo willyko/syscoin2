@@ -21,9 +21,6 @@ bool IsEscrowOp(int op);
 int IndexOfEscrowOutput(const CTransaction& tx);
 bool GetValueOfEscrowTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 int GetEscrowExpirationDepth();
-int64_t GetEscrowNetworkFee(opcodetype seed, unsigned int nHeight);
-int64_t GetEscrowNetFee(const CTransaction& tx);
-bool InsertEscrowFee(CBlockIndex *pindex, uint256 hash, uint64_t nValue);
 
 bool GetNameOfEscrowTx(const CTransaction& tx, std::vector<unsigned char>& escrow);
 std::string escrowFromOp(int op);

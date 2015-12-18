@@ -24,10 +24,6 @@ bool IsOfferOp(int op);
 int IndexOfOfferOutput(const CTransaction& tx);
 bool GetValueOfOfferTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 int GetOfferExpirationDepth();
-int64_t GetOfferNetworkFee(const std::vector<unsigned char>& vchCurrency, opcodetype seed, unsigned int nHeight);
-int64_t GetOfferNetFee(const CTransaction& tx);
-bool InsertOfferFee(CBlockIndex *pindex, uint256 hash, uint64_t nValue);
-
 std::string offerFromOp(int op);
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
 bool DecodeOfferScript(const CScript& script, int& op,
