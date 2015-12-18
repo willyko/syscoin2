@@ -810,6 +810,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 			case OP_ALIAS_ACTIVATE:
 				if (vvch[1].size() > MAX_ID_LENGTH)
 					err = error("aliasactivate tx with rand too big");
+				if (vvch[2].size() > MAX_VALUE_LENGTH)
+					err = error("aliasactivate tx with value too big");
 				break;
 			case OP_ALIAS_UPDATE:
 				if (vvch[1].size() > MAX_VALUE_LENGTH)

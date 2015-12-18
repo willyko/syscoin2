@@ -474,7 +474,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CAliasIndex theAlias(tx);
 		if (theAlias.IsNull())
 			return error("CheckAliasInputs() : null alias");
-		if(theAlias.vValue.size() > MAX_NAME_LENGTH)
+		if(theAlias.vValue.size() > MAX_VALUE_LENGTH)
 		{
 			return error("alias value too big");
 		}
@@ -956,8 +956,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
 	vchValue = vchFromValue(params[1]);
 
-	if (vchValue.size() > MAX_NAME_LENGTH)
-		throw runtime_error("alias value cannot exceed 255 bytes!");
+	if (vchValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias value cannot exceed 1023 bytes!");
 
 
 	CSyscoinAddress myAddress = CSyscoinAddress(stringFromVch(vchName));
@@ -1021,8 +1021,8 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName = vchFromValue(params[0]);
 	vector<unsigned char> vchValue = vchFromValue(params[1]);
-	if (vchValue.size() > MAX_NAME_LENGTH)
-		throw runtime_error("alias value cannot exceed 255 bytes!");
+	if (vchValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias value cannot exceed 1023 bytes!");
 	CWalletTx wtx;
 	const CWalletTx* wtxIn;
 	CScript scriptPubKeyOrig;
