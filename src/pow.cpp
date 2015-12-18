@@ -105,9 +105,8 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
         return error("CheckProofOfWork(): nBits below minimum work");
 
     // Check proof of work matches claimed amount
-	// SYSCOIN regtest fix
 	std::string chain = ChainNameFromCommandLine();
-    if (UintToArith256(hash) > bnTarget && chain != CBaseChainParams::REGTEST)
+    if (UintToArith256(hash) > bnTarget)
         return error("CheckProofOfWork(): hash doesn't match nBits");
 
     return true;
