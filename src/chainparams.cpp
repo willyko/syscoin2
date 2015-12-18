@@ -141,13 +141,10 @@ public:
         //nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1450469367, 2106885, 0x1e0ffff0, 1, 440000 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450469779, 4982278, 0x1e0ffff0, 1, 440000 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000dd5ed1cfbbd92073e1e7f1c6d3c579c04fde569cb5a1a304e24b458a1d8"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
-
+        assert(consensus.hashGenesisBlock == uint256S("0x00000f2e825f8a3f3b7da6dd8441fa3dd61cab64d71a158a49307d15091ca5fe"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4e605acfa4fa6c4c35ae79b9c6752911bec33157ce04cd951b0f0c258408e546"));
        /* vSeeds.push_back(CDNSSeedData("syscoin.sipa.be", "seed.syscoin.sipa.be")); // Pieter Wuille
         vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me")); // Matt Corallo
         vSeeds.push_back(CDNSSeedData("dashjr.org", "dnsseed.syscoin.dashjr.org")); // Luke Dashjr
@@ -228,9 +225,11 @@ public:
         nPruneAfterHeight = 1000;
 
         genesis = CreateGenesisBlock(1450135956, 2483448, 0x1e0ffff0, 1, 2.5 * COIN);
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x000003e32114d8824244e2892c1d72a61513e95c4f9cd4fb3bd7eaa89ff1646d"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4e605acfa4fa6c4c35ae79b9c6752911bec33157ce04cd951b0f0c258408e546"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -299,8 +298,10 @@ public:
 
         genesis = CreateGenesisBlock(1450136017, 4176314, 0x207fffff, 1, 2.5 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         assert(consensus.hashGenesisBlock == uint256S("0x191351dac0f999535bd814fe8d1091f349c6997ad103f2fce7855bfb89f89f83"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(genesis.hashMerkleRoot == uint256S("0x4e605acfa4fa6c4c35ae79b9c6752911bec33157ce04cd951b0f0c258408e546"));
 
         vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();  //! Regtest mode doesn't have any DNS seeds.
