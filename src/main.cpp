@@ -1562,6 +1562,16 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
+    // SYSCOIN shade genesis, old sys snapshot block 700k
+	if(nHeight == 1)
+	{
+		std::string chain = ChainNameFromCommandLine();
+		if (chain == CBaseChainParams::MAIN)
+		{
+			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 440k coins
+			return 440000 * COIN;
+		}
+	}
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     if (halvings >= 64)
         return 0;
@@ -1569,17 +1579,6 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     CAmount nSubsidy = 2.5 * COIN;
     // SYSCOIN Subsidy is cut in half approximately every 7 months.
     nSubsidy >>= halvings;
-
-    // SYSCOIN shade genesis, old sys snapshot block 700k
-	if(nHeight == 0)
-	{
-		std::string chain = ChainNameFromCommandLine();
-		if (chain == CBaseChainParams::MAIN)
-		{
-			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 440k coins
-			nSubsidy = 440000 * COIN;
-		}
-	}
 
     return nSubsidy;
 
