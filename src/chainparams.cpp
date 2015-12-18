@@ -141,12 +141,10 @@ public:
         //nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1450469779, 4982278, 0x1e0ffff0, 1, 2.5 * COIN);
-		uint256 hash;
-		GenerateGenesisBlock(genesis, &hash);
+        genesis = CreateGenesisBlock(1450473723, 5258726, 0x1e0ffff0, 1, 2.5 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000f2e825f8a3f3b7da6dd8441fa3dd61cab64d71a158a49307d15091ca5fe"));
-        assert(genesis.hashMerkleRoot == uint256S("0x4e605acfa4fa6c4c35ae79b9c6752911bec33157ce04cd951b0f0c258408e546"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0000072d66e51ab87de265765cc8bdd2d229a4307c672a1b3d5af692519cf765"));
+        assert(genesis.hashMerkleRoot == uint256S("0x5215c5a2af9b63f2550b635eb2b354bb13645fd8fa31275394eb161944303065"));
        /* vSeeds.push_back(CDNSSeedData("syscoin.sipa.be", "seed.syscoin.sipa.be")); // Pieter Wuille
         vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me")); // Matt Corallo
         vSeeds.push_back(CDNSSeedData("dashjr.org", "dnsseed.syscoin.dashjr.org")); // Luke Dashjr
