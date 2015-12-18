@@ -35,7 +35,46 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
     return genesis;
 }
+// SYSCOIN generate block
+	// This will figure out a valid hash and Nonce if you're
+	// creating a different genesis block:
+static bool GenerateGenesisBlock(CBlockHeader &genesisBlock, uint256 *phash)
+{
+    // Write the first 76 bytes of the block header to a double-SHA256 state.
+	genesisBlock.nTime    = time(NULL);
+    CHash256 hasher;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << genesisBlock;
+    assert(ss.size() == 80);
+    hasher.Write((unsigned char*)&ss[0], 76);
+	arith_uint256 hashTarget = arith_uint256().SetCompact(genesisBlock.nBits);
+    while (true) {
+        
 
+        // Write the last 4 bytes of the block header (the nonce) to a copy of
+        // the double-SHA256 state, and compute the result.
+        CHash256(hasher).Write((unsigned char*)&genesisBlock.nNonce, 4).Finalize((unsigned char*)phash);
+
+        // Return the nonce if the hash has at least some zero bits,
+        // check if it has enough to reach the target
+        if (((uint16_t*)phash)[15] == 0 && UintToArith256(*phash) <= hashTarget)
+            break;
+		genesisBlock.nNonce++;
+		if (genesisBlock.nNonce == 0) {
+			printf("NONCE WRAPPED, incrementing time\n");
+			++genesisBlock.nTime;
+		}
+        // If nothing found after trying for a while, return -1
+        if ((genesisBlock.nNonce & 0xfff) == 0)
+            printf("nonce %08X: hash = %s (target = %s)\n",
+					genesisBlock.nNonce, (*phash).ToString().c_str(),
+					hashTarget.ToString().c_str());
+    }
+	printf("genesis.nTime = %u \n", genesisBlock.nTime);
+	printf("genesis.nNonce = %u \n", genesisBlock.nNonce);
+	printf("Generate hash = %s\n", (*phash).ToString().c_str());
+	printf("genesis.hashMerkleRoot = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
+}
 /**
  * Build the genesis block. Note that the output of its generation
  * transaction cannot be spent since it did not originally exist in the
@@ -97,7 +136,9 @@ public:
         //nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1450135860, 2106885, 0x1e0ffff0, 1, 440000 * COIN);
+        genesis = CreateGenesisBlock(1450469367, 2106885, 0x1e0ffff0, 1, 440000 * COIN);
+		uint256 hash;
+		GenerateGenesisBlock(genesis, &hash);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00000dd5ed1cfbbd92073e1e7f1c6d3c579c04fde569cb5a1a304e24b458a1d8"));
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
