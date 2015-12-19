@@ -800,6 +800,9 @@ bool GetAliasAddress(const CTransaction& tx, std::string& strAddress) {
 void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	try
 	{
+		if(!AreBaseParamsConfigured())
+			throw JSONRPCError(RPC_WALLET_ERROR,
+					"chain params not set");
 		vector<unsigned char> vchName = vchFromValue(strName);
 		if (!paliasdb->ExistsAlias(vchName))
 			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
@@ -815,9 +818,6 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 		// get transaction pointed to by alias
 		uint256 blockHash;
 		CTransaction tx;
-		if(!AreBaseParamsConfigured())
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"chain params not set");
 		uint256 txHash = vtxPos.back().txHash;
 		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
 			throw JSONRPCError(RPC_WALLET_ERROR,
