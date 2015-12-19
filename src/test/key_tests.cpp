@@ -22,12 +22,6 @@ static const string strSecret1     ("5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmF
 static const string strSecret2     ("5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3");
 static const string strSecret1C    ("Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw");
 static const string strSecret2C    ("L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g");
-// SYSCOIN remove instantiation here because it relies on alias which checks Params()
-static const CSyscoinAddress addr1;
-static const CSyscoinAddress addr2;
-static const CSyscoinAddress addr1C;
-static const CSyscoinAddress addr2C;
-
 
 static const string strAddressBad("1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF");
 
@@ -65,10 +59,10 @@ BOOST_FIXTURE_TEST_SUITE(key_tests, BasicTestingSetup)
 BOOST_AUTO_TEST_CASE(key_test1)
 {
 	// SYSCOIN instantiation here because it relies on alias which checks Params()
-	addr1 = CSyscoinAddress("1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ");
-	addr2 = CSyscoinAddress("1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ");
-	addr1C = CSyscoinAddress("1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs");
-	addr2C  = CSyscoinAddress("1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs");
+	CSyscoinAddress addr1 = CSyscoinAddress("1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ");
+	CSyscoinAddress addr2 = CSyscoinAddress("1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ");
+	CSyscoinAddress addr1C = CSyscoinAddress("1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs");
+	CSyscoinAddress addr2C  = CSyscoinAddress("1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs");
     CSyscoinSecret bsecret1, bsecret2, bsecret1C, bsecret2C, baddress1;
     BOOST_CHECK( bsecret1.SetString (strSecret1));
     BOOST_CHECK( bsecret2.SetString (strSecret2));
