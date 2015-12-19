@@ -827,7 +827,8 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	}
 	catch(...)
 	{
-		return error("GetAliasValue() : could not read alias");
+		throw JSONRPCError(RPC_WALLET_ERROR,
+					"could not read alias");
 	}
 }
 
