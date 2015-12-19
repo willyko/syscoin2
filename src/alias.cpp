@@ -230,12 +230,6 @@ int64_t convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCod
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
 string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64_t &nFee, const unsigned int &nHeightToFind, vector<string>& rateList, int &precision)
 {
-	if(!AreBaseParamsConfigured())
-	{
-		if(fDebug)
-			LogPrintf("getCurrencyToSYSFromAlias() base params not configured\n");
-		return "1";
-	}
 	vector<unsigned char> vchName = vchFromString("SYS_RATES");
 	string currencyCodeToFind = stringFromVch(vchCurrency);
 	// check for alias existence in DB
@@ -767,10 +761,6 @@ bool GetValueOfAliasTxHash(const uint256 &txHash, vector<unsigned char>& vchValu
 
 bool GetTxOfAlias(const vector<unsigned char> &vchName,
 		CTransaction& tx) {
-	if(!AreBaseParamsConfigured())
-	{
-		return false;
-	}
 	vector<CAliasIndex> vtxPos;
 	if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
 		return false;
@@ -810,9 +800,6 @@ bool GetAliasAddress(const CTransaction& tx, std::string& strAddress) {
 void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	try
 	{
-		if(!AreBaseParamsConfigured())
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"chain params not set");
 		vector<unsigned char> vchName = vchFromValue(strName);
 		if (!paliasdb->ExistsAlias(vchName))
 			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
