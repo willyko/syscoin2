@@ -330,9 +330,7 @@ static CRegTestParams regTestParams;
 static CChainParams *pCurrentParams = 0;
 
 const CChainParams &Params() {
-	// SYSCOIN must do this because CSyscoinAddress relies on alias which relies on consensus
-    if(pCurrentParams == 0)
-		SelectParams(CBaseChainParams::MAIN);
+    assert(pCurrentParams);
     return *pCurrentParams;
 }
 

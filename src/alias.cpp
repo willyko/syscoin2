@@ -798,27 +798,37 @@ bool GetAliasAddress(const CTransaction& tx, std::string& strAddress) {
 }
 
 void GetAliasValue(const std::string& strName, std::string& strAddress) {
-	vector<unsigned char> vchName = vchFromValue(strName);
-	if (!paliasdb->ExistsAlias(vchName))
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
+	try
+	{
+		vector<unsigned char> vchName = vchFromValue(strName);
+		if (!paliasdb->ExistsAlias(vchName))
+			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
 
-	// check for alias existence in DB
-	vector<CAliasIndex> vtxPos;
-	if (!paliasdb->ReadAlias(vchName, vtxPos))
-		throw JSONRPCError(RPC_WALLET_ERROR,
-				"failed to read from alias DB");
-	if (vtxPos.size() < 1)
-		throw JSONRPCError(RPC_WALLET_ERROR, "no alias result returned");
+		// check for alias existence in DB
+		vector<CAliasIndex> vtxPos;
+		if (!paliasdb->ReadAlias(vchName, vtxPos))
+			throw JSONRPCError(RPC_WALLET_ERROR,
+					"failed to read from alias DB");
+		if (vtxPos.size() < 1)
+			throw JSONRPCError(RPC_WALLET_ERROR, "no alias result returned");
 
-	// get transaction pointed to by alias
-	uint256 blockHash;
-	CTransaction tx;
-	uint256 txHash = vtxPos.back().txHash;
-	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-		throw JSONRPCError(RPC_WALLET_ERROR,
-				"failed to read transaction from disk");
+		// get transaction pointed to by alias
+		uint256 blockHash;
+		CTransaction tx;
+		if(pCurrentParams == 0)
+			throw JSONRPCError(RPC_WALLET_ERROR,
+					"chain params not set");
+		uint256 txHash = vtxPos.back().txHash;
+		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
+			throw JSONRPCError(RPC_WALLET_ERROR,
+					"failed to read transaction from disk");
 
-	GetAliasAddress(tx, strAddress);	
+		GetAliasAddress(tx, strAddress);
+	}
+	catch(...)
+	{
+		return error("GetAliasValue() : could not read alias");
+	}
 }
 
 int IndexOfAliasOutput(const CTransaction& tx) {
