@@ -815,7 +815,7 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 		// get transaction pointed to by alias
 		uint256 blockHash;
 		CTransaction tx;
-		if(pCurrentParams == 0)
+		if(!AreBaseParamsConfigured())
 			throw JSONRPCError(RPC_WALLET_ERROR,
 					"chain params not set");
 		uint256 txHash = vtxPos.back().txHash;
