@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE (generate_200blocks)
 	  MilliSleep(100);
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  r = CallRPC("node2", "getinfo");
-	  timeoutCounter++
+	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE (generate_200blocks)
 	  MilliSleep(100);
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  r = CallRPC("node3", "getinfo");
-	  timeoutCounter++
+	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
