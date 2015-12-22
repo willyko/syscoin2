@@ -25,13 +25,12 @@ void SyscoinTestingSetup::StartNodes()
 void SyscoinTestingSetup::StopNodes()
 {
 	printf("Stopping all 3 nodes...\n");
-	MilliSleep(1000);
 	CallRPC("node1", "stop");
-	MilliSleep(1000);
+	MilliSleep(5000);
 	CallRPC("node2", "stop");
-	MilliSleep(1000);
+	MilliSleep(5000);
 	CallRPC("node3", "stop");
-	MilliSleep(1000);
+	MilliSleep(5000);
 }
 void SyscoinTestingSetup::StartNode(const string &dataDir)
 {
@@ -39,8 +38,8 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
 	string nodePath = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest");
     boost::thread t(runCommand, nodePath);
 	UniValue val;
-	printf("Launching %s, waiting 5 seconds before trying to ping...\n", dataDir.c_str());
-	MilliSleep(1000);
+	printf("Launching %s, waiting 3 seconds before trying to ping...\n", dataDir.c_str());
+	MilliSleep(3000);
 	while (val.isNull())
 	{
 		val = CallRPC(dataDir, "getinfo");
