@@ -67,10 +67,10 @@ SyscoinTestingSetup::~SyscoinTestingSetup()
 	CallRPC("node2", "stop");
 	CallRPC("node3", "stop");
 	MilliSleep(10000);
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest"))
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest"))
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest"))
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 }
