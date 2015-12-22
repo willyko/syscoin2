@@ -3,7 +3,12 @@
 #include <boost/test/unit_test.hpp>
 
 BOOST_FIXTURE_TEST_SUITE (syscoin_tests, SyscoinTestingSetup)
-
+BOOST_AUTO_TEST_CASE (start_nodes)
+{
+	StartNode("node1");
+	StartNode("node2");
+	StartNode("node3");
+}
 BOOST_AUTO_TEST_CASE (generate_200blocks)
 {
 	GenerateBlocks(200);
