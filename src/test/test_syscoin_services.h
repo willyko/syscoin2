@@ -13,6 +13,9 @@ struct SyscoinTestingSetup {
 	string CallExternal(string &cmd);
 	UniValue CallRPC(const string &dataDir, const string& commandWithArgs);
 	void StartNode(const string &dataDir);
+	void GenerateBlocks(int nBlocks);
+	void AliasNew(const string& aliasname, const string& aliasdata);
+	void AliasNewTooBig(const string& aliasname, const string& aliasdata);
 };
 
 #endif

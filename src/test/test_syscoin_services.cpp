@@ -8,6 +8,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
 
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
@@ -60,6 +61,74 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 	}
 	pclose(fp);
 	return response;
+}
+// generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
+// may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
+void SyscoinTestingSetup::GenerateBlocks(int nBlocks)
+{
+  int height, timeoutCounter;
+  CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks));
+  UniValue r;
+  r = CallRPC("node1", "getinfo");
+  height = find_value(r.get_obj(), "blocks").get_int();
+  BOOST_CHECK(height == nBlocks);
+  height = 0;
+  timeoutCounter = 0;
+  while(height != nBlocks)
+  {
+	  MilliSleep(100);
+	  r = CallRPC("node2", "getinfo");
+	  height = find_value(r.get_obj(), "blocks").get_int();
+	  timeoutCounter++;
+	  if(timeoutCounter > 100)
+		  break;
+  }
+  BOOST_CHECK(height == nBlocks);
+  height = 0;
+  timeoutCounter = 0;
+  while(height != nBlocks)
+  {
+	  MilliSleep(100);
+	  r = CallRPC("node3", "getinfo");
+	  height = find_value(r.get_obj(), "blocks").get_int();
+	  timeoutCounter++;
+	  if(timeoutCounter > 100)
+		  break;
+  }
+  BOOST_CHECK(height == nBlocks);
+  height = 0;
+  timeoutCounter = 0;
+}
+void SyscoinTestingSetup::AliasNew(const string& aliasname, const string& aliasdata)
+{
+	UniValue r;
+	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
+	BOOST_CHECK(!r.isNull());
+	GenerateBlocks(1);
+	r = CallRPC("node1", "aliasinfo " + aliasname);
+	BOOST_CHECK(!r.isNull());
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	r = CallRPC("node2", "aliasinfo " + aliasname);
+	BOOST_CHECK(!r.isNull());
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+	r = CallRPC("node3", "aliasinfo " + aliasname);
+	BOOST_CHECK(!r.isNull());
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+}
+void SyscoinTestingSetup::AliasNewTooBig(const string& aliasname, const string& aliasdata)
+{
+	UniValue r;
+	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
+	BOOST_CHECK(!r.isNull());
+	GenerateBlocks(1);
+	r = CallRPC("node1", "aliasinfo " + aliasname);
+	BOOST_CHECK(!r.isNull());
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
