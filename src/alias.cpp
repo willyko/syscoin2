@@ -801,12 +801,12 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	try
 	{
 		vector<unsigned char> vchName = vchFromValue(strName);
-		if (!paliasdb->ExistsAlias(vchName))
+		if (paliasdb && !paliasdb->ExistsAlias(vchName))
 			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPos;
-		if (!paliasdb->ReadAlias(vchName, vtxPos))
+		if (paliasdb && !paliasdb->ReadAlias(vchName, vtxPos))
 			throw JSONRPCError(RPC_WALLET_ERROR,
 					"failed to read from alias DB");
 		if (vtxPos.size() < 1)

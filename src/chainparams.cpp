@@ -134,7 +134,7 @@ public:
         pchMessageStart[1] = 0xbe;
         pchMessageStart[2] = 0xb4;
         pchMessageStart[3] = 0xd9;
-        vAlertPubKey = ParseHex("04a0a5a88b2cebf0d6a7d20214e6bd51c903645505f72d05d536c9f3b996ec428150931cc6e9943f8603f756907b8793d715cb3b4fcca2735110c324c98158f456");
+        vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
         nDefaultPort = 8369;
 		// SYSCOIN todo fix for now
 		nMaxTipAge = 0x7fffffff;

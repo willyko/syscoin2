@@ -41,13 +41,12 @@ extern bool fSendFreeTransactions;
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;
-// SYSCOIN change min fee variables 100x smaller fees than bitcoin
 //! -paytxfee will warn if called with a higher fee than this amount (in satoshis) per KB
-static const CAmount nHighTransactionFeeWarning = 10 * COIN;
+static const CAmount nHighTransactionFeeWarning = 0.01 * COIN;
 //! -mintxfee default
-static const CAmount DEFAULT_TRANSACTION_MINFEE = (1 * CENT);
+static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 //! -maxtxfee default
-static const CAmount DEFAULT_TRANSACTION_MAXFEE = 10 * COIN;
+static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 //! minimum change amount
 static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
@@ -199,8 +198,6 @@ public:
     {
         Init(NULL);
     }
-	// SYSCOIN tx with data and syscoin service version
-	CWalletTx(std::string txData);
     CWalletTx(const CWallet* pwalletIn)
     {
         Init(pwalletIn);

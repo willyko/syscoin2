@@ -1457,7 +1457,7 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, const Consensus::P
 // SYSCOIN check header auxpow proof of work
 bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params)
 {
-    if (block.nVersion.IsAuxpow() && block.nVersion.GetChainId() != params.nAuxpowChainId)
+    if (!block.nVersion.IsLegacy() && block.nVersion.GetChainId() != params.nAuxpowChainId)
         return error("%s : block does not have our chain ID"
                      " (got %d, expected %d, full nVersion %d)",
                      __func__, block.nVersion.GetChainId(),
@@ -1565,20 +1565,23 @@ bool ReadBlockHeaderFromDisk(CBlockHeader& block, const CBlockIndex* pindex, con
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     // SYSCOIN shade genesis, old sys snapshot block 700k
+	if(nHeight == 0)
+		return 2.5*COIN;
 	if(nHeight == 1)
 	{
 		std::string chain = ChainNameFromCommandLine();
 		if (chain == CBaseChainParams::MAIN)
 		{
-			// 2.1B / 21M ratio of supply is 100 @ block 700k of old syscoin = ~ 4.4M coins
-			return 4400000 * COIN;
+			// SYSCOIN snapshot for old chain based on block 700k
+			return 1406671 * COIN;
 		}
 	}
+	
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     if (halvings >= 64)
         return 0;
-	// SYSCOIN default 2.5 coins to start
-    CAmount nSubsidy = 2.5 * COIN;
+	// SYSCOIN default 8.4 coins to start
+    CAmount nSubsidy = 8.4 * COIN;
     // SYSCOIN Subsidy is cut in half approximately every 7 months.
     nSubsidy >>= halvings;
 
