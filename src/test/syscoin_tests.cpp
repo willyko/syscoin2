@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE (generate_200blocks)
   BOOST_CHECK(height == 200);
   height = 0;
   timeoutCounter = 0;
-  if(height != 200)
+  while(height != 200)
   {
 	  MilliSleep(100);
 	  height = find_value(r.get_obj(), "blocks").get_int();
