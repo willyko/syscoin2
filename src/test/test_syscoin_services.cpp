@@ -132,14 +132,19 @@ void SyscoinTestingSetup::AliasNewTooBig(const string& aliasname, const string& 
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
+	MilliSleep(1000);
 	CallRPC("node1", "stop");
+	MilliSleep(1000);
 	CallRPC("node2", "stop");
+	MilliSleep(1000);
 	CallRPC("node3", "stop");
-	MilliSleep(10000);
+	MilliSleep(1000);
 	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
+	MilliSleep(1000);
 	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
+	MilliSleep(1000);
 	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 }
