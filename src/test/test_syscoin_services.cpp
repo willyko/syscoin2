@@ -13,9 +13,25 @@
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
+	StartNodes();
+}
+void SyscoinTestingSetup::StartNodes()
+{
+	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
 	StartNode("node3");
+}
+void SyscoinTestingSetup::StopNodes()
+{
+	printf("Stopping all 3 nodes...\n");
+	MilliSleep(1000);
+	CallRPC("node1", "stop");
+	MilliSleep(1000);
+	CallRPC("node2", "stop");
+	MilliSleep(1000);
+	CallRPC("node3", "stop");
+	MilliSleep(1000);
 }
 void SyscoinTestingSetup::StartNode(const string &dataDir)
 {
@@ -24,7 +40,7 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
     boost::thread t(runCommand, nodePath);
 	UniValue val;
 	printf("Launching %s, waiting 5 seconds before trying to ping...\n", dataDir.c_str());
-	MilliSleep(5000);
+	MilliSleep(1000);
 	while (val.isNull())
 	{
 		val = CallRPC(dataDir, "getinfo");
@@ -138,13 +154,7 @@ void SyscoinTestingSetup::AliasNewTooBig(const string& aliasname, const string& 
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
-	MilliSleep(1000);
-	CallRPC("node1", "stop");
-	MilliSleep(1000);
-	CallRPC("node2", "stop");
-	MilliSleep(1000);
-	CallRPC("node3", "stop");
-	MilliSleep(1000);
+	StopNodes();
 	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
 	MilliSleep(1000);
