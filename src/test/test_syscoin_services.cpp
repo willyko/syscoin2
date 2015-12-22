@@ -21,17 +21,19 @@ void SyscoinTestingSetup::StartNodes()
 	StartNode("node1");
 	StartNode("node2");
 	StartNode("node3");
-	printf("Done!\n");
 }
 void SyscoinTestingSetup::StopNodes()
 {
-	printf("Stopping all 3 nodes...\n");
+	printf("Stopping node1..\n");
 	CallRPC("node1", "stop");
 	MilliSleep(5000);
+	printf("Stopping node2..\n");
 	CallRPC("node2", "stop");
 	MilliSleep(5000);
+	printf("Stopping node3..\n");
 	CallRPC("node3", "stop");
 	MilliSleep(5000);
+	printf("Done!\n");
 }
 void SyscoinTestingSetup::StartNode(const string &dataDir)
 {
