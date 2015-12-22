@@ -66,36 +66,44 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 // may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
 void SyscoinTestingSetup::GenerateBlocks(int nBlocks)
 {
-  int height, timeoutCounter;
-  CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks));
+  int height, oldheight, timeoutCounter;
   UniValue r;
   r = CallRPC("node1", "getinfo");
+  BOOST_CHECK(!r.isNull());
+  oldheight = find_value(r.get_obj(), "blocks").get_int();
+
+  r = CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks));
+  BOOST_CHECK(!r.isNull());
+  r = CallRPC("node1", "getinfo");
+  BOOST_CHECK(!r.isNull());
   height = find_value(r.get_obj(), "blocks").get_int();
-  BOOST_CHECK(height == nBlocks);
+  BOOST_CHECK(height == oldheight+nBlocks);
   height = 0;
   timeoutCounter = 0;
   while(height != nBlocks)
   {
 	  MilliSleep(100);
 	  r = CallRPC("node2", "getinfo");
+	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
-  BOOST_CHECK(height == nBlocks);
+  BOOST_CHECK(height == oldheight+nBlocks);
   height = 0;
   timeoutCounter = 0;
   while(height != nBlocks)
   {
 	  MilliSleep(100);
 	  r = CallRPC("node3", "getinfo");
+	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
-  BOOST_CHECK(height == nBlocks);
+  BOOST_CHECK(height == oldheight+nBlocks);
   height = 0;
   timeoutCounter = 0;
 }
@@ -103,7 +111,6 @@ void SyscoinTestingSetup::AliasNew(const string& aliasname, const string& aliasd
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
-	BOOST_CHECK(!r.isNull());
 	GenerateBlocks(1);
 	r = CallRPC("node1", "aliasinfo " + aliasname);
 	BOOST_CHECK(!r.isNull());
@@ -125,7 +132,6 @@ void SyscoinTestingSetup::AliasNewTooBig(const string& aliasname, const string& 
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
-	BOOST_CHECK(!r.isNull());
 	GenerateBlocks(1);
 	r = CallRPC("node1", "aliasinfo " + aliasname);
 	BOOST_CHECK(!r.isNull());
