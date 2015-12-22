@@ -1,10 +1,14 @@
 #include "test_syscoin_services.h"
 #include "utiltime.h"
+#include "util.h"
+
 
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/thread.hpp>
+
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
@@ -14,26 +18,34 @@ SyscoinTestingSetup::SyscoinTestingSetup()
 }
 void SyscoinTestingSetup::StartNode(const string &dataDir)
 {
-	string nodePath = string("../syscoind -datadir=") + dataDir + string(" -regtest");
-	string response = CallExternal(nodePath);
-	UniValue val = CallRPC(dataDir, "getinfo");
+    boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoind");
+	string nodePath = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest");
+    boost::thread t(runCommand, nodePath);
+	UniValue val;
+	LogPrintf("Launching %s, waiting 5 seconds before trying to ping...\n", dataDir.c_str());
+	MilliSleep(5000);
 	while (val.isNull())
 	{
-		MilliSleep(5000);
 		val = CallRPC(dataDir, "getinfo");
+		if(!val.isNull())
+			break;
+		LogPrintf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
+		MilliSleep(5000);
 	}
 }
 UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& commandWithArgs)
 {
 	UniValue val;
-	string path = string("../syscoin-cli -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
+	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
+	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
+	path += " 2<&1";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
 	return val;
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
-	FILE *fp = popen(cmd.c_str(), "r");
+	FILE *fp = popen(cmd.c_str(), "rt");
 	string response;
 	if (!fp)
 	{
@@ -41,13 +53,11 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 	}
 	while (!feof(fp))
 	{
-		char buffer[500];
-		// read in the line and make sure it was successful
-		if (fgets(buffer,500,fp) != NULL)
+		char buffer[512];
+		if (fgets(buffer,sizeof(buffer),fp) != NULL)
 		{
 			response += string(buffer);
 		}
-
 	}
 	pclose(fp);
 	return response;
@@ -57,7 +67,8 @@ SyscoinTestingSetup::~SyscoinTestingSetup()
 	CallRPC("node1", "stop");
 	CallRPC("node2", "stop");
 	CallRPC("node3", "stop");
-    boost::filesystem::remove_all(boost::filesystem::path("node1/regtest"));
-	boost::filesystem::remove_all(boost::filesystem::path("node2/regtest"));
-	boost::filesystem::remove_all(boost::filesystem::path("node3/regtest"));
+	MilliSleep(10000);
+    boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
+	boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
+	boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 }
