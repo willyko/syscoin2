@@ -13,6 +13,9 @@
 // SYSCOIN testing setup
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
+	StartNode("node1");
+	StartNode("node2");
+	StartNode("node3");
 }
 void SyscoinTestingSetup::StartNode(const string &dataDir)
 {
