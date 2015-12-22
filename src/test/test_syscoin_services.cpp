@@ -22,14 +22,14 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
 	string nodePath = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest");
     boost::thread t(runCommand, nodePath);
 	UniValue val;
-	LogPrintf("Launching %s, waiting 5 seconds before trying to ping...\n", dataDir.c_str());
+	printf("Launching %s, waiting 5 seconds before trying to ping...\n", dataDir.c_str());
 	MilliSleep(5000);
 	while (val.isNull())
 	{
 		val = CallRPC(dataDir, "getinfo");
 		if(!val.isNull())
 			break;
-		LogPrintf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
+		printf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
 		MilliSleep(5000);
 	}
 }
@@ -38,14 +38,13 @@ UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& comma
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
-	path += " 2<&1";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
 	return val;
 }
 std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 {
-	FILE *fp = popen(cmd.c_str(), "rt");
+	FILE *fp = popen(cmd.c_str(), "r");
 	string response;
 	if (!fp)
 	{
@@ -68,7 +67,10 @@ SyscoinTestingSetup::~SyscoinTestingSetup()
 	CallRPC("node2", "stop");
 	CallRPC("node3", "stop");
 	MilliSleep(10000);
-    boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
-	boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
-	boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest"))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest"))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest"))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 }
