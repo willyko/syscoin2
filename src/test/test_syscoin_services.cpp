@@ -21,6 +21,7 @@ void SyscoinTestingSetup::StartNodes()
 	StartNode("node1");
 	StartNode("node2");
 	StartNode("node3");
+	printf("Done!\n");
 }
 void SyscoinTestingSetup::StopNodes()
 {
@@ -48,6 +49,7 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
 		printf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
 		MilliSleep(5000);
 	}
+	printf("Done!\n");
 }
 UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& commandWithArgs)
 {
@@ -129,6 +131,8 @@ void SyscoinTestingSetup::AliasNew(const string& aliasname, const string& aliasd
 	GenerateBlocks(1);
 	r = CallRPC("node1", "aliasinfo " + aliasname);
 	BOOST_CHECK(!r.isNull());
+	printf("aliasinfo value %s\n", find_value(r.get_obj(), "value").get_str().c_str());
+	printf("aliasdata %s\n", aliasdata.c_str());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
