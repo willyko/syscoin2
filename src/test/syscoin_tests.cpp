@@ -8,7 +8,7 @@ BOOST_AUTO_TEST_CASE (generate_sysrates_alias)
 {
 	GenerateBlocks(200);
 	string data = "{\"rates\":[{\"currency\":\"USD\",\"rate\":2690.1,\"precision\":2},{\"currency\":\"EUR\",\"rate\":2695.2,\"precision\":2},{\"currency\":\"GBP\",\"rate\":2697.3,\"precision\":2},{\"currency\":\"CAD\",\"rate\":2698.0,\"precision\":2},{\"currency\":\"BTC\",\"rate\":100000.0,\"precision\":8},{\"currency\":\"SYS\",\"rate\":1.0,\"precision\":2}]}";
-	//AliasNew("SYS_RATES", data);
+	AliasNew("SYS_RATES", data);
 }
 /*BOOST_AUTO_TEST_CASE (generate_big_alias)
 {
