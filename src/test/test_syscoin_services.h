@@ -13,6 +13,7 @@ void StopNodes();
 void GenerateBlocks(int nBlocks);
 string CallExternal(string &cmd);
 void AliasNew(const string& node, const string& aliasname, const string& aliasdata);
+void AliasUpdate(const string& node, const string& aliasname, const string& aliasdata);
 // SYSCOIN testing setup
 struct SyscoinTestingSetup {
     SyscoinTestingSetup();

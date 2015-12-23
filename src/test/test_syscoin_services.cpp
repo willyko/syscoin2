@@ -169,6 +169,36 @@ void AliasNew(const string& node, const string& aliasname, const string& aliasda
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 }
+void AliasUpdate(const string& node, const string& aliasname, const string& aliasdata)
+{
+	string otherNode1 = "node2";
+	string otherNode2 = "node3";
+	if(node == "node2")
+	{
+		otherNode1 = "node3";
+		otherNode2 = "node1";
+	}
+	else if(node == "node3")
+	{
+		otherNode1 = "node1";
+		otherNode2 = "node2";
+	}
+	UniValue r;
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasupdate " + aliasname + " " + aliasdata));
+	GenerateBlocks(1);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "aliasinfo " + aliasname));
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "aliasinfo " + aliasname));
+	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+}
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
 }

@@ -34,19 +34,11 @@ BOOST_AUTO_TEST_CASE (generate_big_aliasname)
 	AliasNew("node1", goodname, "a");
 	//BOOST_CHECK_THROW(CallRPC("node1", "aliasnew " + badname + " 3d"), runtime_error);
 }
-BOOST_AUTO_TEST_CASE (generate_sendtoalias)
+BOOST_AUTO_TEST_CASE (generate_aliasupdate)
 {
-	GenerateBlocks(50);
-	AliasNew("node2", "node2", "sampledata");
-	AliasNew("node3", "node3", "sampledata");
-	/*BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node2 1.15"), runtime_error);
-	BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node3 1.231"), runtime_error);
-	GenerateBlocks(10);
-	UniValue r;
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
-	BOOST_CHECK_EQUAL(AmountFromValue(find_value(r.get_obj(), "blocks")), 1.15*COIN);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
-	BOOST_CHECK_EQUAL(AmountFromValue(find_value(r.get_obj(), "blocks")), 1.231*COIN);*/
+	// update an alias that isn't yours
+	BOOST_CHECK_THROW(CallRPC("node2", "aliasupdate jag test"), runtime_error);
+	AliasUpdate("node1", "jag", "changed data");
 
 }
 BOOST_AUTO_TEST_SUITE_END ()
