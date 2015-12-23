@@ -13,6 +13,7 @@
 // SYSCOIN testing setup
 void StartNodes()
 {
+	StopNodes();
 	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
@@ -22,13 +23,13 @@ void StopNodes()
 {
 	printf("Stopping node1..\n");
 	CallRPC("node1", "stop");
-	MilliSleep(5000);
+	MilliSleep(3000);
 	printf("Stopping node2..\n");
 	CallRPC("node2", "stop");
-	MilliSleep(5000);
+	MilliSleep(3000);
 	printf("Stopping node3..\n");
 	CallRPC("node3", "stop");
-	MilliSleep(5000);
+	MilliSleep(3000);
 	printf("Done!\n");
 }
 void StartNode(const string &dataDir)
