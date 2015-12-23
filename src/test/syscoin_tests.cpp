@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE (generate_sendtoalias)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
 	BOOST_CHECK_EQUAL(AmountFromValue(find_value(r.get_obj(), "blocks")), 1.15*COIN);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
-	BOOST_CHECK_EQUAL(AmountFromValue(find_value(r.get_obj(), "blocks")), 1.231*COIN);
+	BOOST_CHECK_EQUAL(AmountFromValue(find_value(r.get_obj(), "blocks")), 1.232*COIN);
 
 }
 BOOST_AUTO_TEST_SUITE_END ()
