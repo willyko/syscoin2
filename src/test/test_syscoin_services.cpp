@@ -139,20 +139,32 @@ void GenerateBlocks(int nBlocks)
   height = 0;
   timeoutCounter = 0;
 }
-void AliasNew(const string& aliasname, const string& aliasdata)
+void AliasNew(const string& node, const string& aliasname, const string& aliasdata)
 {
+	const string& otherNode1 = "node2";
+	const string& otherNode2 = "node3";
+	if(node == "node2")
+	{
+		otherNode1 = "node3";
+		otherNode2 = "node1";
+	}
+	else if(node == "node3")
+	{
+		otherNode1 = "node1";
+		otherNode2 = "node2";
+	}
 	UniValue r;
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasnew " + aliasname + " " + aliasdata));
 	GenerateBlocks(1);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo " + aliasname));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo " + aliasname));
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo " + aliasname));
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
