@@ -143,13 +143,13 @@ void AliasNew(const string& aliasname, const string& aliasdata)
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 }
-void AliasNewTooBig(const string& aliasname, const string& aliasdata)
+void AliasNewDataTooBig(const string& aliasname, const string& aliasdata)
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
 	GenerateBlocks(1);
 	r = CallRPC("node1", "aliasinfo " + aliasname);
-	BOOST_CHECK(!r.isNull());
+	BOOST_CHECK(r.isNull());
 }
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
