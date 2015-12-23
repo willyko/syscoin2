@@ -83,13 +83,13 @@ void GenerateBlocks(int nBlocks)
 {
   int height, oldheight, timeoutCounter;
   UniValue r;
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"), runtime_error);
+  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
   BOOST_CHECK(!r.isNull());
   oldheight = find_value(r.get_obj(), "blocks").get_int();
 
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks)), runtime_error);
+  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks)));
   BOOST_CHECK(!r.isNull());
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"), runtime_error);
+  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
   BOOST_CHECK(!r.isNull());
   height = find_value(r.get_obj(), "blocks").get_int();
   BOOST_CHECK(height == oldheight+nBlocks);
@@ -98,7 +98,7 @@ void GenerateBlocks(int nBlocks)
   while(height != nBlocks)
   {
 	  MilliSleep(100);
-	  BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"), runtime_error);
+	  BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
 	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
@@ -111,7 +111,7 @@ void GenerateBlocks(int nBlocks)
   while(height != nBlocks)
   {
 	  MilliSleep(100);
-	  BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"), runtime_error);
+	  BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
 	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
@@ -125,19 +125,19 @@ void GenerateBlocks(int nBlocks)
 void AliasNew(const string& aliasname, const string& aliasdata)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata), runtime_error);
+	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata));
 	GenerateBlocks(1);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo " + aliasname), runtime_error);
+	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo " + aliasname));
 	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo " + aliasname), runtime_error);
+	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo " + aliasname));
 	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
-	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo " + aliasname), runtime_error);
+	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo " + aliasname));
 	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
