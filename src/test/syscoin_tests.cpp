@@ -38,6 +38,6 @@ BOOST_AUTO_TEST_CASE (generate_aliasupdate)
 {
 	// update an alias that isn't yours
 	BOOST_CHECK_THROW(CallRPC("node2", "aliasupdate jag test"), runtime_error);
-	AliasUpdate("node1", "jag", "changed data");
+	//AliasUpdate("node1", "jag", "changed data");
 }
 BOOST_AUTO_TEST_SUITE_END ()
