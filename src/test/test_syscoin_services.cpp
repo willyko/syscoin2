@@ -11,18 +11,14 @@
 #include <boost/lexical_cast.hpp>
 
 // SYSCOIN testing setup
-SyscoinTestingSetup::SyscoinTestingSetup()
-{
-	StartNodes();
-}
-void SyscoinTestingSetup::StartNodes()
+void StartNodes()
 {
 	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
 	StartNode("node3");
 }
-void SyscoinTestingSetup::StopNodes()
+void StopNodes()
 {
 	printf("Stopping node1..\n");
 	CallRPC("node1", "stop");
@@ -35,7 +31,7 @@ void SyscoinTestingSetup::StopNodes()
 	MilliSleep(5000);
 	printf("Done!\n");
 }
-void SyscoinTestingSetup::StartNode(const string &dataDir)
+void StartNode(const string &dataDir)
 {
     boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoind");
 	string nodePath = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest");
@@ -53,7 +49,7 @@ void SyscoinTestingSetup::StartNode(const string &dataDir)
 	}
 	printf("Done!\n");
 }
-UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& commandWithArgs)
+UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 {
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
@@ -62,7 +58,7 @@ UniValue SyscoinTestingSetup::CallRPC(const string &dataDir, const string& comma
     val.read(rawJson);
 	return val;
 }
-std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
+std::string CallExternal(std::string &cmd)
 {
 	FILE *fp = popen(cmd.c_str(), "r");
 	string response;
@@ -83,7 +79,7 @@ std::string SyscoinTestingSetup::CallExternal(std::string &cmd)
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
 // may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
-void SyscoinTestingSetup::GenerateBlocks(int nBlocks)
+void GenerateBlocks(int nBlocks)
 {
   int height, oldheight, timeoutCounter;
   UniValue r;
@@ -126,7 +122,7 @@ void SyscoinTestingSetup::GenerateBlocks(int nBlocks)
   height = 0;
   timeoutCounter = 0;
 }
-void SyscoinTestingSetup::AliasNew(const string& aliasname, const string& aliasdata)
+void AliasNew(const string& aliasname, const string& aliasdata)
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
@@ -147,13 +143,17 @@ void SyscoinTestingSetup::AliasNew(const string& aliasname, const string& aliasd
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 }
-void SyscoinTestingSetup::AliasNewTooBig(const string& aliasname, const string& aliasdata)
+void AliasNewTooBig(const string& aliasname, const string& aliasdata)
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
 	GenerateBlocks(1);
 	r = CallRPC("node1", "aliasinfo " + aliasname);
 	BOOST_CHECK(!r.isNull());
+}
+SyscoinTestingSetup::SyscoinTestingSetup()
+{
+	StartNodes();
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
