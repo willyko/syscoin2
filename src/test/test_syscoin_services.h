@@ -8,6 +8,8 @@ using namespace std;
  */
 UniValue CallRPC(const string &dataDir, const string& commandWithArgs);
 void StartNode(const string &dataDir);
+void Begin();
+void End();
 void StartNodes();
 void StopNodes();
 void GenerateBlocks(int nBlocks);

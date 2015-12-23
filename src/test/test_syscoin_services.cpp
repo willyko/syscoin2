@@ -11,9 +11,37 @@
 #include <boost/lexical_cast.hpp>
 
 // SYSCOIN testing setup
+void End()
+{
+	try
+	{
+		StopNodes();
+	}
+	catch(...)
+	{
+	}
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
+	MilliSleep(1000);
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
+	MilliSleep(1000);
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
+}
+void Begin()
+{
+	try
+	{
+		End();
+	}
+	catch(...)
+	{
+	}
+	StartNodes();
+}
 void StartNodes()
 {
-	StopNodes();
 	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
@@ -160,17 +188,9 @@ BasicSyscoinTestingSetup::~BasicSyscoinTestingSetup()
 }
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
-	StartNodes();
+	Begin();
 }
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
-	StopNodes();
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
-	MilliSleep(1000);
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
-	MilliSleep(1000);
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
+	End();
 }
