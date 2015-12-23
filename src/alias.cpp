@@ -495,7 +495,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			// validate inputs
 			if (vvchArgs[1].size() > MAX_ID_LENGTH)
 				return error("aliasactivate tx with rand too big");
-			if (vvchArgs[2].size() > MAX_NAME_LENGTH)
+			if (vvchArgs[2].size() > MAX_VALUE_LENGTH)
 				return error("aliasactivate tx with value too long");
 			break;
 
@@ -952,9 +952,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 		throw runtime_error(
 				"aliasnew <aliasname> <value>\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 255 chars max.\n"
-						"Perform a first update after an aliasnew reservation.\n"
-						"Note that the first update will go into a block 12 blocks after the aliasnew, at the soonest."
+						"<value> alias value, 1023 chars max.\n"
+						"Perform a first update after an aliasnew reservation."
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromValue(params[0]);
