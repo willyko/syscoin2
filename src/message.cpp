@@ -541,7 +541,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	vector<unsigned char> vchMySubject = vchFromValue(params[0]);
     if (vchMySubject.size() > MAX_NAME_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Subject cannot exceed 255 bytes!");
+        throw runtime_error("Subject cannot exceed 255 bytes!");
 
 	vector<unsigned char> vchMyMessage = vchFromValue(params[1]);
 	vector<unsigned char> vchFromAliasOrPubKey = vchFromValue(params[2]);
@@ -562,8 +562,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		CPubKey PubKey(vchPubKeyByte);
 		CSyscoinAddress PublicAddress(PubKey.GetID());
 		if(!PublicAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid alias, no public key found! (fromalias)");	
+			throw runtime_error("Invalid alias, no public key found! (fromalias)");	
 		fromAddress = PublicAddress;
 		vchFromPubKey = vchFromAliasOrPubKey;
 	}
@@ -571,18 +570,15 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	{
 		fromAddress = CSyscoinAddress(strFromAddress);
 		if (!fromAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid syscoin address of fromalias");
+			throw runtime_error("Invalid syscoin address of fromalias");
 		if (!fromAddress.isAlias)
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Must be a valid alias (fromalias)");
+			throw runtime_error("Must be a valid alias (fromalias)");
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPosFrom;
 		if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxPosFrom))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read alias from alias DB (fromalias)");
+			throw runtime_error("failed to read alias from alias DB (fromalias)");
 		if (vtxPosFrom.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned (fromalias)");
+			throw runtime_error("no result returned (fromalias)");
 		CAliasIndex msgFromAlias = vtxPosFrom.back();
 		vchFromPubKey = msgFromAlias.vchPubKey;
 
@@ -595,8 +591,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		CPubKey PubKey(vchPubKeyByte);
 		CSyscoinAddress PublicAddress(PubKey.GetID());
 		if(!PublicAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid alias, no public key found! (toalias)");	
+			throw runtime_error("Invalid alias, no public key found! (toalias)");	
 		toAddress = PublicAddress;
 		vchToPubKey = vchToAliasOrPubKey;
 	}
@@ -604,18 +599,15 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	{
 		toAddress = CSyscoinAddress(strToAddress);
 		if (!toAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid syscoin address of toalias");
+			throw runtime_error("Invalid syscoin address of toalias");
 		if (!toAddress.isAlias)
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Must be a valid alias (toalias)");
+			throw runtime_error("Must be a valid alias (toalias)");
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPosTo;
 		if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxPosTo))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read alias from alias DB (toalias)");
+			throw runtime_error("failed to read alias from alias DB (toalias)");
 		if (vtxPosTo.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned (toalias)");
+			throw runtime_error("no result returned (toalias)");
 		CAliasIndex msgToAlias = vtxPosTo.back();
 		vchToPubKey = msgToAlias.vchPubKey;
 
@@ -624,8 +616,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	
 
 	if (!IsMine(*pwalletMain, fromAddress.Get()))
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"fromalias must be yours");
+		throw runtime_error("fromalias must be yours");
 
 
     // gather inputs
@@ -646,17 +637,17 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	string strCipherTextTo;
 	if(!EncryptMessage(vchToPubKey, vchMyMessage, strCipherTextTo))
 	{
-		throw JSONRPCError(RPC_WALLET_ERROR, "Could not encrypt message data for receiver!");
+		throw runtime_error("Could not encrypt message data for receiver!");
 	}
 	string strCipherTextFrom;
 	if(!EncryptMessage(vchFromPubKey, vchMyMessage, strCipherTextFrom))
 	{
-		throw JSONRPCError(RPC_WALLET_ERROR, "Could not encrypt message data for sender!");
+		throw runtime_error("Could not encrypt message data for sender!");
 	}
     if (strCipherTextFrom.size() > MAX_MSG_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Message data cannot exceed 16383 bytes!");
+        throw runtime_error("Message data cannot exceed 16383 bytes!");
     if (strCipherTextTo.size() > MAX_MSG_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Message data cannot exceed 16383 bytes!");
+        throw runtime_error("Message data cannot exceed 16383 bytes!");
 
     // build message UniValue
     CMessage newMessage;
@@ -710,7 +701,7 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
     vector<unsigned char> vchValue;
 
 	if (!pmessagedb->ReadMessage(vchRand, vtxPos) || vtxPos.empty())
-		  throw JSONRPCError(RPC_WALLET_ERROR, "failed to read from message DB");
+		 throw runtime_error("failed to read from message DB");
 	CMessage ca = vtxPos.back();
 
     string sHeight = strprintf("%llu", ca.nHeight);
@@ -882,8 +873,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
     {
         vector<CMessage> vtxPos;
         if (!pmessagedb->ReadMessage(vchMessage, vtxPos) || vtxPos.empty())
-            throw JSONRPCError(RPC_WALLET_ERROR,
-                    "failed to read from message DB");
+            throw runtime_error("failed to read from message DB");
 
         CMessage txPos2;
         uint256 txHash;

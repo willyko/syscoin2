@@ -1288,19 +1288,16 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchAlias = vchFromValue(params[0]);
 	CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
 	if (!aliasAddress.IsValid())
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"Invalid syscoin address");
+		throw runtime_error("Invalid syscoin address");
 	if (!aliasAddress.isAlias)
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"Arbiter must be a valid alias");
+		throw runtime_error("Arbiter must be a valid alias");
 
 	// check for alias existence in DB
 	vector<CAliasIndex> vtxPos;
 	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
-		throw JSONRPCError(RPC_WALLET_ERROR,
-				"failed to read alias from alias DB");
+		throw runtime_error("failed to read alias from alias DB");
 	if (vtxPos.size() < 1)
-		throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+		throw runtime_error("no result returned");
 	CAliasIndex alias = vtxPos.back();
 	vector<unsigned char> vchCat = vchFromValue(params[1]);
 	vector<unsigned char> vchTitle = vchFromValue(params[2]);
@@ -1318,7 +1315,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	nPrice = atof(params[4].get_str().c_str());
 	if(nPrice <= 0)
 	{
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "offer price must be greater than 0!");
+		throw runtime_error("offer price must be greater than 0!");
 	}
 	vchDesc = vchFromValue(params[5]);
 	if(vchCat.size() < 1)
@@ -1331,7 +1328,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
         throw runtime_error("offer title cannot exceed 255 bytes!");
     // 1Kbyte offer desc. maxlen
 	if (vchDesc.size() > MAX_VALUE_LENGTH)
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "offer description cannot exceed 1023 bytes!");
+		throw runtime_error("offer description cannot exceed 1023 bytes!");
 	const CWalletTx *wtxCertIn;
 	CCert theCert;
 	if(params.size() >= 8)
@@ -1353,7 +1350,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 			if (IsCertMine(txCert) && wtxCertIn != NULL) 
 				nQty = 1;
 			else
-				throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot sell this certificate, it is not yours!");
+				throw runtime_error("Cannot sell this certificate, it is not yours!");
 			// check the offer links in the cert, can't sell a cert thats already linked to another offer
 			if(!theCert.vchOfferLink.empty())
 			{
@@ -1363,7 +1360,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 				if (GetTxOfOffer(*pofferdb, theCert.vchOfferLink, myOffer, txMyOffer))
 				{
 					string strError = strprintf("Cannot sell this certificate, it is already linked to offer: %s", stringFromVch(theCert.vchOfferLink).c_str());
-					throw JSONRPCError(RPC_INVALID_PARAMETER, strError);
+					throw runtime_error(strError);
 				}
 		    }
 		}
@@ -1378,7 +1375,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	int precision;
 	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
 	{
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "Could not find this currency code in the SYS_RATES alias!\n");
+		throw runtime_error("Could not find this currency code in the SYS_RATES alias!\n");
 	}
 	float minPrice = 1/pow(10,precision);
 	float price = nPrice;
@@ -1497,7 +1494,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	int commissionInteger = atoi(params[1].get_str().c_str());
 	if(commissionInteger < 0 || commissionInteger > 255)
 	{
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "commission must positive and less than 256!");
+		throw runtime_error("commission must positive and less than 256!");
 	}
 	
 	if(params.size() >= 3)
@@ -1508,7 +1505,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		{
 			// 1kbyte offer desc. maxlen
 			if (vchDesc.size() > MAX_VALUE_LENGTH)
-				throw JSONRPCError(RPC_INVALID_PARAMETER, "offer description cannot exceed 1023 bytes!");
+				throw runtime_error("offer description cannot exceed 1023 bytes!");
 		}
 		else
 		{
@@ -1963,7 +1960,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (params.size() >= 6) vchDesc = vchFromValue(params[5]);
 	if(price <= 0)
 	{
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "offer price must be greater than 0!");
+		throw runtime_error("offer price must be greater than 0!");
 	}
 	
 	if(vchCat.size() < 1)
@@ -1976,7 +1973,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
         throw runtime_error("offer title cannot exceed 255 bytes!");
     // 1kbyte offer desc. maxlen
 	if (vchDesc.size() > MAX_VALUE_LENGTH)
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "offer description cannot exceed 1023 bytes!");
+		throw runtime_error("offer description cannot exceed 1023 bytes!");
 
 	// this is a syscoind txn
 	CWalletTx wtx;
@@ -2065,11 +2062,11 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			if (!IsCertMine(txCert) || wtxCertIn == NULL) 
 			{
-				throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot update this offer because this certificate is not yours!");
+				throw runtime_error("Cannot update this offer because this certificate is not yours!");
 			}			
 		}
 		else
-			throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot find this certificate!");
+			throw runtime_error("Cannot find this certificate!");
 		
 		if(!theCert.vchOfferLink.empty() && theCert.vchOfferLink != vchOffer)
 		{
@@ -2079,7 +2076,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 			if (GetTxOfOffer(*pofferdb, theCert.vchOfferLink, myOffer, txMyOffer))
 			{
 				string strError = strprintf("Cannot update this offer because this certificate is linked to another offer: %s", stringFromVch(theCert.vchOfferLink).c_str());
-				throw JSONRPCError(RPC_INVALID_PARAMETER, strError);
+				throw runtime_error(strError);
 			}
 		}
 
@@ -2129,11 +2126,11 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 				wtxCertOldIn = pwalletMain->GetWalletTx(txOldCert.GetHash());
 				if (!IsCertMine(txOldCert) || wtxCertOldIn == NULL)
 				{
-					throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot update this offer because old certificate is not yours!");
+					throw runtime_error("Cannot update this offer because old certificate is not yours!");
 				}			
 			}
 			else
-				throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot find old certificate!");
+				throw runtime_error("Cannot find old certificate!");
 			// create CERTUPDTE txn keys
 			CScript scriptOldPubKey, scriptPubKeyOld;
 			pwalletMain->GetKeyFromPool(newDefaultKey);
@@ -2269,7 +2266,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		refundAddr = CSyscoinAddress(stringFromVch(vchRefundAddress));
 	}
     if (vchMessage.size() <= 0 && vchPubKey.empty())
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "offeraccept message data cannot be empty!");
+        throw runtime_error("offeraccept message data cannot be empty!");
 
 
 	// this is a syscoin txn
@@ -2382,7 +2379,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 
 	if (vchMessage.size() > MAX_VALUE_LENGTH)
-		throw JSONRPCError(RPC_INVALID_PARAMETER, "offeraccept message length cannot exceed 1023 bytes!");
+		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 	if(!theOffer.vchCert.empty())
 	{
 		CTransaction txCert;
@@ -2391,7 +2388,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		if (!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 		{
 			// make sure its in your wallet (you control this cert)		
-			throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot purchase this certificate, it may be expired!");
+			throw runtime_error("Cannot purchase this certificate, it may be expired!");
 			
 		}
 		nQty = 1;
@@ -2503,17 +2500,16 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	{
 		vector<COffer> vtxPos;
 		if (!pofferdb->ReadOffer(vchOffer, vtxPos))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read from offer DB");
+			throw runtime_error("failed to read from offer DB");
 		if (vtxPos.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+			throw runtime_error("no result returned");
 
         // get transaction pointed to by offer
         CTransaction tx;
         uint256 blockHash;
         uint256 txHash = vtxPos.back().txHash;
         if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-            throw JSONRPCError(RPC_WALLET_ERROR, "failed to read transaction from disk");
+            throw runtime_error("failed to read transaction from disk");
 
         COffer theOffer = vtxPos.back();
 
@@ -2530,7 +2526,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	        uint256 blockHashA;
 	        uint256 txHashA= ca.txHash;
 	        if (!GetTransaction(txHashA, txA, Params().GetConsensus(), blockHashA, true))
-	            throw JSONRPCError(RPC_WALLET_ERROR, "failed to read transaction from disk");
+	            throw runtime_error("failed to read transaction from disk");
 			string sTime;
 			CBlockIndex *pindex = chainActive[ca.nHeight];
 			if (pindex) {
@@ -2956,8 +2952,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 		vector<COffer> vtxPos;
 		//COfferDB dbOffer("r");
 		if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read from offer DB");
+			throw runtime_error("failed to read from offer DB");
 
 		COffer txPos2;
 		uint256 txHash;
@@ -3044,7 +3039,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchOffer;
 	vector<pair<vector<unsigned char>, COffer> > offerScan;
 	if (!pofferdb->ScanOffers(vchOffer, 100000000, offerScan))
-		throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+		throw runtime_error("scan failed");
 
     // regexp
     using namespace boost::xpressive;
@@ -3149,7 +3144,7 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 
 	vector<pair<vector<unsigned char>, COffer> > offerScan;
 	if (!pofferdb->ScanOffers(vchOffer, nMax, offerScan))
-		throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+		throw runtime_error("scan failed");
 
 	pair<vector<unsigned char>, COffer> pairScan;
 	BOOST_FOREACH(pairScan, offerScan) {

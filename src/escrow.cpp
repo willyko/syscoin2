@@ -576,21 +576,17 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	string strArbiter = params[3].get_str();
 	CSyscoinAddress arbiterAddress = CSyscoinAddress(strArbiter);
 	if (!arbiterAddress.IsValid())
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"Invalid arbiter syscoin address");
+		throw runtime_error("Invalid arbiter syscoin address");
 	if (!arbiterAddress.isAlias)
-		throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"Arbiter must be a valid alias");
+		throw runtime_error("Arbiter must be a valid alias");
 	if(IsMine(*pwalletMain, arbiterAddress.Get()))
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-				"Arbiter alias must not be yours");
+		throw runtime_error("Arbiter alias must not be yours");
 	// check for alias existence in DB
 	vector<CAliasIndex> vtxPos;
 	if (!paliasdb->ReadAlias(vchFromString(arbiterAddress.aliasName), vtxPos))
-		throw JSONRPCError(RPC_WALLET_ERROR,
-				"failed to read alias from alias DB");
+		throw runtime_error("failed to read alias from alias DB");
 	if (vtxPos.size() < 1)
-		throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+		throw runtime_error("no result returned");
 	CAliasIndex xferAlias = vtxPos.back();
 	std::vector<unsigned char> vchArbiterPubKey = xferAlias.vchPubKey;
 
@@ -608,7 +604,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     if (vchMessage.size() <= 0)
         vchMessage = vchFromString("ESCROW");
     if (vchMessage.size() > MAX_VALUE_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "offeraccept message data cannot exceed 1023 bytes!");
+        throw runtime_error("offeraccept message data cannot exceed 1023 bytes!");
 	COffer theOffer;
 	CTransaction txOffer;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
@@ -771,7 +767,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
-		throw JSONRPCError(RPC_WALLET_ERROR, "failed to escrow transaction");
+		throw runtime_error("failed to escrow transaction");
 
 	std::vector<unsigned char> vchArbiterKeyByte;
     boost::algorithm::unhex(escrow.vchArbiterKey.begin(), escrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
@@ -820,10 +816,10 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		// try arbiter
 		CKeyID keyID;
 		if (!arbiterAddress.GetKeyID(keyID))
-			throw JSONRPCError(RPC_TYPE_ERROR, "Arbiter address does not refer to a key");
+			throw runtime_error("Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw JSONRPCError(RPC_WALLET_ERROR, "Private key for arbiter address " + arbiterAddress.ToString() + " is not known");
+			throw runtime_error("Private key for arbiter address " + arbiterAddress.ToString() + " is not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
 	catch(...)
@@ -832,10 +828,10 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		// otherwise try buyer
 		CKeyID keyID;
 		if (!buyerAddress.GetKeyID(keyID))
-			throw JSONRPCError(RPC_TYPE_ERROR, "Buyer or Arbiter address does not refer to a key");
+			throw runtime_error("Buyer or Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw JSONRPCError(RPC_WALLET_ERROR, "Buyer or Arbiter private keys not known");
+			throw runtime_error("Buyer or Arbiter private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
 
@@ -948,7 +944,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
-		throw JSONRPCError(RPC_WALLET_ERROR, "failed to read escrow transaction");
+		throw runtime_error("failed to read escrow transaction");
 
  	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
@@ -1026,10 +1022,10 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		throw runtime_error("Seller address is invalid!");
 
 	if (!sellerAddress.GetKeyID(keyID))
-		throw JSONRPCError(RPC_TYPE_ERROR, "Seller address does not refer to a key");
+		throw runtime_error("Seller address does not refer to a key");
 	CKey vchSecret;
 	if (!pwalletMain->GetKey(keyID, vchSecret))
-		throw JSONRPCError(RPC_WALLET_ERROR, "Private key for seller address " + sellerAddress.ToString() + " is not known");
+		throw runtime_error("Private key for seller address " + sellerAddress.ToString() + " is not known");
 	string strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	if(!foundSellerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the seller!");	
@@ -1238,7 +1234,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
-		throw JSONRPCError(RPC_WALLET_ERROR, "failed to escrow transaction");
+		throw runtime_error("failed to escrow transaction");
 
 	std::vector<unsigned char> vchArbiterKeyByte;
     boost::algorithm::unhex(escrow.vchArbiterKey.begin(), escrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
@@ -1286,10 +1282,10 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		// try arbiter
 		CKeyID keyID;
 		if (!arbiterAddress.GetKeyID(keyID))
-			throw JSONRPCError(RPC_TYPE_ERROR, "Arbiter address does not refer to a key");
+			throw runtime_error(Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw JSONRPCError(RPC_WALLET_ERROR, "Private key for arbiter address " + arbiterAddress.ToString() + " is not known");
+			throw runtime_error("Private key for arbiter address " + arbiterAddress.ToString() + " is not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
 	catch(...)
@@ -1298,10 +1294,10 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		// otherwise try seller
 		CKeyID keyID;
 		if (!sellerAddress.GetKeyID(keyID))
-			throw JSONRPCError(RPC_TYPE_ERROR, "Seller or Arbiter address does not refer to a key");
+			throw runtime_error("Seller or Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw JSONRPCError(RPC_WALLET_ERROR, "Seller or Arbiter private keys not known");
+			throw runtime_error("Seller or Arbiter private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
 	// refunds buyer from escrow
@@ -1412,7 +1408,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
-		throw JSONRPCError(RPC_WALLET_ERROR, "failed to read escrow transaction");
+		throw runtime_error("failed to read escrow transaction");
 
  	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
@@ -1491,10 +1487,10 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 		throw runtime_error("Buyer address is invalid!");
 
 	if (!buyerAddress.GetKeyID(keyID))
-		throw JSONRPCError(RPC_TYPE_ERROR, "Buyer address does not refer to a key");
+		throw runtime_error("Buyer address does not refer to a key");
 	CKey vchSecret;
 	if (!pwalletMain->GetKey(keyID, vchSecret))
-		throw JSONRPCError(RPC_WALLET_ERROR, "Private key for buyer address " + buyerAddress.ToString() + " is not known");
+		throw runtime_error("Private key for buyer address " + buyerAddress.ToString() + " is not known");
 	string strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	if(!foundBuyerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the buyer!");
@@ -1555,7 +1551,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
     vector<unsigned char> vchValue;
 
 	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
-		  throw JSONRPCError(RPC_WALLET_ERROR, "failed to read from escrow DB");
+		  throw runtime_error("failed to read from escrow DB");
 	CEscrow ca = vtxPos.back();
 	
 	
@@ -1690,8 +1686,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
     {
         vector<CEscrow> vtxPos;
         if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
-            throw JSONRPCError(RPC_WALLET_ERROR,
-                    "failed to read from escrow DB");
+            throw runtime_error("failed to read from escrow DB");
 
         CEscrow txPos2;
         uint256 txHash;
@@ -1777,7 +1772,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
     vector<unsigned char> vchEscrow;
     vector<pair<vector<unsigned char>, CEscrow> > escrowScan;
     if (!pescrowdb->ScanEscrows(vchEscrow, 100000000, escrowScan))
-        throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+        throw runtime_error("scan failed");
 
     pair<vector<unsigned char>, CEscrow> pairScan;
     BOOST_FOREACH(pairScan, escrowScan) {
@@ -1865,7 +1860,7 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 
     vector<pair<vector<unsigned char>, CEscrow> > escrowScan;
     if (!pescrowdb->ScanEscrows(vchEscrow, nMax, escrowScan))
-        throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+        throw runtime_error("scan failed");
 
     pair<vector<unsigned char>, CEscrow> pairScan;
     BOOST_FOREACH(pairScan, escrowScan) {

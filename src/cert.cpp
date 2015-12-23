@@ -643,7 +643,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
         throw runtime_error("certificate title cannot exceed 255 bytes!");
 
     if (vchData.size() > MAX_VALUE_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "certificate data cannot exceed 1023 bytes!");
+        throw runtime_error("certificate data cannot exceed 1023 bytes!");
 	if(params.size() >= 3)
 	{
 		bPrivate = atoi(params[2].get_str().c_str()) == 1? true: false;
@@ -677,7 +677,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 		string strCipherText;
 		if(!EncryptMessage(vchFromString(strPubKey), vchData, strCipherText))
 		{
-			throw JSONRPCError(RPC_WALLET_ERROR, "Could not encrypt certificate data!");
+			throw runtime_error("Could not encrypt certificate data!");
 		}
 		vchData = vchFromString(strCipherText);
 	}
@@ -740,7 +740,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
         vchData = vchFromString(" ");
 
     if (vchData.size() > MAX_VALUE_LENGTH)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "certificate data cannot exceed 1023 bytes!");
+        throw runtime_error("certificate data cannot exceed 1023 bytes!");
 
     // this is a syscoind txn
     CWalletTx wtx;
@@ -793,7 +793,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 		string strCipherText;
 		if(!EncryptMessage(vchFromString(strPubKey), vchData, strCipherText))
 		{
-			throw JSONRPCError(RPC_WALLET_ERROR, "Could not encrypt certificate data!");
+			throw runtime_error("Could not encrypt certificate data!");
 		}
 		vchData = vchFromString(strCipherText);
 	}
@@ -849,34 +849,30 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		xferKey  = CPubKey(vchPubKeyByte);
 		if(!xferKey.IsValid())
 		{
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid public key");
+			throw runtime_error("Invalid public key");
 		}
 	}
 	catch(...)
 	{
 		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
 		if (!myAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid syscoin address");
+			throw runtime_error("Invalid syscoin address");
 		if (!myAddress.isAlias)
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"You must transfer to a valid alias");
+			throw runtime_error("You must transfer to a valid alias");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxAliasPos;
 		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read alias from alias DB");
+			throw runtime_error("failed to read alias from alias DB");
 		if (vtxAliasPos.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+			throw runtime_error("no result returned");
 		CAliasIndex xferAlias = vtxAliasPos.back();
 		vchPubKey = xferAlias.vchPubKey;
 		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
 		xferKey = CPubKey(vchPubKeyByte);
 		if(!xferKey.IsValid())
 		{
-			throw JSONRPCError(RPC_WALLET_ERROR, "Invalid transfer public key");
+			throw runtime_error("Invalid transfer public key");
 		}
 	}
 
@@ -927,12 +923,12 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		// decrypt using old key
 		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
 		{
-			throw JSONRPCError(RPC_WALLET_ERROR, "Could not decrypt certificate data!");
+			throw runtime_error("Could not decrypt certificate data!");
 		}
 		// encrypt using new key
 		if(!EncryptMessage(vchPubKey, vchFromString(strData), strCipherText))
 		{
-			throw JSONRPCError(RPC_WALLET_ERROR, "Could not encrypt certificate data!");
+			throw runtime_error("Could not encrypt certificate data!");
 		}
 		theCert.vchData = vchFromString(strCipherText);
 	}	
@@ -950,7 +946,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		if (GetTxOfOffer(*pofferdb, theCert.vchOfferLink, myOffer, txMyOffer))
 		{
 			string strError = strprintf("Cannot transfer this certificate, it is linked to offer: %s", stringFromVch(theCert.vchOfferLink).c_str());
-			throw JSONRPCError(RPC_INVALID_PARAMETER, strError);
+			throw runtime_error(strError);
 		}
    }
 	theCert.nHeight = chainActive.Tip()->nHeight;
@@ -993,12 +989,11 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
     vector<unsigned char> vchValue;
 
 	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-		  throw JSONRPCError(RPC_WALLET_ERROR, "failed to read from cert DB");
+		throw runtime_error("failed to read from cert DB");
 	CCert ca = vtxPos.back();
 	uint256 blockHash;
 	if (!GetTransaction(ca.txHash, tx, Params().GetConsensus(), blockHash, true))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read transaction from disk");   
+		throw runtime_error("failed to read transaction from disk");   
     string sHeight = strprintf("%llu", ca.nHeight);
     oCert.push_back(Pair("cert", stringFromVch(vchCert)));
     oCert.push_back(Pair("txid", ca.txHash.GetHex()));
@@ -1163,8 +1158,7 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
     {
         vector<CCert> vtxPos;
         if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-            throw JSONRPCError(RPC_WALLET_ERROR,
-                    "failed to read from cert DB");
+            throw runtime_error("failed to read from cert DB");
 
         CCert txPos2;
         uint256 txHash;
@@ -1258,7 +1252,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     vector<unsigned char> vchCert;
     vector<pair<vector<unsigned char>, CCert> > certScan;
     if (!pcertdb->ScanCerts(vchCert, 100000000, certScan))
-        throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+        throw runtime_error("scan failed");
     // regexp
     using namespace boost::xpressive;
     smatch certparts;
@@ -1360,7 +1354,7 @@ UniValue certscan(const UniValue& params, bool fHelp) {
 
     vector<pair<vector<unsigned char>, CCert> > certScan;
     if (!pcertdb->ScanCerts(vchCert, nMax, certScan))
-        throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+        throw runtime_error("scan failed");
 
     pair<vector<unsigned char>, CCert> pairScan;
     BOOST_FOREACH(pairScan, certScan) {

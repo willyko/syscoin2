@@ -802,30 +802,27 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	{
 		vector<unsigned char> vchName = vchFromValue(strName);
 		if (paliasdb && !paliasdb->ExistsAlias(vchName))
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Alias not found");
+			throw runtime_error("Alias not found");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPos;
 		if (paliasdb && !paliasdb->ReadAlias(vchName, vtxPos))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read from alias DB");
+			throw runtime_error("failed to read from alias DB");
 		if (vtxPos.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no alias result returned");
+			throw runtime_error("no alias result returned");
 
 		// get transaction pointed to by alias
 		uint256 blockHash;
 		CTransaction tx;
 		uint256 txHash = vtxPos.back().txHash;
 		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read transaction from disk");
+			throw runtime_error("failed to read transaction from disk");
 
 		GetAliasAddress(tx, strAddress);
 	}
 	catch(...)
 	{
-		throw JSONRPCError(RPC_WALLET_ERROR,
-					"could not read alias");
+		throw runtime_error("could not read alias");
 	}
 }
 
@@ -1042,19 +1039,16 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		string strAddress = params[2].get_str();
 		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
 		if (!myAddress.IsValid())
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"Invalid syscoin address");
+			throw runtime_error("Invalid syscoin address");
 		if (!myAddress.isAlias)
-			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-					"You must transfer an alias to another alias");
+			throw runtime_error("You must transfer an alias to another alias");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPos;
 		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxPos))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read transfer to alias from alias DB");
+			throw runtime_error("failed to read transfer to alias from alias DB");
 		if (vtxPos.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+			throw runtime_error("no result returned");
 		CAliasIndex xferAlias = vtxPos.back();
 		strPubKey = stringFromVch(xferAlias.vchPubKey);
 		scriptPubKeyOrig = GetScriptForDestination(myAddress.Get());
@@ -1221,17 +1215,15 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPos;
 		if (!paliasdb->ReadAlias(vchName, vtxPos))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read from alias DB");
+			throw runtime_error("failed to read from alias DB");
 		if (vtxPos.size() < 1)
-			throw JSONRPCError(RPC_WALLET_ERROR, "no result returned");
+			throw runtime_error("no result returned");
 
 		// get transaction pointed to by alias
 		uint256 blockHash;
 		uint256 txHash = vtxPos.back().txHash;
 		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read transaction from disk");
+			throw runtime_error("failed to read transaction from disk");
 
 		UniValue oName(UniValue::VOBJ);
 		vector<unsigned char> vchValue;
@@ -1288,8 +1280,7 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 	{
 		vector<CAliasIndex> vtxPos;
 		if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
-			throw JSONRPCError(RPC_WALLET_ERROR,
-					"failed to read from alias DB");
+			throw runtime_error("failed to read from alias DB");
 
 		CAliasIndex txPos2;
 		uint256 txHash;
@@ -1384,7 +1375,7 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchName;
 	vector<pair<vector<unsigned char>, CAliasIndex> > nameScan;
 	if (!paliasdb->ScanNames(vchName, 100000000, nameScan))
-		throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+		throw runtime_error("scan failed");
 	// regexp
 	using namespace boost::xpressive;
 	smatch nameparts;
@@ -1481,7 +1472,7 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 
 	vector<pair<vector<unsigned char>, CAliasIndex> > nameScan;
 	if (!paliasdb->ScanNames(vchName, nMax, nameScan))
-		throw JSONRPCError(RPC_WALLET_ERROR, "scan failed");
+		throw runtime_error(scan failed");
 
 	pair<vector<unsigned char>, CAliasIndex> pairScan;
 	BOOST_FOREACH(pairScan, nameScan) {
