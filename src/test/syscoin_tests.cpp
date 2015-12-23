@@ -3,6 +3,8 @@
 #include <boost/test/unit_test.hpp>
 BOOST_GLOBAL_FIXTURE( SyscoinTestingSetup )
 
+BOOST_FIXTURE_TEST_SUITE (syscoin_tests)
+
 BOOST_AUTO_TEST_CASE (generate_sysrates_alias)
 {
 	GenerateBlocks(200);
@@ -19,3 +21,4 @@ BOOST_AUTO_TEST_CASE (generate_big_alias)
 	AliasNew("jag", gooddata);
 	AliasNewTooBig("jag", baddata);
 }
+BOOST_AUTO_TEST_SUITE_END ()
