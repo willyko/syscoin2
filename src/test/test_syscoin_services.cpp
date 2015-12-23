@@ -93,9 +93,14 @@ std::string CallExternal(std::string &cmd)
 	{
 		char buffer[512];
 		printf("fgets\n");
-		if (fgets(buffer,sizeof(buffer),fp) != NULL)
+		try{
+			if (fgets(buffer,512,fp) != NULL)
+			{
+				response += string(buffer);
+			}
+		}
+		catch(...)
 		{
-			response += string(buffer);
 		}
 	}
 	pclose(fp);
