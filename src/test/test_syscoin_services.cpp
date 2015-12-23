@@ -81,7 +81,7 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 }
 std::string CallExternal(std::string &cmd)
 {
-    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
     if (!pipe) return "ERROR";
     char buffer[128];
     std::string result = "";
