@@ -965,6 +965,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
 	if (vchValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias value cannot exceed 1023 bytes!");
+	if (vchName.size() > MAX_NAME_LENGTH)
+		throw runtime_error("alias name cannot exceed 255 bytes!");
 
 
 	CSyscoinAddress myAddress = CSyscoinAddress(stringFromVch(vchName));
@@ -1024,7 +1026,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 				"aliasupdate <aliasname> <value> [<toalias>]\n"
 						"Update and possibly transfer an alias.\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 255 chars max.\n"
+						"<value> alias value, 1023 chars max.\n"
                         "<toalias> receiver syscoin alias, if transferring alias.\n"
 						+ HelpRequiringPassphrase());
 
