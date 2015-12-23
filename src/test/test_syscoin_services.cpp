@@ -81,22 +81,22 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 }
 std::string CallExternal(std::string &cmd)
 {
+	printf("open\n");
 	FILE *fp = popen(cmd.c_str(), "r");
 	string response;
 	if (!fp)
 	{
 		return response;
 	}
-	char buffer[512];
-	size_t nret;
-	size_t nmemb = 512;
-
-	while (nmemb == (nret = fread(buffer, sizeof *buffer, 1, fp))) {
-		response += string(buffer);
-	}
-
-	if (nret) {
-		response += string(buffer);
+	printf("while\n");
+	while (!feof(fp))
+	{
+		char buffer[512];
+		printf("fgets\n");
+		if (fgets(buffer,sizeof(buffer),fp) != NULL)
+		{
+			response += string(buffer);
+		}
 	}
 	pclose(fp);
 	return response;
