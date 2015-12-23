@@ -88,19 +88,12 @@ std::string CallExternal(std::string &cmd)
 	{
 		return response;
 	}
-	printf("while\n");
 	while (!feof(fp))
 	{
 		char buffer[512];
-		printf("fgets\n");
-		try{
-			if (fgets(buffer,512,fp) != NULL)
-			{
-				response += string(buffer);
-			}
-		}
-		catch(...)
+		if (fgets(buffer,sizeof(buffer),fp) != NULL)
 		{
+			response += string(buffer);
 		}
 	}
 	pclose(fp);
