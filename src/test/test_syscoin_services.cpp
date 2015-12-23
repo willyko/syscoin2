@@ -73,7 +73,6 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
-	path += " 2>&1";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
 	if(val.isNull())
