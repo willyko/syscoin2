@@ -54,7 +54,6 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
-	path += " 2>&1";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
 	return val;
@@ -148,9 +147,7 @@ void AliasNewDataTooBig(const string& aliasname, const string& aliasdata)
 {
 	UniValue r;
 	r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata);
-	GenerateBlocks(1);
-	r = CallRPC("node1", "aliasinfo " + aliasname);
-	BOOST_CHECK(r.isNull());
+	BOOST_CHECK(r.empty());
 }
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
