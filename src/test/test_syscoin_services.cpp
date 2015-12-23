@@ -73,7 +73,6 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
-	path += " 2>&-";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
 	if(val.isNull())
@@ -88,13 +87,16 @@ std::string CallExternal(std::string &cmd)
 	{
 		return response;
 	}
-	while (!feof(fp))
-	{
-		char buffer[512];
-		if (fgets(buffer,sizeof(buffer),fp) != NULL)
-		{
-			response += string(buffer);
-		}
+	char buffer[512];
+	size_t nret;
+	size_t nmemb = 512;
+
+	while (nmemb == (nret = fread(buffer, sizeof *buffer, 1, fp))) {
+		response += string(buffer);
+	}
+
+	if (nret) {
+		response += string(buffer);
 	}
 	pclose(fp);
 	return response;
