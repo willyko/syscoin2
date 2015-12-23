@@ -1721,7 +1721,9 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() != 2)
@@ -1800,7 +1802,9 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() != 1)
@@ -1874,7 +1878,9 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 
 UniValue offerwhitelist(const UniValue& params, bool fHelp) {
@@ -2165,7 +2171,9 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
 
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 
 UniValue offerrefund(const UniValue& params, bool fHelp) {

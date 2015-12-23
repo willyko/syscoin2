@@ -1013,7 +1013,9 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	// send the tranasction
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 
 UniValue aliasupdate(const UniValue& params, bool fHelp) {
@@ -1101,7 +1103,9 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
-	return wtx.GetHash().GetHex();
+	UniValue res(UniValue::VARR);
+	res.push_back(wtx.GetHash().GetHex());
+	return res;
 }
 
 UniValue aliaslist(const UniValue& params, bool fHelp) {

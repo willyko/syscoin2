@@ -916,7 +916,9 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
-	return wtx.GetHash().GetHex();
+	UniValue ret(UniValue::VARR);
+	ret.push_back(wtx.GetHash().GetHex());
+	return ret;
 }
 UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 1)
@@ -1190,7 +1192,9 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
-	return wtx.GetHash().GetHex();
+	UniValue ret(UniValue::VARR);
+	ret.push_back(wtx.GetHash().GetHex());
+	return ret;
 }
 UniValue escrowrefund(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 1)
@@ -1376,7 +1380,9 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
-	return wtx.GetHash().GetHex();
+	UniValue ret(UniValue::VARR);
+	ret.push_back(wtx.GetHash().GetHex());
+	return ret;
 }
 UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 1)

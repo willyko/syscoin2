@@ -21,13 +21,28 @@ void StartNodes()
 void StopNodes()
 {
 	printf("Stopping node1..\n");
-	CallRPC("node1", "stop");
+	try{
+		CallRPC("node1", "stop");
+	}
+	catch(const runtime_error& error)
+	{
+	}	
 	MilliSleep(3000);
 	printf("Stopping node2..\n");
-	CallRPC("node2", "stop");
+	try{
+		CallRPC("node2", "stop");
+	}
+	catch(const runtime_error& error)
+	{
+	}	
 	MilliSleep(3000);
 	printf("Stopping node3..\n");
-	CallRPC("node3", "stop");
+	try{
+		CallRPC("node3", "stop");
+	}
+	catch(const runtime_error& error)
+	{
+	}	
 	MilliSleep(3000);
 	printf("Done!\n");
 }
@@ -36,16 +51,20 @@ void StartNode(const string &dataDir)
     boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoind");
 	string nodePath = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest");
     boost::thread t(runCommand, nodePath);
-	UniValue val;
 	printf("Launching %s, waiting 3 seconds before trying to ping...\n", dataDir.c_str());
 	MilliSleep(3000);
-	while (val.isNull())
+	while (1)
 	{
-		val = CallRPC(dataDir, "getinfo");
-		if(!val.isNull())
-			break;
-		printf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
-		MilliSleep(5000);
+		try{
+			CallRPC(dataDir, "getinfo");
+		}
+		catch(const runtime_error& error)
+		{
+			printf("Waiting for %s to come online, trying again in 5 seconds...\n", dataDir.c_str());
+			MilliSleep(5000);
+			continue;
+		}
+		break;
 	}
 	printf("Done!\n");
 }
@@ -54,8 +73,11 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	UniValue val;
 	boost::filesystem::path fpath = boost::filesystem::system_complete("../syscoin-cli");
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
+	path += " 2>&1";
 	string rawJson = CallExternal(path);
     val.read(rawJson);
+	if(val.isNull())
+		throw runtime_error("Could not parse rpc results");
 	return val;
 }
 std::string CallExternal(std::string &cmd)
@@ -81,44 +103,39 @@ std::string CallExternal(std::string &cmd)
 // may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
 void GenerateBlocks(int nBlocks)
 {
-  int height, oldheight, timeoutCounter;
+  int height, newHeight, timeoutCounter;
   UniValue r;
   BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
-  BOOST_CHECK(!r.isNull());
-  oldheight = find_value(r.get_obj(), "blocks").get_int();
+  newHeight = find_value(r.get_obj(), "blocks").get_int() + nBlocks;
 
   BOOST_CHECK_NO_THROW(r = CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks)));
-  BOOST_CHECK(!r.isNull());
   BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
-  BOOST_CHECK(!r.isNull());
   height = find_value(r.get_obj(), "blocks").get_int();
-  BOOST_CHECK(height == oldheight+nBlocks);
+  BOOST_CHECK(height == newHeight);
   height = 0;
   timeoutCounter = 0;
-  while(height != nBlocks)
+  while(height != newHeight)
   {
 	  MilliSleep(100);
 	  BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
-	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
-  BOOST_CHECK(height == oldheight+nBlocks);
+  BOOST_CHECK(height == newHeight);
   height = 0;
   timeoutCounter = 0;
-  while(height != nBlocks)
+  while(height != newHeight)
   {
 	  MilliSleep(100);
 	  BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
-	  BOOST_CHECK(!r.isNull());
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
 		  break;
   }
-  BOOST_CHECK(height == oldheight+nBlocks);
+  BOOST_CHECK(height == newHeight);
   height = 0;
   timeoutCounter = 0;
 }
@@ -128,17 +145,14 @@ void AliasNew(const string& aliasname, const string& aliasdata)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew " + aliasname + " " + aliasdata));
 	GenerateBlocks(1);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo " + aliasname));
-	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo " + aliasname));
-	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo " + aliasname));
-	BOOST_CHECK(!r.isNull());
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
