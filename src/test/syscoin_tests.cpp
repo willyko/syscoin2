@@ -39,8 +39,8 @@ BOOST_AUTO_TEST_CASE (generate_sendtoalias)
 	GenerateBlocks(50);
 	AliasNew("node2", "node2", "sampledata");
 	AliasNew("node3", "node3", "sampledata");
-	BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node2 1.15"));
-	BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node3 1.231"));
+	BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node2 1.15"), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node1", "sendtoaddress node3 1.231"), runtime_error);
 	GenerateBlocks(10);
 	UniValue r;
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
