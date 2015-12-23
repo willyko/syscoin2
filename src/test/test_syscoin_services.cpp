@@ -3,7 +3,7 @@
 #include "util.h"
 
 
-
+#include <memory>
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -81,23 +81,15 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 }
 std::string CallExternal(std::string &cmd)
 {
-	printf("open\n");
-	FILE *fp = popen(cmd.c_str(), "r");
-	string response;
-	if (!fp)
-	{
-		return response;
-	}
-	while (!feof(fp))
-	{
-		char buffer[512];
-		if (fgets(buffer,sizeof(buffer),fp) != NULL)
-		{
-			response += string(buffer);
-		}
-	}
-	pclose(fp);
-	return response;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != NULL)
+            result += buffer;
+    }
+    return result;
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
 // may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
