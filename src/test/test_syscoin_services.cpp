@@ -13,7 +13,6 @@
 // SYSCOIN testing setup
 void StartNodes()
 {
-	StopNodes();
 	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
