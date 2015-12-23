@@ -19,5 +19,8 @@ struct SyscoinTestingSetup {
     SyscoinTestingSetup();
     ~SyscoinTestingSetup();
 };
-
+struct BasicSyscoinTestingSetup {
+    BasicSyscoinTestingSetup();
+    ~BasicSyscoinTestingSetup();
+};
 #endif

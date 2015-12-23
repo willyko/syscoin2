@@ -3,7 +3,7 @@
 #include <boost/test/unit_test.hpp>
 BOOST_GLOBAL_FIXTURE( SyscoinTestingSetup )
 
-BOOST_FIXTURE_TEST_SUITE (syscoin_tests)
+BOOST_FIXTURE_TEST_SUITE (syscoin_tests, BasicSyscoinTestingSetup)
 
 BOOST_AUTO_TEST_CASE (generate_sysrates_alias)
 {

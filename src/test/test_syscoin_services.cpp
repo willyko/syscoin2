@@ -151,6 +151,12 @@ void AliasNewTooBig(const string& aliasname, const string& aliasdata)
 	r = CallRPC("node1", "aliasinfo " + aliasname);
 	BOOST_CHECK(!r.isNull());
 }
+BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
+{
+}
+BasicSyscoinTestingSetup::~BasicSyscoinTestingSetup()
+{
+}
 SyscoinTestingSetup::SyscoinTestingSetup()
 {
 	StartNodes();
