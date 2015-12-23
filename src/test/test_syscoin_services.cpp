@@ -141,8 +141,8 @@ void GenerateBlocks(int nBlocks)
 }
 void AliasNew(const string& node, const string& aliasname, const string& aliasdata)
 {
-	const string& otherNode1 = "node2";
-	const string& otherNode2 = "node3";
+	string otherNode1 = "node2";
+	string otherNode2 = "node3";
 	if(node == "node2")
 	{
 		otherNode1 = "node3";
