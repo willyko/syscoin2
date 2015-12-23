@@ -75,11 +75,10 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
 	string rawJson = CallExternal(path);
     val.read(rawJson);
-	
+	printf("rawJson %s isnull? %d\n", rawJson.c_str(), val.isNull()? 1: 0);
 	if(val.isNull())
 		throw runtime_error("Could not parse rpc results");
-	else
-		printf("rawJson %s rpc val %s, isnull? %d\n", rawJson.c_str(), val.get_str().c_str(), val.isNull()? 1: 0);
+	printf("no null\n");
 	return val;
 }
 std::string CallExternal(std::string &cmd)
