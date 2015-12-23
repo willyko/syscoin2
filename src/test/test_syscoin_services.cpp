@@ -75,6 +75,7 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 	string path = fpath.string() + string(" -datadir=") + dataDir + string(" -regtest ") + commandWithArgs;
 	string rawJson = CallExternal(path);
     val.read(rawJson);
+	printf("rpc val %s, isnull? %d\n", val.get_str().c_str(), val.isNull()? 1: 0);
 	if(val.isNull())
 		throw runtime_error("Could not parse rpc results");
 	return val;
