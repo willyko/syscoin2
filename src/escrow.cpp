@@ -1282,7 +1282,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		// try arbiter
 		CKeyID keyID;
 		if (!arbiterAddress.GetKeyID(keyID))
-			throw runtime_error(Arbiter address does not refer to a key");
+			throw runtime_error("Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
 			throw runtime_error("Private key for arbiter address " + arbiterAddress.ToString() + " is not known");
