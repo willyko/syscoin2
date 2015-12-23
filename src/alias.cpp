@@ -1472,7 +1472,7 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 
 	vector<pair<vector<unsigned char>, CAliasIndex> > nameScan;
 	if (!paliasdb->ScanNames(vchName, nMax, nameScan))
-		throw runtime_error(scan failed");
+		throw runtime_error("scan failed");
 
 	pair<vector<unsigned char>, CAliasIndex> pairScan;
 	BOOST_FOREACH(pairScan, nameScan) {
