@@ -101,10 +101,13 @@ std::string CallExternal(std::string &cmd)
     if (!pipe) return "ERROR";
     char buffer[128];
     std::string result = "";
-    while (fsize(pipe.get()) > 0 && !feof(pipe.get())) {
-        if (fgets(buffer, 128, pipe.get()) != NULL)
-            result += buffer;
-    }
+	if(fsize(pipe.get()) > 0)
+	{
+		while (!feof(pipe.get())) {
+			if (fgets(buffer, 128, pipe.get()) != NULL)
+				result += buffer;
+		}
+	}
     return result;
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
