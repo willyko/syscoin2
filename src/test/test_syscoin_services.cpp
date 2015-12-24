@@ -79,11 +79,16 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 		throw runtime_error("Could not parse rpc results");
 	return val;
 }
+void safe_fclose(FILE* file)
+{
+      if (file)
+         BOOST_VERIFY(0 == fclose(file));
+}
 std::string CallExternal(std::string &cmd)
 {
 	cmd += " > cmdoutput.log";
 	runCommand(cmd);
-    boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), pclose);
+    boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
     if (!pipe) return "ERROR";
     char buffer[128];
     std::string result = "";
