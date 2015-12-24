@@ -91,6 +91,8 @@ std::string CallExternal(std::string &cmd)
         if (fgets(buffer, 128, pipe.get()) != NULL)
             result += buffer;
     }
+	if(boost::filesystem::exists("cmdoutput.log"))
+		boost::filesystem::remove("cmdoutput.log");
     return result;
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
