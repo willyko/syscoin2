@@ -82,7 +82,7 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 std::string CallExternal(std::string &cmd)
 {
 	cmd += " < cmdoutput.log";
-	runCommand(cmd)
+	runCommand(cmd);
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), pclose);
     if (!pipe) return "ERROR";
     char buffer[128];
