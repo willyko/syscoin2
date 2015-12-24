@@ -93,10 +93,16 @@ void safe_fclose(FILE* file)
 	if(boost::filesystem::exists("cmdoutput.log"))
 		boost::filesystem::remove("cmdoutput.log");
 }
+int runSysCommand(const std::string& strCommand)
+{
+    int nErr = ::system(strCommand.c_str());
+	return nErr;
+}
 std::string CallExternal(std::string &cmd)
 {
 	cmd += " > cmdoutput.log";
-	runCommand(cmd);
+	if(runSysCommand(cmd))
+		return string("ERROR");
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
     if (!pipe) return "ERROR";
     char buffer[128];
