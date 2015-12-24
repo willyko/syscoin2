@@ -100,7 +100,7 @@ int runSysCommand(const std::string& strCommand)
 }
 std::string CallExternal(std::string &cmd)
 {
-	cmd += " > cmdoutput.log";
+	cmd += " > cmdoutput.log 2>&1";
 	if(runSysCommand(cmd))
 		return string("ERROR");
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
