@@ -83,7 +83,7 @@ std::string CallExternal(std::string &cmd)
 {
 	cmd += " < cmdoutput.log";
 	runCommand(cmd)
-    std::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), pclose);
+    boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), pclose);
     if (!pipe) return "ERROR";
     char buffer[128];
     std::string result = "";
