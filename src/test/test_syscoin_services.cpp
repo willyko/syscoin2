@@ -79,6 +79,13 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs)
 		throw runtime_error("Could not parse rpc results");
 	return val;
 }
+int fsize(FILE *fp){
+    int prev=ftell(fp);
+    fseek(fp, 0L, SEEK_END);
+    int sz=ftell(fp);
+    fseek(fp,prev,SEEK_SET); //go back to where we were
+    return sz;
+}
 void safe_fclose(FILE* file)
 {
       if (file)
@@ -92,10 +99,9 @@ std::string CallExternal(std::string &cmd)
 	runCommand(cmd);
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
     if (!pipe) return "ERROR";
-	int len = lseek(pipe.get(), 0, SEEK_END)+1;
     char buffer[128];
     std::string result = "";
-    while (len > 0 && !feof(pipe.get())) {
+    while (fsize(pipe.get()) > 0 && !feof(pipe.get())) {
         if (fgets(buffer, 128, pipe.get()) != NULL)
             result += buffer;
     }
