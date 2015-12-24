@@ -83,6 +83,8 @@ void safe_fclose(FILE* file)
 {
       if (file)
          BOOST_VERIFY(0 == fclose(file));
+	if(boost::filesystem::exists("cmdoutput.log"))
+		boost::filesystem::remove("cmdoutput.log");
 }
 std::string CallExternal(std::string &cmd)
 {
@@ -90,14 +92,13 @@ std::string CallExternal(std::string &cmd)
 	runCommand(cmd);
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
     if (!pipe) return "ERROR";
+	int len = lseek(pipe.get(), 0, SEEK_END)+1;
     char buffer[128];
     std::string result = "";
-    while (!feof(pipe.get())) {
+    while (len > 0 && !feof(pipe.get())) {
         if (fgets(buffer, 128, pipe.get()) != NULL)
             result += buffer;
     }
-	if(boost::filesystem::exists("cmdoutput.log"))
-		boost::filesystem::remove("cmdoutput.log");
     return result;
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
