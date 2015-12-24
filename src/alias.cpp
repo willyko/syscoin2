@@ -61,7 +61,7 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 	return nQty;
 
 }
-bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
+bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type)
 {
 	LOCK(mempool.cs);
 	for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
@@ -70,129 +70,23 @@ bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type)
         const CTransaction& tx = mi->GetTx();	
 		if (tx.IsCoinBase() || !CheckFinalTx(tx))
 			continue;
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
 		if(IsAliasOp(type))
-		{
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			
-			if(DecodeAliasTx(tx, op, nOut, vvch, -1)) {
-				if(op == type)
-				{
-					string vchToFindStr = stringFromVch(vchToFind);
-					string vvchFirstStr = stringFromVch(vvch[0]);
-					if(vvchFirstStr == vchToFindStr)
-					{
-						return true;
-					}
-					if(vvch.size() > 1)
-					{
-						string vvchSecondStr = HexStr(vvch[1]);
-						if(vvchSecondStr == vchToFindStr)
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-		else if(IsOfferOp(type))
-		{
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			
-			if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
-				if(op == type)
-				{
-					string vchToFindStr = stringFromVch(vchToFind);
-					string vvchFirstStr = stringFromVch(vvch[0]);
-					if(vvchFirstStr == vchToFindStr)
-					{
-						return true;
-					}
-					if(vvch.size() > 1)
-					{
-						string vvchSecondStr = HexStr(vvch[1]);
-						if(vvchSecondStr == vchToFindStr)
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
+			DecodeAliasTx(tx, op, nOut, vvch, -1);
+		else if(IsOfferOp(type))		
+			DecodeOfferTx(tx, op, nOut, vvch, -1);
 		else if(IsCertOp(type))
-		{
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			
-			if(DecodeCertTx(tx, op, nOut, vvch, -1)) {
-				if(op == type)
-				{
-					string vchToFindStr = stringFromVch(vchToFind);
-					string vvchFirstStr = stringFromVch(vvch[0]);
-					if(vvchFirstStr == vchToFindStr)
-					{
-						return true;
-					}
-					if(vvch.size() > 1)
-					{
-						string vvchSecondStr = HexStr(vvch[1]);
-						if(vvchSecondStr == vchToFindStr)
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-		else if(IsEscrowOp(type))
-		{
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			
-			if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) {
-				if(op == type)
-				{
-					string vchToFindStr = stringFromVch(vchToFind);
-					string vvchFirstStr = stringFromVch(vvch[0]);
-					if(vvchFirstStr == vchToFindStr)
-					{
-						return true;
-					}
-					if(vvch.size() > 1)
-					{
-						string vvchSecondStr = HexStr(vvch[1]);
-						if(vvchSecondStr == vchToFindStr)
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
+			DecodeCertTx(tx, op, nOut, vvch, -1);
+		else if(IsEscrowOp(type))	
+			DecodeEscrowTx(tx, op, nOut, vvch, -1);
 		else if(IsMessageOp(type))
+			DecodeMessageTx(tx, op, nOut, vvch, -1);
+		if(op == type)
 		{
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			
-			if(DecodeMessageTx(tx, op, nOut, vvch, -1)) {
-				if(op == type)
-				{
-					string vchToFindStr = stringFromVch(vchToFind);
-					string vvchFirstStr = stringFromVch(vvch[0]);
-					if(vvchFirstStr == vchToFindStr)
-					{
-						return true;
-					}
-					if(vvch.size() > 1)
-					{
-						string vvchSecondStr = HexStr(vvch[1]);
-						if(vvchSecondStr == vchToFindStr)
-						{
-							return true;
-						}
-					}
-				}
+			if(vchToFind == vvch[0])
+			{
+				return true;
 			}
 		}
 	}
@@ -269,52 +163,48 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	}
 
 
-	vector<unsigned char> vchValue;
-	int nHeight;
 	bool found = false;
-	uint256 hash;
-	if (GetValueOfAliasTxHash(txHash, vchValue, hash, nHeight)) {
-		string value = stringFromVch(vchValue);	
-		UniValue outerValue(UniValue::VSTR);
-		if (outerValue.read(value))
+	string value = stringFromVch(foundAlias.vchValue);	
+	UniValue outerValue(UniValue::VSTR);
+	if (outerValue.read(value))
+	{
+		UniValue outerObj = outerValue.get_obj();
+		UniValue ratesValue = find_value(outerObj, "rates");
+		if (ratesValue.isArray())
 		{
-			UniValue outerObj = outerValue.get_obj();
-			UniValue ratesValue = find_value(outerObj, "rates");
-			if (ratesValue.isArray())
-			{
-				UniValue codes = ratesValue.get_array();
-				for (unsigned int idx = 0; idx < codes.size(); idx++) {
-					const UniValue& code = codes[idx];					
-					UniValue codeObj = code.get_obj();					
-					UniValue currencyNameValue = find_value(codeObj, "currency");
-					UniValue currencyAmountValue = find_value(codeObj, "rate");
-					if (currencyNameValue.isStr())
-					{		
-						string currencyCode = currencyNameValue.get_str();
-						rateList.push_back(currencyCode);
-						if(currencyCodeToFind == currencyCode)
+			UniValue codes = ratesValue.get_array();
+			for (unsigned int idx = 0; idx < codes.size(); idx++) {
+				const UniValue& code = codes[idx];					
+				UniValue codeObj = code.get_obj();					
+				UniValue currencyNameValue = find_value(codeObj, "currency");
+				UniValue currencyAmountValue = find_value(codeObj, "rate");
+				if (currencyNameValue.isStr())
+				{		
+					string currencyCode = currencyNameValue.get_str();
+					rateList.push_back(currencyCode);
+					if(currencyCodeToFind == currencyCode)
+					{
+						UniValue precisionValue = find_value(codeObj, "precision");
+						if(precisionValue.isNum())
 						{
-							UniValue precisionValue = find_value(codeObj, "precision");
-							if(precisionValue.isNum())
-							{
-								precision = precisionValue.get_int();
+							precision = precisionValue.get_int();
+						}
+						if(currencyAmountValue.isNum())
+						{
+							found = true;
+							try{
+								nFee = AmountFromValue(currencyAmountValue.get_real());
 							}
-							if(currencyAmountValue.isNum())
+							catch(std::runtime_error& err)
 							{
-								found = true;
-								try{
-									nFee = AmountFromValue(currencyAmountValue.get_real());
-								}
-								catch(std::runtime_error& err)
-								{
-									nFee = currencyAmountValue.get_int()*COIN;
-								}								
-							}
+								nFee = currencyAmountValue.get_int()*COIN;
+							}								
 						}
 					}
 				}
 			}
 		}
+		
 	}
 	else
 	{
@@ -347,16 +237,6 @@ void PutToAliasList(std::vector<CAliasIndex> &aliasList, CAliasIndex& index) {
     aliasList.push_back(index);
 }
 
-
-
-int GetMinActivateDepth() {
-
-    if (Params().NetworkIDString() != "main")
-		return MIN_ACTIVATE_DEPTH_TESTNET;
-	else
-		return MIN_ACTIVATE_DEPTH;
-}
-
 bool IsAliasOp(int op) {
 	return op == OP_ALIAS_ACTIVATE
 			|| op == OP_ALIAS_UPDATE;
@@ -382,19 +262,6 @@ int GetSyscoinDataOutput(const CTransaction& tx) {
 		}
 	}
    return -1;
-}
-
-int GetAliasHeight(vector<unsigned char> vchName) {
-	vector<CAliasIndex> vtxPos;
-	if (paliasdb->ExistsAlias(vchName)) {
-		if (!paliasdb->ReadAlias(vchName, vtxPos))
-			return error("GetAliasHeight() : failed to read from alias DB");
-		if (vtxPos.empty())
-			return -1;
-		CAliasIndex& txPos = vtxPos.back();
-		return txPos.nHeight;
-	}
-	return -1;
 }
 
 int GetSyscoinTxVersion()
@@ -474,11 +341,11 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CAliasIndex theAlias(tx);
 		if (theAlias.IsNull())
 			return error("CheckAliasInputs() : null alias");
-		if(theAlias.vValue.size() > MAX_VALUE_LENGTH)
+		if(theAlias.vchValue.size() > MAX_VALUE_LENGTH)
 		{
 			return error("alias value too big");
 		}
-		if(theAlias.vchPubKey.size() > MAX_VALUE_LENGTH)
+		if(theAlias.vchPubKey.size() > MAX_NAME_LENGTH)
 		{
 			return error("alias pub key too big");
 		}
@@ -491,12 +358,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 		switch (op) {
 
 		case OP_ALIAS_ACTIVATE:
-
-			// validate inputs
-			if (vvchArgs[1].size() > MAX_ID_LENGTH)
-				return error("aliasactivate tx with rand too big");
-			if (vvchArgs[2].size() > MAX_VALUE_LENGTH)
-				return error("aliasactivate tx with value too long");
 			break;
 
 		case OP_ALIAS_UPDATE:
@@ -505,9 +366,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				return error("aliasupdate previous tx not found");
 			if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
 				return error("aliasupdate tx without correct previous alias tx");
-
-			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-				return error("aliasupdate tx with value too long");
 
 			// Check name
 			if (vvchPrevArgs[0] != vvchArgs[0])
@@ -534,10 +392,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 				
 				int nHeight = chainActive.Tip()->nHeight;
 	
-				const vector<unsigned char> &vchVal = vvchArgs[
-					op == OP_ALIAS_ACTIVATE ? 2 : 1];
 				theAlias.nHeight = nHeight;
-				theAlias.vValue = vchVal;
 				theAlias.txHash = tx.GetHash();
 
 				PutToAliasList(vtxPos, theAlias);
@@ -688,8 +543,7 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 					continue;
 
 				const vector<unsigned char> &vchName = vvchArgs[0];
-				const vector<unsigned char> &vchValue = vvchArgs[
-						op == OP_ALIAS_ACTIVATE ? 2 : 1];
+
 
 				if (!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
 					continue;
@@ -702,10 +556,9 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 								"ReconstructAliasIndex() : failed to read from alias DB");
 				}
 
-				// rebuild the alias UniValue, store to DB
+				// rebuild the alias, store to DB
 				CAliasIndex txName;
 				txName.nHeight = nHeight;
-				txName.vValue = vchValue;
 				txName.txHash = tx.GetHash();
 
 				PutToAliasList(vtxPos, txName);
@@ -716,9 +569,8 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 
 			
 				LogPrintf(
-						"RECONSTRUCT ALIAS: op=%s alias=%s value=%s hash=%s height=%d\n",
+						"RECONSTRUCT ALIAS: op=%s alias=%s hash=%s height=%d\n",
 						aliasFromOp(op).c_str(), stringFromVch(vchName).c_str(),
-						stringFromVch(vchValue).c_str(),
 						tx.GetHash().ToString().c_str(), nHeight);
 
 			} /* TX */
@@ -743,20 +595,6 @@ CScript RemoveAliasScriptPrefix(const CScript& scriptIn) {
 		throw runtime_error(
 				"RemoveAliasScriptPrefix() : could not decode name script");
 	return CScript(pc, scriptIn.end());
-}
-bool GetValueOfAliasTxHash(const uint256 &txHash, vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-	CTransaction tx;
-	uint256 blockHash;
-
-	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-		return error("GetValueOfAliasTxHash() : could not read tx from disk");
-
-	nHeight = GetBlockHeight(blockHash);
-	if (!GetValueOfAliasTx(tx, vchValue))
-		return error("GetValueOfAliasTxHash() : could not decode value from tx");
-
-	hash = tx.GetHash();
-	return true;
 }
 
 bool GetTxOfAlias(const vector<unsigned char> &vchName,
@@ -859,27 +697,6 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 }
 
 
-bool GetValueOfAliasTx(const CTransaction& tx, vector<unsigned char>& value) {
-	vector<vector<unsigned char> > vvch;
-
-	int op;
-	int nOut;
-
-	if (!DecodeAliasTx(tx, op, nOut, vvch, -1))
-		return false;
-
-	switch (op) {
-	case OP_ALIAS_ACTIVATE:
-		value = vvch[2];
-		return true;
-	case OP_ALIAS_UPDATE:
-		value = vvch[1];
-		return true;
-	default:
-		return false;
-	}
-}
-
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch, int nHeight) {
 	bool found = false;
@@ -938,7 +755,7 @@ bool DecodeAliasScript(const CScript& script, int& op,
 
 	pc--;
 
-	if ((op == OP_ALIAS_ACTIVATE && vvch.size() == 3)
+	if ((op == OP_ALIAS_ACTIVATE && vvch.size() == 2)
 			|| (op == OP_ALIAS_UPDATE && vvch.size() == 2))
 		return true;
 	return false;
@@ -955,7 +772,6 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName = vchFromValue(params[0]);
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
-	vector<unsigned char> vchRand = CScriptNum(rand).getvch();
 	vector<unsigned char> vchValue;
 
 	vchValue = vchFromValue(params[1]);
@@ -992,26 +808,26 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	CScript scriptPubKeyOrig;
 	scriptPubKeyOrig = GetScriptForDestination(newDefaultKey.GetID());
 	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_ACTIVATE) << vchName
-			<< vchRand << vchValue << OP_2DROP << OP_2DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_ACTIVATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
 	string strPubKey = HexStr(vchPubKey);
 
-    // build cert UniValue
+    // build alias
     CAliasIndex newAlias;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchFromString(strPubKey);
+	newAlias.vchValue = vchValue;
 
     vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << newAlias.Serialize();
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 	// send the tranasction
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
@@ -1062,8 +878,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	}
 
 	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << vchValue
-			<< OP_2DROP << OP_DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
 	
@@ -1089,16 +904,17 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
     CAliasIndex updateAlias;
 	updateAlias.nHeight = chainActive.Tip()->nHeight;
 	updateAlias.vchPubKey = vchFromString(strPubKey);
+	updateAlias.vchValue = vchValue;
 
     vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 	CScript scriptData;
 	scriptData << OP_RETURN << updateAlias.Serialize();
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
@@ -1127,7 +943,6 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 		uint256 hash;
 		CTransaction tx;
 	
-		vector<unsigned char> vchValue;
 		int nHeight;
 		BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
 			// get txn hash, read txn index
@@ -1162,7 +977,6 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 				continue;
 			if(!IsAliasMine(tx))
 				continue;
-			GetValueOfAliasTx(tx, vchValue);
 			nHeight = GetBlockHeight(blockHash);
 		
 			int expired = 0;
@@ -1171,7 +985,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// build the output UniValue
 			UniValue oName(UniValue::VOBJ);
 			oName.push_back(Pair("name", stringFromVch(vchName)));
-			oName.push_back(Pair("value", stringFromVch(vchValue)));
+			oName.push_back(Pair("value", stringFromVch(alias.vchValue)));
 			expired_block = nHeight + GetAliasExpirationDepth();
 			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 			{
@@ -1231,34 +1045,32 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
-		uint256 hash;
-		if (GetValueOfAliasTxHash(txHash, vchValue, hash, nHeight)) {
-			oName.push_back(Pair("name", stringFromVch(vchName)));
-			string value = stringFromVch(vchValue);
-			oName.push_back(Pair("value", value));
-			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-			string strAddress = "";
-			GetAliasAddress(tx, strAddress);
-			oName.push_back(Pair("address", strAddress));
-			bool fAliasMine = IsAliasMine(tx)? true:  false;
-			oName.push_back(Pair("isaliasmine", fAliasMine));
-			bool fMine = pwalletMain->IsMine(tx)? true:  false;
-			oName.push_back(Pair("ismine", fMine));
-            oName.push_back(Pair("lastupdate_height", nHeight));
-			expired_block = nHeight + GetAliasExpirationDepth();
-			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
-			{
-				expired = 1;
-			}  
-			if(expired == 0)
-			{
-				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
-			}
-			oName.push_back(Pair("expires_in", expires_in));
-			oName.push_back(Pair("expires_on", expired_block));
-			oName.push_back(Pair("expired", expired));
-			oShowResult = oName;
+		nHeight = GetBlockHeight(blockHash);
+		oName.push_back(Pair("name", stringFromVch(vchName)));
+		string value = stringFromVch(vchValue);
+		oName.push_back(Pair("value", stringFromVch(vtxPos.back().vchValue)));
+		oName.push_back(Pair("txid", tx.GetHash().GetHex()));
+		string strAddress = "";
+		GetAliasAddress(tx, strAddress);
+		oName.push_back(Pair("address", strAddress));
+		bool fAliasMine = IsAliasMine(tx)? true:  false;
+		oName.push_back(Pair("isaliasmine", fAliasMine));
+		bool fMine = pwalletMain->IsMine(tx)? true:  false;
+		oName.push_back(Pair("ismine", fMine));
+        oName.push_back(Pair("lastupdate_height", nHeight));
+		expired_block = nHeight + GetAliasExpirationDepth();
+		if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+		{
+			expired = 1;
+		}  
+		if(expired == 0)
+		{
+			expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
 		}
+		oName.push_back(Pair("expires_in", expires_in));
+		oName.push_back(Pair("expires_on", expired_block));
+		oName.push_back(Pair("expired", expired));
+		oShowResult = oName;
 	}
 	return oShowResult;
 }
@@ -1298,30 +1110,28 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			UniValue oName(UniValue::VOBJ);
 			vector<unsigned char> vchValue;
 			int nHeight;
-			uint256 hash;
-			if (GetValueOfAliasTxHash(txHash, vchValue, hash, nHeight)) {
-				oName.push_back(Pair("name", name));
-				string value = stringFromVch(vchValue);
-				oName.push_back(Pair("value", value));
-				oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-				string strAddress = "";
-				GetAliasAddress(tx, strAddress);
-				oName.push_back(Pair("address", strAddress));
-	            oName.push_back(Pair("lastupdate_height", nHeight));
-				expired_block = nHeight + GetAliasExpirationDepth();
-				if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
-				{
-					expired = 1;
-				}  
-				if(expired == 0)
-				{
-					expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
-				}
-				oName.push_back(Pair("expires_in", expires_in));
-				oName.push_back(Pair("expires_on", expired_block));
-				oName.push_back(Pair("expired", expired));
-				oRes.push_back(oName);
+			nHeight = GetBlockHeight(blockHash);
+			oName.push_back(Pair("name", name));
+			string value = stringFromVch(vchValue);
+			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));
+			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
+			string strAddress = "";
+			GetAliasAddress(tx, strAddress);
+			oName.push_back(Pair("address", strAddress));
+            oName.push_back(Pair("lastupdate_height", nHeight));
+			expired_block = nHeight + GetAliasExpirationDepth();
+			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+			{
+				expired = 1;
+			}  
+			if(expired == 0)
+			{
+				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
 			}
+			oName.push_back(Pair("expires_in", expires_in));
+			oName.push_back(Pair("expires_on", expired_block));
+			oName.push_back(Pair("expired", expired));
+			oRes.push_back(oName);
 		}
 	}
 	return oRes;
@@ -1410,10 +1220,7 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
 
-		vector<unsigned char> vchValue;
-		GetValueOfAliasTx(tx, vchValue);
-		string value = stringFromVch(vchValue);
-		oName.push_back(Pair("value", value));
+		oName.push_back(Pair("value", stringFromVch(txName.vchValue)));
 		oName.push_back(Pair("txid", txHash.GetHex()));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();
@@ -1489,11 +1296,8 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 		if (!GetTransaction(txName.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
 
-		vector<unsigned char> vchValue = txName.vValue;
-
-		string value = stringFromVch(vchValue);
 		oName.push_back(Pair("txid", txName.txHash.GetHex()));
-		oName.push_back(Pair("value", value));
+		oName.push_back(Pair("value", stringFromVch(txName.vchValue)));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();
 		if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)

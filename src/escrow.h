@@ -19,7 +19,6 @@ bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std:
 bool DecodeEscrowScript(const CScript& script, int& op, std::vector<std::vector<unsigned char> > &vvch);
 bool IsEscrowOp(int op);
 int IndexOfEscrowOutput(const CTransaction& tx);
-bool GetValueOfEscrowTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 int GetEscrowExpirationDepth();
 
 bool GetNameOfEscrowTx(const CTransaction& tx, std::vector<unsigned char>& escrow);
@@ -31,7 +30,6 @@ bool DecodeEscrowScript(const CScript& script, int& op,
 
 class CEscrow {
 public:
-    std::vector<unsigned char> vchRand;
 	std::vector<unsigned char> vchBuyerKey;
 	std::vector<unsigned char> vchSellerKey;
 	std::vector<unsigned char> vchArbiterKey;
@@ -59,7 +57,6 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(vchRand);
         READWRITE(vchBuyerKey);
 		READWRITE(arbiter);
 		READWRITE(vchSellerKey);
@@ -81,8 +78,7 @@ public:
 
     friend bool operator==(const CEscrow &a, const CEscrow &b) {
         return (
-        a.vchRand == b.vchRand
-        && a.vchBuyerKey == b.vchBuyerKey
+        a.vchBuyerKey == b.vchBuyerKey
 		&& a.vchSellerKey == b.vchSellerKey
         && a.arbiter == b.arbiter
 		&& a.seller == b.seller
@@ -101,7 +97,6 @@ public:
     }
 
     CEscrow operator=(const CEscrow &b) {
-        vchRand = b.vchRand;
         vchBuyerKey = b.vchBuyerKey;
 		vchSellerKey = b.vchSellerKey;
         arbiter = b.arbiter;
@@ -124,8 +119,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { nHeight = 0; txHash.SetNull(); arbiter = ""; seller = ""; escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchRand.clear(); vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
-    bool IsNull() const { return (txHash.IsNull() && escrowInputTxHash.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0 && vchRand.size() == 0); }
+    void SetNull() { nHeight = 0; txHash.SetNull(); arbiter = ""; seller = ""; escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
+    bool IsNull() const { return (txHash.IsNull() && escrowInputTxHash.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

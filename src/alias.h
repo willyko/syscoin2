@@ -15,7 +15,7 @@ class CAliasIndex {
 public:
     uint256 txHash;
     int64_t nHeight;
-    std::vector<unsigned char> vValue;
+    std::vector<unsigned char> vchValue;
 	std::vector<unsigned char> vchPubKey;
     CAliasIndex() { 
         SetNull();
@@ -24,32 +24,26 @@ public:
         SetNull();
         UnserializeFromTx(tx);
     }
-    CAliasIndex(uint256 txHashIn, uint64_t nHeightIn, std::vector<unsigned char> vValueIn, std::vector<unsigned char> vchPubKeyIn) {
-        txHash = txHashIn;
-        nHeight = nHeightIn;
-        vValue = vValueIn;
-		vchPubKey = vchPubKeyIn;
-    }
 
 	ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {        
 		READWRITE(txHash);
         READWRITE(VARINT(nHeight));
-    	READWRITE(vValue);
+    	READWRITE(vchValue);
 		READWRITE(vchPubKey);
 	}
 
     friend bool operator==(const CAliasIndex &a, const CAliasIndex &b) {
-        return (a.nHeight == b.nHeight && a.txHash == b.txHash && a.vValue == b.vValue && a.vchPubKey == b.vchPubKey);
+        return (a.nHeight == b.nHeight && a.txHash == b.txHash && a.vchValue == b.vchValue && a.vchPubKey == b.vchPubKey);
     }
 
     friend bool operator!=(const CAliasIndex &a, const CAliasIndex &b) {
         return !(a == b);
     }
     
-    void SetNull() { txHash.IsNull(); nHeight = 0; vValue.clear(); vchPubKey.clear(); }
-    bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vValue.empty() && vchPubKey.empty()); }
+    void SetNull() { txHash.IsNull(); nHeight = 0; vchValue.clear(); vchPubKey.clear(); }
+    bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vchValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };
@@ -99,14 +93,10 @@ std::vector<unsigned char> vchFromString(const std::string &str);
 std::string stringFromValue(const UniValue& value);
 int GetSyscoinTxVersion();
 const int SYSCOIN_TX_VERSION = 0x7400;
-static const int64_t MIN_AMOUNT = COIN;
 static const unsigned int MAX_NAME_LENGTH = 255;
 static const unsigned int MAX_VALUE_LENGTH = 1023;
 static const unsigned int MAX_ID_LENGTH = 20;
 static const unsigned int MAX_MSG_LENGTH = 1023;
-
-static const unsigned int MIN_ACTIVATE_DEPTH = 1;
-static const unsigned int MIN_ACTIVATE_DEPTH_TESTNET = 1;
 
 bool CheckAliasInputs(const CTransaction &tx, CValidationState &state,
 	const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight);
@@ -118,7 +108,6 @@ bool IsAliasOp(int op);
 bool GetTxOfAlias(const std::vector<unsigned char> &vchName, CTransaction& tx);
 int IndexOfAliasOutput(const CTransaction& tx);
 bool GetAliasOfTx(const CTransaction& tx, std::vector<unsigned char>& name);
-bool GetValueOfAliasTx(const CTransaction& tx, std::vector<unsigned char>& value);
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 bool DecodeAliasScript(const CScript& script, int& op, std::vector<std::vector<unsigned char> > &vvch);
 bool DecodeAliasScript(const CScript& script, int& op,
@@ -127,7 +116,7 @@ bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);
 void GetAliasValue(const std::string& strName, std::string& strAddress);
 int64_t convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const double &nPrice, const unsigned int &nHeight, int &precision);
 bool HasReachedMainNetForkB2();
-bool ExistsInMempool(std::vector<unsigned char> vchToFind, opcodetype type);
+bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type);
 unsigned int QtyOfPendingAcceptsInMempool(const std::vector<unsigned char>& vchToFind);
 std::string getCurrencyToSYSFromAlias(const std::vector<unsigned char> &vchCurrency, int64_t &nFee, const unsigned int &nHeightToFind, std::vector<std::string>& rateList, int &precision);
 int64_t GetBlockHeight(const uint256 blockHash);
@@ -136,6 +125,4 @@ bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
 CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
 bool GetSyscoinData(const CTransaction &tx, std::vector<unsigned char> &vchData);
-bool GetValueOfAliasTxHash(const uint256 &txHash,
-						   std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 #endif // ALIAS_H

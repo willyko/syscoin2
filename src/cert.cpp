@@ -193,8 +193,7 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
 
             txCert.txHash = tx.GetHash();
             txCert.nHeight = nHeight;
-            // txn-specific values to cert object
-            txCert.vchRand = vvchArgs[0];
+
             PutToCertList(vtxPos, txCert);
 
             if (!WriteCert(vchCert, vtxPos))
@@ -214,20 +213,6 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
     }
     return true;
 }
-
-int GetCertHeight(vector<unsigned char> vchCert) {
-    vector<CCert> vtxPos;
-    if (pcertdb->ExistsCert(vchCert)) {
-        if (!pcertdb->ReadCert(vchCert, vtxPos))
-            return error("GetCertHeight() : failed to read from cert DB");
-        if (vtxPos.empty()) return -1;
-        CCert& txPos = vtxPos.back();
-        return txPos.nHeight;
-    }
-    return -1;
-}
-
-
 int IndexOfCertOutput(const CTransaction& tx) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
@@ -254,26 +239,6 @@ bool GetNameOfCertTx(const CTransaction& tx, vector<unsigned char>& cert) {
     return false;
 }
 
-bool GetValueOfCertTx(const CTransaction& tx, vector<unsigned char>& value) {
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-
-    if (!DecodeCertTx(tx, op, nOut, vvch, -1))
-        return false;
-
-    switch (op) {
-    case OP_CERT_ACTIVATE:
-        value = vvch[2];
-        return true;
-    case OP_CERT_UPDATE:
-    case OP_CERT_TRANSFER:
-        value = vvch[1];
-        return true;
-    default:
-        return false;
-    }
-}
-
 bool IsCertMine(const CTransaction& tx) {
     if (tx.nVersion != SYSCOIN_TX_VERSION)
         return false;
@@ -295,30 +260,6 @@ bool IsCertMine(const CTransaction& tx) {
     return false;
 }
 
-bool GetValueOfCertTxHash(const uint256 &txHash,
-        vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-    CTransaction tx;
-    uint256 blockHash;
-    if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-        return error("GetValueOfCertTxHash() : could not read tx from disk");
-	nHeight = GetBlockHeight(blockHash);
-    if (!GetValueOfCertTx(tx, vchValue))
-        return error("GetValueOfCertTxHash() : could not decode value from tx");
-    hash = tx.GetHash();
-    return true;
-}
-
-bool GetValueOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
-        vector<unsigned char>& vchValue, int& nHeight) {
-    vector<CCert> vtxPos;
-    if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-        return false;
-
-    CCert& txPos = vtxPos.back();
-    nHeight = txPos.nHeight;
-    vchValue = txPos.vchRand;
-    return true;
-}
 
 bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
         CCert& txPos, CTransaction& tx) {
@@ -413,9 +354,9 @@ bool DecodeCertScript(const CScript& script, int& op,
 
     pc--;
 
-    if ((op == OP_CERT_ACTIVATE && vvch.size() == 3)
-        || (op == OP_CERT_UPDATE && vvch.size() == 2)
-        || (op == OP_CERT_TRANSFER && vvch.size() == 2))
+    if ((op == OP_CERT_ACTIVATE && vvch.size() == 1)
+        || (op == OP_CERT_UPDATE && vvch.size() == 1)
+        || (op == OP_CERT_TRANSFER && vvch.size() == 1))
         return true;
     return false;
 }
@@ -510,10 +451,6 @@ bool CheckCertInputs(const CTransaction &tx,
 		{
 			return error("cert title too big");
 		}
-		if(theCert.vchRand.size() > MAX_ID_LENGTH)
-		{
-			return error("cert rand too big");
-		}
 		if(theCert.vchPubKey.size() > MAX_VALUE_LENGTH)
 		{
 			return error("cert pub key too big");
@@ -525,10 +462,6 @@ bool CheckCertInputs(const CTransaction &tx,
             if (found)
                 return error(
                         "CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-			if (vvchArgs[1].size() > MAX_ID_LENGTH)
-				return error("cert tx with rand too big");
-			if (vvchArgs[2].size() > MAX_NAME_LENGTH)
-                return error("certactivate tx title too long");
 
             break;
 
@@ -538,8 +471,6 @@ bool CheckCertInputs(const CTransaction &tx,
                 return error("certupdate previous op is invalid");
             if (vvchPrevArgs[0] != vvchArgs[0] && !IsOfferOp(prevOp))
                 return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
-            if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-                return error("certupdate tx title too long");
 
             break;
 
@@ -549,21 +480,8 @@ bool CheckCertInputs(const CTransaction &tx,
             // validate conditions
             if ( !found || !IsCertOp(prevOp))
                 return error("certtransfer previous op is invalid");
-        	if (vvchArgs[0].size() > MAX_ID_LENGTH)
-				return error("certtransfer tx with cert rand too big");
-            if (vvchArgs[1].size() > MAX_ID_LENGTH)
-                return error("certtransfer tx with cert Cert hash too big");
             if (vvchPrevArgs[0] != vvchArgs[0])
                 return error("CheckCertInputs() : certtransfer cert mismatch");
-            if (fBlock && !fJustCheck) {
-                // Check hash
-                const vector<unsigned char> &vchCert = vvchArgs[0];
-                if(theCert.vchRand != vchCert)
-                    return error("Cert txn contains invalid txnCert hash");
-
-
-            }
-
             break;
 
         default:
@@ -590,7 +508,6 @@ bool CheckCertInputs(const CTransaction &tx,
                 // set the cert's txn-dependent values
 				theCert.nHeight = chainActive.Tip()->nHeight;
 				theCert.txHash = tx.GetHash();
-                theCert.vchRand = vvchArgs[0];
 				PutToCertList(vtxPos, theCert);
 				{
 				TRY_LOCK(cs_main, cs_trymain);
@@ -684,21 +601,19 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	// calculate net
     // build cert object
     CCert newCert;
-    newCert.vchRand = vchCert;
     newCert.vchTitle = vchTitle;
 	newCert.vchData = vchData;
 	newCert.nHeight = chainActive.Tip()->nHeight;
 	newCert.vchPubKey = vchFromString(strPubKey);
 	newCert.bPrivate = bPrivate;
 
-    scriptPubKey << CScript::EncodeOP_N(OP_CERT_ACTIVATE) << vchCert
-            << vchRand << newCert.vchTitle << OP_2DROP << OP_2DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_CERT_ACTIVATE) << vchCert << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 
 
 	// use the script pub key to create the vecsend which sendmoney takes and puts it into vout
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
@@ -706,10 +621,11 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
+	res.push_back(HexStr(vchRand));
 	return res;
 }
 
@@ -784,8 +700,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	string strPubKey = HexStr(vchPubKey);
     // create CERTUPDATE txn keys
     CScript scriptPubKey;
-    scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << vchTitle
-            << OP_2DROP << OP_DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 	// if we want to make data private, encrypt it
 	if(bPrivate)
@@ -800,7 +715,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 
 
   
-    theCert.vchRand = vchCert;
     theCert.vchTitle = vchTitle;
 	theCert.vchData = vchData;
 	theCert.nHeight = chainActive.Tip()->nHeight;
@@ -809,7 +723,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
@@ -817,7 +731,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);	
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);	
  	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
@@ -901,7 +815,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL || !IsCertMine(tx))
 		throw runtime_error("this certificate is not in your wallet");
 
-	if (ExistsInMempool(theCert.vchRand, OP_CERT_TRANSFER)) {
+	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 		throw runtime_error("there are pending operations on that cert ");
 	}
 	// unserialize cert object from txn
@@ -935,7 +849,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
     scriptPubKeyOrig= GetScriptForDestination(xferKey.GetID());
     CScript scriptPubKey;
-    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << theCert.vchRand << vchCertKey << OP_2DROP << OP_DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCertKey << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 	// check the offer links in the cert, can't xfer a cert thats linked to another offer
    if(!theCert.vchOfferLink.empty() && !offerpurchase)
@@ -953,7 +867,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	theCert.vchPubKey = vchPubKey;
     // send the cert pay txn
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
@@ -961,7 +875,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1011,29 +925,26 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
     oCert.push_back(Pair("is_mine", IsCertMine(tx) ? "true" : "false"));
 
     int nHeight;
-    uint256 certHash;
-    if (GetValueOfCertTxHash(ca.txHash, vchValue, certHash, nHeight)) {
-        string strAddress = "";
-        GetCertAddress(tx, strAddress);
-		CSyscoinAddress address(strAddress);
-		if(address.IsValid() && address.isAlias)
-			oCert.push_back(Pair("address", address.aliasName));
-		else
-			oCert.push_back(Pair("address", address.ToString()));
-		expired_block = nHeight + GetCertExpirationDepth();
-		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
-		{
-			expired = 1;
-		}  
-		if(expired == 0)
-		{
-			expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
-		}
-		oCert.push_back(Pair("expires_in", expires_in));
-		oCert.push_back(Pair("expires_on", expired_block));
-		oCert.push_back(Pair("expired", expired));
-    
-    }
+	nHeight = GetBlockHeight(blockHash);
+	string strAddress = "";
+    GetCertAddress(tx, strAddress);
+	CSyscoinAddress address(strAddress);
+	if(address.IsValid() && address.isAlias)
+		oCert.push_back(Pair("address", address.aliasName));
+	else
+		oCert.push_back(Pair("address", address.ToString()));
+	expired_block = nHeight + GetCertExpirationDepth();
+	if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+	{
+		expired = 1;
+	}  
+	if(expired == 0)
+	{
+		expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
+	}
+	oCert.push_back(Pair("expires_in", expires_in));
+	oCert.push_back(Pair("expires_on", expired_block));
+	oCert.push_back(Pair("expired", expired));
     return oCert;
 }
 
@@ -1177,33 +1088,31 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             UniValue oCert(UniValue::VOBJ);
             vector<unsigned char> vchValue;
             int nHeight;
-            uint256 hash;
-            if (GetValueOfCertTxHash(txHash, vchValue, hash, nHeight)) {
-                oCert.push_back(Pair("cert", cert));
-                string value = stringFromVch(vchValue);
-                oCert.push_back(Pair("value", value));
-                oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
-                string strAddress = "";
-                GetCertAddress(tx, strAddress);
-				CSyscoinAddress address(strAddress);
-				if(address.IsValid() && address.isAlias)
-					oCert.push_back(Pair("address", address.aliasName));
-				else
-					oCert.push_back(Pair("address", address.ToString()));
-				expired_block = nHeight + GetCertExpirationDepth();
-				if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
-				{
-					expired = 1;
-				}  
-				if(expired == 0)
-				{
-					expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
-				}
-				oCert.push_back(Pair("expires_in", expires_in));
-				oCert.push_back(Pair("expires_on", expired_block));
-				oCert.push_back(Pair("expired", expired));
-                oRes.push_back(oCert);
-            }
+			nHeight = GetBlockHeight(blockHash);
+            oCert.push_back(Pair("cert", cert));
+            string value = stringFromVch(vchValue);
+            oCert.push_back(Pair("value", value));
+            oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
+            string strAddress = "";
+            GetCertAddress(tx, strAddress);
+			CSyscoinAddress address(strAddress);
+			if(address.IsValid() && address.isAlias)
+				oCert.push_back(Pair("address", address.aliasName));
+			else
+				oCert.push_back(Pair("address", address.ToString()));
+			expired_block = nHeight + GetCertExpirationDepth();
+			if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+			{
+				expired = 1;
+			}  
+			if(expired == 0)
+			{
+				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
+			}
+			oCert.push_back(Pair("expires_in", expires_in));
+			oCert.push_back(Pair("expires_on", expired_block));
+			oCert.push_back(Pair("expired", expired));
+            oRes.push_back(oCert);
         }
     }
     return oRes;
@@ -1260,7 +1169,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
 		CCert txCert = pairScan.second;
-		string cert = stringFromVch(txCert.vchRand);
+		string cert = stringFromVch(pairScan.first);
 		string title = stringFromVch(txCert.vchTitle);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;

@@ -18,7 +18,6 @@ bool DecodeCertTxInputs(const CTransaction& tx, int& op, int& nOut, std::vector<
 bool DecodeCertScript(const CScript& script, int& op, std::vector<std::vector<unsigned char> > &vvch);
 bool IsCertOp(int op);
 int IndexOfCertOutput(const CTransaction& tx);
-bool GetValueOfCertTxHash(const uint256 &txHash, std::vector<unsigned char>& vchValue, uint256& hash, int& nHeight);
 bool EncryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchMessage, std::string &strCipherText);
 bool DecryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchCipherText, std::string &strMessage);
 std::string certFromOp(int op);
@@ -31,7 +30,6 @@ bool DecodeCertScript(const CScript& script, int& op,
 
 class CCert {
 public:
-    std::vector<unsigned char> vchRand;
 	std::vector<unsigned char> vchPubKey;
     std::vector<unsigned char> vchTitle;
     std::vector<unsigned char> vchData;
@@ -49,7 +47,6 @@ public:
 	ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(vchRand);
         READWRITE(vchTitle);
         READWRITE(vchData);
         READWRITE(txHash);
@@ -63,8 +60,7 @@ public:
 
     friend bool operator==(const CCert &a, const CCert &b) {
         return (
-        a.vchRand == b.vchRand
-        && a.vchTitle == b.vchTitle
+        a.vchTitle == b.vchTitle
         && a.vchData == b.vchData
         && a.txHash == b.txHash
         && a.nHeight == b.nHeight
@@ -75,7 +71,6 @@ public:
     }
 
     CCert operator=(const CCert &b) {
-        vchRand = b.vchRand;
         vchTitle = b.vchTitle;
         vchData = b.vchData;
         txHash = b.txHash;
@@ -90,8 +85,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { nHeight = 0; txHash.SetNull();  vchRand.clear(); vchPubKey.clear(); bPrivate = false;vchOfferLink.clear();}
-    bool IsNull() const { return (txHash.IsNull() &&  nHeight == 0 && vchRand.size() == 0); }
+    void SetNull() { nHeight = 0; txHash.SetNull(); vchPubKey.clear(); bPrivate = false;vchOfferLink.clear();}
+    bool IsNull() const { return (txHash.IsNull() &&  nHeight == 0); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

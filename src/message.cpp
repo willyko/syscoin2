@@ -157,8 +157,7 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
 
             txMessage.txHash = tx.GetHash();
             txMessage.nHeight = nHeight;
-            // txn-specific values to message UniValue
-            txMessage.vchRand = vvchArgs[0];
+ 
             PutToMessageList(vtxPos, txMessage);
 
             if (!WriteMessage(vchMessage, vtxPos))
@@ -177,19 +176,6 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
     }
     return true;
 }
-
-int GetMessageHeight(vector<unsigned char> vchMessage) {
-    vector<CMessage> vtxPos;
-    if (pmessagedb->ExistsMessage(vchMessage)) {
-        if (!pmessagedb->ReadMessage(vchMessage, vtxPos))
-            return error("GetMessageHeight() : failed to read from message DB");
-        if (vtxPos.empty()) return -1;
-        CMessage& txPos = vtxPos.back();
-        return txPos.nHeight;
-    }
-    return -1;
-}
-
 
 int IndexOfMessageOutput(const CTransaction& tx) {
     vector<vector<unsigned char> > vvch;
@@ -215,21 +201,6 @@ bool GetNameOfMessageTx(const CTransaction& tx, vector<unsigned char>& message) 
     return false;
 }
 
-bool GetValueOfMessageTx(const CTransaction& tx, vector<unsigned char>& value) {
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-
-    if (!DecodeMessageTx(tx, op, nOut, vvch, -1))
-        return false;
-
-    switch (op) {
-    case OP_MESSAGE_ACTIVATE:
-        value = vvch[1];
-        return true;
-    default:
-        return false;
-    }
-}
 
 bool IsMessageMine(const CTransaction& tx) {
     if (tx.nVersion != SYSCOIN_TX_VERSION)
@@ -253,30 +224,6 @@ bool IsMessageMine(const CTransaction& tx) {
 }
 
 
-bool GetValueOfMessageTxHash(const uint256 &txHash,
-        vector<unsigned char>& vchValue, uint256& hash, int& nHeight) {
-    CTransaction tx;
-    uint256 blockHash;
-    if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-        return error("GetValueOfMessageTxHash() : could not read tx from disk");
-	nHeight = GetBlockHeight(blockHash);
-    if (!GetValueOfMessageTx(tx, vchValue))
-        return error("GetValueOfMessageTxHash() : could not decode value from tx");
-    hash = tx.GetHash();
-    return true;
-}
-
-bool GetValueOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessage,
-        vector<unsigned char>& vchValue, int& nHeight) {
-    vector<CMessage> vtxPos;
-    if (!pmessagedb->ReadMessage(vchMessage, vtxPos) || vtxPos.empty())
-        return false;
-
-    CMessage& txPos = vtxPos.back();
-    nHeight = txPos.nHeight;
-    vchValue = txPos.vchRand;
-    return true;
-}
 
 bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessage,
         CMessage& txPos, CTransaction& tx) {
@@ -350,7 +297,7 @@ bool DecodeMessageScript(const CScript& script, int& op,
 	
     pc--;
 
-    if ((op == OP_MESSAGE_ACTIVATE && vvch.size() == 2))
+    if ((op == OP_MESSAGE_ACTIVATE && vvch.size() == 1))
         return true;
 
     return false;
@@ -435,14 +382,8 @@ bool CheckMessageInputs(const CTransaction &tx,
         theMessage.UnserializeFromTx(tx);
         if (theMessage.IsNull())
             return error("CheckMessageInputs() : null message");
-		if(theMessage.vchRand.size() > MAX_ID_LENGTH)
-		{
-			return error("message rand too big");
-		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("message tx GUID too big");
-		if (vvchArgs[1].size() > MAX_ID_LENGTH)
-			return error("message tx rand too big");
 		if(theMessage.vchPubKeyTo.size() > MAX_NAME_LENGTH)
 		{
 			return error("message public key to, too big");
@@ -497,7 +438,6 @@ bool CheckMessageInputs(const CTransaction &tx,
                 // set the message's txn-dependent values
 				theMessage.txHash = tx.GetHash();
 				theMessage.nHeight = nHeight;
-                theMessage.vchRand = vvchArgs[0];
 				PutToMessageList(vtxPos, theMessage);
 				{
 				TRY_LOCK(cs_main, cs_trymain);
@@ -629,8 +569,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 
 	CScript scriptPubKeyOrig, scriptPubKey;
 	scriptPubKeyOrig= GetScriptForDestination(toAddress.Get());
-	scriptPubKey << CScript::EncodeOP_N(OP_MESSAGE_ACTIVATE) << vchMessage
-			<< vchRand << OP_2DROP << OP_DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_MESSAGE_ACTIVATE) << vchMessage << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
 
@@ -651,7 +590,6 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 
     // build message UniValue
     CMessage newMessage;
-    newMessage.vchRand = vchMessage;
 	if(fromAddress.isAlias)
 		newMessage.vchFrom = vchFromString(fromAddress.aliasName);
 	else
@@ -669,7 +607,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	
 	// send the tranasction
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, MIN_AMOUNT, false};
+	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
 	vecSend.push_back(recipient);
 
 	CScript scriptData;
@@ -677,7 +615,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CRecipient fee = {scriptData, 0, false};
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, MIN_AMOUNT, false, wtx);
+	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -689,7 +627,7 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
         throw runtime_error("messageinfo <guid>\n"
                 "Show stored values of a single message.\n");
 
-    vector<unsigned char> vchRand = vchFromValue(params[0]);
+    vector<unsigned char> vchMessage = vchFromValue(params[0]);
 
     // look for a transaction with this key, also returns
     // an message UniValue if it is found
@@ -700,12 +638,12 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
     UniValue oMessage(UniValue::VOBJ);
     vector<unsigned char> vchValue;
 
-	if (!pmessagedb->ReadMessage(vchRand, vtxPos) || vtxPos.empty())
+	if (!pmessagedb->ReadMessage(vchMessage, vtxPos) || vtxPos.empty())
 		 throw runtime_error("failed to read from message DB");
 	CMessage ca = vtxPos.back();
 
     string sHeight = strprintf("%llu", ca.nHeight);
-	oMessage.push_back(Pair("GUID", stringFromVch(vchRand)));
+	oMessage.push_back(Pair("GUID", stringFromVch(vchMessage)));
 	string sTime;
 	CBlockIndex *pindex = chainActive[ca.nHeight];
 	if (pindex) {
@@ -888,29 +826,27 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
             UniValue oMessage(UniValue::VOBJ);
             vector<unsigned char> vchValue;
             int nHeight;
-            uint256 hash;
-            if (GetValueOfMessageTxHash(txHash, vchValue, hash, nHeight)) {
-                oMessage.push_back(Pair("GUID", message));
-				string sTime;
-				CBlockIndex *pindex = chainActive[txPos2.nHeight];
-				if (pindex) {
-					sTime = strprintf("%llu", pindex->nTime);
-				}
-				oMessage.push_back(Pair("time", sTime));
+            nHeight = GetBlockHeight(blockHash);
+            oMessage.push_back(Pair("GUID", message));
+			string sTime;
+			CBlockIndex *pindex = chainActive[txPos2.nHeight];
+			if (pindex) {
+				sTime = strprintf("%llu", pindex->nTime);
+			}
+			oMessage.push_back(Pair("time", sTime));
 
-				oMessage.push_back(Pair("from", stringFromVch(txPos2.vchFrom)));
-				oMessage.push_back(Pair("to", stringFromVch(txPos2.vchTo)));
-				oMessage.push_back(Pair("subject", stringFromVch(txPos2.vchSubject)));
-				string strDecrypted = "";
-				string strData = string("Encrypted for owner of message");
-				if(DecryptMessage(txPos2.vchPubKeyTo, txPos2.vchMessageTo, strDecrypted))
-					strData = strDecrypted;
-				else if(DecryptMessage(txPos2.vchPubKeyFrom, txPos2.vchMessageFrom, strDecrypted))
-					strData = strDecrypted;
+			oMessage.push_back(Pair("from", stringFromVch(txPos2.vchFrom)));
+			oMessage.push_back(Pair("to", stringFromVch(txPos2.vchTo)));
+			oMessage.push_back(Pair("subject", stringFromVch(txPos2.vchSubject)));
+			string strDecrypted = "";
+			string strData = string("Encrypted for owner of message");
+			if(DecryptMessage(txPos2.vchPubKeyTo, txPos2.vchMessageTo, strDecrypted))
+				strData = strDecrypted;
+			else if(DecryptMessage(txPos2.vchPubKeyFrom, txPos2.vchMessageFrom, strDecrypted))
+				strData = strDecrypted;
 
-				oMessage.push_back(Pair("message", strData));
-                oRes.push_back(oMessage);
-            }
+			oMessage.push_back(Pair("message", strData));
+            oRes.push_back(oMessage);
         }
     }
     return oRes;

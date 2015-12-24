@@ -801,116 +801,51 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     int op;
     int nOut;
 	string err = "";
-
-    if(DecodeAliasTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("alias transaction with alias too long");
-		}
-		switch (op) {
-			case OP_ALIAS_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("aliasactivate tx with rand too big");
-				if (vvch[2].size() > MAX_VALUE_LENGTH)
-					err = error("aliasactivate tx with value too long");
-				break;
-			case OP_ALIAS_UPDATE:
-				if (vvch[1].size() > MAX_VALUE_LENGTH)
-					err = error("aliasupdate tx with value too long");
-				break;
-			default:
-				err = error("alias transaction has unknown op");
-		}
-		
-    }
+	if (vvch[0].size() > MAX_NAME_LENGTH)
+		err = error("sys tx with GUID too big");
+    if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+	{
+	}
     else if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("offer transaction with offer guid too long");
-		}
-		switch (op) {
-			case OP_OFFER_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offeractivate tx with rand too big");
-				break;
-			case OP_OFFER_UPDATE:
-				if (vvch[1].size() > MAX_VALUE_LENGTH)
-					err = error("offerupdate tx with value too long");
-				break;
+		switch (op) {		
 			case OP_OFFER_ACCEPT: 
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offeraccept tx with accept rand too big");
+				if (vvch[1].size() > MAX_NAME_LENGTH)
+					err = error("offeraccept tx with accept GUID too big");
 				break;
 			case OP_OFFER_REFUND: 
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("offerrefund tx with accept rand too big");
+				if (vvch[1].size() > MAX_NAME_LENGTH)
+					err = error("offerrefund tx with accept GUID too big");
 				if (vvch[2].size() > MAX_ID_LENGTH)
 					err = error("offerrefund tx with refund status too long");
 				break;
 			default:
-				err = error("offer transaction has unknown op");
+				break;
 		
         }
     }
-    else if(DecodeCertTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("cert transaction with cert title too long");
-		}
-		switch (op) {
-
-			case OP_CERT_ACTIVATE:
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("cert tx with rand too big");
-				if (vvch[2].size() > MAX_NAME_LENGTH)
-					err = error("cert tx with value too long");
-				break;
-			case OP_CERT_UPDATE:
+   else if(DecodeCertTx(tx, op, nOut, vvch, -1)) 
+   {
+   }
+   else if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) 
+   {
+		switch (op) {		
+			case OP_ESCROW_RELEASE: 
+			case OP_ESCROW_REFUND: 
+			case OP_ESCROW_COMPLETE: 
 				if (vvch[1].size() > MAX_NAME_LENGTH)
-					err = error("cert tx with value too long");
-				break;
-			case OP_CERT_TRANSFER:
-        		if (vvch[0].size() > MAX_ID_LENGTH)
-					err = error("cert transfer tx with cert rand too big");
-				if (vvch[1].size() > MAX_ID_LENGTH)
-					err = error("cert transfer tx with invalid hash length");
+					err = error("escrow tx with offer GUID too big");
 				break;
 			default:
-				err = error("cert transaction has unknown op");
-		}
-        
-	}  
-   else if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("escrow tx with GUID too big");
-		}
-		if (vvch[1].size() > MAX_ID_LENGTH) {
-			err = error("escrow tx rand too big");
-		}
-		switch (op) {
-			case OP_ESCROW_ACTIVATE:
 				break;
-			case OP_ESCROW_RELEASE:
-				break;
-			case OP_ESCROW_REFUND:
-				break;
-			case OP_ESCROW_COMPLETE:
-				break;			
-			default:
-				err = error("escrow transaction has unknown op");
-		}
-	} 
-   else if(DecodeMessageTx(tx, op, nOut, vvch, -1)) {
-		if (vvch[0].size() > MAX_NAME_LENGTH) {
-			err = error("message tx with GUID too big");
-		}
-		if (vvch[1].size() > MAX_ID_LENGTH) {
-			err = error("message tx rand too big");
-		}
-		switch (op) {
-			case OP_MESSAGE_ACTIVATE:
-				break;		
-			default:
-				err = error("message transaction has unknown op");
-		}
-	} 
+        }
+   }
+   else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+   {
+   }
+   else
+   {
+	   err = error("Unknown syscoin transaction type!");
+   }
     if(err != "")
 	{
 		return state.DoS(10,error(err.c_str()));
