@@ -755,8 +755,8 @@ bool DecodeAliasScript(const CScript& script, int& op,
 
 	pc--;
 
-	if ((op == OP_ALIAS_ACTIVATE && vvch.size() == 2)
-			|| (op == OP_ALIAS_UPDATE && vvch.size() == 2))
+	if ((op == OP_ALIAS_ACTIVATE && vvch.size() == 1)
+			|| (op == OP_ALIAS_UPDATE && vvch.size() == 1))
 		return true;
 	return false;
 }

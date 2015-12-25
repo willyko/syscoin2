@@ -801,8 +801,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     int op;
     int nOut;
 	string err = "";
-	if (vvch[0].size() > MAX_NAME_LENGTH)
-		err = error("sys tx with GUID too big");
+
     if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 	{
 	}
@@ -846,6 +845,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
    {
 	   err = error("Unknown syscoin transaction type!");
    }
+	if (vvch.size() > 0 && vvch[0].size() > MAX_NAME_LENGTH)
+		err = error("sys tx with GUID too big");
     if(err != "")
 	{
 		return state.DoS(10,error(err.c_str()));
