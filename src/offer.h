@@ -252,7 +252,6 @@ public:
 		offerLinks.clear();
 		vchLinkOffer.clear();
 		sCurrencyCode.clear();
-		vchCert.clear();
 		sCategory.clear();
 		sTitle.clear();
 		sDescription.clear();

@@ -46,6 +46,17 @@ public:
     uint64_t nHeight;
 	unsigned int nQty;
 	int64_t nPricePerUnit;
+	void ClearEscrow()
+	{
+		vchArbiterKey.clear();
+		vchSellerKey.clear();
+		vchBuyerKey.clear();
+		seller.clear();
+		arbiter.clear();
+		vchRedeemScript.clear();
+		vchOffer.clear();
+		vchPaymentMessage.clear();
+	}
     CEscrow() {
         SetNull();
     }

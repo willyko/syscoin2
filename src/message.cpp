@@ -607,15 +607,18 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	
 	// send the tranasction
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = newMessage.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << newMessage.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

@@ -211,7 +211,7 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 
 	// this is a syscoin txn
 	CWalletTx wtx, wtx2;
-	int64_t nTotalValue = DEFAULT_MIN_RELAY_TX_FEE;
+	int64_t nTotalValue = 0;
 	CScript scriptPubKeyOrig, scriptPayment;
 
 	if(refundCode == OFFER_REFUND_COMPLETE)
@@ -249,13 +249,16 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
     offerCopy.PutOfferAccept(offerAcceptCopy);
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = offerCopy.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << offerCopy.Serialize();
-	CRecipient data = {scriptData, 0, false};
-	vecSend.push_back(data);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxPrevIn);
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
+	vecSend.push_back(fee);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxPrevIn);
 	
 	if(refundCode == OFFER_REFUND_COMPLETE)
 	{
@@ -868,17 +871,21 @@ bool CheckOfferInputs(const CTransaction &tx,
 					theOffer = serializedOffer;
 					// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
 					theOffer.linkWhitelist = dbOffer.linkWhitelist;
-					// some fields are only updated if they are not empty to limit txn size, here we revert to the saved db field if they are empty in the txn
+					// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
 					if(serializedOffer.sCurrencyCode.empty())
 						theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
-					if(serializedOffer.vchCert.empty())
-						theOffer.vchCert = dbOffer.vchCert;
 					if(serializedOffer.sCategory.empty())
 						theOffer.sCategory = dbOffer.sCategory;
 					if(serializedOffer.sTitle.empty())
 						theOffer.sTitle = dbOffer.sTitle;
 					if(serializedOffer.sDescription.empty())
 						theOffer.sDescription = dbOffer.sDescription;
+					if(serializedOffer.vchPubKey.empty())
+						theOffer.vchPubKey = dbOffer.vchPubKey;
+					if(serializedOffer.aliasName.empty())
+						theOffer.aliasName = dbOffer.aliasName;
+					if(serializedOffer.vchLinkOffer.empty())
+						theOffer.vchLinkOffer = dbOffer.vchLinkOffer;
 
 				}
 				else if(op == OP_OFFER_ACTIVATE)
@@ -1257,6 +1264,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		{
+			theCert.ClearCert();
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
 			if (IsCertMine(txCert) && wtxCertIn != NULL) 
@@ -1332,14 +1340,17 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	scriptPubKey += scriptPubKeyOrig;
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = newOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << newOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1359,14 +1370,17 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		theCert.nHeight = chainActive.Tip()->nHeight;
 		theCert.vchOfferLink = vchOffer;
 		vector<CRecipient> vecSend;
-		CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+		CRecipient recipient;
+		CreateRecipient(scriptPubKey, recipient);
 		vecSend.push_back(recipient);
 
-		CScript scriptData;
-		scriptData << OP_RETURN << theCert.Serialize();
-		CRecipient fee = {scriptData, 0, false};
-		vecSend.push_back(fee);
-		SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxCertIn);
+	const vector<unsigned char> &data = theCert.Serialize();
+	CScript scriptData;
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
+	vecSend.push_back(fee);
+		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxCertIn);
 
 	}
 	return res;
@@ -1510,15 +1524,17 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	string strError;
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = newOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << newOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1616,13 +1632,16 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1696,13 +1715,16 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	}
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1771,13 +1793,16 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1919,6 +1944,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read offer from DB");
 
 	theOffer = vtxPos.back();
+	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();	
 	int precision = 2;
 	// get precision
@@ -1929,11 +1955,11 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	string priceStr = strprintf("%.*f", precision, price);
 	price = (float)atof(priceStr.c_str());
 	// update offer values
-	if(theOffer.sCategory != vchCat)
+	if(offerCopy.sCategory != vchCat)
 		theOffer.sCategory = vchCat;
-	if(theOffer.sTitle != vchTitle)
+	if(offerCopy.sTitle != vchTitle)
 		theOffer.sTitle = vchTitle;
-	if(theOffer.sDescription != vchDesc)
+	if(offerCopy.sDescription != vchDesc)
 		theOffer.sDescription = vchDesc;
 	if (params.size() >= 7)
 		theOffer.bPrivate = bPrivate;
@@ -1961,6 +1987,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		{
+			theCert.ClearCert();
 			// make sure its in your wallet (you control this cert)	
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			if (!IsCertMine(txCert) || wtxCertIn == NULL) 
@@ -2004,14 +2031,17 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 			theCert.vchOfferLink = vchOffer;
 
 		vector<CRecipient> vecSend;
-		CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+		CRecipient recipient;
+		CreateRecipient(scriptPubKey, recipient);
 		vecSend.push_back(recipient);
 
+		const vector<unsigned char> &data = theCert.Serialize();
 		CScript scriptData;
-		scriptData << OP_RETURN << theCert.Serialize();
-		CRecipient fee = {scriptData, 0, false};
+		scriptData << OP_RETURN << data;
+		CRecipient fee;
+		CreateFeeRecipient(scriptData, data, fee);
 		vecSend.push_back(fee);
-		SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxCertIn);
+		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxCertIn);
 
 		// updating from one cert to another, need to update both certs in this case
 		if(!vchOldCert.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vchOldCert)
@@ -2024,6 +2054,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 			// make sure this cert is still valid
 			if (GetTxOfCert(*pcertdb, vchOldCert, theOldCert, txOldCert))
 			{
+				theOldCert.ClearCert();
 				// make sure its in your wallet (you control this cert)		
 				wtxCertOldIn = pwalletMain->GetWalletTx(txOldCert.GetHash());
 				if (!IsCertMine(txOldCert) || wtxCertOldIn == NULL)
@@ -2037,20 +2068,26 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 			CScript scriptOldPubKey, scriptPubKeyOld;
 			pwalletMain->GetKeyFromPool(newDefaultKey);
 			scriptPubKeyOld= GetScriptForDestination(newDefaultKey.GetID());
+			
 			scriptOldPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchOldCert << OP_2DROP;
 			scriptOldPubKey += scriptPubKeyOld;
 			// clear the offer link, this is the only change we are making to this cert
 			theOldCert.vchOfferLink.clear();
+			theOldCert.nHeight = chainActive.Tip()->nHeight;
+
 
 			vector<CRecipient> vecSend;
-			CRecipient recipient = {scriptOldPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+			CRecipient recipient;
+			CreateRecipient(scriptOldPubKey, recipient);
 			vecSend.push_back(recipient);
 
+			const vector<unsigned char> &data = theOldCert.Serialize();
 			CScript scriptData;
-			scriptData << OP_RETURN << theOldCert.Serialize();
-			CRecipient fee = {scriptData, 0, false};
+			scriptData << OP_RETURN << data;
+			CRecipient fee;
+			CreateFeeRecipient(scriptData, data, fee);
 			vecSend.push_back(fee);
-			SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtxold, wtxCertOldIn);
+			SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtxold, wtxCertOldIn);
 		}
 	}
 	theOffer.nHeight = chainActive.Tip()->nHeight;
@@ -2061,13 +2098,16 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -2341,16 +2381,18 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CRecipient paymentRecipient = {scriptPayment, nTotalValue, false};
 	vecSend.push_back(paymentRecipient);
 
+	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theOffer.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
 	if(!foundCert.IsNull())
 	{
 		if(escrow.IsNull() && wtxCertIn != NULL)
 		{
-			SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE+nTotalValue, false, wtx, wtxCertIn);
+			SendMoneySyscoin(vecSend, fee.nAmount+nTotalValue, false, wtx, wtxCertIn);
 		}
 	
 		// create a certupdate passing in wtx (offeraccept) as input to keep chain of inputs going for next cert transaction (since we used the last cert tx as input to sendmoneysysoin)
@@ -2360,7 +2402,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		CTransaction tx;
 		if (!GetTxOfCert(*pcertdb, foundCert.certLinkVchRand, cert, tx))
 			throw runtime_error("could not find a certificate with this key");
-
+		cert.ClearCert();
 
 		// get a key from our wallet set dest as ourselves
 		CPubKey newDefaultKey;
@@ -2374,19 +2416,22 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		cert.nHeight = chainActive.Tip()->nHeight;
 
 		vector<CRecipient> vecSend;
-		CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+		CRecipient recipient;
+		CreateRecipient(scriptPubKey, recipient);
 		vecSend.push_back(recipient);
 
+		const vector<unsigned char> &data = cert.Serialize();
 		CScript scriptData;
-		scriptData << OP_RETURN << cert.Serialize();
-		CRecipient fee = {scriptData, 0, false};
+		scriptData << OP_RETURN << data;
+		CRecipient fee;
+		CreateFeeRecipient(scriptData, data, fee);
 		vecSend.push_back(fee);
 		const CWalletTx* wtxIn = &wtx;
-		SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtxCert, wtxIn);
+		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtxCert, wtxIn);
 	}
 	else
 	{
-		SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE+nTotalValue, false, wtx);
+		SendMoneySyscoin(vecSend, fee.nAmount+nTotalValue, false, wtx);
 	}
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

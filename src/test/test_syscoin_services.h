@@ -10,7 +10,7 @@ UniValue CallRPC(const string &dataDir, const string& commandWithArgs);
 void StartNode(const string &dataDir);
 void StartNodes();
 void StopNodes();
-void GenerateBlocks(int nBlocks);
+void GenerateBlocks(int nBlocks, const string& node="node1");
 string CallExternal(string &cmd);
 void AliasNew(const string& node, const string& aliasname, const string& aliasdata);
 void AliasUpdate(const string& node, const string& aliasname, const string& aliasdata);

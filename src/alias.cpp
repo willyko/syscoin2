@@ -18,6 +18,7 @@
 #include "txdb.h"
 #include "chainparams.h"
 #include "policy/policy.h"
+
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
@@ -349,10 +350,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias pub key too big");
 		}
-		if(theAlias.vchPubKey.empty())
-		{
-			return error("alias pub key cannot be empty");
-		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
 		switch (op) {
@@ -389,7 +386,11 @@ bool CheckAliasInputs(const CTransaction &tx,
 			}
 
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-				
+				const CAliasIndex& dbAlias = vtxPos.back();
+				if(theAlias.vchValue.empty())
+					theAlias.vchValue = dbAlias.vchValue;	
+				if(theAlias.vchPubKey.empty())
+					theAlias.vchPubKey = dbAlias.vchPubKey;
 				int nHeight = chainActive.Tip()->nHeight;
 	
 				theAlias.nHeight = nHeight;
@@ -760,7 +761,20 @@ bool DecodeAliasScript(const CScript& script, int& op,
 		return true;
 	return false;
 }
-
+void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient)
+{
+	recipient = {scriptPubKey, 0, false};
+	CTxOut txout(recipient.nAmount,	recipient.scriptPubKey);
+	recipient.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+}
+void CreateFeeRecipient(const CScript& scriptPubKey, const vector<unsigned char>& data, CRecipient& recipient)
+{
+	CScript script;
+	script += CScript() << data;
+	CTxOut txout(0,	script);
+	recipient = {scriptPubKey, 0, false};
+	recipient.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+}
 UniValue aliasnew(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() != 2 )
 		throw runtime_error(
@@ -820,19 +834,22 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	newAlias.vchValue = vchValue;
 
     vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 	CScript scriptData;
-	scriptData << OP_RETURN << newAlias.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	const vector<unsigned char> &data = newAlias.Serialize();
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 	// send the tranasction
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount + fee.nAmount, false, wtx);
+	printf("recp %llu fee %llu\n", recipient.nAmount, fee.nAmount);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
 }
-
 UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if (fHelp || 2 > params.size() || 3 < params.size())
 		throw runtime_error(
@@ -845,9 +862,11 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName = vchFromValue(params[0]);
 	vector<unsigned char> vchValue = vchFromValue(params[1]);
+	vector<unsigned char> vchPubKey;
 	if (vchValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias value cannot exceed 1023 bytes!");
 	CWalletTx wtx;
+	CAliasIndex updateAlias;
 	const CWalletTx* wtxIn;
 	CScript scriptPubKeyOrig;
 	string strPubKey;
@@ -866,15 +885,13 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		if (vtxPos.size() < 1)
 			throw runtime_error("no result returned");
 		CAliasIndex xferAlias = vtxPos.back();
-		strPubKey = stringFromVch(xferAlias.vchPubKey);
+		vchPubKey = xferAlias.vchPubKey;
 		scriptPubKeyOrig = GetScriptForDestination(myAddress.Get());
 
 	} else {
 		CPubKey newDefaultKey;
 		pwalletMain->GetKeyFromPool(newDefaultKey);
 		scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
-		std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-		strPubKey = HexStr(vchPubKey);
 	}
 
 	CScript scriptPubKey;
@@ -895,26 +912,39 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not find an alias with this name");
 
     if(!IsAliasMine(tx)) {
-		throw runtime_error("Cannot modify a transferred alias");
+		throw runtime_error("This alias is not yours, you cannot update it.");
     }
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
+   // get the alias from DB
+	CAliasIndex theAlias;
+    vector<CAliasIndex> vtxPos;
+    if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
+        throw runtime_error("could not read alias from DB");
+    theAlias = vtxPos.back();
+	CAliasIndex copyAlias = theAlias;
+	theAlias.ClearAlias();
 
-    CAliasIndex updateAlias;
-	updateAlias.nHeight = chainActive.Tip()->nHeight;
-	updateAlias.vchPubKey = vchFromString(strPubKey);
-	updateAlias.vchValue = vchValue;
+	theAlias.nHeight = chainActive.Tip()->nHeight;
+	if(copyAlias.vchValue != vchValue)
+		theAlias.vchValue = vchValue;
+	if(!vchPubKey.empty() && copyAlias.vchPubKey != vchPubKey)
+		theAlias.vchPubKey = vchPubKey;
 
     vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	const vector<unsigned char> &data = theAlias.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << updateAlias.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
+	printf("update recp %llu fee %llu\n", recipient.nAmount, fee.nAmount);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;

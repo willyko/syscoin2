@@ -492,9 +492,6 @@ bool CheckCertInputs(const CTransaction &tx,
 
         // these ifs are problably total bullshit except for the certnew
         if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
-			// save serialized cert for later use
-			CCert serializedCert = theCert;
-
 			// if not an certnew, load the cert data from the DB
 			vector<CCert> vtxPos;
 			if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
@@ -503,6 +500,13 @@ bool CheckCertInputs(const CTransaction &tx,
 							"CheckCertInputs() : failed to read from cert DB");
 			}
             if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
+				const CCert& dbCert = vtxPos.back();
+				if(theCert.vchData.empty())
+					theCert.vchData = dbCert.vchData;
+				if(theCert.vchTitle.empty())
+					theCert.vchTitle = dbCert.vchTitle;
+				if(theCert.vchPubKey.empty())
+					theCert.vchPubKey = dbCert.vchPubKey;
                 int nHeight = chainActive.Tip()->nHeight;     
 				
                 // set the cert's txn-dependent values
@@ -613,15 +617,18 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 
 	// use the script pub key to create the vecsend which sendmoney takes and puts it into vout
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = newCert.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << newCert.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -691,13 +698,14 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
         throw runtime_error("could not read cert from DB");
     theCert = vtxPos.back();
-
+	CCert copyCert = theCert;
+	theCert.ClearCert();
     // get a key from our wallet set dest as ourselves
     CPubKey newDefaultKey;
     pwalletMain->GetKeyFromPool(newDefaultKey);
     scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-	string strPubKey = HexStr(vchPubKey);
+
     // create CERTUPDATE txn keys
     CScript scriptPubKey;
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
@@ -706,7 +714,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	if(bPrivate)
 	{
 		string strCipherText;
-		if(!EncryptMessage(vchFromString(strPubKey), vchData, strCipherText))
+		if(!EncryptMessage(copyCert.vchPubKey, vchData, strCipherText))
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
@@ -714,24 +722,27 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	}
 
 
-  
-    theCert.vchTitle = vchTitle;
-	theCert.vchData = vchData;
+    if(copyCert.vchTitle != vchTitle)
+		theCert.vchTitle = vchTitle;
+	if(copyCert.vchData != vchData)
+		theCert.vchData = vchData;
 	theCert.nHeight = chainActive.Tip()->nHeight;
 	theCert.bPrivate = bPrivate;
-	theCert.vchPubKey = vchFromString(strPubKey);
 
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = theCert.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theCert.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);	
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);	
  	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
@@ -828,12 +839,13 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read cert from DB");
 	theCert = vtxPos.back();
 
-
 	// if cert is private, decrypt the data
+	vector<unsigned char> vchData = theCert.vchData;
 	if(theCert.bPrivate)
 	{		
 		string strData;
 		string strCipherText;
+		
 		// decrypt using old key
 		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
 		{
@@ -844,9 +856,10 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
-		theCert.vchData = vchFromString(strCipherText);
+		vchData = vchFromString(strCipherText);
 	}	
-
+	CCert copyCert = theCert;
+	theCert.ClearCert();
     scriptPubKeyOrig= GetScriptForDestination(xferKey.GetID());
     CScript scriptPubKey;
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCertKey << OP_2DROP;
@@ -865,17 +878,22 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
    }
 	theCert.nHeight = chainActive.Tip()->nHeight;
 	theCert.vchPubKey = vchPubKey;
+	if(copyCert.vchData != vchData)
+		theCert.vchData = vchData;
     // send the cert pay txn
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = theCert.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << theCert.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx, wtxIn);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

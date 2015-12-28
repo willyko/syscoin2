@@ -5,12 +5,14 @@
 #include "dbwrapper.h"
 #include "script/script.h"
 #include "serialize.h"
+
 class CWalletTx;
 class CTransaction;
 class CReserveKey;
 class CValidationState;
 class CCoinsViewCache;
 class CCoins;
+class CRecipient;
 class CAliasIndex {
 public:
     uint256 txHash;
@@ -24,7 +26,11 @@ public:
         SetNull();
         UnserializeFromTx(tx);
     }
-
+	void ClearAlias()
+	{
+		vchValue.clear();
+		vchPubKey.clear();
+	}
 	ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {        
@@ -100,7 +106,8 @@ static const unsigned int MAX_MSG_LENGTH = 1023;
 
 bool CheckAliasInputs(const CTransaction &tx, CValidationState &state,
 	const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight);
-
+void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);
+void CreateFeeRecipient(const CScript& scriptPubKey, const std::vector<unsigned char>& data, CRecipient& recipient);
 bool IsAliasMine(const CTransaction& tx);
 bool IsAliasOp(int op);
 
@@ -124,5 +131,6 @@ std::string aliasFromOp(int op);
 bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
 CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
+int GetSyscoinDataOutput(const CTransaction& tx);
 bool GetSyscoinData(const CTransaction &tx, std::vector<unsigned char> &vchData);
 #endif // ALIAS_H

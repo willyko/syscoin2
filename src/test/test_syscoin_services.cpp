@@ -118,15 +118,27 @@ std::string CallExternal(std::string &cmd)
 }
 // generate n Blocks, with up to 10 seconds relay time buffer for other nodes to get the blocks.
 // may fail if your network is slow or you try to generate too many blocks such that can't relay within 10 seconds
-void GenerateBlocks(int nBlocks)
+void GenerateBlocks(int nBlocks, const string& node)
 {
   int height, newHeight, timeoutCounter;
   UniValue r;
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
+	string otherNode1 = "node2";
+	string otherNode2 = "node3";
+	if(node == "node2")
+	{
+		otherNode1 = "node3";
+		otherNode2 = "node1";
+	}
+	else if(node == "node3")
+	{
+		otherNode1 = "node1";
+		otherNode2 = "node2";
+	}
+  BOOST_CHECK_NO_THROW(r = CallRPC(node, "getinfo"));
   newHeight = find_value(r.get_obj(), "blocks").get_int() + nBlocks;
 
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "generate " + boost::lexical_cast<std::string>(nBlocks)));
-  BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
+  BOOST_CHECK_NO_THROW(r = CallRPC(node, "generate " + boost::lexical_cast<std::string>(nBlocks)));
+  BOOST_CHECK_NO_THROW(r = CallRPC(node, "getinfo"));
   height = find_value(r.get_obj(), "blocks").get_int();
   BOOST_CHECK(height == newHeight);
   height = 0;
@@ -134,7 +146,7 @@ void GenerateBlocks(int nBlocks)
   while(height != newHeight)
   {
 	  MilliSleep(100);
-	  BOOST_CHECK_NO_THROW(r = CallRPC("node2", "getinfo"));
+	  BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "getinfo"));
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
@@ -146,7 +158,7 @@ void GenerateBlocks(int nBlocks)
   while(height != newHeight)
   {
 	  MilliSleep(100);
-	  BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
+	  BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "getinfo"));
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
 	  if(timeoutCounter > 100)
@@ -172,7 +184,7 @@ void AliasNew(const string& node, const string& aliasname, const string& aliasda
 	}
 	UniValue r;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasnew " + aliasname + " " + aliasdata));
-	GenerateBlocks(1);
+	GenerateBlocks(1, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
@@ -216,6 +228,7 @@ void AliasUpdate(const string& node, const string& aliasname, const string& alia
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 }
+
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
 }

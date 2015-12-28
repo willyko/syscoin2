@@ -28,7 +28,9 @@
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <queue>
-
+// SYSCOIN need constant SYSCOIN_TX_VERSION
+extern int GetSyscoinTxVersion();
+extern int GetSyscoinDataOutput(const CTransaction& tx);
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -129,6 +131,9 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
     bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
     uint64_t nBlockSize = 1000;
     uint64_t nBlockTx = 0;
+	// SYSCOIN inflate when high demand for syscoin services
+	uint64_t nSysBlockTx = 0;
+	CAmount nSysRegenFees = 0;
     unsigned int nBlockSigOps = 100;
     int lastFewTxs = 0;
     CAmount nFees = 0;
@@ -237,6 +242,17 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             CAmount nTxFees = iter->GetFee();
             // Added
             pblock->vtx.push_back(tx);
+			// SYSCOIN inflate and regenerate based on opreturn value set when creating the service(user)
+			if(tx.nVersion == GetSyscoinTxVersion())
+			{
+				nSysBlockTx++;
+				if(nSysBlockTx >= 5)
+				{
+					int nOut = GetSyscoinDataOutput(tx);
+					if (nOut != -1)
+						nSysRegenFees += tx.vout[nOut].nValue*2;
+				}
+			}
             pblocktemplate->vTxFees.push_back(nTxFees);
             pblocktemplate->vTxSigOps.push_back(nTxSigOps);
             nBlockSize += nTxSize;
@@ -278,8 +294,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         nLastBlockSize = nBlockSize;
         LogPrintf("CreateNewBlock(): total size %u txs: %u fees: %ld sigops %d\n", nBlockSize, nBlockTx, nFees, nBlockSigOps);
 
-        // Compute final coinbase transaction.
-        txNew.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        // SYSCOIN Compute final coinbase transaction. Add Syscoin dynamic inflation based on service demand
+        txNew.vout[0].nValue = nSysRegenFees + nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;

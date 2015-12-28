@@ -632,21 +632,25 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nPricePerUnit = nPricePerUnit;
 	// send the tranasction
 	vecSend.clear();
-	CRecipient recipientSeller = {scriptPubKeySeller, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipientSeller;
+	CreateRecipient(scriptPubKeySeller, recipientSeller);
 	vecSend.push_back(recipientSeller);
 
+	const vector<unsigned char> &data = newEscrow.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << newEscrow.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipientSeller.nAmount+fee.nAmount, false, wtx);
 
 	vecSend.clear();
-	CRecipient recipientArbiter = {scriptPubKeyArbiter, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipientArbiter;
+	CreateRecipient(scriptPubKeyArbiter, recipientArbiter);
 	vecSend.push_back(recipientArbiter);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipientArbiter.nAmount+fee.nAmount, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -679,7 +683,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-
+	escrow.ClearEscrow();
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
@@ -830,15 +834,18 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     scriptPubKey += scriptPubKeySeller;
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = escrow.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
@@ -867,7 +874,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-  
+    escrow.ClearEscrow();
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
@@ -1035,6 +1042,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
+	escrow.ClearEscrow();
 	uint256 hash, blockHash;
 	
 	bool foundEscrowRelease = false;
@@ -1106,15 +1114,18 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 
 
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = escrow.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
@@ -1146,7 +1157,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-
+	escrow.ClearEscrow();
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
@@ -1294,15 +1305,18 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_REFUND) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
     scriptPubKey += scriptPubKeyBuyer;
 	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, DEFAULT_MIN_RELAY_TX_FEE, false};
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	const vector<unsigned char> &data = escrow.Serialize();
 	CScript scriptData;
-	scriptData << OP_RETURN << escrow.Serialize();
-	CRecipient fee = {scriptData, 0, false};
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, DEFAULT_MIN_RELAY_TX_FEE, false, wtx);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
@@ -1331,7 +1345,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-
+	escrow.ClearEscrow();
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))

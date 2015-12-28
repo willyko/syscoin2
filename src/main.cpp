@@ -2455,6 +2455,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
+	// SYSCOIN inflate when high demand for syscoin services
+	uint64_t nSysBlockTx = 0;
+	CAmount nSysRegenFees = 0;
     CAmount nFees = 0;
     int nInputs = 0;
     unsigned int nSigOps = 0;
@@ -2465,7 +2468,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
-
+		// SYSCOIN inflate and regenerate based on opreturn value set when creating the service(user)
+		if(tx.nVersion == GetSyscoinTxVersion())
+		{
+			nSysBlockTx++;
+			if(nSysBlockTx >= 5)
+			{
+				int nOut = GetSyscoinDataOutput(tx);
+				if (nOut != -1)
+					nSysRegenFees += tx.vout[nOut].nValue*2;
+			}
+		}
         nInputs += tx.vin.size();
         nSigOps += GetLegacySigOpCount(tx);
         if (nSigOps > MAX_BLOCK_SIGOPS)
@@ -2512,7 +2525,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
+	// SYSCOIN Add Syscoin dynamic inflation based on service demand
+    CAmount blockReward = nSysRegenFees + nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
     if (block.vtx[0].GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
