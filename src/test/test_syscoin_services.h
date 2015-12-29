@@ -14,6 +14,9 @@ void GenerateBlocks(int nBlocks, const string& node="node1");
 string CallExternal(string &cmd);
 void AliasNew(const string& node, const string& aliasname, const string& aliasdata);
 void AliasUpdate(const string& node, const string& aliasname, const string& aliasdata);
+const string CertNew(const string& node, const string& title, const string& data, bool privateData=false);
+void CertUpdate(const string& node, const string& guid, const string& title, const string& data, bool privateData=false);
+void CertTransfer(const string& node, const string& guid, const string& toalias);
 // SYSCOIN testing setup
 struct SyscoinTestingSetup {
     SyscoinTestingSetup();

@@ -845,7 +845,6 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	// send the tranasction
 	SendMoneySyscoin(vecSend, recipient.nAmount + fee.nAmount, false, wtx);
-	printf("recp %llu fee %llu\n", recipient.nAmount, fee.nAmount);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
@@ -944,7 +943,6 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 
 	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
-	printf("update recp %llu fee %llu\n", recipient.nAmount, fee.nAmount);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;

@@ -214,7 +214,9 @@ void AliasUpdate(const string& node, const string& aliasname, const string& alia
 	}
 	UniValue r;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasupdate " + aliasname + " " + aliasdata));
-	GenerateBlocks(1);
+	// ensure mempool blocks second tx until it confirms
+	BOOST_CHECK_THROW(CallRPC(node, "aliasupdate " + aliasname + " " + aliasdata), runtime_error);
+	GenerateBlocks(1, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
@@ -228,7 +230,140 @@ void AliasUpdate(const string& node, const string& aliasname, const string& alia
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
 }
+const string CertNew(const string& node, const string& title, const string& data, bool privateData)
+{
+	string otherNode1 = "node2";
+	string otherNode2 = "node3";
+	if(node == "node2")
+	{
+		otherNode1 = "node3";
+		otherNode2 = "node1";
+	}
+	else if(node == "node3")
+	{
+		otherNode1 = "node1";
+		otherNode2 = "node2";
+	}
+	string privateFlag = privateData? "1":"0";
+	UniValue r;
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certnew " + title + " " + data + " " + privateFlag));
+	const UniValue &arr = r.get_array();
+	string guid = arr[1].get_str();
+	GenerateBlocks(1, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "true");
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	if(privateData)
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "Yes");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() != data);
+	}
+	else
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "No");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	}
 
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	if(privateData)
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "Yes");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() != data);
+	}
+	else
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "No");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	}
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
+	return guid;
+}
+void CertUpdate(const string& node, const string& guid, const string& title, const string& data, bool privateData)
+{
+	string otherNode1 = "node2";
+	string otherNode2 = "node3";
+	if(node == "node2")
+	{
+		otherNode1 = "node3";
+		otherNode2 = "node1";
+	}
+	else if(node == "node3")
+	{
+		otherNode1 = "node1";
+		otherNode2 = "node2";
+	}
+	UniValue r;
+	string privateFlag = privateData? "1":" 0";
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certupdate " + guid + " " + title + " " + data + " " +privateFlag));
+	// ensure mempool blocks second tx until it confirms
+	BOOST_CHECK_THROW(CallRPC(node, "certupdate " + guid + " " + title + " " + data + " " +privateFlag), runtime_error);
+	GenerateBlocks(1, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "true");
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	if(privateData)
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "Yes");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() != data);
+	}
+	else
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "No");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	}
+
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "certinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
+	if(privateData)
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "Yes");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() != data);
+	}
+	else
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "private").get_str() == "No");
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	}
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
+}
+void CertTransfer(const string& node, const string& guid, const string& toalias)
+{
+	UniValue r;
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certinfo " + guid));
+	string data = find_value(r.get_obj(), "data").get_str();
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certtransfer " + guid + " " + toalias));
+	// ensure mempool blocks second tx until it confirms
+	BOOST_CHECK_THROW(CallRPC(node, "certtransfer " + guid + " " + toalias), runtime_error);
+	GenerateBlocks(1, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certinfo " + guid));
+	bool privateData = find_value(r.get_obj(), "private").get_str() == "Yes";
+	if(privateData)
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() != data);
+	}
+	else
+	{
+		BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
+	}
+	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
+}
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
 }

@@ -760,7 +760,6 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	if(!HasReachedMainNetForkB2())
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
-    vector<unsigned char> vchCertKey = ParseHex(params[0].get_str());
 	vector<unsigned char> vchCert = vchFromValue(params[0]);
 
 	string strAddress = params[1].get_str();
@@ -862,7 +861,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	theCert.ClearCert();
     scriptPubKeyOrig= GetScriptForDestination(xferKey.GetID());
     CScript scriptPubKey;
-    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCertKey << OP_2DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCert << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 	// check the offer links in the cert, can't xfer a cert thats linked to another offer
    if(!theCert.vchOfferLink.empty() && !offerpurchase)
