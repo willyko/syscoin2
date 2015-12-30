@@ -51,7 +51,7 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
             return false;
 	// SYSCOIN check for size of sys tx, normal tx size is checked in isstandardtx now
     } else if (whichType == TX_NULL_DATA &&
-               (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes*20))
+               (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes*40))
           return false;
 
     return whichType != TX_NONSTANDARD;

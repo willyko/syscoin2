@@ -630,6 +630,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nQty = nQty;
 	newEscrow.escrowInputTxHash = escrowWtx.GetHash();
 	newEscrow.nPricePerUnit = nPricePerUnit;
+	newEscrow.nHeight = chainActive.Tip()->nHeight;
 	// send the tranasction
 	vecSend.clear();
 	CRecipient recipientSeller;
@@ -827,6 +828,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		throw runtime_error("This is not a multisignature escrow!");
 
 	escrow.rawTx = vchFromString(hex_str);
+	escrow.nHeight = chainActive.Tip()->nHeight;
 
     CScript scriptPubKey, scriptPubKeySeller;
 	scriptPubKeySeller= GetScriptForDestination(sellerKey.GetID());
@@ -1102,6 +1104,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 
 
 	escrow.vchOfferAcceptLink = vchFromString(acceptGUID);
+	escrow.nHeight = chainActive.Tip()->nHeight;
   	CPubKey newDefaultKey;
 	pwalletMain->GetKeyFromPool(newDefaultKey); 
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
@@ -1298,6 +1301,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
 
 	escrow.rawTx = vchFromString(hex_str);
+	escrow.nHeight = chainActive.Tip()->nHeight;
 
 
     CScript scriptPubKey, scriptPubKeyBuyer;

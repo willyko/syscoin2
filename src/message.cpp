@@ -584,9 +584,9 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Could not encrypt message data for sender!");
 	}
     if (strCipherTextFrom.size() > MAX_MSG_LENGTH)
-        throw runtime_error("Message data cannot exceed 16383 bytes!");
+        throw runtime_error("Message data cannot exceed 1023 bytes!");
     if (strCipherTextTo.size() > MAX_MSG_LENGTH)
-        throw runtime_error("Message data cannot exceed 16383 bytes!");
+        throw runtime_error("Message data cannot exceed 1023 bytes!");
 
     // build message UniValue
     CMessage newMessage;
@@ -604,6 +604,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	newMessage.vchSubject = vchMySubject;
 	newMessage.vchPubKeyFrom = vchFromPubKey;
 	newMessage.vchPubKeyTo = vchToPubKey;
+	newMessage.nHeight = chainActive.Tip()->nHeight;
 	
 	// send the tranasction
 	vector<CRecipient> vecSend;
@@ -617,7 +618,6 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-
 	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

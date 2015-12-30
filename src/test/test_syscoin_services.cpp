@@ -364,6 +364,34 @@ void CertTransfer(const string& node, const string& guid, const string& toalias)
 	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "false");
 }
+const string MessageNew(const string& fromnode, const string& tonode, const string& title, const string& data, const string& fromalias, const string& toalias)
+{
+	string otherNode;
+	if(fromnode != "node1" && tonode != "node1")
+		otherNode = "node1";
+	else if(fromnode != "node2" && tonode != "node2")
+		otherNode = "node2";
+	else if(fromnode != "node3" && tonode != "node3")
+		otherNode = "node3";
+	UniValue r;
+	BOOST_CHECK_NO_THROW(r = CallRPC(fromnode, "messagenew " + title + " " + data + " " + fromalias + " " + toalias));
+	const UniValue &arr = r.get_array();
+	string guid = arr[1].get_str();
+	GenerateBlocks(1, fromnode);
+	BOOST_CHECK_NO_THROW(r = CallRPC(fromnode, "messageinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "GUID").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "message").get_str() == data);
+	BOOST_CHECK(find_value(r.get_obj(), "subject").get_str() == title);
+	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode, "messageinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "GUID").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "message").get_str() != data);
+	BOOST_CHECK(find_value(r.get_obj(), "subject").get_str() == title);
+	BOOST_CHECK_NO_THROW(r = CallRPC(tonode, "messageinfo " + guid));
+	BOOST_CHECK(find_value(r.get_obj(), "GUID").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "message").get_str() == data);
+	BOOST_CHECK(find_value(r.get_obj(), "subject").get_str() == title);
+	return guid;
+}
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
 }
