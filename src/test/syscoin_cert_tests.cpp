@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE (generate_certupdate)
 {
 	string guid = CertNew("node1", "title", "data");
 	// update an cert that isn't yours
-	BOOST_CHECK_THROW(CallRPC("node2", "certupdate " + guid + " title data"), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node2", "certupdate " + guid + " title data 0"), runtime_error);
 	CertUpdate("node1", guid, "changedtitle", "changeddata");
 	// shouldnt update data, just uses prev data because it hasnt changed
 	CertUpdate("node1", guid, "changedtitle", "changeddata");

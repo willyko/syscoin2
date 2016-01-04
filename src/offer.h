@@ -301,7 +301,7 @@ public:
 	void SetPrice(float price){
 		nPrice = price;
 	}
-	bool GetAcceptByHash(const std::vector<unsigned char> &ahash, COfferAccept &ca);	
+	bool GetAcceptByHash(const std::vector<unsigned char> &ahash, COfferAccept &ca, const CTransaction &intx);	
     void PutOfferAccept(COfferAccept &theOA) {
     	for(unsigned int i=0;i<accepts.size();i++) {
     		COfferAccept oa = accepts[i];

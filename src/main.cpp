@@ -1506,7 +1506,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 	if(nHeight == 1)
 	{
 		std::string chain = ChainNameFromCommandLine();
-		if (chain == CBaseChainParams::MAIN)
+		if (chain == CBaseChainParams::MAIN || chain == CBaseChainParams::REGTEST)
 		{
 			// SYSCOIN snapshot for old chain based on block 700k
 			return 1406671 * COIN;
@@ -2035,7 +2035,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     	COfferAccept theOfferAccept;
 
     	// make sure the offeraccept is also in the serialized offer in the txn
-    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept))
+    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept, tx))
             return error("DisconnectBlock() : not found in offer for offer accept %s %s\n",
             		opName.c_str(), HexStr(vvchOfferAccept).c_str());
 		

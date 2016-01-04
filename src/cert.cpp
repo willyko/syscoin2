@@ -17,7 +17,7 @@
 using namespace std;
 
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchMessage, string &strCipherText)
 {
 	CMessageCrypter crypter;
@@ -554,8 +554,8 @@ UniValue certnew(const UniValue& params, bool fHelp) {
                         + HelpRequiringPassphrase());
 	if(!HasReachedMainNetForkB2())
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
-	vector<unsigned char> vchTitle = vchFromValue(params[0]);
-    vector<unsigned char> vchData = vchFromValue(params[1]);
+	vector<unsigned char> vchTitle = vchFromString(params[0].get_str());
+    vector<unsigned char> vchData = vchFromString(params[1].get_str());
 	bool bPrivate = false;
     if(vchTitle.size() < 1)
         throw runtime_error("certificate cannot be empty!");
@@ -670,11 +670,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	const CWalletTx* wtxIn;
     CScript scriptPubKeyOrig;
 
-
-      	// check for existing cert 's
-	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		throw runtime_error("there are pending operations on that cert");
-	}
     EnsureWalletIsUnlocked();
 
     // look for a transaction with this key
@@ -687,7 +682,15 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL || !IsCertMine(tx))
 		throw runtime_error("this cert is not in your wallet");
-	
+
+printf("before\n");
+      	// check for existing cert 's
+	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		printf("throwing\n");
+		throw runtime_error("there are pending operations on that cert");
+	}
+	printf("after\n");
+
     // unserialize cert object from txn
     CCert theCert;
     if(!theCert.UnserializeFromTx(tx))
@@ -941,8 +944,8 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	oCert.push_back(Pair("private", ca.bPrivate? "Yes": "No"));
     oCert.push_back(Pair("is_mine", IsCertMine(tx) ? "true" : "false"));
 
-    int nHeight;
-	nHeight = GetBlockHeight(blockHash);
+    uint64_t nHeight;
+	nHeight = ca.nHeight;
 	string strAddress = "";
     GetCertAddress(tx, strAddress);
 	CSyscoinAddress address(strAddress);
@@ -986,7 +989,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
     CTransaction tx;
 
     vector<unsigned char> vchValue;
-    int nHeight;
+    uint64_t nHeight;
 
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
@@ -1029,7 +1032,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		
 		if(!IsCertMine(tx))
 			continue;
-		nHeight = GetBlockHeight(blockHash);
+		nHeight = cert.nHeight;
         // build the output object
 		UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("cert", stringFromVch(vchName)));
@@ -1104,8 +1107,8 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			int expired_block = 0;
             UniValue oCert(UniValue::VOBJ);
             vector<unsigned char> vchValue;
-            int nHeight;
-			nHeight = GetBlockHeight(blockHash);
+            uint64_t nHeight;
+			nHeight = txPos2.nHeight;
             oCert.push_back(Pair("cert", cert));
             string value = stringFromVch(vchValue);
             oCert.push_back(Pair("value", value));

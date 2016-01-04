@@ -19,6 +19,7 @@
 #include "chainparams.h"
 #include "policy/policy.h"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
@@ -28,7 +29,7 @@ COfferDB *pofferdb = NULL;
 CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind)
 {
 	LOCK(mempool.cs);
@@ -51,7 +52,7 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 					COfferAccept theOfferAccept;
 					if (theOffer.IsNull())
 						continue;
-					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept))
+					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept, tx))
 					{
 						nQty += theOfferAccept.nQty;
 					}
@@ -68,7 +69,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 	for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
-        const CTransaction& tx = mi->GetTx();	
+        const CTransaction& tx = mi->GetTx();
 		if (tx.IsCoinBase() || !CheckFinalTx(tx))
 			continue;
 		vector<vector<unsigned char> > vvch;
@@ -83,6 +84,8 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 			DecodeEscrowTx(tx, op, nOut, vvch, -1);
 		else if(IsMessageOp(type))
 			DecodeMessageTx(tx, op, nOut, vvch, -1);
+		else
+			return false;
 		if(op == type)
 		{
 			if(vchToFind == vvch[0])
@@ -93,14 +96,6 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 	}
 	return false;
 
-}
-int64_t GetBlockHeight(const uint256 blockHash) {
-	const CBlockIndex* pIndex;
-    BlockMap::const_iterator t = mapBlockIndex.find(blockHash);
-    if (t == mapBlockIndex.end())
-        return -1;
-	pIndex = t->second;
-	return pIndex->nHeight;
 }
 bool HasReachedMainNetForkB2()
 {
@@ -165,9 +160,11 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 
 
 	bool found = false;
-	string value = stringFromVch(foundAlias.vchValue);	
+	string value = stringFromVch(foundAlias.vchValue);
+	
 	UniValue outerValue(UniValue::VSTR);
-	if (outerValue.read(value))
+	bool read = outerValue.read(value);
+	if (read)
 	{
 		UniValue outerObj = outerValue.get_obj();
 		UniValue ratesValue = find_value(outerObj, "rates");
@@ -209,14 +206,14 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	}
 	else
 	{
-		if(fDebug)
-			LogPrintf("getCurrencyToSYSFromAlias() Failed to get value from alias\n");
+		//if(fDebug)
+			printf("getCurrencyToSYSFromAlias() Failed to get value from alias\n");
 		return "1";
 	}
 	if(!found)
 	{
 		if(fDebug)
-			LogPrintf("getCurrencyToSYSFromAlias() currency not found in SYS_RATES alias\n");
+			LogPrintf("getCurrencyToSYSFromAlias() currency %s not found in SYS_RATES alias\n", stringFromVch(vchCurrency).c_str());
 		return "0";
 	}
 	return "";
@@ -784,11 +781,12 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 						"Perform a first update after an aliasnew reservation."
 						+ HelpRequiringPassphrase());
 
-	vector<unsigned char> vchName = vchFromValue(params[0]);
+	vector<unsigned char> vchName = vchFromString(params[0].get_str());
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
 	vector<unsigned char> vchValue;
-
-	vchValue = vchFromValue(params[1]);
+	string strValue = params[1].get_str();
+	boost::replace_all(strValue, "''", "\"");
+	vchValue = vchFromString(strValue);
 
 	if (vchValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias value cannot exceed 1023 bytes!");
@@ -859,8 +857,11 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
                         "<toalias> receiver syscoin alias, if transferring alias.\n"
 						+ HelpRequiringPassphrase());
 
-	vector<unsigned char> vchName = vchFromValue(params[0]);
-	vector<unsigned char> vchValue = vchFromValue(params[1]);
+	vector<unsigned char> vchName = vchFromString(params[0].get_str());
+	vector<unsigned char> vchValue;
+	string strValue = params[1].get_str();
+	boost::replace_all(strValue, "''", "\"");
+	vchValue = vchFromString(strValue);
 	vector<unsigned char> vchPubKey;
 	if (vchValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias value cannot exceed 1023 bytes!");
@@ -897,12 +898,6 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
-	
-
-	// check for existing pending aliases
-	if (ExistsInMempool(vchName, OP_ALIAS_ACTIVATE) || ExistsInMempool(vchName, OP_ALIAS_UPDATE)) {
-		throw runtime_error("there are pending operations on that alias");
-	}
 
 	EnsureWalletIsUnlocked();
 
@@ -916,6 +911,10 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
+	// check for existing pending aliases
+	if (ExistsInMempool(vchName, OP_ALIAS_ACTIVATE) || ExistsInMempool(vchName, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
    // get the alias from DB
 	CAliasIndex theAlias;
     vector<CAliasIndex> vtxPos;
@@ -971,7 +970,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 		uint256 hash;
 		CTransaction tx;
 	
-		int nHeight;
+		uint64_t nHeight;
 		BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
 			// get txn hash, read txn index
 			hash = item.second.GetHash();
@@ -1005,7 +1004,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 				continue;
 			if(!IsAliasMine(tx))
 				continue;
-			nHeight = GetBlockHeight(blockHash);
+			nHeight = alias.nHeight;
 		
 			int expired = 0;
 			int expires_in = 0;
@@ -1069,11 +1068,11 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 
 		UniValue oName(UniValue::VOBJ);
 		vector<unsigned char> vchValue;
-		int nHeight;
+		uint64_t nHeight;
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
-		nHeight = GetBlockHeight(blockHash);
+		nHeight = vtxPos.back().nHeight;
 		oName.push_back(Pair("name", stringFromVch(vchName)));
 		string value = stringFromVch(vchValue);
 		oName.push_back(Pair("value", stringFromVch(vtxPos.back().vchValue)));
@@ -1137,8 +1136,8 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			int expired_block = 0;
 			UniValue oName(UniValue::VOBJ);
 			vector<unsigned char> vchValue;
-			int nHeight;
-			nHeight = GetBlockHeight(blockHash);
+			uint64_t nHeight;
+			nHeight = txPos2.nHeight;
 			oName.push_back(Pair("name", name));
 			string value = stringFromVch(vchValue);
 			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));

@@ -15,7 +15,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 void PutToMessageList(std::vector<CMessage> &messageList, CMessage& index) {
 	int i = messageList.size() - 1;
 	BOOST_REVERSE_FOREACH(CMessage &o, messageList) {
@@ -828,11 +828,11 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			}
             UniValue oMessage(UniValue::VOBJ);
             vector<unsigned char> vchValue;
-            int nHeight;
-            nHeight = GetBlockHeight(blockHash);
+            uint64_t nHeight;
+            nHeight = txPos2.nHeight;
             oMessage.push_back(Pair("GUID", message));
 			string sTime;
-			CBlockIndex *pindex = chainActive[txPos2.nHeight];
+			CBlockIndex *pindex = chainActive[nHeight];
 			if (pindex) {
 				sTime = strprintf("%llu", pindex->nTime);
 			}

@@ -16,8 +16,8 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 using namespace std;
-
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
+extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 void PutToEscrowList(std::vector<CEscrow> &escrowList, CEscrow& index) {
 	int i = escrowList.size() - 1;
 	BOOST_REVERSE_FOREACH(CEscrow &o, escrowList) {
@@ -165,9 +165,6 @@ bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
             CEscrow txEscrow;
             if(!txEscrow.UnserializeFromTx(tx))
                 return error("ReconstructEscrowIndex() : failed to unserialize escrow from tx");
-
-            // save serialized escrow
-            CEscrow serializedEscrow = txEscrow;
 
             // read escrow from DB if it exists
             vector<CEscrow> vtxPos;
@@ -438,22 +435,15 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				if(op != OP_ESCROW_ACTIVATE) 
 				{
 					bool escrowChanged = false;
-					// make sure we have found this offer in the dbescrowhist
+					// make sure we have found this escrow in db
 					if(!vtxPos.empty())
 					{
+						theEscrow = vtxPos.back();
 						// these are the only settings allowed to change outside of activate
-						serializedEscrow.rawTx = vtxPos.back().rawTx;
-						serializedEscrow.nHeight = vtxPos.back().nHeight;
-						serializedEscrow.txHash = vtxPos.back().txHash;
-						serializedEscrow.vchOfferAcceptLink = vtxPos.back().vchOfferAcceptLink;
-						if(serializedEscrow != vtxPos.back())
-							escrowChanged = true;
-					}
-					if(escrowChanged)
-					{
-						if(fDebug)
-							LogPrintf("CheckEscrowInputs(): Escrow value changed outside of activate, not allowed!\n");
-						return true;
+						if(!serializedEscrow.rawTx.empty())
+							theEscrow.rawTx = serializedEscrow.rawTx;
+						if(!serializedEscrow.vchOfferAcceptLink.empty())
+							theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;
 					}
 				}
 				
@@ -588,7 +578,15 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	arrayOfKeys.push_back(stringFromVch(theOffer.vchPubKey));
 	arrayOfKeys.push_back(strBuyerKey);
 	arrayParams.push_back(arrayOfKeys);
-	UniValue resCreate = tableRPC.execute("createmultisig", arrayParams);
+	UniValue resCreate;
+	try
+	{
+		resCreate = tableRPC.execute("createmultisig", arrayParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!resCreate.isObject())
 		throw runtime_error("Could not create escrow transaction: Invalid response from createescrow!");
 	const UniValue &o = resCreate.get_obj();
@@ -609,15 +607,14 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	int64_t nEscrowFee = GetEscrowArbiterFee(nTotal);
 	int64_t nAmountWithEscrowFee = nTotal+nEscrowFee;
 
-	// send to seller/arbiter so they can track the escrow through GUI
 	CWalletTx escrowWtx;
-	vector<CRecipient> vecSend;
-	CRecipient recipient = {scriptPubKey, nAmountWithEscrowFee, false};
-	vecSend.push_back(recipient);
-	SendMoneySyscoin(vecSend, nAmountWithEscrowFee, false, escrowWtx);
+	vector<CRecipient> vecSendEscrow;
+	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithEscrowFee, false};
+	vecSendEscrow.push_back(recipientEscrow);
+	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, false);
 	
- 
-    // build escrow UniValue
+	// send to seller/arbiter so they can track the escrow through GUI
+    // build escrow
     CEscrow newEscrow;
 	newEscrow.vchBuyerKey = vchFromString(strBuyerKey);
 	newEscrow.seller = theOffer.aliasName;
@@ -632,7 +629,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nPricePerUnit = nPricePerUnit;
 	newEscrow.nHeight = chainActive.Tip()->nHeight;
 	// send the tranasction
-	vecSend.clear();
+	vector<CRecipient> vecSend;
 	CRecipient recipientSeller;
 	CreateRecipient(scriptPubKeySeller, recipientSeller);
 	vecSend.push_back(recipientSeller);
@@ -668,11 +665,6 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
-     	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
-		throw runtime_error("there are pending operations on that escrow");
-	}
-
     // this is a syscoin transaction
     CWalletTx wtx;
 
@@ -684,7 +676,6 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	escrow.ClearEscrow();
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
@@ -766,7 +757,10 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 			throw runtime_error("Buyer or Arbiter private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
-
+     	// check for existing escrow 's
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
+		throw runtime_error("there are pending operations on that escrow");
+	}
 	// create a raw tx that sends escrow amount to seller and collateral to buyer
     // inputs buyer txHash
 	UniValue arrayCreateParams(UniValue::VARR);
@@ -789,7 +783,15 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 
 	arrayCreateParams.push_back(createTxInputsArray);
 	arrayCreateParams.push_back(createAddressUniValue);
-	UniValue resCreate = tableRPC.execute("createrawtransaction", arrayCreateParams);
+	UniValue resCreate;
+	try
+	{
+		resCreate = tableRPC.execute("createrawtransaction", arrayCreateParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}	
 	if (!resCreate.isStr())
 		throw runtime_error("Could not create escrow transaction: Invalid response from createrawtransaction!");
 	string createEscrowSpendingTx = resCreate.get_str();
@@ -809,7 +811,15 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
 	arraySignParams.push_back(arrayPrivateKeys);
-	UniValue res = tableRPC.execute("signrawtransaction", arraySignParams);
+	UniValue res;
+	try
+	{
+		res = tableRPC.execute("signrawtransaction", arraySignParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}	
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
 	
@@ -826,7 +836,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 
 	if(bComplete)
 		throw runtime_error("This is not a multisignature escrow!");
-
+	escrow.ClearEscrow();
 	escrow.rawTx = vchFromString(hex_str);
 	escrow.nHeight = chainActive.Tip()->nHeight;
 
@@ -863,10 +873,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
-      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
-		throw runtime_error("there are pending operations on that escrow");
-	}
 
 	EnsureWalletIsUnlocked();
 
@@ -876,7 +882,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-    escrow.ClearEscrow();
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
@@ -898,20 +903,27 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	string strEscrowScriptPubKey = HexStr(fundingTx.vout[nOutMultiSig].scriptPubKey.begin(), fundingTx.vout[nOutMultiSig].scriptPubKey.end());
 	if(nAmount != nExpectedAmountWithEscrowFee)
 		throw runtime_error("Expected amount of escrow does not match what is held in escrow!");
-
 	// decode rawTx and check it pays enough and it pays to buyer/seller appropriately
 	// check that right amount is going to be sent to seller
 	bool foundSellerPayment = false;
 	UniValue arrayDecodeParams(UniValue::VARR);
 	arrayDecodeParams.push_back(stringFromVch(escrow.rawTx));
-	UniValue decodeRes = tableRPC.execute("decoderawtransaction", arrayDecodeParams);
+	UniValue decodeRes;
+	try
+	{
+		decodeRes = tableRPC.execute("decoderawtransaction", arrayDecodeParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!decodeRes.isObject())
 		throw runtime_error("Could not decode escrow transaction: Invalid response from decoderawtransaction!");
 	const UniValue& decodeo = decodeRes.get_obj();
 	const UniValue& vout_value = find_value(decodeo, "vout");
 	if (!vout_value.isArray())
 		throw runtime_error("Could not decode escrow transaction: Can't find vout's from transaction!");	
-	UniValue vouts = vout_value.get_array();
+	const UniValue &vouts = vout_value.get_array();
     for (unsigned int idx = 0; idx < vouts.size(); idx++) {
         const UniValue& vout = vouts[idx];					
 		const UniValue &voutObj = vout.get_obj();					
@@ -927,12 +939,12 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		if(!addressesValue.isArray())
 			throw runtime_error("Could not decode escrow transaction: Invalid addresses UniValue!");
 
-		UniValue addresses = addressesValue.get_array();
+		const UniValue &addresses = addressesValue.get_array();
 		for (unsigned int idx = 0; idx < addresses.size(); idx++) {
 			const UniValue& address = addresses[idx];
 			if(!address.isStr())
 				throw runtime_error("Could not decode escrow transaction: Invalid address UniValue!");
-			string strAddress = address.get_str();
+			const string &strAddress = address.get_str();
 			CSyscoinAddress payoutAddress(strAddress);
 			if(IsMine(*pwalletMain, payoutAddress.Get()))
 			{
@@ -962,10 +974,13 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	CKey vchSecret;
 	if (!pwalletMain->GetKey(keyID, vchSecret))
 		throw runtime_error("Private key for seller address " + sellerAddress.ToString() + " is not known");
-	string strPrivateKey = CSyscoinSecret(vchSecret).ToString();
+	const string &strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	if(!foundSellerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the seller!");	
-
+      	// check for existing escrow 's
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
+		throw runtime_error("there are pending operations on that escrow");
+	}
     // Seller signs it
 	UniValue arraySignParams(UniValue::VARR);
 	UniValue arraySignInputs(UniValue::VARR);
@@ -980,7 +995,15 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
 	arraySignParams.push_back(arrayPrivateKeys);
-	UniValue res = tableRPC.execute("signrawtransaction", arraySignParams);
+	UniValue res;
+	try
+	{
+		res = tableRPC.execute("signrawtransaction", arraySignParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}	
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
 	
@@ -1002,18 +1025,32 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	// broadcast the payment transaction
 	UniValue arraySendParams(UniValue::VARR);
 	arraySendParams.push_back(hex_str);
-	res = tableRPC.execute("sendrawtransaction", arraySendParams);
+	try
+	{
+		res = tableRPC.execute("sendrawtransaction", arraySendParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!res.isStr())
 		throw runtime_error("Could not send escrow transaction: Invalid response from sendrawtransaction!");
 
 
 	UniValue arrayAcceptParams(UniValue::VARR);
 	arrayAcceptParams.push_back(stringFromVch(vchEscrow));
-	res = tableRPC.execute("escrowcomplete", arrayAcceptParams);
-	if (!res.isStr())
-		throw runtime_error("Could not complete escrow: Invalid response from escrowofferaccept!");
+	try
+	{
+		res = tableRPC.execute("escrowcomplete", arrayAcceptParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+	if (!res.isArray())
+		throw runtime_error("Could not complete escrow: Invalid response from escrowcomplete!");
 
-	return res.get_str();
+	return res;
 
 	
 	
@@ -1029,11 +1066,6 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
-      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
-		throw runtime_error("there are pending operations on that escrow");
-	}
-
 	EnsureWalletIsUnlocked();
 
     // look for a transaction with this key
@@ -1044,9 +1076,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	escrow.ClearEscrow();
 	uint256 hash, blockHash;
-	
 	bool foundEscrowRelease = false;
 	
 	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
@@ -1059,7 +1089,6 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		// skip non-syscoin txns
 		if (tx.nVersion != SYSCOIN_TX_VERSION)
 			continue;
-		
 		if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
     		|| !IsEscrowOp(op) 
 			|| vvch[0] != vchEscrow
@@ -1068,11 +1097,13 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		foundEscrowRelease = true;
 		break;
 	}
-
     if (!foundEscrowRelease)
         throw runtime_error("Can only complete an escrow that has been released to you and is not complete already");
 
-
+      	// check for existing escrow 's
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
+		throw runtime_error("there are pending operations on that escrow");
+	}
 	std::vector<unsigned char> vchBuyerKeyByte;
     boost::algorithm::unhex(escrow.vchBuyerKey.begin(), escrow.vchBuyerKey.end(), std::back_inserter(vchBuyerKeyByte));
 	CPubKey buyerKey(vchBuyerKeyByte);
@@ -1089,26 +1120,32 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	acceptParams.push_back("");
 	acceptParams.push_back(tx.GetHash().GetHex());
 
-	UniValue res = tableRPC.execute("offeraccept", acceptParams);
+	UniValue res;
+	try
+	{
+		res = tableRPC.execute("offeraccept", acceptParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}	
 	if (!res.isArray())
 		throw runtime_error("Could not complete escrow transaction: Invalid response from offeraccept!");
 
-	UniValue arr = res.get_array();
-	vector<unsigned char> vchAcceptTxHash = vchFromString(arr[0].get_str());
-	uint256 acceptTxHash(vchAcceptTxHash);
-	string acceptGUID = arr[1].get_str();
+	const UniValue &arr = res.get_array();
+	uint256 acceptTxHash(uint256S(arr[0].get_str()));
+	const string &acceptGUID = arr[1].get_str();
 	const CWalletTx *wtxAcceptIn;
 	wtxAcceptIn = pwalletMain->GetWalletTx(acceptTxHash);
 	if (wtxAcceptIn == NULL)
 		throw runtime_error("offer accept is not in your wallet");
 
-
+	escrow.ClearEscrow();
 	escrow.vchOfferAcceptLink = vchFromString(acceptGUID);
 	escrow.nHeight = chainActive.Tip()->nHeight;
   	CPubKey newDefaultKey;
 	pwalletMain->GetKeyFromPool(newDefaultKey); 
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-	escrow.rawTx.clear();
 
     CScript scriptPubKey,scriptPubKeyOrig;
 	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
@@ -1144,11 +1181,6 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
-     	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
-		throw runtime_error("there are pending operations on that escrow");
-	}
-
     // this is a syscoin transaction
     CWalletTx wtx;
 
@@ -1160,7 +1192,6 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	escrow.ClearEscrow();
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
@@ -1241,6 +1272,10 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 			throw runtime_error("Seller or Arbiter private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
+     	// check for existing escrow 's
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
+		throw runtime_error("there are pending operations on that escrow");
+	}
 	// refunds buyer from escrow
 	UniValue arrayCreateParams(UniValue::VARR);
 	UniValue createTxInputsArray(UniValue::VARR);
@@ -1260,7 +1295,15 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	}	
 	arrayCreateParams.push_back(createTxInputsArray);
 	arrayCreateParams.push_back(createAddressUniValue);
-	UniValue resCreate = tableRPC.execute("createrawtransaction", arrayCreateParams);
+	UniValue resCreate;
+	try
+	{
+		resCreate = tableRPC.execute("createrawtransaction", arrayCreateParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!resCreate.isStr())
 		throw runtime_error("Could not create escrow transaction: Invalid response from createrawtransaction!");
 	string createEscrowSpendingTx = resCreate.get_str();
@@ -1280,7 +1323,16 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
 	arraySignParams.push_back(arrayPrivateKeys);
-	UniValue res = tableRPC.execute("signrawtransaction", arraySignParams);
+	UniValue res;
+	try
+	{
+		res = tableRPC.execute("signrawtransaction", arraySignParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+	
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
 	
@@ -1299,7 +1351,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		throw runtime_error("This is not a multisignature escrow!");
 
 
-
+	escrow.ClearEscrow();
 	escrow.rawTx = vchFromString(hex_str);
 	escrow.nHeight = chainActive.Tip()->nHeight;
 
@@ -1336,10 +1388,6 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
-      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
-		throw runtime_error("there are pending operations on that escrow");
-	}
 
 	EnsureWalletIsUnlocked();
 
@@ -1349,7 +1397,6 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	escrow.ClearEscrow();
 	CTransaction fundingTx;
 	uint256 blockHash;
 	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
@@ -1378,7 +1425,15 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	UniValue arrayDecodeParams(UniValue::VARR);
 
 	arrayDecodeParams.push_back(stringFromVch(escrow.rawTx));
-	UniValue decodeRes = tableRPC.execute("decoderawtransaction", arrayDecodeParams);
+	UniValue decodeRes;
+	try
+	{
+		decodeRes = tableRPC.execute("decoderawtransaction", arrayDecodeParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!decodeRes.isObject())
 		throw runtime_error("Could not decode escrow transaction: Invalid response from decoderawtransaction!");
 	const UniValue& decodeo = decodeRes.get_obj();
@@ -1439,7 +1494,10 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	string strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	if(!foundBuyerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the buyer!");
-
+      	// check for existing escrow 's
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
+		throw runtime_error("there are pending operations on that escrow");
+	}
     // Seller signs it
 	UniValue arraySignParams(UniValue::VARR);
 	UniValue arraySignInputs(UniValue::VARR);
@@ -1454,7 +1512,15 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
 	arraySignParams.push_back(arrayPrivateKeys);
-	UniValue res = tableRPC.execute("signrawtransaction", arraySignParams);
+	UniValue res;
+	try
+	{
+		res = tableRPC.execute("signrawtransaction", arraySignParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
 	
@@ -1464,7 +1530,6 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
 		hex_str = hex_value.get_str();
-	LogPrintf("after signing final %s\n", hex_str.c_str());
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())
@@ -1476,7 +1541,16 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	// broadcast the payment transaction
 	UniValue arraySendParams(UniValue::VARR);
 	arraySendParams.push_back(hex_str);
-    return tableRPC.execute("sendrawtransaction", arraySendParams);
+	UniValue returnRes;
+	try
+	{
+		returnRes = tableRPC.execute("signrawtransaction", arraySignParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+	return returnRes;
 }
 
 UniValue escrowinfo(const UniValue& params, bool fHelp) {
@@ -1543,7 +1617,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
     CTransaction tx, dbtx;
 
     vector<unsigned char> vchValue;
-    int nHeight;
+    uint64_t nHeight;
 
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
@@ -1574,7 +1648,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		if (!GetTransaction(escrow.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
-		nHeight = GetBlockHeight(blockHash);
+		nHeight = escrow.nHeight;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("escrow", stringFromVch(vchName)));
@@ -1645,8 +1719,8 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			}
 			int expired = 0;
             UniValue oEscrow(UniValue::VOBJ);
-            int nHeight;
-			nHeight = GetBlockHeight(blockHash);
+            uint64_t nHeight;
+			nHeight = txPos2.nHeight;
 			oEscrow.push_back(Pair("escrow", escrow));
 			string sTime;
 			CBlockIndex *pindex = chainActive[txPos2.nHeight];

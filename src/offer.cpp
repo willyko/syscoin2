@@ -18,7 +18,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 // check wallet transactions to see if there was a refund for an accept already
 // need this because during a reorg blocks are disconnected (deleted from db) and we can't rely on looking in db to see if refund was made for an accept
 bool foundRefundInWallet(const vector<unsigned char> &vchAcceptRand, const vector<unsigned char>& acceptCode)
@@ -66,7 +66,7 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 					if (theOffer.IsNull())
 						continue;
 
-					if(theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+					if(theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept, wtx))
 					{
 						if(theOfferAccept.vchLinkOfferAccept == vchAcceptRandLink)
 							return true;
@@ -173,8 +173,6 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	COfferAccept theOfferAccept;
 	if(GetTxOfOfferAccept(*pofferdb, vchAcceptRand, theOffer, myOfferTx))
 	{
-		if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
-			return string("makeOfferRefundTX(): failed to get offer transaction");
 		if(!IsOfferMine(myOfferTx))
 			return "";
 		if(theOfferAccept.nQty <= 0)
@@ -417,7 +415,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 	                    LogPrintf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
 	                else bReadOffer = true;
 	            }
-				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
+				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA, tx))
 					 return error("ReconstructOfferIndex() OP_OFFER_REFUND: failed to read offer accept from serializedOffer\n");
 
 				if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
@@ -438,7 +436,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 	                    LogPrintf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
 	                else bReadOffer = true;
 	            }
-				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
+				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA, tx))
 					 return error("ReconstructOfferIndex() OP_OFFER_ACCEPT: failed to read offer accept from offer\n");
 
 				// add txn-specific values to offer accept UniValue
@@ -728,7 +726,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		if (!good)
 			return error("CheckOfferInputs() : could not decode a syscoin tx");
 		int nDepth;
-		// unserialize offer UniValue from txn, check for valid
+		// unserialize offer from txn, check for valid
 		COffer theOffer(tx);
 		COfferAccept theOfferAccept;
 		if (theOffer.IsNull())
@@ -807,7 +805,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// Check hash
 				const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
 				// check for existence of offeraccept in txn offer obj
-				if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
+				if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept, tx))
 					return error("OP_OFFER_REFUND could not read accept from offer txn");
 			}
 			break;
@@ -818,7 +816,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("offeraccept tx with guid too big");
 			// check for existence of offeraccept in txn offer obj
-			if(!theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+			if(!theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept, tx))
 				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
 			if (theOfferAccept.vchMessage.size() > MAX_VALUE_LENGTH)
 				return error("OP_OFFER_ACCEPT message field too big");
@@ -922,7 +920,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 					}
 
-					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept))
+					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept, tx))
 						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from serializedOffer txn");	
             		
 					if(!fInit && pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
@@ -995,7 +993,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 											
 					// check for existence of offeraccept in txn offer obj
-					if(!serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+					if(!serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept, tx))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not read accept from offer txn");					
 
 
@@ -1295,7 +1293,8 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	int precision;
 	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
 	{
-		throw runtime_error("Could not find this currency code in the SYS_RATES alias!\n");
+		string err = strprintf("Could not find currency %s in the SYS_RATES alias!\n", stringFromVch(vchCurrency));
+		throw runtime_error(err.c_str());
 	}
 	float minPrice = 1/pow(10,precision);
 	float price = nPrice;
@@ -1374,12 +1373,12 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		CreateRecipient(scriptPubKey, recipient);
 		vecSend.push_back(recipient);
 
-	const vector<unsigned char> &data = theCert.Serialize();
-	CScript scriptData;
-	scriptData << OP_RETURN << data;
-	CRecipient fee;
-	CreateFeeRecipient(scriptData, data, fee);
-	vecSend.push_back(fee);
+		const vector<unsigned char> &data = theCert.Serialize();
+		CScript scriptData;
+		scriptData << OP_RETURN << data;
+		CRecipient fee;
+		CreateFeeRecipient(scriptData, data, fee);
+		vecSend.push_back(fee);
 		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxCertIn);
 
 	}
@@ -1585,11 +1584,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	pwalletMain->GetKeyFromPool(newDefaultKey);
 	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
 
-
-	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
-	}
 	EnsureWalletIsUnlocked();
 
 	// look for a transaction with this key
@@ -1600,6 +1594,10 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
+	// check for existing pending offers
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+		throw runtime_error("there are pending operations or refunds on that offer");
+	}
 	// unserialize offer UniValue from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1610,7 +1608,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read offer from DB");
 
 	theOffer = vtxPos.back();
-	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
@@ -1629,6 +1626,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	COfferLinkWhitelistEntry entry;
 	entry.certLinkVchRand = vchCert;
 	entry.nDiscountPct = nDiscountPctInteger;
+	theOffer.ClearOffer();
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 
 	vector<CRecipient> vecSend;
@@ -1672,11 +1670,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	pwalletMain->GetKeyFromPool(newDefaultKey);
 	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
 
-	
-	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
-	}
 	EnsureWalletIsUnlocked();
 
 	// look for a transaction with this key
@@ -1688,6 +1681,10 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
+	// check for existing pending offers
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+		throw runtime_error("there are pending operations or refunds on that offer");
+	}
 	// unserialize offer UniValue from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1708,11 +1705,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	COfferLinkWhitelistEntry entry;
 	entry.certLinkVchRand = vchCert;
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
-
-	if(!theOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry))
-	{
-		throw runtime_error("could not find this whitelist entry to remove");
-	}
 
 	vector<CRecipient> vecSend;
 	CRecipient recipient;
@@ -1754,11 +1746,6 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	pwalletMain->GetKeyFromPool(newDefaultKey);
 	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
 
-
-	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
-	}
 	EnsureWalletIsUnlocked();
 
 	// look for a transaction with this key
@@ -1770,6 +1757,10 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
+	// check for existing pending offers
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+		throw runtime_error("there are pending operations or refunds on that offer");
+	}
 	// unserialize offer UniValue from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1840,7 +1831,7 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			int expires_in = 0;
 			if (!GetTransaction(txCert.GetHash(), txCert, Params().GetConsensus(), blockHash, true))
 				continue;
-			int64_t nHeight = GetBlockHeight(blockHash);
+			uint64_t nHeight = theCert.nHeight;
             if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight > 0)
 			{
 				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
@@ -1919,10 +1910,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
-	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
-	}
 	EnsureWalletIsUnlocked();
 
 	// look for a transaction with this key
@@ -1934,6 +1921,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
+	// check for existing pending offers
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+		throw runtime_error("there are pending operations or refunds on that offer");
+	}
 	// unserialize offer UniValue from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -2127,8 +2118,8 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	EnsureWalletIsUnlocked();
 
 	// look for a transaction with this key
-	COffer activateOffer, theOffer;
-	CTransaction tmpTx, txOffer, txAccept;
+	COffer theOffer;
+	CTransaction txOffer;
 	COfferAccept theOfferAccept;
 	uint256 hashBlock;
 
@@ -2149,9 +2140,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchAcceptRand, OP_OFFER_REFUND) || ExistsInMempool(vchAcceptRand, OP_OFFER_ACTIVATE) || ExistsInMempool(vvch[0], OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
-	// check for existence of offeraccept in txn offer obj
-	if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
-		throw runtime_error("could not read accept from offer txn");
+
 	// check if this offer is linked to another offer
 	if (!theOffer.vchLinkOffer.empty())
 		throw runtime_error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
@@ -2213,7 +2202,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     if (vchMessage.size() <= 0 && vchPubKey.empty())
         throw runtime_error("offeraccept message data cannot be empty!");
 
-
 	// this is a syscoin txn
 	CWalletTx wtx;
 	CScript scriptPubKeyOrig;
@@ -2227,18 +2215,14 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CScript scriptPubKey;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
 
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
-	}
 
 	EnsureWalletIsUnlocked();
 	const CWalletTx *wtxEscrowIn;
-	uint256 escrowTxHash(vchEscrowTxHash);
+	uint256 escrowTxHash(uint256S(stringFromVch(vchEscrowTxHash)));
 	// make sure cert is in wallet
 	wtxEscrowIn = pwalletMain->GetWalletTx(escrowTxHash);
 	if (!vchEscrowTxHash.empty() && wtxEscrowIn == NULL) 
-		throw runtime_error("release escrow transaction is not in your wallet");
-
+		throw runtime_error("release escrow transaction is not in your wallet");;
 	CEscrow escrow(*wtxEscrowIn);
 	if(!vchEscrowTxHash.empty() && escrow.IsNull())
 		throw runtime_error("release escrow transaction cannot unserialize escrow value");
@@ -2246,10 +2230,12 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	int op, nOut;
 	if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch, -1))
 		throw runtime_error("Cannot decode escrow tx hash");
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+		throw runtime_error("there are pending operations or refunds on that offer");
+	}
 	// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 	if(!escrow.IsNull())
 	{
-
 		// get escrow activation UniValue
 		vector<CEscrow> escrowVtxPos;
 		if (pescrowdb->ExistsEscrow(escrowVvch[0])) {
@@ -2269,7 +2255,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
-	theOffer.ClearOffer();
 
 	COffer linkedOffer;
 	CTransaction tmpTx;
@@ -2299,10 +2284,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			{
 				foundCert = entry;
 				break;
-			}
-			
+			}		
 		}
-
 	}
 	// if this is an accept for a linked offer, the offer is set to exclusive mode and you dont have a cert in the whitelist, you cannot accept this offer
 	if(!vchLinkOfferAccept.empty() && foundCert.IsNull() && theOffer.linkWhitelist.bExclusiveResell)
@@ -2313,6 +2296,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 	if(theOffer.nQty < (nQty+memPoolQty))
 		throw runtime_error("not enough remaining quantity to fulfill this orderaccept");
+
 	int precision = 2;
 	int64_t nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight>0?nHeight:chainActive.Tip()->nHeight, precision);
 	string strCipherText = "";
@@ -2324,7 +2308,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
 			throw runtime_error("could not encrypt message to seller");
 	}
-
 
 	if (vchMessage.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
@@ -2356,11 +2339,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// in checkescrowinput we override this if its from an escrow release, just like above.
 	txAccept.nHeight = nHeight>0?nHeight:chainActive.Tip()->nHeight;
 
-
 	txAccept.bPaid = true;
 	txAccept.vchCertLink = foundCert.certLinkVchRand;
 	txAccept.vchBuyerKey = vchPubKey;
 	txAccept.vchEscrowLink = escrowVvch[0];
+	theOffer.ClearOffer();
 	theOffer.PutOfferAccept(txAccept);
 
 
@@ -2376,9 +2359,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("payment to invalid address");
 	}
     scriptPayment= GetScriptForDestination(address.Get());
+	scriptPubKey += scriptPayment;
 
 	vector<CRecipient> vecSend;
-	CRecipient paymentRecipient = {scriptPayment, nTotalValue, false};
+	CRecipient paymentRecipient = {scriptPubKey, nTotalValue, false};
 	vecSend.push_back(paymentRecipient);
 
 	const vector<unsigned char> &data = theOffer.Serialize();
@@ -2498,8 +2482,10 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			int precision = 2;
-			convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
-			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 
+			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
+			const string &sTotal = strprintf("%llu SYS", (nPricePerUnit/COIN)*ca.nQty);
+			oOfferAccept.push_back(Pair("systotal", sTotal));
+			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
 			COfferLinkWhitelistEntry entry;
 			if(IsOfferMine(tx)) 
@@ -2533,7 +2519,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 
 			aoOfferAccepts.push_back(oOfferAccept);
 		}
-		int nHeight;
+		uint64_t nHeight;
 		int expired;
 		int expires_in;
 		int expired_block;
@@ -2541,7 +2527,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		expired = 0;	
 		expires_in = 0;
 		expired_block = 0;
-        nHeight = GetBlockHeight(blockHash);
+        nHeight = theOffer.nHeight;
 		oOffer.push_back(Pair("offer", offer));
 		oOffer.push_back(Pair("cert", stringFromVch(theOffer.vchCert)));
 		oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
@@ -2557,7 +2543,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("expires_in", expires_in));
 		oOffer.push_back(Pair("expired_block", expired_block));
 		oOffer.push_back(Pair("expired", expired));
-
+		oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
 		string strAddress = "";
         GetOfferAddress(tx, strAddress);
 		CSyscoinAddress address(strAddress);
@@ -2572,7 +2558,9 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		
 		
 		int precision = 2;
-		convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
+		int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
+		const string &sTotal = strprintf("%llu", nPricePerUnit/COIN);
+		oOffer.push_back(Pair("sysprice", sTotal));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
 		oOffer.push_back(Pair("is_mine", IsOfferMine(tx) ? "true" : "false"));
@@ -2648,11 +2636,11 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))	
 				continue;
 			// check for existence of offeraccept in txn offer obj
-			if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
+			if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept, wtx))
 				continue;					
 
 			string offer = stringFromVch(vchOffer);
-			string sHeight = strprintf("%u", theOfferAccept.nHeight);
+			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
@@ -2663,7 +2651,9 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(theOfferAccept.vchEscrowLink)));
 			int precision = 2;
-			convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
+			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
+			const string &sTotal = strprintf("%llu SYS", (nPricePerUnit/COIN)*theOfferAccept.nQty);
+			oOfferAccept.push_back(Pair("systotal", sTotal));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
@@ -2721,25 +2711,24 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOfferAcceptLink, theOffer, offerTx))
 				continue;
 
-			// check for existence of offeraccept in txn offer obj
-			if(!theOffer.GetAcceptByHash(theEscrow.vchOfferAcceptLink, theOfferAccept))
-				continue;	
-
             if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
                 continue;
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > offerVvch;
-            if (!DecodeOfferTx(offerTx, op, nOut, offerVvch, -1) 
+            if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch, -1) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT))
                 continue;
+			// check for existence of offeraccept in txn offer obj
+			if(!theOffer.GetAcceptByHash(theEscrow.vchOfferAcceptLink, theOfferAccept, acceptTx))
+				continue;	
 			const vector<unsigned char> &vchAcceptRand = offerVvch[1];
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
 				continue;
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
-			string sHeight = strprintf("%u", theOfferAccept.nHeight);
+			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
@@ -2798,7 +2787,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 		int pending;
 		int expires_in;
 		int expired_block;
-        int nHeight;
+        uint64_t nHeight;
 
         BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
@@ -2852,7 +2841,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			uint256 blockHash;
 			if (!GetTransaction(theOfferA.txHash, tx, Params().GetConsensus(), blockHash, true))
 				continue;
-			nHeight = GetBlockHeight(blockHash);
+			nHeight = theOfferA.nHeight;
             // build the output UniValue
             UniValue oName(UniValue::VOBJ);
             oName.push_back(Pair("offer", stringFromVch(vchName)));
@@ -2936,8 +2925,8 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			int expired_block = 0;
 			UniValue oOffer(UniValue::VOBJ);
 			vector<unsigned char> vchValue;
-			int nHeight;
-			nHeight = GetBlockHeight(blockHash);
+			uint64_t nHeight;
+			nHeight = txPos2.nHeight;
 			oOffer.push_back(Pair("offer", offer));
 			string value = stringFromVch(vchValue);
 			oOffer.push_back(Pair("value", value));
@@ -3147,16 +3136,12 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
-bool COffer::GetAcceptByHash(const vector<unsigned char> &ahash, COfferAccept &ca) {
+bool COffer::GetAcceptByHash(const vector<unsigned char> &ahash, COfferAccept &ca, const CTransaction &offerAcceptTx) {
+	vector<vector<unsigned char> > vvch;
+	int op, nOut;
+	if (!DecodeOfferTx(offerAcceptTx, op, nOut, vvch, -1))
+		return false;
 	for(unsigned int i=0;i<accepts.size();i++) {
-		vector<vector<unsigned char> > vvch;
-		int op, nOut;
-        CTransaction tx;
-        uint256 blockHash;
-		if (!GetTransaction(accepts[i].txHash, tx, Params().GetConsensus(), blockHash, true))
-			continue;
-		if (!DecodeOfferTx(tx, op, nOut, vvch, -1))
-			continue;
 		const vector<unsigned char> &vchAcceptRand = vvch[1];			
 		if(vchAcceptRand == ahash) {
 			ca = accepts[i];

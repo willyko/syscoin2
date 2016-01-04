@@ -18,6 +18,12 @@ const string CertNew(const string& node, const string& title, const string& data
 void CertUpdate(const string& node, const string& guid, const string& title, const string& data, bool privateData=false);
 void CertTransfer(const string& node, const string& guid, const string& toalias);
 const string MessageNew(const string& fromnode, const string& tonode, const string& title, const string& data, const string& fromalias, const string& toalias);
+void CreateSysRatesIfNotExist();
+const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid);
+const string OfferNew(const string& node, const string& aliasname, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency, const string& certguid="", const bool exclusiveResell=true);
+const string EscrowNew(const string& node, const string& offerguid, const string& qty, const string& message, const string& arbiteralias);
+void EscrowRelease(const string& node, const string& guid);
+void EscrowClaimRelease(const string& node, const string& guid);
 // SYSCOIN testing setup
 struct SyscoinTestingSetup {
     SyscoinTestingSetup();

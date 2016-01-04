@@ -126,7 +126,6 @@ bool HasReachedMainNetForkB2();
 bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type);
 unsigned int QtyOfPendingAcceptsInMempool(const std::vector<unsigned char>& vchToFind);
 std::string getCurrencyToSYSFromAlias(const std::vector<unsigned char> &vchCurrency, int64_t &nFee, const unsigned int &nHeightToFind, std::vector<std::string>& rateList, int &precision);
-int64_t GetBlockHeight(const uint256 blockHash);
 std::string aliasFromOp(int op);
 bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
