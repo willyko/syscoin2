@@ -74,21 +74,26 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 			continue;
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if(IsAliasOp(type))
-			DecodeAliasTx(tx, op, nOut, vvch, -1);
-		else if(IsOfferOp(type))		
-			DecodeOfferTx(tx, op, nOut, vvch, -1);
-		else if(IsCertOp(type))
-			DecodeCertTx(tx, op, nOut, vvch, -1);
-		else if(IsEscrowOp(type))	
-			DecodeEscrowTx(tx, op, nOut, vvch, -1);
-		else if(IsMessageOp(type))
-			DecodeMessageTx(tx, op, nOut, vvch, -1);
+		if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+		{
+		}
+		else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+		{
+		}
+		else if(DecodeCertTx(tx, op, nOut, vvch, -1))
+		{
+		}
+		else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+		{
+		}
+		else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+		{
+		}
 		else
-			return false;
+			continue;
 		if(op == type)
 		{
-			if(vchToFind == vvch[0])
+			if(vvch.size() >= 1 && vchToFind == vvch[0])
 			{
 				return true;
 			}

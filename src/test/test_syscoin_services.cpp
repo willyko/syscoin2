@@ -1,8 +1,8 @@
 #include "test_syscoin_services.h"
 #include "utiltime.h"
 #include "util.h"
-
-
+#include "amount.h"
+#include "rpcserver.h"
 #include <memory>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -101,7 +101,7 @@ int runSysCommand(const std::string& strCommand)
 }
 std::string CallExternal(std::string &cmd)
 {
-	cmd += " > cmdoutput.log 2>&1";
+	cmd += " > cmdoutput.log" /*2>&1"*/;
 	if(runSysCommand(cmd))
 		return string("ERROR");
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);
@@ -495,27 +495,28 @@ const string EscrowNew(const string& node, const string& offerguid, const string
 	string guid = arr[1].get_str();
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
-	const string &offerprice = find_value(r.get_obj(), "sysprice").get_str();
+	CAmount offerprice = AmountFromValue(find_value(r.get_obj(), "sysprice"));
 	const string &selleralias = find_value(r.get_obj(), "alias").get_str();
 	unsigned int nQty = boost::lexical_cast<unsigned int>(qty);
-	uint64_t nTotal = boost::lexical_cast<uint64_t>(offerprice)*nQty;
-	const string &sTotal = strprintf("%llu SYS", nTotal);
+	CAmount nTotal = offerprice*nQty;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
-	BOOST_CHECK(find_value(r.get_obj(), "total").get_str() == sTotal);
+	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
+	// you can't see this message, its meant for the seller
+	BOOST_CHECK(find_value(r.get_obj(), "pay_message").get_str() == string("Encrypted for owner of offer"));
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
-	BOOST_CHECK(find_value(r.get_obj(), "total").get_str() == sTotal);
+	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
-	BOOST_CHECK(find_value(r.get_obj(), "total").get_str() == sTotal);
+	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
 	return guid;
@@ -523,6 +524,11 @@ const string EscrowNew(const string& node, const string& offerguid, const string
 void EscrowRelease(const string& node, const string& guid)
 {
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
+	GenerateBlocks(10, node);
+}
+void EscrowRefund(const string& node, const string& guid)
+{
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
 	GenerateBlocks(10, node);
 }
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid)
@@ -542,6 +548,7 @@ const UniValue FindOfferAccept(const string& node, const string& offerguid, cons
 	}
 	return r;
 }
+// not that this is for escrow dealing with non-linked offers
 void EscrowClaimRelease(const string& node, const string& guid)
 {
 	UniValue r;
@@ -550,12 +557,61 @@ void EscrowClaimRelease(const string& node, const string& guid)
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
 	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
-	const string &escrowprice = find_value(r.get_obj(), "total").get_str();
+	const string &pay_message = find_value(r.get_obj(), "pay_message").get_str();
+	// check that you as the seller who claims the release can see the payment message
+	BOOST_CHECK(pay_message != string("Encrypted for owner of offer"));
+	CAmount escrowtotal = AmountFromValue(find_value(r.get_obj(), "systotal"));
 	const UniValue &acceptValue = FindOfferAccept(node, offerguid, acceptguid);
 	BOOST_CHECK(find_value(acceptValue, "escrowlink").get_str() == guid);
-	const string &sTotal = find_value(acceptValue, "systotal").get_str();
-	BOOST_CHECK(sTotal == escrowprice);
+	CAmount nTotal = AmountFromValue(find_value(acceptValue, "systotal"));
+	BOOST_CHECK(nTotal == escrowtotal);
 	BOOST_CHECK(find_value(acceptValue, "is_mine").get_str() == "true");
+	// confirm that the unencrypted messages match from the escrow and the accept
+	BOOST_CHECK(find_value(acceptValue, "pay_message").get_str() == pay_message);
+}
+// not that this is for escrow dealing with linked offers
+void EscrowClaimReleaseLinked(const string& node, const string& guid, const string& sellernode)
+{
+	UniValue r;
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrelease " + guid));
+	GenerateBlocks(10, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
+	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
+	const string &pay_message = find_value(r.get_obj(), "pay_message").get_str();
+	// check that you as the seller who claims the release can see the payment message
+	BOOST_CHECK(pay_message != string("Encrypted for owner of offer"));
+	CAmount escrowtotal = AmountFromValue(find_value(r.get_obj(), "systotal"));
+	const UniValue &acceptValue = FindOfferAccept(node, offerguid, acceptguid);
+	BOOST_CHECK(find_value(acceptValue, "escrowlink").get_str() == guid);
+	CAmount nTotal = AmountFromValue(find_value(acceptValue, "systotal"));
+	BOOST_CHECK(nTotal == escrowtotal);
+	BOOST_CHECK(find_value(acceptValue, "is_mine").get_str() == "false");
+	// confirm that the message is encrypted because he is a reseller for someone else
+	BOOST_CHECK(find_value(acceptValue, "pay_message").get_str() == string("Encrypted for owner of offer"));
+
+	// now get the accept from the sellernode
+	const UniValue &acceptSellerValue = FindOfferAccept(sellernode, offerguid, acceptguid);
+	BOOST_CHECK(find_value(acceptSellerValue, "escrowlink").get_str() == guid);
+	nTotal = AmountFromValue(find_value(acceptSellerValue, "systotal"));
+	BOOST_CHECK(nTotal == escrowtotal);
+	BOOST_CHECK(find_value(acceptSellerValue, "is_mine").get_str() == "true");
+	// confirm that the message is unencrypted and matches what the seller sees from escrowinfo
+	BOOST_CHECK(find_value(acceptSellerValue, "pay_message").get_str() == pay_message);
+
+}
+void EscrowClaimRefund(const string& node, const string& guid, bool arbiter)
+{
+	UniValue r;
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrefund " + guid));
+
+	GenerateBlocks(10, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
+	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
+	CAmount escrowtotal = AmountFromValue(find_value(r.get_obj(), "systotal"));
+	CAmount escrowfee = AmountFromValue(find_value(r.get_obj(), "sysfee"));
+
 }
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {

@@ -584,7 +584,7 @@ bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 		}
 	}
 	if (!found) vvch.clear();
-	return found;
+	return found && IsOfferOp(op);
 }
 
 
@@ -818,7 +818,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			// check for existence of offeraccept in txn offer obj
 			if(!theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept, tx))
 				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
-			if (theOfferAccept.vchMessage.size() > MAX_VALUE_LENGTH)
+			if (theOfferAccept.vchMessage.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 				return error("OP_OFFER_ACCEPT message field too big");
 			if (theOfferAccept.vchRefundAddress.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT refund field too big");
@@ -2300,16 +2300,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	int64_t nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight>0?nHeight:chainActive.Tip()->nHeight, precision);
 	string strCipherText = "";
-	// encryption should only happen once even if the offer accept is from a reseller.
-	// if this is an accept to the root of the offer owner, not reseller accept
-	if(vchLinkOfferAccept.empty())
+	// encryption should only happen once even when not a resell or not an escrow accept. It is already encrypted in both cases.
+	if(vchLinkOfferAccept.empty() && vchEscrowTxHash.empty())
 	{
 		// encrypt to offer owner
 		if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
 			throw runtime_error("could not encrypt message to seller");
 	}
 
-	if (vchMessage.size() > MAX_VALUE_LENGTH)
+	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 	if(!theOffer.vchCert.empty())
 	{
@@ -2483,8 +2482,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			int precision = 2;
 			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
-			const string &sTotal = strprintf("%llu SYS", (nPricePerUnit/COIN)*ca.nQty);
-			oOfferAccept.push_back(Pair("systotal", sTotal));
+			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
 			COfferLinkWhitelistEntry entry;
@@ -2559,8 +2557,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		
 		int precision = 2;
 		int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
-		const string &sTotal = strprintf("%llu", nPricePerUnit/COIN);
-		oOffer.push_back(Pair("sysprice", sTotal));
+		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
 		oOffer.push_back(Pair("is_mine", IsOfferMine(tx) ? "true" : "false"));
@@ -2652,8 +2649,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(theOfferAccept.vchEscrowLink)));
 			int precision = 2;
 			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
-			const string &sTotal = strprintf("%llu SYS", (nPricePerUnit/COIN)*theOfferAccept.nQty);
-			oOfferAccept.push_back(Pair("systotal", sTotal));
+			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
@@ -2668,7 +2664,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
 			}
-
+			string strMessage = string("");
+			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
+				strMessage = string("Encrypted for owner of offer");
+			oOfferAccept.push_back(Pair("pay_message", strMessage));
 			oRes.push_back(oOfferAccept);	
         }
        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
@@ -2754,6 +2753,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
 			}
+			string strMessage = string("");
+			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
+				strMessage = string("Encrypted for owner of offer");
+			oOfferAccept.push_back(Pair("pay_message", strMessage));
 			oRes.push_back(oOfferAccept);	
         }
     }

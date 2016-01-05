@@ -261,7 +261,7 @@ bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,
         }
     }
 	if (!found) vvch.clear();
-    return found;
+    return found && IsMessageOp(op);
 }
 
 bool DecodeMessageScript(const CScript& script, int& op,
@@ -404,11 +404,11 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message to too big");
 		}
-		if(theMessage.vchMessageTo.size() > MAX_MSG_LENGTH)
+		if(theMessage.vchMessageTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
 			return error("message data to too big");
 		}
-		if(theMessage.vchMessageFrom.size() > MAX_MSG_LENGTH)
+		if(theMessage.vchMessageFrom.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
 			return error("message data from too big");
 		}
@@ -583,9 +583,10 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("Could not encrypt message data for sender!");
 	}
-    if (strCipherTextFrom.size() > MAX_MSG_LENGTH)
+
+    if (strCipherTextFrom.size() > MAX_ENCRYPTED_VALUE_LENGTH)
         throw runtime_error("Message data cannot exceed 1023 bytes!");
-    if (strCipherTextTo.size() > MAX_MSG_LENGTH)
+    if (strCipherTextTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
         throw runtime_error("Message data cannot exceed 1023 bytes!");
 
     // build message UniValue

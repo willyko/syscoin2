@@ -5,7 +5,6 @@
 #include "init.h"
 #include "main.h"
 #include "util.h"
-#include "util.h"
 #include "base58.h"
 #include "rpcserver.h"
 #include "wallet/wallet.h"
@@ -43,10 +42,8 @@ bool IsEscrowOp(int op) {
 int64_t GetEscrowArbiterFee(int64_t escrowValue) {
 
 	int64_t nFee = escrowValue*0.005;
-	
-	// Round up to CENT
-	nFee += CENT - 1;
-	nFee = (nFee / CENT) * CENT;
+	if(nFee < DEFAULT_MIN_RELAY_TX_FEE)
+		nFee = DEFAULT_MIN_RELAY_TX_FEE;
 	return nFee;
 }
 // Increase expiration to 36000 gradually starting at block 24000.
@@ -279,7 +276,7 @@ bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,
         }
     }
 	if (!found) vvch.clear();
-    return found;
+    return found && IsEscrowOp(op);
 }
 
 bool DecodeEscrowScript(const CScript& script, int& op,
@@ -523,8 +520,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 
     if (vchMessage.size() <= 0)
         vchMessage = vchFromString("ESCROW");
-    if (vchMessage.size() > MAX_VALUE_LENGTH)
-        throw runtime_error("offeraccept message data cannot exceed 1023 bytes!");
+
 	COffer theOffer;
 	CTransaction txOffer;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
@@ -551,7 +547,13 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
 	CPubKey SellerPubKey(vchSellerKeyByte);
 	CSyscoinAddress selleraddy(SellerPubKey.GetID());
-
+	string strCipherText = "";
+	// encrypt to offer owner
+	if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
+		throw runtime_error("could not encrypt message to seller");
+	
+	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 
 	std::vector<unsigned char> vchArbiterKeyByte;
     boost::algorithm::unhex(vchArbiterPubKey.begin(), vchArbiterPubKey.end(), std::back_inserter(vchArbiterKeyByte));
@@ -623,7 +625,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.vchRedeemScript = vchFromString(redeemScript_str);
 	newEscrow.vchOffer = vchOffer;
 	newEscrow.vchSellerKey = theOffer.vchPubKey;
-	newEscrow.vchPaymentMessage = vchMessage;
+	newEscrow.vchPaymentMessage = vchFromString(strCipherText);
 	newEscrow.nQty = nQty;
 	newEscrow.escrowInputTxHash = escrowWtx.GetHash();
 	newEscrow.nPricePerUnit = nPricePerUnit;
@@ -906,6 +908,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	// decode rawTx and check it pays enough and it pays to buyer/seller appropriately
 	// check that right amount is going to be sent to seller
 	bool foundSellerPayment = false;
+	bool foundFeePayment = false;
 	UniValue arrayDecodeParams(UniValue::VARR);
 	arrayDecodeParams.push_back(stringFromVch(escrow.rawTx));
 	UniValue decodeRes;
@@ -946,6 +949,25 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 				throw runtime_error("Could not decode escrow transaction: Invalid address UniValue!");
 			const string &strAddress = address.get_str();
 			CSyscoinAddress payoutAddress(strAddress);
+			// check arb fee is paid to arbiter or buyer
+			if(!foundFeePayment)
+			{
+				std::vector<unsigned char> vchArbiterKeyByte;
+				boost::algorithm::unhex(escrow.vchArbiterKey.begin(), escrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+				CPubKey arbiterKey(vchArbiterKeyByte);
+				CSyscoinAddress arbiterAddress(arbiterKey.GetID());
+				if(arbiterAddress == payoutAddress && iVout == nEscrowFee)
+					foundFeePayment = true;
+			}
+			if(!foundFeePayment)
+			{
+				std::vector<unsigned char> vchBuyerKeyByte;
+				boost::algorithm::unhex(escrow.vchBuyerKey.begin(), escrow.vchBuyerKey.end(), std::back_inserter(vchBuyerKeyByte));
+				CPubKey buyerKey(vchBuyerKeyByte);
+				CSyscoinAddress buyerAddress(buyerKey.GetID());
+				if(buyerAddress == payoutAddress && iVout == nEscrowFee)
+					foundFeePayment = true;
+			}	
 			if(IsMine(*pwalletMain, payoutAddress.Get()))
 			{
 				if(!foundSellerPayment)
@@ -953,7 +975,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 					if(iVout == nExpectedAmount)
 					{
 						foundSellerPayment = true;
-						break;
 					}
 				}
 			}
@@ -977,7 +998,9 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	const string &strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	if(!foundSellerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the seller!");	
-      	// check for existing escrow 's
+	if(!foundFeePayment)    
+		throw runtime_error("Expected fee payment to arbiter or buyer from escrow does not match what was expected!");	
+	// check for existing escrow 's
 	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
@@ -1587,11 +1610,18 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	oEscrow.push_back(Pair("buyerkey", stringFromVch(ca.vchBuyerKey)));
 	oEscrow.push_back(Pair("offer", stringFromVch(ca.vchOffer)));
 	oEscrow.push_back(Pair("offeracceptlink", stringFromVch(ca.vchOfferAcceptLink)));
-
+	oEscrow.push_back(Pair("systotal", ValueFromAmount(ca.nPricePerUnit * ca.nQty)));
+	int64_t nEscrowFee = GetEscrowArbiterFee(ca.nPricePerUnit * ca.nQty);
+	oEscrow.push_back(Pair("sysfee", ValueFromAmount(nEscrowFee)));
 	string sTotal = strprintf("%llu SYS", (ca.nPricePerUnit/COIN)*ca.nQty);
 	oEscrow.push_back(Pair("total", sTotal));
     oEscrow.push_back(Pair("txid", ca.txHash.GetHex()));
     oEscrow.push_back(Pair("height", sHeight));
+	string strMessage = string("");
+	if(!DecryptMessage(ca.vchSellerKey, ca.vchPaymentMessage, strMessage))
+		strMessage = string("Encrypted for owner of offer");
+	oEscrow.push_back(Pair("pay_message", strMessage));
+
 	
     return oEscrow;
 }

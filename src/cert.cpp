@@ -317,7 +317,7 @@ bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,
         }
     }
     if (!found) vvch.clear();
-    return found;
+    return found && IsCertOp(op);
 }
 
 
@@ -443,7 +443,7 @@ bool CheckCertInputs(const CTransaction &tx,
         CCert theCert(tx);
         if (theCert.IsNull())
             return error("CheckCertInputs() : null cert object");
-		if(theCert.vchData.size() > MAX_VALUE_LENGTH*2)
+		if(theCert.vchData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
 			return error("cert data too big");
 		}
@@ -563,8 +563,6 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     if(vchTitle.size() > MAX_NAME_LENGTH)
         throw runtime_error("certificate title cannot exceed 255 bytes!");
 
-    if (vchData.size() > MAX_VALUE_LENGTH)
-        throw runtime_error("certificate data cannot exceed 1023 bytes!");
 	if(params.size() >= 3)
 	{
 		bPrivate = atoi(params[2].get_str().c_str()) == 1? true: false;
@@ -600,8 +598,11 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			throw runtime_error("data length cannot exceed 1023 bytes!");
 		vchData = vchFromString(strCipherText);
 	}
+
 	// calculate net
     // build cert object
     CCert newCert;
@@ -662,9 +663,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     if (vchData.size() < 1)
         vchData = vchFromString(" ");
 
-    if (vchData.size() > MAX_VALUE_LENGTH)
-        throw runtime_error("certificate data cannot exceed 1023 bytes!");
-
     // this is a syscoind txn
     CWalletTx wtx;
 	const CWalletTx* wtxIn;
@@ -682,15 +680,10 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL || !IsCertMine(tx))
 		throw runtime_error("this cert is not in your wallet");
-
-printf("before\n");
       	// check for existing cert 's
 	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		printf("throwing\n");
 		throw runtime_error("there are pending operations on that cert");
 	}
-	printf("after\n");
-
     // unserialize cert object from txn
     CCert theCert;
     if(!theCert.UnserializeFromTx(tx))
@@ -721,6 +714,8 @@ printf("before\n");
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			throw runtime_error("data length cannot exceed 1023 bytes!");
 		vchData = vchFromString(strCipherText);
 	}
 
@@ -858,6 +853,8 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			throw runtime_error("data length cannot exceed 1023 bytes!");
 		vchData = vchFromString(strCipherText);
 	}	
 	CCert copyCert = theCert;
