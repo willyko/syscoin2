@@ -46,13 +46,13 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 		if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
 			if(op == OP_OFFER_ACCEPT)
 			{
-				if(vvch[0] == vchToFind)
+				if(vvch.size() >= 1 && vvch[0] == vchToFind)
 				{
 					COffer theOffer(tx);
 					COfferAccept theOfferAccept;
 					if (theOffer.IsNull())
 						continue;
-					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept, tx))
+					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept))
 					{
 						nQty += theOfferAccept.nQty;
 					}
@@ -110,9 +110,9 @@ bool HasReachedMainNetForkB2()
 	return fTestNet || (!fTestNet && chainActive.Tip()->nHeight >= 1);
 }
 
-int64_t convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const double &nPrice, const unsigned int &nHeight, int &precision)
+int64_t convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision)
 {
-	double sysPrice = nPrice;
+	float sysPrice = nPrice;
 	int64_t nRate;
 	vector<string> rateList;
 	if(getCurrencyToSYSFromAlias(vchCurrencyCode, nRate, nHeight, rateList, precision) == "")

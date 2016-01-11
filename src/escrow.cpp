@@ -199,25 +199,6 @@ int IndexOfEscrowOutput(const CTransaction& tx) {
     return nOut;
 }
 
-bool GetNameOfEscrowTx(const CTransaction& tx, vector<unsigned char>& escrow) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-    vector<vector<unsigned char> > vvchArgs;
-    int op, nOut;
-    if (!DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
-        return error("GetNameOfEscrowTx() : could not decode a syscoin tx");
-
-    switch (op) {
-        case OP_ESCROW_ACTIVATE:
-        case OP_ESCROW_RELEASE:
-        case OP_ESCROW_REFUND:
-		case OP_ESCROW_COMPLETE:
-            escrow = vvchArgs[0];
-            return true;
-    }
-    return false;
-}
-
 bool IsEscrowMine(const CTransaction& tx) {
     if (tx.nVersion != SYSCOIN_TX_VERSION)
         return false;
@@ -877,7 +858,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 
 
 	EnsureWalletIsUnlocked();
-
     // look for a transaction with this key
     CTransaction tx;
 	CEscrow escrow;
@@ -1072,7 +1052,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	}
 	if (!res.isArray())
 		throw runtime_error("Could not complete escrow: Invalid response from escrowcomplete!");
-
 	return res;
 
 	
@@ -1662,9 +1641,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeEscrowTx(wtx, op, nOut, vvch, -1) || !IsEscrowOp(op))
 			continue;
-		// get the txn escrow name
-		if (!GetNameOfEscrowTx(wtx, vchName))
-			continue;
+		vchName = vvch[0];
 		vector<CEscrow> vtxPos;
 		if (!pescrowdb->ReadEscrow(vchName, vtxPos) || vtxPos.empty())
 			continue;

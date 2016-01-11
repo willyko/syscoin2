@@ -126,15 +126,25 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	CAmount balanceAfter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
 
-}/*
+}
 BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 {
+	GenerateBlocks(200);
+	GenerateBlocks(2000, "node2");
+	GenerateBlocks(2000, "node3");
 	string qty = "3";
 	string message = "paymentmessage";
-	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.45", "description", "EUR");
-	string offerlinkguid = OfferLink("node3", offerguid);
+	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR");
+	string commission = "10";
+	string description = "newsescription";
+	// offer should be set to exclusive mode by default so linking isn't allowed
+	BOOST_CHECK_THROW(CallRPC("node3", "offerlink " + offerguid + " " + commission + " " + description), runtime_error);
+	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR", "", false);
+	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
 	string guid = EscrowNew("node1", offerlinkguid, qty, message, "arbiteralias");
-	EscrowRelease("node1", guid);	
-	EscrowClaimReleaseLink("node3", guid, "node2");
-}*/
+	EscrowRelease("node1", guid);
+	// reseller cant claim escrow, seller must claim it
+	BOOST_CHECK_THROW(CallRPC("node3", "escrowclaimrelease " + guid), runtime_error);
+	EscrowClaimReleaseLink("node2", guid, "node3");
+}
 BOOST_AUTO_TEST_SUITE_END ()

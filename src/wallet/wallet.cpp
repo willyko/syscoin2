@@ -2149,7 +2149,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // Limit size
                 if (nBytes >= MAX_STANDARD_TX_SIZE)
                 {
-                    strFailReason = _("Transaction too large");
+					// SYSCOIN better output
+					strFailReason = strprintf("%s: %d bytes", _("Transaction too large"), nBytes);
                     return false;
                 }
 

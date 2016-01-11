@@ -2035,7 +2035,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     	COfferAccept theOfferAccept;
 
     	// make sure the offeraccept is also in the serialized offer in the txn
-    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept, tx))
+    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept))
             return error("DisconnectBlock() : not found in offer for offer accept %s %s\n",
             		opName.c_str(), HexStr(vvchOfferAccept).c_str());
 		

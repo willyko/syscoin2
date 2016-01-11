@@ -185,22 +185,6 @@ int IndexOfMessageOutput(const CTransaction& tx) {
     return nOut;
 }
 
-bool GetNameOfMessageTx(const CTransaction& tx, vector<unsigned char>& message) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-    vector<vector<unsigned char> > vvchArgs;
-    int op, nOut;
-    if (!DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
-        return error("GetNameOfMessageTx() : could not decode a syscoin tx");
-
-    switch (op) {
-        case OP_MESSAGE_ACTIVATE:
-            message = vvchArgs[0];
-            return true;
-    }
-    return false;
-}
-
 
 bool IsMessageMine(const CTransaction& tx) {
     if (tx.nVersion != SYSCOIN_TX_VERSION)
@@ -701,9 +685,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
 			continue;
-		// get the txn message name
-		if (!GetNameOfMessageTx(wtx, vchName))
-			continue;
+		vchName = vvch[0];
 
 		vector<CMessage> vtxPos;
 		if (!pmessagedb->ReadMessage(vchName, vtxPos))
@@ -767,9 +749,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
 			continue;
-		// get the txn message name
-		if (!GetNameOfMessageTx(wtx, vchName))
-			continue;
+		vchName = vvch[0];
 
 		vector<CMessage> vtxPos;
 		if (!pmessagedb->ReadMessage(vchName, vtxPos) || vtxPos.empty())

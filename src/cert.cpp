@@ -221,24 +221,6 @@ int IndexOfCertOutput(const CTransaction& tx) {
     return nOut;
 }
 
-bool GetNameOfCertTx(const CTransaction& tx, vector<unsigned char>& cert) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-    vector<vector<unsigned char> > vvchArgs;
-    int op, nOut;
-    if (!DecodeCertTx(tx, op, nOut, vvchArgs, -1))
-        return error("GetNameOfCertTx() : could not decode a syscoin tx");
-
-    switch (op) {
-        case OP_CERT_ACTIVATE:
-        case OP_CERT_UPDATE:
-        case OP_CERT_TRANSFER:
-            cert = vvchArgs[0];
-            return true;
-    }
-    return false;
-}
-
 bool IsCertMine(const CTransaction& tx) {
     if (tx.nVersion != SYSCOIN_TX_VERSION)
         return false;
@@ -1006,10 +988,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!DecodeCertTx(wtx, op, nOut, vvch, -1) || !IsCertOp(op))
 			continue;
 		
-
-		// get the txn cert name
-		if (!GetNameOfCertTx(wtx, vchName))
-			continue;
+		vchName = vvch[0];
 		
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)

@@ -355,10 +355,10 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
 
     // Check amount
     if (nValue <= 0)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
+        throw runtime_error("Invalid amount");
 
     if (nValue > curBalance)
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
+        throw runtime_error("Insufficient funds");
 
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
@@ -368,10 +368,10 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
     if (!pwalletMain->CreateTransaction(vecSend, wtxNew, reservekey, nFeeRequired, nChangePosRet, strError, NULL, true, wtxIn, syscoinTx)) {
         if (!fSubtractFeeFromAmount && nValue + nFeeRequired > pwalletMain->GetBalance())
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
-        throw JSONRPCError(RPC_WALLET_ERROR, strError);
+        throw runtime_error(strError);
     }
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+        throw runtime_error("Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
 }
 void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
 {

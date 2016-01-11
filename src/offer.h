@@ -37,6 +37,7 @@ static const std::vector<unsigned char> OFFER_REFUND_COMPLETE = std::vector<unsi
 
 class COfferAccept {
 public:
+	std::vector<unsigned char> vchAcceptRand;
     std::vector<unsigned char> vchMessage;
 	uint256 txHash;
 	uint64_t nHeight;
@@ -57,6 +58,7 @@ public:
 	ADD_SERIALIZE_METHODS;
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+		READWRITE(vchAcceptRand);
         READWRITE(vchMessage);
 		READWRITE(txHash);
 		READWRITE(VARINT(nHeight));
@@ -75,7 +77,8 @@ public:
 
     friend bool operator==(const COfferAccept &a, const COfferAccept &b) {
         return (
-        a.vchMessage == b.vchMessage
+		a.vchAcceptRand == b.vchAcceptRand
+        && a.vchMessage == b.vchMessage
         && a.txHash == b.txHash
         && a.nHeight == b.nHeight
         && a.nQty == b.nQty
@@ -92,6 +95,7 @@ public:
     }
 
     COfferAccept operator=(const COfferAccept &b) {
+		vchAcceptRand = b.vchAcceptRand;
         vchMessage = b.vchMessage;
         txHash = b.txHash;
         nHeight = b.nHeight;
@@ -112,8 +116,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
-    bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == 0 && bRefunded == false && txRefundId.IsNull()); }
+    void SetNull() { vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
+    bool IsNull() const { return (vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == 0 && bRefunded == false && txRefundId.IsNull()); }
 
 };
 class COfferLinkWhitelistEntry {
@@ -283,19 +287,19 @@ public:
 		
 	}
 	float GetPrice(const COfferLinkWhitelistEntry& entry=COfferLinkWhitelistEntry()){
-		double price = nPrice;
+		float price = nPrice;
 		if(!entry.IsNull())
 		{
-			double discountPct = entry.nDiscountPct;
+			int discountPct = entry.nDiscountPct;
 			if(entry.nDiscountPct < -99 || entry.nDiscountPct > 99)
 				discountPct = 0;
-			double fDiscount = (double)discountPct / 100.0;
-			price -= fDiscount*price;
+			float fDiscount = price*(discountPct / 100);
+			price = price - fDiscount;
 
 		}
 		// add commission
-		double fCommission = (double)nCommission / 100.0;
-		price = price + price*fCommission;
+		float fCommission = price*(nCommission / 100);
+		price = price + fCommission;
 		return price;
 	}
 	void SetPrice(float price){
@@ -312,7 +316,15 @@ public:
     	}
     	accepts.push_back(theOA);
     }
-
+	bool GetAcceptByHash(const std::vector<unsigned char> &ahash, COfferAccept &ca) {
+		for(unsigned int i=0;i<accepts.size();i++) {		
+			if(accepts[i].vchAcceptRand == ahash) {
+				ca = accepts[i];
+				return true;
+			}
+		}
+		return false;
+	}
     void PutToOfferList(std::vector<COffer> &offerList) {
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];

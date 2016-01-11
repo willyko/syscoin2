@@ -21,7 +21,6 @@ bool IsEscrowOp(int op);
 int IndexOfEscrowOutput(const CTransaction& tx);
 int GetEscrowExpirationDepth();
 
-bool GetNameOfEscrowTx(const CTransaction& tx, std::vector<unsigned char>& escrow);
 std::string escrowFromOp(int op);
 CScript RemoveEscrowScriptPrefix(const CScript& scriptIn);
 bool DecodeEscrowScript(const CScript& script, int& op,
