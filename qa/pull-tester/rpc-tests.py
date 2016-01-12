@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2014 The Syscoin Core developers
+# Copyright (c) 2014-2015 The Syscoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -62,8 +62,10 @@ for arg in sys.argv[1:]:
 
 #Set env vars
 buildDir = BUILDDIR
-os.environ["SYSCOIND"] = buildDir + '/src/syscoind' + EXEEXT
-os.environ["SYSCOINCLI"] = buildDir + '/src/syscoin-cli' + EXEEXT
+if "SYSCOIND" not in os.environ:
+    os.environ["SYSCOIND"] = buildDir + '/src/syscoind' + EXEEXT
+if "SYSCOINCLI" not in os.environ:
+    os.environ["SYSCOINCLI"] = buildDir + '/src/syscoin-cli' + EXEEXT
 
 #Disable Windows tests by default
 if EXEEXT == ".exe" and "-win" not in opts:
@@ -83,6 +85,7 @@ testScripts = [
     'rest.py',
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
+    'mempool_limit.py',
     'httpbasics.py',
     'multi_rpc.py',
     'zapwallettxes.py',
