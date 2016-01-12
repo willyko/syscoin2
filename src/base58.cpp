@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 The Syscoin Core developers
+// Copyright (c) 2014 The Syscoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,7 +14,8 @@
 #include <string>
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
-
+// SYSCOIN use aliases as addresses
+extern void GetAliasValue(const std::string& strName, std::string& strAddress);
 /** All alphanumeric characters except for "0", "I", "O", and "l" */
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -217,7 +218,57 @@ public:
 };
 
 } // anon namespace
-
+// SYSCOIN aliases as addresses
+CSyscoinAddress::CSyscoinAddress() {
+	isAlias = false;
+	aliasName = "";
+}
+CSyscoinAddress::CSyscoinAddress(const CTxDestination &dest) { 
+	isAlias = false;
+	aliasName = "";
+    Set(dest);
+}
+CSyscoinAddress::CSyscoinAddress(const std::string& strAddress) { 
+	isAlias = false;
+	aliasName = "";
+    SetString(strAddress);
+	// try to resolve alias address
+	if (!IsValid())
+	{
+		try 
+		{
+			std::string strAliasAddress;
+			GetAliasValue(strAddress, strAliasAddress);
+			SetString(strAliasAddress);
+			aliasName = strAddress;
+			isAlias = true;
+		}
+		catch(...)
+		{
+		}
+	}
+			
+}
+CSyscoinAddress::CSyscoinAddress(const char* pszAddress) { 
+	isAlias = false;
+    SetString(pszAddress);
+	// try to resolve alias address
+	if (!IsValid())
+	{
+		try 
+		{
+			std::string strAliasAddress;
+			GetAliasValue(std::string(pszAddress), strAliasAddress);
+			SetString(strAliasAddress);
+			aliasName = std::string(pszAddress);
+			isAlias = true;
+			
+		}
+		catch(...)
+		{
+		}
+	}
+}
 bool CSyscoinAddress::Set(const CKeyID& id)
 {
     SetData(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS), &id, 20);
@@ -243,7 +294,9 @@ bool CSyscoinAddress::IsValid() const
 bool CSyscoinAddress::IsValid(const CChainParams& params) const
 {
     bool fCorrectSize = vchData.size() == 20;
-    bool fKnownVersion = vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS) ||
+	// SYSCOIN allow old SYSCOIN address scheme
+    bool fKnownVersion = vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS)     ||
+						 vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS) ||
                          vchVersion == params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
     return fCorrectSize && fKnownVersion;
 }
@@ -254,7 +307,9 @@ CTxDestination CSyscoinAddress::Get() const
         return CNoDestination();
     uint160 id;
     memcpy(&id, &vchData[0], 20);
-    if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))
+	// SYSCOIN allow old SYSCOIN address scheme
+    if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS) ||
+		vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS))
         return CKeyID(id);
     else if (vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS))
         return CScriptID(id);
@@ -264,7 +319,8 @@ CTxDestination CSyscoinAddress::Get() const
 
 bool CSyscoinAddress::GetKeyID(CKeyID& keyID) const
 {
-    if (!IsValid() || vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))
+	// SYSCOIN allow old SYSCOIN address scheme
+    if (!IsValid() || (vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS) && vchVersion != Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS_SYS)))
         return false;
     uint160 id;
     memcpy(&id, &vchData[0], 20);
@@ -296,7 +352,9 @@ CKey CSyscoinSecret::GetKey()
 bool CSyscoinSecret::IsValid() const
 {
     bool fExpectedFormat = vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1);
-    bool fCorrectVersion = vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY);
+	// SYSCOIN allow old SYSCOIN address scheme
+    bool fCorrectVersion = vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY) ||
+                               vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY_SYS);
     return fExpectedFormat && fCorrectVersion;
 }
 

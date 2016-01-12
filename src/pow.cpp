@@ -10,6 +10,7 @@
 #include "primitives/block.h"
 #include "uint256.h"
 #include "util.h"
+#include "chainparamsbase.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -18,7 +19,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Genesis block
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
-
+	// SYSCOIN set difficulty to about 1040 at block 1k to avoid local miners mining all the blocks
+	std::string chain = ChainNameFromCommandLine();
+	if((pindexLast->nHeight+1) == 1000 && chain == CBaseChainParams::MAIN)
+		return 0x1d00003f;
     // Only change once per difficulty adjustment interval
     if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
     {
@@ -40,9 +44,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         return pindexLast->nBits;
     }
+	// SYSCOIN adapt retargeting interval because of merge-mining
+    int nBlocksBack = params.DifficultyAdjustmentInterval() - 1;
+    if (pindexLast->nHeight + 1 > params.DifficultyAdjustmentInterval())
+        nBlocksBack = params.DifficultyAdjustmentInterval();
 
     // Go back by what we want to be 14 days worth of blocks
-    int nHeightFirst = pindexLast->nHeight - (params.DifficultyAdjustmentInterval()-1);
+    int nHeightFirst = pindexLast->nHeight - nBlocksBack;
     assert(nHeightFirst >= 0);
     const CBlockIndex* pindexFirst = pindexLast->GetAncestor(nHeightFirst);
     assert(pindexFirst);
@@ -97,6 +105,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
         return error("CheckProofOfWork(): nBits below minimum work");
 
     // Check proof of work matches claimed amount
+	std::string chain = ChainNameFromCommandLine();
     if (UintToArith256(hash) > bnTarget)
         return error("CheckProofOfWork(): hash doesn't match nBits");
 

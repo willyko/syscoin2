@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2015 The Syscoin Core developers
+// Copyright (c) 2012-2013 The Syscoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -35,7 +35,8 @@ BOOST_FIXTURE_TEST_SUITE(pmt_tests, BasicTestingSetup)
 BOOST_AUTO_TEST_CASE(pmt_test1)
 {
     seed_insecure_rand(false);
-    static const unsigned int nTxCounts[] = {1, 4, 7, 17, 56, 100, 127, 256, 312, 513, 1000, 4095};
+	// SYSCOIN 4096 tx's too large for a 1 min block set to 100k bytes max, set to 1000
+    static const unsigned int nTxCounts[] = {1, 4, 7, 17, 56, 100, 127, 256, 312, 513, 1000, 1000};
 
     for (int n = 0; n < 12; n++) {
         unsigned int nTx = nTxCounts[n];

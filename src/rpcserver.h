@@ -197,6 +197,8 @@ extern UniValue estimatefee(const UniValue& params, bool fHelp);
 extern UniValue estimatepriority(const UniValue& params, bool fHelp);
 extern UniValue estimatesmartfee(const UniValue& params, bool fHelp);
 extern UniValue estimatesmartpriority(const UniValue& params, bool fHelp);
+//SYSCOIN mining
+extern UniValue getauxblock(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue getaccountaddress(const UniValue& params, bool fHelp);
@@ -236,7 +238,58 @@ extern UniValue getblockchaininfo(const UniValue& params, bool fHelp);
 extern UniValue getnetworkinfo(const UniValue& params, bool fHelp);
 extern UniValue setmocktime(const UniValue& params, bool fHelp);
 extern UniValue resendwallettransactions(const UniValue& params, bool fHelp);
+// SYSCOIN service rpc functions
+extern UniValue aliasnew(const UniValue& params, bool fHelp);
+extern UniValue aliasupdate(const UniValue& params, bool fHelp);
+extern UniValue aliaslist(const UniValue& params, bool fHelp);
+extern UniValue aliasinfo(const UniValue& params, bool fHelp);
+extern UniValue aliashistory(const UniValue& params, bool fHelp);
+extern UniValue aliasfilter(const UniValue& params, bool fHelp);
+extern UniValue aliasscan(const UniValue& params, bool fHelp);
 
+
+extern UniValue offernew(const UniValue& params, bool fHelp);
+extern UniValue offerupdate(const UniValue& params, bool fHelp);
+extern UniValue offeraccept(const UniValue& params, bool fHelp);
+extern UniValue offerrefund(const UniValue& params, bool fHelp);
+extern UniValue offerlink(const UniValue& params, bool fHelp);
+extern UniValue offeraddwhitelist(const UniValue& params, bool fHelp);
+extern UniValue offerremovewhitelist(const UniValue& params, bool fHelp);
+extern UniValue offerclearwhitelist(const UniValue& params, bool fHelp);
+extern UniValue offerwhitelist(const UniValue& params, bool fHelp);
+extern UniValue offerinfo(const UniValue& params, bool fHelp);
+extern UniValue offerlist(const UniValue& params, bool fHelp);
+extern UniValue offeracceptlist(const UniValue& params, bool fHelp);
+extern UniValue offerhistory(const UniValue& params, bool fHelp);
+extern UniValue offerfilter(const UniValue& params, bool fHelp);
+extern UniValue offerscan(const UniValue& params, bool fHelp);
+
+extern UniValue certupdate(const UniValue& params, bool fHelp);
+extern UniValue certnew(const UniValue& params, bool fHelp);
+extern UniValue certtransfer(const UniValue& params, bool fHelp);
+extern UniValue certinfo(const UniValue& params, bool fHelp);
+extern UniValue certlist(const UniValue& params, bool fHelp);
+extern UniValue certhistory(const UniValue& params, bool fHelp);
+extern UniValue certfilter(const UniValue& params, bool fHelp);
+extern UniValue certscan(const UniValue& params, bool fHelp);
+
+extern UniValue escrownew(const UniValue& params, bool fHelp);
+extern UniValue escrowrelease(const UniValue& params, bool fHelp);
+extern UniValue escrowcomplete(const UniValue& params, bool fHelp);
+extern UniValue escrowclaimrelease(const UniValue& params, bool fHelp);
+extern UniValue escrowrefund(const UniValue& params, bool fHelp);
+extern UniValue escrowclaimrefund(const UniValue& params, bool fHelp);
+extern UniValue escrowinfo(const UniValue& params, bool fHelp);
+extern UniValue escrowlist(const UniValue& params, bool fHelp);
+extern UniValue escrowhistory(const UniValue& params, bool fHelp);
+extern UniValue escrowfilter(const UniValue& params, bool fHelp);
+extern UniValue escrowscan(const UniValue& params, bool fHelp);
+
+extern UniValue messagenew(const UniValue& params, bool fHelp);
+extern UniValue messageinfo(const UniValue& params, bool fHelp);
+extern UniValue messagelist(const UniValue& params, bool fHelp);
+extern UniValue messagesentlist(const UniValue& params, bool fHelp);
+extern UniValue messagehistory(const UniValue& params, bool fHelp);
 extern UniValue getrawtransaction(const UniValue& params, bool fHelp); // in rcprawtransaction.cpp
 extern UniValue listunspent(const UniValue& params, bool fHelp);
 extern UniValue lockunspent(const UniValue& params, bool fHelp);
