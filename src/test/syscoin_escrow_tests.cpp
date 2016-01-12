@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 	string message = "paymentmessage";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR");
 	string commission = "10";
-	string description = "newsescription";
+	string description = "newdescription";
 	// offer should be set to exclusive mode by default so linking isn't allowed
 	BOOST_CHECK_THROW(CallRPC("node3", "offerlink " + offerguid + " " + commission + " " + description), runtime_error);
 	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR", "", false);
@@ -146,5 +146,37 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 	// reseller cant claim escrow, seller must claim it
 	BOOST_CHECK_THROW(CallRPC("node3", "escrowclaimrelease " + guid), runtime_error);
 	EscrowClaimReleaseLink("node2", guid, "node3");
+}
+BOOST_AUTO_TEST_CASE (generate_escrow_linked_release_with_peg_update)
+{
+	GenerateBlocks(100);
+	GenerateBlocks(100, "node2");
+	GenerateBlocks(100, "node3");
+	string qty = "3";
+	string message = "paymentmessage";
+	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR", "", false);
+	string commission = "3";
+	string description = "newdescription";
+	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
+	string guid = EscrowNew("node1", offerlinkguid, qty, message, "arbiteralias");
+	EscrowRelease("node1", guid);
+	// update the EUR peg twice before claiming escrow
+	string data = "{''rates'':[{''currency'':''USD'',''rate'':2690.1,''precision'':2},{''currency'':''EUR'',''rate'':269.2,''precision'':2},{''currency'':''GBP'',''rate'':2697.3,''precision'':2},{''currency'':''CAD'',''rate'':2698.0,''precision'':2},{''currency'':''BTC'',''rate'':100000.0,''precision'':8},{''currency'':''SYS'',''rate'':1.0,''precision'':2}]}";
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate SYS_RATES " + data));
+	GenerateBlocks(100);
+	GenerateBlocks(100, "node2");
+	GenerateBlocks(100, "node3");
+	data = "{''rates'':[{''currency'':''USD'',''rate'':2690.1,''precision'':2},{''currency'':''EUR'',''rate'':218.2,''precision'':2},{''currency'':''GBP'',''rate'':2697.3,''precision'':2},{''currency'':''CAD'',''rate'':2698.0,''precision'':2},{''currency'':''BTC'',''rate'':100000.0,''precision'':8},{''currency'':''SYS'',''rate'':1.0,''precision'':2}]}";
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate SYS_RATES " + data));
+	GenerateBlocks(100);
+	GenerateBlocks(100, "node2");
+	GenerateBlocks(100, "node3");
+	EscrowClaimReleaseLink("node2", guid, "node3");
+	// restore EUR peg
+	data = "{''rates'':[{''currency'':''USD'',''rate'':2690.1,''precision'':2},{''currency'':''EUR'',''rate'':2695.2,''precision'':2},{''currency'':''GBP'',''rate'':2697.3,''precision'':2},{''currency'':''CAD'',''rate'':2698.0,''precision'':2},{''currency'':''BTC'',''rate'':100000.0,''precision'':8},{''currency'':''SYS'',''rate'':1.0,''precision'':2}]}";
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate SYS_RATES " + data));
+	GenerateBlocks(10);
+	GenerateBlocks(10, "node2");
+	GenerateBlocks(10, "node3");
 }
 BOOST_AUTO_TEST_SUITE_END ()

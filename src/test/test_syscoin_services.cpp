@@ -652,18 +652,20 @@ void EscrowClaimRelease(const string& node, const string& guid)
 }
 float GetPriceOfOffer(const float nPrice, const int nDiscountPct, const int nCommission){
 	float price = nPrice;
+	float fCommission = nCommission;
 	if(nDiscountPct > 0)
 	{
-		int discountPct = nDiscountPct;
+		float fDiscount = nDiscountPct;
 		if(nDiscountPct < -99 || nDiscountPct > 99)
-			discountPct = 0;
-		float fDiscount = price*(discountPct / 100);
+			fDiscount = 0;
+		fDiscount = price*(fDiscount / 100);
 		price = price + fDiscount;
 
 	}
 	// add commission
-	float fCommission = price*(nCommission / 100);
+	fCommission = price*(fCommission / 100);
 	price = price + fCommission;
+	return price;
 	return price;
 }
 // not that this is for escrow dealing with linked offers
@@ -710,9 +712,12 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 	const UniValue &acceptSellerValue = FindOfferLinkedAccept(node, rootofferguid, acceptguid);
 	BOOST_CHECK(find_value(acceptSellerValue, "escrowlink").get_str().empty());
 	nTotal = AmountFromValue(find_value(acceptSellerValue, "systotal"));
+	if(commission != 0 || discount != 0)
+		BOOST_CHECK(nTotal != escrowtotal);
 	float calculatedTotal = GetPriceOfOffer(nTotal, discount, commission);
 	CAmount calculatedTotalAmount(calculatedTotal);
-	BOOST_CHECK_EQUAL(calculatedTotalAmount, escrowtotal);
+	
+	BOOST_CHECK_EQUAL(calculatedTotalAmount/COIN, escrowtotal/COIN);
 	BOOST_CHECK(find_value(acceptSellerValue, "is_mine").get_str() == "true");
 	BOOST_CHECK(find_value(acceptSellerValue, "pay_message").get_str() == pay_message);
 }

@@ -584,11 +584,11 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	// send to escrow address
 
 	int precision = 2;
-	int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
-	int64_t nTotal = nPricePerUnit*nQty;
+	CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
+	CAmount nTotal = nPricePerUnit*nQty;
 
-	int64_t nEscrowFee = GetEscrowArbiterFee(nTotal);
-	int64_t nAmountWithEscrowFee = nTotal+nEscrowFee;
+	CAmount nEscrowFee = GetEscrowArbiterFee(nTotal);
+	CAmount nAmountWithEscrowFee = nTotal+nEscrowFee;
 
 	CWalletTx escrowWtx;
 	vector<CRecipient> vecSendEscrow;

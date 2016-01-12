@@ -288,17 +288,18 @@ public:
 	}
 	float GetPrice(const COfferLinkWhitelistEntry& entry=COfferLinkWhitelistEntry()){
 		float price = nPrice;
+		float fCommission = nCommission;
 		if(!entry.IsNull())
 		{
-			int discountPct = entry.nDiscountPct;
+			float fDiscount = entry.nDiscountPct;
 			if(entry.nDiscountPct < -99 || entry.nDiscountPct > 99)
-				discountPct = 0;
-			float fDiscount = price*(discountPct / 100);
+				fDiscount = 0;
+			fDiscount = price*(fDiscount / 100);
 			price = price - fDiscount;
 
 		}
 		// add commission
-		float fCommission = price*(nCommission / 100);
+		fCommission = price*(fCommission / 100);
 		price = price + fCommission;
 		return price;
 	}

@@ -110,20 +110,20 @@ bool HasReachedMainNetForkB2()
 	return fTestNet || (!fTestNet && chainActive.Tip()->nHeight >= 1);
 }
 
-int64_t convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision)
+CAmount convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision)
 {
-	float sysPrice = nPrice;
-	int64_t nRate;
+	CAmount sysPrice;
+	CAmount nRate;
 	vector<string> rateList;
 	if(getCurrencyToSYSFromAlias(vchCurrencyCode, nRate, nHeight, rateList, precision) == "")
 	{
-		// nRate is assumed to be rate of USD/SYS
-		sysPrice = sysPrice * nRate;
+		float price = nPrice*(float)nRate;
+		sysPrice = CAmount(price);
 	}
-	return (int64_t)sysPrice;
+	return sysPrice;
 }
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
-string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64_t &nFee, const unsigned int &nHeightToFind, vector<string>& rateList, int &precision)
+string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, CAmount &nFee, const unsigned int &nHeightToFind, vector<string>& rateList, int &precision)
 {
 	vector<unsigned char> vchName = vchFromString("SYS_RATES");
 	string currencyCodeToFind = stringFromVch(vchCurrency);
@@ -211,7 +211,7 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, int64
 	}
 	else
 	{
-		//if(fDebug)
+		if(fDebug)
 			printf("getCurrencyToSYSFromAlias() Failed to get value from alias\n");
 		return "1";
 	}

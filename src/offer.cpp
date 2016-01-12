@@ -209,7 +209,7 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 
 	// this is a syscoin txn
 	CWalletTx wtx, wtx2;
-	int64_t nTotalValue = 0;
+	CAmount nTotalValue = 0;
 	CScript scriptPubKeyOrig, scriptPayment;
 
 	if(refundCode == OFFER_REFUND_COMPLETE)
@@ -956,7 +956,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 					int precision = 2;
 					// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-					int64_t nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+					CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
 					if(tx.vout[nOut].nValue != nPrice)
 					{
 						if(fDebug)
@@ -1273,7 +1273,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		bExclusiveResell = atoi(params[9].get_str().c_str()) == 1? true: false;
 	}
 	
-	int64_t nRate;
+	CAmount nRate;
 	vector<string> rateList;
 	int precision;
 	if(getCurrencyToSYSFromAlias(vchCurrency, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
@@ -1285,8 +1285,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	float price = nPrice;
 	if(price < minPrice)
 		price = minPrice;
-	string priceStr = strprintf("%.*f", precision, price);
-	nPrice = (float)atof(priceStr.c_str());
 	// this is a syscoin transaction
 	CWalletTx wtx;
 
@@ -1926,8 +1924,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	float minPrice = 1/pow(10,precision);
 	if(price < minPrice)
 		price = minPrice;
-	string priceStr = strprintf("%.*f", precision, price);
-	price = (float)atof(priceStr.c_str());
 	// update offer values
 	if(offerCopy.sCategory != vchCat)
 		theOffer.sCategory = vchCat;
@@ -2282,7 +2278,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("not enough remaining quantity to fulfill this orderaccept");
 
 	int precision = 2;
-	int64_t nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight>0?nHeight:chainActive.Tip()->nHeight, precision);
+	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight>0?nHeight:chainActive.Tip()->nHeight, precision);
 	string strCipherText = "";
 	// encryption should only happen once even when not a resell or not an escrow accept. It is already encrypted in both cases.
 	if(vchLinkOfferAccept.empty() && vchEscrowTxHash.empty())
@@ -2461,7 +2457,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			int precision = 2;
-			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
+			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
 			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
 			oOfferAccept.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
@@ -2537,7 +2533,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		
 		
 		int precision = 2;
-		int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
+		CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
 		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
@@ -2636,7 +2632,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(theOfferAccept.vchEscrowLink)));
 			int precision = 2;
-			int64_t nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
+			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
 			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 

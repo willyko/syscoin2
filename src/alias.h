@@ -121,11 +121,11 @@ bool DecodeAliasScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch, CScript::const_iterator& pc);
 bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);
 void GetAliasValue(const std::string& strName, std::string& strAddress);
-int64_t convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision);
+CAmount convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision);
 bool HasReachedMainNetForkB2();
 bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type);
 unsigned int QtyOfPendingAcceptsInMempool(const std::vector<unsigned char>& vchToFind);
-std::string getCurrencyToSYSFromAlias(const std::vector<unsigned char> &vchCurrency, int64_t &nFee, const unsigned int &nHeightToFind, std::vector<std::string>& rateList, int &precision);
+std::string getCurrencyToSYSFromAlias(const std::vector<unsigned char> &vchCurrency, CAmount &nFee, const unsigned int &nHeightToFind, std::vector<std::string>& rateList, int &precision);
 std::string aliasFromOp(int op);
 bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
