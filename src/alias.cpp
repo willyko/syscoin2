@@ -790,7 +790,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
 	vector<unsigned char> vchValue;
 	string strValue = params[1].get_str();
-	boost::replace_all(strValue, "''", "\"");
+	if(params[0].get_str() == "SYS_RATES")
+		boost::replace_all(strValue, "'Q'", "\"");
 	vchValue = vchFromString(strValue);
 
 	if (vchValue.size() > MAX_VALUE_LENGTH)
@@ -865,7 +866,8 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
 	vector<unsigned char> vchValue;
 	string strValue = params[1].get_str();
-	boost::replace_all(strValue, "''", "\"");
+	if(params[0].get_str() == "SYS_RATES")
+		boost::replace_all(strValue, "'Q'", "\"");
 	vchValue = vchFromString(strValue);
 	vector<unsigned char> vchPubKey;
 	if (vchValue.size() > MAX_VALUE_LENGTH)

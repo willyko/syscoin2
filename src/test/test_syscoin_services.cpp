@@ -14,6 +14,7 @@
 // SYSCOIN testing setup
 void StartNodes()
 {
+	printf("Stopping any test nodes that are running...\n");
 	StopNodes();
 	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
 		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
@@ -180,7 +181,7 @@ void GenerateBlocks(int nBlocks, const string& node)
 }
 void CreateSysRatesIfNotExist()
 {
-	string data = "{''rates'':[{''currency'':''USD'',''rate'':2690.1,''precision'':2},{''currency'':''EUR'',''rate'':2695.2,''precision'':2},{''currency'':''GBP'',''rate'':2697.3,''precision'':2},{''currency'':''CAD'',''rate'':2698.0,''precision'':2},{''currency'':''BTC'',''rate'':100000.0,''precision'':8},{''currency'':''SYS'',''rate'':1.0,''precision'':2}]}";
+	string data = "{'Q'rates'Q':[{'Q'currency'Q':'Q'USD'Q','Q'rate'Q':2690.1,'Q'precision'Q':2},{'Q'currency'Q':'Q'EUR'Q','Q'rate'Q':2695.2,'Q'precision'Q':2},{'Q'currency'Q':'Q'GBP'Q','Q'rate'Q':2697.3,'Q'precision'Q':2},{'Q'currency'Q':'Q'CAD'Q','Q'rate'Q':2698.0,'Q'precision'Q':2},{'Q'currency'Q':'Q'BTC'Q','Q'rate'Q':100000.0,'Q'precision'Q':8},{'Q'currency'Q':'Q'SYS'Q','Q'rate'Q':1.0,'Q'precision'Q':2}]}";
 	// should get runtime error if doesnt exist
 	try{
 		CallRPC("node1", "aliasupdate SYS_RATES " + data);
