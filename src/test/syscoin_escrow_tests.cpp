@@ -130,16 +130,16 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 {
 	GenerateBlocks(200);
-	GenerateBlocks(2000, "node2");
-	GenerateBlocks(2000, "node3");
+	GenerateBlocks(200, "node2");
+	GenerateBlocks(200, "node3");
 	string qty = "3";
 	string message = "paymentmessage";
-	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR");
+	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.04", "description", "EUR");
 	string commission = "10";
 	string description = "newdescription";
 	// offer should be set to exclusive mode by default so linking isn't allowed
 	BOOST_CHECK_THROW(CallRPC("node3", "offerlink " + offerguid + " " + commission + " " + description), runtime_error);
-	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR", "", false);
+	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.04", "description", "EUR", "", false);
 	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
 	string guid = EscrowNew("node1", offerlinkguid, qty, message, "arbiteralias");
 	EscrowRelease("node1", guid);
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release_with_peg_update)
 	GenerateBlocks(100, "node3");
 	string qty = "3";
 	string message = "paymentmessage";
-	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.45", "description", "EUR", "", false);
+	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.05", "description", "EUR", "", false);
 	string commission = "3";
 	string description = "newdescription";
 	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
