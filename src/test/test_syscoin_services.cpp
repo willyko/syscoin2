@@ -14,6 +14,15 @@
 // SYSCOIN testing setup
 void StartNodes()
 {
+	StopNodes();
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
+	MilliSleep(1000);
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
+	MilliSleep(1000);
+	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
+		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 	printf("Starting 3 nodes in a regtest setup...\n");
 	StartNode("node1");
 	StartNode("node2");
@@ -101,7 +110,7 @@ int runSysCommand(const std::string& strCommand)
 }
 std::string CallExternal(std::string &cmd)
 {
-	cmd += " > cmdoutput.log" /*2>&1"*/;
+	cmd += " > cmdoutput.log || true";
 	if(runSysCommand(cmd))
 		return string("ERROR");
     boost::shared_ptr<FILE> pipe(fopen("cmdoutput.log", "r"), safe_fclose);

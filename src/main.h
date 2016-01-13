@@ -100,7 +100,8 @@ static const bool DEFAULT_RELAYPRIORITY = true;
 
 /** Default for -permitbaremultisig */
 static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
-static const unsigned int DEFAULT_BYTES_PER_SIGOP = 20;
+// SYSCOIN, skip sigop byte check for std transactions
+static const unsigned int DEFAULT_BYTES_PER_SIGOP = 0;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
