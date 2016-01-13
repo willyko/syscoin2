@@ -1291,7 +1291,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (!res) {
         BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
             pcoinsTip->Uncache(hashTx);
-		printf("AcceptToMemoryPool Failed: %s \n", FormatStateMessage(state).c_str());
     }
     return res;
 }
