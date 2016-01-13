@@ -791,7 +791,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchValue;
 	string strValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
-		boost::replace_all(strValue, "'Q'", "\"");
+		boost::replace_all(strValue, "Qu", "\"");
 	vchValue = vchFromString(strValue);
 
 	if (vchValue.size() > MAX_VALUE_LENGTH)
@@ -867,7 +867,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchValue;
 	string strValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
-		boost::replace_all(strValue, "'Q'", "\"");
+		boost::replace_all(strValue, "Qu", "\"");
 	vchValue = vchFromString(strValue);
 	vector<unsigned char> vchPubKey;
 	if (vchValue.size() > MAX_VALUE_LENGTH)

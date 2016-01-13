@@ -181,7 +181,7 @@ void GenerateBlocks(int nBlocks, const string& node)
 }
 void CreateSysRatesIfNotExist()
 {
-	string data = "{'Q'rates'Q':[{'Q'currency'Q':'Q'USD'Q','Q'rate'Q':2690.1,'Q'precision'Q':2},{'Q'currency'Q':'Q'EUR'Q','Q'rate'Q':2695.2,'Q'precision'Q':2},{'Q'currency'Q':'Q'GBP'Q','Q'rate'Q':2697.3,'Q'precision'Q':2},{'Q'currency'Q':'Q'CAD'Q','Q'rate'Q':2698.0,'Q'precision'Q':2},{'Q'currency'Q':'Q'BTC'Q','Q'rate'Q':100000.0,'Q'precision'Q':8},{'Q'currency'Q':'Q'SYS'Q','Q'rate'Q':1.0,'Q'precision'Q':2}]}";
+	string data = "{QuratesQu:[{QucurrencyQu:QuUSDQu,QurateQu:2690.1,QuprecisionQu:2},{QucurrencyQu:QuEURQu,QurateQu:2695.2,QuprecisionQu:2},{QucurrencyQu:QuGBPQu,QurateQu:2697.3,QuprecisionQu:2},{QucurrencyQu:QuCADQu,QurateQu:2698.0,QuprecisionQu:2},{QucurrencyQu:QuBTCQu,QurateQu:100000.0,QuprecisionQu:8},{QucurrencyQu:QuSYSQu,QurateQu:1.0,QuprecisionQu:2}]}";
 	// should get runtime error if doesnt exist
 	try{
 		CallRPC("node1", "aliasupdate SYS_RATES " + data);
