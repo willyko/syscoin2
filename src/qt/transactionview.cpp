@@ -90,6 +90,27 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     typeWidget->addItem(tr("To yourself"), TransactionFilterProxy::TYPE(TransactionRecord::SendToSelf));
     typeWidget->addItem(tr("Mined"), TransactionFilterProxy::TYPE(TransactionRecord::Generated));
     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
+    // SYSCOIN
+	typeWidget->addItem(tr("Alias Activated"), TransactionFilterProxy::TYPE(TransactionRecord::AliasActivate));
+    typeWidget->addItem(tr("Alias Updated"), TransactionFilterProxy::TYPE(TransactionRecord::AliasUpdate));
+    typeWidget->addItem(tr("Alias Updated (Transfer)"), TransactionFilterProxy::TYPE(TransactionRecord::AliasTransfer));
+   
+    typeWidget->addItem(tr("Offer Activated"), TransactionFilterProxy::TYPE(TransactionRecord::OfferActivate));
+    typeWidget->addItem(tr("Offer Updated"), TransactionFilterProxy::TYPE(TransactionRecord::OfferUpdate));
+    typeWidget->addItem(tr("Offer Accepted"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAccept));
+	typeWidget->addItem(tr("Offer Refund In Progress"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundInProgress));
+	typeWidget->addItem(tr("Offer Refund Complete"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundComplete));
+  
+    typeWidget->addItem(tr("Certificate Activated"), TransactionFilterProxy::TYPE(TransactionRecord::CertActivate));
+    typeWidget->addItem(tr("Certificate Updated"), TransactionFilterProxy::TYPE(TransactionRecord::CertUpdate));
+    typeWidget->addItem(tr("Certificate Transfer"), TransactionFilterProxy::TYPE(TransactionRecord::CertTransfer));
+
+    typeWidget->addItem(tr("Escrow Activated"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowActivate));
+    typeWidget->addItem(tr("Escrow Released"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRelease));
+    typeWidget->addItem(tr("Escrow Refunded"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefund));
+	typeWidget->addItem(tr("Escrow Complete"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowComplete));
+
+	typeWidget->addItem(tr("New Message"), TransactionFilterProxy::TYPE(TransactionRecord::MessageActivate));
 
     hlayout->addWidget(typeWidget);
 

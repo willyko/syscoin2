@@ -9,11 +9,18 @@
 #include "main.h"
 #include "timedata.h"
 #include "wallet/wallet.h"
-
+#include "offer.h"
 #include <stdint.h>
 
 #include <boost/foreach.hpp>
-
+extern bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
+extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
+extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
+extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
+extern int GetSyscoinTxVersion();
+extern bool IsAliasMine(const CTransaction& tx);
+extern std::string stringFromVch(const std::vector<unsigned char> &vch);
+using namespace std;
 /* Return positive answer if transaction should be shown in list.
  */
 bool TransactionRecord::showTransaction(const CWalletTx &wtx)
@@ -81,6 +88,33 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     }
     else
     {
+		// SYSCOIN Check if tx is a syscoin service
+        vector<vector<unsigned char> > vvchArgs;
+        int op, nOut;
+		op = 0;
+        if (wtx.nVersion == GetSyscoinTxVersion()) {
+			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
+			{
+
+			}
+            else if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
+            {
+
+            }
+			else if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
+			{
+
+			}
+			else if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
+			{
+
+			}
+			else if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
+			{
+
+			}
+        }
+
         bool involvesWatchAddress = false;
         isminetype fAllFromMe = ISMINE_SPENDABLE;
         BOOST_FOREACH(const CTxIn& txin, wtx.vin)
@@ -134,6 +168,62 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     // Sent to Syscoin Address
                     sub.type = TransactionRecord::SendToAddress;
                     sub.address = CSyscoinAddress(address).ToString();
+					// SYSCOIN
+					if (op > 0) {
+						switch(op)
+						{
+						case OP_ALIAS_ACTIVATE:
+							sub.type = TransactionRecord::AliasActivate;
+							break;
+						case OP_ALIAS_UPDATE:
+							sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;							
+							break;
+						case OP_OFFER_ACTIVATE:
+							sub.type = TransactionRecord::OfferActivate;
+							break;
+						case OP_OFFER_UPDATE:
+							sub.type = TransactionRecord::OfferUpdate;
+							break;
+						case OP_OFFER_REFUND:
+							if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
+							{
+								sub.type = TransactionRecord::OfferAcceptRefundInProgress;
+							}
+							else
+							{
+								sub.type = TransactionRecord::OfferAcceptRefundComplete;
+							}
+							break;
+						case OP_OFFER_ACCEPT:
+							sub.type = TransactionRecord::OfferAccept;
+							break;
+						case OP_CERT_ACTIVATE:
+							sub.type = TransactionRecord::CertActivate;
+							break;
+						case OP_CERT_UPDATE:
+							sub.type = TransactionRecord::CertUpdate;
+							break;
+						case OP_CERT_TRANSFER:
+							sub.type = TransactionRecord::CertTransfer;
+							break;
+						case OP_ESCROW_ACTIVATE:
+							sub.type = TransactionRecord::EscrowActivate;
+							break;
+						case OP_ESCROW_RELEASE:
+							sub.type = TransactionRecord::EscrowRelease;
+							break;
+						case OP_ESCROW_COMPLETE:
+							sub.type = TransactionRecord::EscrowComplete;
+							break;
+						case OP_ESCROW_REFUND:
+							sub.type = TransactionRecord::EscrowRefund;
+							break;
+						case OP_MESSAGE_ACTIVATE:
+							sub.type = TransactionRecord::MessageActivate;
+							break;
+						}
+						sub.address = stringFromVch(vvchArgs[0]);
+					} 
                 }
                 else
                 {
@@ -159,7 +249,68 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Mixed debit transaction, can't break down payees
             //
-            parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
+			// SYSCOIN
+			if (op > 0){
+                TransactionRecord sub(hash, nTime);
+                switch(op)
+                {
+                case OP_ALIAS_ACTIVATE:
+                    sub.type = TransactionRecord::AliasActivate;
+                    break;
+                case OP_ALIAS_UPDATE:
+                    sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;                   
+                    break;
+                case OP_OFFER_ACTIVATE:
+                    sub.type = TransactionRecord::OfferActivate;
+                    break;
+                case OP_OFFER_UPDATE:
+                    sub.type = TransactionRecord::OfferUpdate;
+                    break;
+				case OP_OFFER_REFUND:
+					if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
+					{
+						sub.type = TransactionRecord::OfferAcceptRefundInProgress;
+					}
+					else
+					{
+						sub.type = TransactionRecord::OfferAcceptRefundComplete;
+					}
+					break;
+                case OP_OFFER_ACCEPT:
+					sub.type = TransactionRecord::OfferAccept;
+                    break;
+                case OP_CERT_ACTIVATE:
+                    sub.type = TransactionRecord::CertActivate;
+                    break;
+                case OP_CERT_UPDATE:
+                    sub.type = TransactionRecord::CertUpdate;
+                    break;
+                case OP_CERT_TRANSFER:
+                    sub.type = TransactionRecord::CertTransfer;
+                    break;
+                case OP_ESCROW_ACTIVATE:
+                    sub.type = TransactionRecord::EscrowActivate;
+                    break;
+                case OP_ESCROW_RELEASE:
+                    sub.type = TransactionRecord::EscrowRelease;
+                    break;
+				case OP_ESCROW_COMPLETE:
+					sub.type = TransactionRecord::EscrowComplete;
+					break;
+                case OP_ESCROW_REFUND:
+                    sub.type = TransactionRecord::EscrowRefund;
+                    break;
+                case OP_MESSAGE_ACTIVATE:
+                    sub.type = TransactionRecord::MessageActivate;
+                    break;
+                }
+                sub.address = stringFromVch(vvchArgs[0]);
+                sub.debit = nNet;
+                parts.append(sub);
+            } else {
+
+                parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
+            }
             parts.last().involvesWatchAddress = involvesWatchAddress;
         }
     }

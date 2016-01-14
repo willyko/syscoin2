@@ -20,6 +20,12 @@
 #include "walletmodel.h"
 
 #include "ui_interface.h"
+// SYSCOIN
+#include "aliasview.h"
+#include "offerview.h"
+#include "certview.h"
+#include "messageview.h"
+#include "escrowview.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -42,6 +48,18 @@ WalletView::WalletView(const PlatformStyle *platformStyle, QWidget *parent):
     QVBoxLayout *vbox = new QVBoxLayout();
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
+	// SYSCOIN
+    aliasListPage = new QStackedWidget();
+	messageListPage = new QStackedWidget();
+	certListPage = new QStackedWidget();
+    escrowListPage = new QStackedWidget();
+	offerListPage = new QStackedWidget();
+    aliasView = new AliasView(aliasListPage);
+	messageView = new MessageView(messageListPage);
+	escrowView = new EscrowView(escrowListPage);
+	certView = new CertView(certListPage);
+	offerView = new OfferView(offerListPage);
+
     vbox->addWidget(transactionView);
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
@@ -63,6 +81,12 @@ WalletView::WalletView(const PlatformStyle *platformStyle, QWidget *parent):
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+	// SYSCOIN
+	addWidget(aliasListPage);
+	addWidget(messageListPage);
+	addWidget(escrowListPage);
+    addWidget(certListPage);
+	addWidget(offerListPage);
 
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
@@ -98,6 +122,12 @@ void WalletView::setSyscoinGUI(SyscoinGUI *gui)
 
         // Pass through transaction notifications
         connect(this, SIGNAL(incomingTransaction(QString,int,CAmount,QString,QString,QString)), gui, SLOT(incomingTransaction(QString,int,CAmount,QString,QString,QString)));
+		// SYSCOIN
+		aliasView->setSyscoinGUI(gui);
+		messageView->setSyscoinGUI(gui);
+		escrowView->setSyscoinGUI(gui);
+		certView->setSyscoinGUI(gui);
+		offerView->setSyscoinGUI(gui);
     }
 }
 
@@ -107,6 +137,12 @@ void WalletView::setClientModel(ClientModel *clientModel)
 
     overviewPage->setClientModel(clientModel);
     sendCoinsPage->setClientModel(clientModel);
+	// SYSCOIN
+    aliasView->setClientModel(clientModel);
+	messageView->setClientModel(clientModel);
+	escrowView->setClientModel(clientModel);
+    certView->setClientModel(clientModel);
+	offerView->setClientModel(clientModel);
 }
 
 void WalletView::setWalletModel(WalletModel *walletModel)
@@ -139,6 +175,12 @@ void WalletView::setWalletModel(WalletModel *walletModel)
 
         // Show progress dialog
         connect(walletModel, SIGNAL(showProgress(QString,int)), this, SLOT(showProgress(QString,int)));
+		// SYSCOIN
+        aliasView->setWalletModel(walletModel);
+		messageView->setWalletModel(walletModel);
+		escrowView->setWalletModel(walletModel);
+        certView->setWalletModel(walletModel);
+		offerView->setWalletModel(walletModel);
     }
 }
 
@@ -184,6 +226,27 @@ void WalletView::gotoSendCoinsPage(QString addr)
     if (!addr.isEmpty())
         sendCoinsPage->setAddress(addr);
 }
+// SYSCOIN
+void WalletView::gotoAliasListPage()
+{
+    setCurrentWidget(aliasListPage);
+}
+void WalletView::gotoMessageListPage()
+{
+    setCurrentWidget(messageListPage);
+}
+void WalletView::gotoEscrowListPage()
+{
+    setCurrentWidget(escrowListPage);
+}
+void WalletView::gotoOfferListPage()
+{
+	setCurrentWidget(offerListPage);  
+}
+void WalletView::gotoCertListPage()
+{
+    setCurrentWidget(certListPage);
+}
 
 void WalletView::gotoSignMessageTab(QString addr)
 {
@@ -211,6 +274,10 @@ void WalletView::gotoVerifyMessageTab(QString addr)
 
 bool WalletView::handlePaymentRequest(const SendCoinsRecipient& recipient)
 {
+    if (offerView->handlePaymentRequest(&recipient))
+    {
+        return true;
+    }
     return sendCoinsPage->handlePaymentRequest(recipient);
 }
 

@@ -292,6 +292,50 @@ void SyscoinGUI::createActions()
     historyAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
     tabGroup->addAction(historyAction);
 
+	// SYSCOIN
+	aliasListAction = new QAction(QIcon(":/icons/alias"), tr("A&liases"), this);
+    aliasListAction->setStatusTip(tr("Manage aliases"));
+    aliasListAction->setToolTip(aliasListAction->statusTip());
+    aliasListAction->setCheckable(true);
+    aliasListAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    tabGroup->addAction(aliasListAction);
+
+    messageListAction = new QAction(QIcon(":/icons/message"), tr("&Messages"), this);
+    messageListAction->setStatusTip(tr("Messages"));
+    messageListAction->setToolTip(messageListAction->statusTip());
+    messageListAction->setCheckable(true);
+    messageListAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    tabGroup->addAction(messageListAction);
+
+    offerListAction = new QAction(QIcon(":/icons/cart"), tr("&Marketplace"), this);
+    offerListAction->setStatusTip(tr("Manage offers"));
+    offerListAction->setToolTip(offerListAction->statusTip());
+    offerListAction->setCheckable(true);
+    offerListAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_8));
+    tabGroup->addAction(offerListAction);
+
+	
+    certListAction = new QAction(QIcon(":/icons/cert"), tr("&Certificates"), this);
+    certListAction->setStatusTip(tr("Manage Certificates"));
+    certListAction->setToolTip(certListAction->statusTip());
+    certListAction->setCheckable(true);
+    certListAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_0));
+    tabGroup->addAction(certListAction);
+
+    escrowListAction = new QAction(QIcon(":/icons/escrow"), tr("&Escrow"), this);
+    escrowListAction->setStatusTip(tr("Escrows with offers"));
+    escrowListAction->setToolTip(escrowListAction->statusTip());
+    escrowListAction->setCheckable(true);
+    escrowListAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    tabGroup->addAction(escrowListAction);
+
+    // Hide buttons until we fixed the issues (win and mac)
+	aliasListAction->setVisible (true);
+	messageListAction->setVisible (true);
+	offerListAction->setVisible (true);
+	certListAction->setVisible (true);
+	escrowListAction->setVisible (true);
+
 #ifdef ENABLE_WALLET
     // These showNormalIfMinimized are needed because Send Coins and Receive Coins
     // can be triggered from the tray menu, and need to show the GUI to be useful.
@@ -307,6 +351,17 @@ void SyscoinGUI::createActions()
     connect(receiveCoinsMenuAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
+	// SYSCOIN
+    connect(aliasListAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(aliasListAction, SIGNAL(triggered()), this, SLOT(gotoAliasListPage()));
+    connect(messageListAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(messageListAction, SIGNAL(triggered()), this, SLOT(gotoMessageListPage()));
+    connect(escrowListAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(escrowListAction, SIGNAL(triggered()), this, SLOT(gotoEscrowListPage()));
+    connect(offerListAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(offerListAction, SIGNAL(triggered()), this, SLOT(gotoOfferListPage()));
+    connect(certListAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(certListAction, SIGNAL(triggered()), this, SLOT(gotoCertListPage()));
 #endif // ENABLE_WALLET
 
     quitAction = new QAction(platformStyle->TextColorIcon(":/icons/quit"), tr("E&xit"), this);
@@ -437,6 +492,12 @@ void SyscoinGUI::createToolBars()
         toolbar->addAction(receiveCoinsAction);
         toolbar->addAction(historyAction);
         overviewAction->setChecked(true);
+		// SYSCOIN
+		toolbar->addAction(aliasListAction);
+		toolbar->addAction(messageListAction);
+		toolbar->addAction(escrowListAction);
+		toolbar->addAction(offerListAction);
+		toolbar->addAction(certListAction);
     }
 }
 
@@ -522,6 +583,12 @@ void SyscoinGUI::setWalletActionsEnabled(bool enabled)
     usedSendingAddressesAction->setEnabled(enabled);
     usedReceivingAddressesAction->setEnabled(enabled);
     openAction->setEnabled(enabled);
+	// SYSCOIN
+    aliasListAction->setEnabled(enabled);
+    messageListAction->setEnabled(enabled);
+	escrowListAction->setEnabled(enabled);
+    offerListAction->setEnabled(enabled);
+    certListAction->setEnabled(enabled);
 }
 
 void SyscoinGUI::createTrayIcon(const NetworkStyle *networkStyle)
@@ -665,8 +732,31 @@ void SyscoinGUI::gotoVerifyMessageTab(QString addr)
 {
     if (walletFrame) walletFrame->gotoVerifyMessageTab(addr);
 }
-#endif // ENABLE_WALLET
 
+// SYSCOIN
+void SyscoinGUI::gotoAliasListPage()
+{
+    if (walletFrame) walletFrame->gotoAliasListPage();
+}
+
+void SyscoinGUI::gotoMessageListPage()
+{
+    if (walletFrame) walletFrame->gotoMessageListPage();
+}
+void SyscoinGUI::gotoEscrowListPage()
+{
+    if (walletFrame) walletFrame->gotoEscrowListPage();
+}
+void SyscoinGUI::gotoOfferListPage()
+{
+    if (walletFrame) walletFrame->gotoOfferListPage();
+}
+
+void SyscoinGUI::gotoCertListPage()
+{
+    if (walletFrame) walletFrame->gotoCertListPage();
+}
+#endif // ENABLE_WALLET
 void SyscoinGUI::setNumConnections(int count)
 {
     QString icon;

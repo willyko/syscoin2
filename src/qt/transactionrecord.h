@@ -76,7 +76,28 @@ public:
         SendToOther,
         RecvWithAddress,
         RecvFromOther,
-        SendToSelf
+        SendToSelf,
+		// SYSCOIN
+        AliasActivate,
+        AliasUpdate,
+        AliasTransfer,
+        
+        OfferActivate,
+        OfferUpdate,
+        OfferAccept,
+		OfferAcceptRefundInProgress,
+		OfferAcceptRefundComplete,
+      
+        CertActivate,
+        CertUpdate,
+        CertTransfer,
+
+        EscrowActivate,
+        EscrowRelease,
+        EscrowRefund,
+		EscrowComplete,
+
+		MessageActivate
     };
 
     /** Number of confirmation recommended for accepting a transaction */
