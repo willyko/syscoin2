@@ -368,7 +368,8 @@ void SyscoinGUI::createActions()
     quitAction->setStatusTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(platformStyle->TextColorIcon(":/icons/about"), tr("&About Syscoin Core"), this);
+	// SYSCOIN
+    aboutAction = new QAction(QIcon(":/icons/about"), tr("&About Syscoin Core"), this);
     aboutAction->setStatusTip(tr("Show information about Syscoin Core"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(platformStyle->TextColorIcon(":/icons/about_qt"), tr("About &Qt"), this);
