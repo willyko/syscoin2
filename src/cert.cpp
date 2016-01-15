@@ -108,24 +108,27 @@ const vector<unsigned char> CCert::Serialize() {
 bool CCertDB::ScanCerts(const std::vector<unsigned char>& vchCert, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CCert> >& certScan) {
 
+	printf("start scana\n");
     CDBIterator *pcursor = pcertdb->NewIterator();
-
-    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair(string("certi"), vchCert);
-    pcursor->Seek(ssKeySet.str());
-
+    boost::scoped_ptr<CDBIterator> pcursor(const_cast<CDBWrapper*>(&pcertdb)->NewIterator());
+    pcursor->Seek("certi");
+	printf("start scanb\n");
     while (pcursor->Valid()) {
+		printf("cursor valid\n");
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
         try {
             if (pcursor->GetKey(key) && key.first == "certi") {
+				printf("getkey\n");
                 vector<unsigned char> vchCert = key.second;
                 vector<CCert> vtxPos;
-                pcursor->GetValue(vtxPos);
-                CCert txPos;
-                if (!vtxPos.empty())
-                    txPos = vtxPos.back();
-                certScan.push_back(make_pair(vchCert, txPos));
+                if(pcursor->GetValue(vtxPos) && !vtxPos.empty())
+				{
+					printf("not empty\n");
+					CCert txPos;
+					txPos = vtxPos.back();
+					certScan.push_back(make_pair(vchCert, txPos));
+				}
             }
             if (certScan.size() >= nMax)
                 break;
@@ -135,7 +138,6 @@ bool CCertDB::ScanCerts(const std::vector<unsigned char>& vchCert, unsigned int 
             return error("%s() : deserialize error", __PRETTY_FUNCTION__);
         }
     }
-    delete pcursor;
     return true;
 }
 
@@ -1150,7 +1152,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 
     if (params.size() > 4)
         fStat = (params[4].get_str() == "stat" ? true : false);
-	printf("start scan\n");
+
     //CCertDB dbCert("r");
     UniValue oRes(UniValue::VARR);
 
@@ -1158,37 +1160,33 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     vector<pair<vector<unsigned char>, CCert> > certScan;
     if (!pcertdb->ScanCerts(vchCert, 100000000, certScan))
         throw runtime_error("scan failed");
-	printf("scan certs\n");
     // regexp
     using namespace boost::xpressive;
     smatch certparts;
     sregex cregex = sregex::compile(strRegexp);
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
-		printf("cert\n");
 		CCert txCert = pairScan.second;
 		string cert = stringFromVch(pairScan.first);
 		string title = stringFromVch(txCert.vchTitle);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;
 
-        printf("after regex\n");
+        
         int nHeight = txCert.nHeight;
 
         // max age
         if (nMaxAge != 0 && chainActive.Tip()->nHeight - nHeight >= nMaxAge)
             continue;
-		printf("after age\n");
         // from limits
         nCountFrom++;
         if (nCountFrom < nFrom + 1)
             continue;
-		printf("after count\n");
         CTransaction tx;
         uint256 blockHash;
 		if (!GetTransaction(txCert.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
-	printf("after gettx\n");
+
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
