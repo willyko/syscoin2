@@ -233,31 +233,33 @@ void CertListPage::on_searchCert_clicked()
 		int expired = 0;
 		int expires_in = 0;
 		int expires_on = 0; 
-
+            QMessageBox::critical(this, windowTitle(),
+                tr("1"),
+                QMessageBox::Ok, QMessageBox::Ok);
         params.push_back(ui->lineEditCertSearch->text().toStdString());
+            QMessageBox::critical(this, windowTitle(),
+                tr("2"),
+                QMessageBox::Ok, QMessageBox::Ok);
         params.push_back(GetCertExpirationDepth());
+            QMessageBox::critical(this, windowTitle(),
+                tr("3"),
+                QMessageBox::Ok, QMessageBox::Ok);
 		params.push_back(0);
+            QMessageBox::critical(this, windowTitle(),
+                tr("4"),
+                QMessageBox::Ok, QMessageBox::Ok);
 		params.push_back(ui->comboBox->currentText().toInt());
             QMessageBox::critical(this, windowTitle(),
                 tr("before execute"),
                 QMessageBox::Ok, QMessageBox::Ok);
         try {
             result = tableRPC.execute(strMethod, params);
-           QMessageBox::critical(this, windowTitle(),
-                tr("post execute"),
-                QMessageBox::Ok, QMessageBox::Ok);
         }
         catch (UniValue& objError)
         {
-           QMessageBox::critical(this, windowTitle(),
-                tr("exeption"),
-                QMessageBox::Ok, QMessageBox::Ok);
             strError = find_value(objError, "message").get_str();
             QMessageBox::critical(this, windowTitle(),
             tr("Error searching Certificate: \"%1\"").arg(QString::fromStdString(strError)),
-                QMessageBox::Ok, QMessageBox::Ok);
-           QMessageBox::critical(this, windowTitle(),
-                tr("after exeption"),
                 QMessageBox::Ok, QMessageBox::Ok);
             return;
         }
@@ -270,13 +272,7 @@ void CertListPage::on_searchCert_clicked()
         }
 		if (result.type() == UniValue::VARR)
 			{
-           QMessageBox::critical(this, windowTitle(),
-                tr("before array"),
-                QMessageBox::Ok, QMessageBox::Ok);
 				this->model->clear();
-			           QMessageBox::critical(this, windowTitle(),
-                tr("array"),
-                QMessageBox::Ok, QMessageBox::Ok);
 			  const UniValue &arr = result.get_array();
 			  for (unsigned int idx = 0; idx < arr.size(); idx++) {
 				    const UniValue& input = arr[idx];
@@ -324,11 +320,7 @@ void CertListPage::on_searchCert_clicked()
 					expires_in_str = strprintf("%d Blocks", expires_in);
 					expires_on_str = strprintf("Block %d", expires_on);
 				}
-
-				
-				QMessageBox::critical(this, windowTitle(),
-                tr("addrow"),
-                QMessageBox::Ok, QMessageBox::Ok);
+			
 				model->addRow(CertTableModel::Cert,
 						QString::fromStdString(name_str),
 						QString::fromStdString(value_str),
@@ -355,8 +347,4 @@ void CertListPage::on_searchCert_clicked()
                 QMessageBox::Ok, QMessageBox::Ok);
             return;
         }
-		           QMessageBox::critical(this, windowTitle(),
-                tr("done"),
-                QMessageBox::Ok, QMessageBox::Ok);
-
 }
