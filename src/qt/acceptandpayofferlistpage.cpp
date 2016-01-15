@@ -44,7 +44,7 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
 
 	m_netwManager = new QNetworkAccessManager(this);
-	m_placeholderImage.load(":/images/image");
+	m_placeholderImage.load(":/images/imageplaceholder");
 
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
 	ui->infoCert->setVisible(false);

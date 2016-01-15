@@ -59,6 +59,11 @@
         <file alias="mailout">res/icons/mailout.png</file>
         <file alias="message">res/icons/message.png</file>
         <file alias="search">res/icons/search.png</file>
+        <file alias="aboutshade">res/icons/about-shade.png</file>
+        <file alias="aboutshade1">res/icons/about-shade1.png</file>
+        <file alias="overviewshade">res/icons/shade-overview.png</file>
+        <file alias="splashshade">res/icons/shade-splash.png</file>
+        <file alias="imageplaceholder">res/icons/imageplaceholder.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>

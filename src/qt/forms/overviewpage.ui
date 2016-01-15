@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>596</width>
-    <height>342</height>
+    <height>485</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -416,6 +416,19 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap resource="../syscoin.qrc">:/icons/overviewshade</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -533,6 +546,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../syscoin.qrc"/>
+ </resources>
  <connections/>
 </ui>

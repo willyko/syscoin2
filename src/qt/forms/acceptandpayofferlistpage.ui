@@ -76,7 +76,7 @@
        </property>
        <property name="icon">
         <iconset resource="../syscoin.qrc">
-         <normaloff>:/images/image</normaloff>:/images/image</iconset>
+         <normaloff>:/images/imageplaceholder</normaloff>:/images/imageplaceholder</iconset>
        </property>
        <property name="iconSize">
         <size>
