@@ -46,6 +46,19 @@
         <file alias="about_qt">res/icons/about_qt.png</file>
         <file alias="verify">res/icons/verify.png</file>
         <file alias="warning">res/icons/warning.png</file>
+        <file alias="alias">res/icons/alias.png</file>
+        <file alias="cart">res/icons/cart.png</file>
+        <file alias="cert">res/icons/cert.png</file>
+        <file alias="data">res/icons/data.png</file>
+        <file alias="details">res/icons/details.png</file>
+        <file alias="editsys">res/icons/editsys.png</file>
+        <file alias="escrow">res/icons/escrow.png</file>
+        <file alias="escrow1">res/icons/escrow1.png</file>
+        <file alias="mail">res/icons/mail1.png</file>
+        <file alias="mailin">res/icons/mailin.png</file>
+        <file alias="mailout">res/icons/mailout.png</file>
+        <file alias="message">res/icons/message.png</file>
+        <file alias="search">res/icons/search.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>
