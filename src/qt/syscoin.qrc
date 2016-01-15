@@ -54,7 +54,7 @@
         <file alias="editsys">res/icons/editsys.png</file>
         <file alias="escrow">res/icons/escrow.png</file>
         <file alias="escrow1">res/icons/escrow1.png</file>
-        <file alias="mail">res/icons/mail1.png</file>
+        <file alias="mail">res/icons/mail.png</file>
         <file alias="mailin">res/icons/mailin.png</file>
         <file alias="mailout">res/icons/mailout.png</file>
         <file alias="message">res/icons/message.png</file>
