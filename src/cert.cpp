@@ -1150,7 +1150,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 
     if (params.size() > 4)
         fStat = (params[4].get_str() == "stat" ? true : false);
-
+	printf("start scan\n");
     //CCertDB dbCert("r");
     UniValue oRes(UniValue::VARR);
 
@@ -1158,33 +1158,37 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     vector<pair<vector<unsigned char>, CCert> > certScan;
     if (!pcertdb->ScanCerts(vchCert, 100000000, certScan))
         throw runtime_error("scan failed");
+	printf("scan certs\n");
     // regexp
     using namespace boost::xpressive;
     smatch certparts;
     sregex cregex = sregex::compile(strRegexp);
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
+		printf("cert\n");
 		CCert txCert = pairScan.second;
 		string cert = stringFromVch(pairScan.first);
 		string title = stringFromVch(txCert.vchTitle);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;
 
-        
+        printf("after regex\n");
         int nHeight = txCert.nHeight;
 
         // max age
         if (nMaxAge != 0 && chainActive.Tip()->nHeight - nHeight >= nMaxAge)
             continue;
+		printf("after age\n");
         // from limits
         nCountFrom++;
         if (nCountFrom < nFrom + 1)
             continue;
+		printf("after count\n");
         CTransaction tx;
         uint256 blockHash;
 		if (!GetTransaction(txCert.txHash, tx, Params().GetConsensus(), blockHash, true))
 			continue;
-
+	printf("after gettx\n");
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
