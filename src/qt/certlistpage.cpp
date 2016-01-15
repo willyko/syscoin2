@@ -16,6 +16,7 @@
 #include <QMenu>
 #include "main.h"
 #include "rpcserver.h"
+#include "rpcclient.h"
 using namespace std;
 
 
@@ -215,7 +216,6 @@ void CertListPage::selectNewCert(const QModelIndex &parent, int begin, int /*end
 void CertListPage::on_searchCert_clicked()
 {
     if(!walletModel) return;
-        UniValue params(UniValue::VARR);
         UniValue valError;
         UniValue valResult;
         UniValue valId;
@@ -233,25 +233,12 @@ void CertListPage::on_searchCert_clicked()
 		int expired = 0;
 		int expires_in = 0;
 		int expires_on = 0; 
-            QMessageBox::critical(this, windowTitle(),
-                tr("1"),
-                QMessageBox::Ok, QMessageBox::Ok);
-        params.push_back(ui->lineEditCertSearch->text().toStdString());
-            QMessageBox::critical(this, windowTitle(),
-                tr("2"),
-                QMessageBox::Ok, QMessageBox::Ok);
-        params.push_back(GetCertExpirationDepth());
-            QMessageBox::critical(this, windowTitle(),
-                tr("3"),
-                QMessageBox::Ok, QMessageBox::Ok);
-		params.push_back(0);
-            QMessageBox::critical(this, windowTitle(),
-                tr("4"),
-                QMessageBox::Ok, QMessageBox::Ok);
-		params.push_back(ui->comboBox->currentText().toInt());
-            QMessageBox::critical(this, windowTitle(),
-                tr("before execute"),
-                QMessageBox::Ok, QMessageBox::Ok);
+		vector<string> vArgs;
+        vArgs.push_back(ui->lineEditCertSearch->text().toStdString());
+        vArgs.push_back(GetCertExpirationDepth());
+		vArgs.push_back(0);
+		vArgs.push_back(ui->comboBox->currentText().toInt());
+		UniValue params = RPCConvertValues(strMethod, strParams);
         try {
             result = tableRPC.execute(strMethod, params);
         }
@@ -273,6 +260,7 @@ void CertListPage::on_searchCert_clicked()
 		if (result.type() == UniValue::VARR)
 			{
 				this->model->clear();
+			
 			  const UniValue &arr = result.get_array();
 			  for (unsigned int idx = 0; idx < arr.size(); idx++) {
 				    const UniValue& input = arr[idx];
@@ -320,7 +308,9 @@ void CertListPage::on_searchCert_clicked()
 					expires_in_str = strprintf("%d Blocks", expires_in);
 					expires_on_str = strprintf("Block %d", expires_on);
 				}
-			
+
+				
+				
 				model->addRow(CertTableModel::Cert,
 						QString::fromStdString(name_str),
 						QString::fromStdString(value_str),
@@ -347,4 +337,5 @@ void CertListPage::on_searchCert_clicked()
                 QMessageBox::Ok, QMessageBox::Ok);
             return;
         }
+
 }
