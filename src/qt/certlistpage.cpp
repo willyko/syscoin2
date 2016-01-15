@@ -238,7 +238,7 @@ void CertListPage::on_searchCert_clicked()
         vArgs.push_back(GetCertExpirationDepth());
 		vArgs.push_back(0);
 		vArgs.push_back(ui->comboBox->currentText().toInt());
-		UniValue params = RPCConvertValues(strMethod, strParams);
+		UniValue params = RPCConvertValues(strMethod, vArgs);
         try {
             result = tableRPC.execute(strMethod, params);
         }
