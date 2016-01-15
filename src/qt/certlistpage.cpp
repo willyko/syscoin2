@@ -233,14 +233,14 @@ void CertListPage::on_searchCert_clicked()
 		int expired = 0;
 		int expires_in = 0;
 		int expires_on = 0; 
-            QMessageBox::critical(this, windowTitle(),
-                tr("before execute"),
-                QMessageBox::Ok, QMessageBox::Ok);
+
         params.push_back(ui->lineEditCertSearch->text().toStdString());
         params.push_back(GetCertExpirationDepth());
 		params.push_back(0);
 		params.push_back(ui->comboBox->currentText().toInt());
-
+            QMessageBox::critical(this, windowTitle(),
+                tr("before execute"),
+                QMessageBox::Ok, QMessageBox::Ok);
         try {
             result = tableRPC.execute(strMethod, params);
            QMessageBox::critical(this, windowTitle(),
@@ -249,9 +249,15 @@ void CertListPage::on_searchCert_clicked()
         }
         catch (UniValue& objError)
         {
+           QMessageBox::critical(this, windowTitle(),
+                tr("exeption"),
+                QMessageBox::Ok, QMessageBox::Ok);
             strError = find_value(objError, "message").get_str();
             QMessageBox::critical(this, windowTitle(),
             tr("Error searching Certificate: \"%1\"").arg(QString::fromStdString(strError)),
+                QMessageBox::Ok, QMessageBox::Ok);
+           QMessageBox::critical(this, windowTitle(),
+                tr("after exeption"),
                 QMessageBox::Ok, QMessageBox::Ok);
             return;
         }
