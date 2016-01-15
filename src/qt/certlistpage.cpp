@@ -16,7 +16,6 @@
 #include <QMenu>
 #include "main.h"
 #include "rpcserver.h"
-#include "rpcclient.h"
 using namespace std;
 
 
@@ -216,6 +215,7 @@ void CertListPage::selectNewCert(const QModelIndex &parent, int begin, int /*end
 void CertListPage::on_searchCert_clicked()
 {
     if(!walletModel) return;
+        UniValue params(UniValue::VARR);
         UniValue valError;
         UniValue valResult;
         UniValue valId;
@@ -233,12 +233,13 @@ void CertListPage::on_searchCert_clicked()
 		int expired = 0;
 		int expires_in = 0;
 		int expires_on = 0; 
-		vector<string> vArgs;
-        vArgs.push_back(ui->lineEditCertSearch->text().toStdString());
-        vArgs.push_back(GetCertExpirationDepth());
-		vArgs.push_back(0);
-		vArgs.push_back(ui->comboBox->currentText().toInt());
-		UniValue params = RPCConvertValues(strMethod, vArgs);
+        params.push_back(ui->lineEditCertSearch->text().toStdString());
+        params.push_back(GetCertExpirationDepth());
+		UniValue num;
+		num.setInt(0);
+		params.push_back(num);
+		params.push_back(ui->comboBox->currentText().toInt());
+
         try {
             result = tableRPC.execute(strMethod, params);
         }
