@@ -104,7 +104,6 @@ bool EditAliasDialog::saveCurrentRow()
             UniValue result = tableRPC.execute(strMethod, params);
 			if (result.type() != UniValue::VNULL)
 			{
-				string strResult = result.get_str();
 				alias = ui->nameEdit->text() + ui->aliasEdit->text();
 					
 			}
@@ -138,7 +137,7 @@ bool EditAliasDialog::saveCurrentRow()
 				UniValue result = tableRPC.execute(strMethod, params);
 				if (result.type() != UniValue::VNULL)
 				{
-					string strResult = result.get_str();
+				
 					alias = ui->nameEdit->text() + ui->aliasEdit->text();
 						
 				}
@@ -171,7 +170,6 @@ bool EditAliasDialog::saveCurrentRow()
 				UniValue result = tableRPC.execute(strMethod, params);
 				if (result.type() != UniValue::VNULL)
 				{
-					string strResult = result.get_str();
 
 					alias = ui->nameEdit->text() + ui->aliasEdit->text()+ui->transferEdit->text();
 						

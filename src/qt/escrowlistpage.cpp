@@ -293,7 +293,7 @@ void EscrowListPage::on_searchEscrow_clicked()
 				const UniValue& offer_value = find_value(o, "offer");
 				if (offer_value.type() == UniValue::VSTR)
 					offer_str = offer_value.get_str();
-				const UniValue& offeraccept_value = find_value(o, "offeraccept");
+				const UniValue& offeraccept_value = find_value(o, "offeracceptlink");
 				if (offeraccept_value.type() == UniValue::VSTR)
 					offeraccept_str = offeraccept_value.get_str();
 				const UniValue& total_value = find_value(o, "total");

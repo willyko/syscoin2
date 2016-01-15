@@ -121,7 +121,6 @@ bool EditCertDialog::saveCurrentRow()
             UniValue result = tableRPC.execute(strMethod, params);
 			if (result.type() != UniValue::VNULL)
 			{
-				string strResult = result.get_str();
 				cert = ui->nameEdit->text();
 					
 			}
@@ -156,7 +155,6 @@ bool EditCertDialog::saveCurrentRow()
 				UniValue result = tableRPC.execute(strMethod, params);
 				if (result.type() != UniValue::VNULL)
 				{
-					string strResult = result.get_str();
 					cert = ui->nameEdit->text() + ui->certEdit->text();
 
 				}
@@ -188,8 +186,6 @@ bool EditCertDialog::saveCurrentRow()
 				UniValue result = tableRPC.execute(strMethod, params);
 				if (result.type() != UniValue::VNULL)
 				{
-					string strResult = result.get_str();
-
 					cert = ui->certEdit->text()+ui->transferEdit->text();
 
 				}

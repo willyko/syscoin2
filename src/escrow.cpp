@@ -1669,7 +1669,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("arbiter", escrow.arbiter));
 		oName.push_back(Pair("buyerkey", stringFromVch(escrow.vchBuyerKey)));
 		oName.push_back(Pair("offer", stringFromVch(escrow.vchOffer)));
-		oName.push_back(Pair("offeraccept", stringFromVch(escrow.vchOfferAcceptLink)));
+		oName.push_back(Pair("offeracceptlink", stringFromVch(escrow.vchOfferAcceptLink)));
 
 		string sTotal = strprintf("%llu SYS", (escrow.nPricePerUnit/COIN)*escrow.nQty);
 		oName.push_back(Pair("total", sTotal));

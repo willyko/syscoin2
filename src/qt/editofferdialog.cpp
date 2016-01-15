@@ -352,7 +352,6 @@ bool EditOfferDialog::saveCurrentRow()
 				UniValue result = tableRPC.execute(strMethod, params);
 				if (result.type() != UniValue::VNULL)
 				{
-					string strResult = result.get_str();
 					offer = ui->nameEdit->text() + ui->offerEdit->text();
 
 				}
