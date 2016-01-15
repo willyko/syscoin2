@@ -255,7 +255,9 @@ void AliasListPage::on_searchAlias_clicked()
 		int expires_on = 0;  
         params.push_back(ui->lineEditAliasSearch->text().toStdString());
         params.push_back(GetAliasExpirationDepth());
-		params.push_back(0);
+		UniValue num;
+		num.setInt(0);
+		params.push_back(num);
 		params.push_back(ui->comboBox->currentText().toInt());
 
         try {

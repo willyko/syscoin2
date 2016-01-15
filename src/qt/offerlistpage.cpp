@@ -348,7 +348,9 @@ void OfferListPage::on_searchOffer_clicked()
 		int expired = 0;
         params.push_back(ui->lineEditOfferSearch->text().toStdString());
         params.push_back(GetOfferExpirationDepth());
-		params.push_back(0);
+		UniValue num;
+		num.setInt(0);
+		params.push_back(num);
 		params.push_back(ui->comboBox->currentText().toInt());
         try {
             result = tableRPC.execute(strMethod, params);

@@ -234,7 +234,9 @@ void EscrowListPage::on_searchEscrow_clicked()
 		QDateTime dateTime;
         params.push_back(ui->lineEditEscrowSearch->text().toStdString());
         params.push_back(GetEscrowExpirationDepth());
-		params.push_back(0);
+		UniValue num;
+		num.setInt(0);
+		params.push_back(num);
 		params.push_back(ui->comboBox->currentText().toInt());
 
         try {
