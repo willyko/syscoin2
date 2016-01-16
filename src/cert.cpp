@@ -110,7 +110,7 @@ bool CCertDB::ScanCerts(const std::vector<unsigned char>& vchCert, unsigned int 
 
 	printf("start scana\n");
     boost::scoped_ptr<CDBIterator> pcursor(const_cast<CCertDB*>(pcertdb)->NewIterator());
-    pcursor->Seek(make_pair("certi", vchCert));
+    pcursor->Seek(make_pair(string("certi"), vchCert));
 	printf("start scanb\n");
     while (pcursor->Valid()) {
 		printf("cursor valid\n");
