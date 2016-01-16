@@ -486,7 +486,7 @@ bool CAliasDB::ScanNames(const std::vector<unsigned char>& vchName,
 		vector<pair<vector<unsigned char>, CAliasIndex> >& nameScan) {
 
 	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
-	pcursor->Seek(make_pair(string("namei"), vchCert));
+	pcursor->Seek(make_pair(string("namei"), vchName));
 	while (pcursor->Valid()) {
 		boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;

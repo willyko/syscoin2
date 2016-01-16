@@ -317,7 +317,7 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
 		std::vector<std::pair<std::vector<unsigned char>, COffer> >& offerScan) {
 
 	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
-	pcursor->Seek(make_pair(string("offeri"), vchCert));
+	pcursor->Seek(make_pair(string("offeri"), vchOffer));
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;

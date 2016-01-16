@@ -74,7 +74,7 @@ bool CMessageDB::ScanMessages(const std::vector<unsigned char>& vchMessage, unsi
         std::vector<std::pair<std::vector<unsigned char>, CMessage> >& messageScan) {
 
 	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
-	pcursor->Seek(make_pair(string("messagei"), vchCert));
+	pcursor->Seek(make_pair(string("messagei"), vchMessage));
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
