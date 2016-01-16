@@ -17,8 +17,6 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
     ui(new Ui::EditCertDialog), mapper(0), mode(mode), model(0)
 {
     ui->setupUi(this);
-
-    GUIUtil::setupAddressWidget(ui->transferEdit, this);
 	ui->certLabel->setVisible(true);
 	ui->certEdit->setVisible(true);
 	ui->certEdit->setEnabled(false);
@@ -56,6 +54,7 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
 		ui->transferLabel->setVisible(true);
 		ui->transferEdit->setVisible(true);
 		ui->transferDisclaimer->setVisible(true);
+		GUIUtil::setupAddressWidget(ui->transferEdit, this);
         break;
     }
     mapper = new QDataWidgetMapper(this);

@@ -18,15 +18,12 @@ EditAliasDialog::EditAliasDialog(Mode mode, QWidget *parent) :
 {
     ui->setupUi(this);
 
-    GUIUtil::setupAddressWidget(ui->aliasEdit, this);
-	GUIUtil::setupAddressWidget(ui->transferEdit, this);
 	ui->transferEdit->setVisible(false);
 	ui->transferLabel->setVisible(false);
     switch(mode)
     {
     case NewDataAlias:
         setWindowTitle(tr("New Data Alias"));
-        
         break;
     case NewAlias:
         setWindowTitle(tr("New Alias"));
@@ -45,6 +42,7 @@ EditAliasDialog::EditAliasDialog(Mode mode, QWidget *parent) :
 		ui->nameEdit->setEnabled(false);
 		ui->transferEdit->setVisible(true);
 		ui->transferLabel->setVisible(true);
+		GUIUtil::setupAddressWidget(ui->transferEdit, this);
         break;
     }
     mapper = new QDataWidgetMapper(this);

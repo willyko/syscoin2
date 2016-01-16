@@ -115,9 +115,11 @@ void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent)
 #if QT_VERSION >= 0x040700
     // We don't want translators to use own addresses in translations
     // and this is the only place, where this address is supplied.
-    widget->setPlaceholderText(QObject::tr("Enter a Syscoin address (e.g. %1)").arg("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"));
+	// SYSCOIN
+    widget->setPlaceholderText(QObject::tr("Enter a Syscoin address (e.g. %1)").arg("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L or john_smith"));
 #endif
-    widget->setValidator(new SyscoinAddressEntryValidator(parent));
+	// SYSCOIN can be an alias, so this check is invalid
+    // widget->setValidator(new SyscoinAddressEntryValidator(parent));
     widget->setCheckValidator(new SyscoinAddressCheckValidator(parent));
 }
 
