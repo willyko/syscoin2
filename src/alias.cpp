@@ -485,12 +485,8 @@ bool CAliasDB::ScanNames(const std::vector<unsigned char>& vchName,
 		unsigned int nMax,
 		vector<pair<vector<unsigned char>, CAliasIndex> >& nameScan) {
 
-	boost::scoped_ptr<CDBIterator> pcursor(paliasdb->NewIterator());
-	
-	CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-	ssKeySet << make_pair(string("namei"), vchName);
-	pcursor->Seek(ssKeySet.str());
-
+	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
+	pcursor->Seek(make_pair(string("namei"), vchCert));
 	while (pcursor->Valid()) {
 		boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;

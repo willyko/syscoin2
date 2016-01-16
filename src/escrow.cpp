@@ -90,12 +90,8 @@ const vector<unsigned char> CEscrow::Serialize() {
 bool CEscrowDB::ScanEscrows(const std::vector<unsigned char>& vchEscrow, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CEscrow> >& escrowScan) {
 
-    CDBIterator *pcursor = pescrowdb->NewIterator();
-
-    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair(string("escrowi"), vchEscrow);
-    pcursor->Seek(ssKeySet.str());
-
+	 boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
+	pcursor->Seek(make_pair(string("escrowi"), vchCert));
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
@@ -117,7 +113,6 @@ bool CEscrowDB::ScanEscrows(const std::vector<unsigned char>& vchEscrow, unsigne
             return error("%s() : deserialize error", __PRETTY_FUNCTION__);
         }
     }
-    delete pcursor;
     return true;
 }
 

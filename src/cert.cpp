@@ -108,22 +108,17 @@ const vector<unsigned char> CCert::Serialize() {
 bool CCertDB::ScanCerts(const std::vector<unsigned char>& vchCert, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CCert> >& certScan) {
 
-	printf("start scana\n");
-    boost::scoped_ptr<CDBIterator> pcursor(const_cast<CCertDB*>(pcertdb)->NewIterator());
+    boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
     pcursor->Seek(make_pair(string("certi"), vchCert));
-	printf("start scanb\n");
     while (pcursor->Valid()) {
-		printf("cursor valid\n");
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
         try {
             if (pcursor->GetKey(key) && key.first == "certi") {
-				printf("getkey\n");
                 vector<unsigned char> vchCert = key.second;
                 vector<CCert> vtxPos;
                 if(pcursor->GetValue(vtxPos) && !vtxPos.empty())
 				{
-					printf("not empty\n");
 					CCert txPos;
 					txPos = vtxPos.back();
 					certScan.push_back(make_pair(vchCert, txPos));

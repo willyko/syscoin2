@@ -73,12 +73,8 @@ const vector<unsigned char> CMessage::Serialize() {
 bool CMessageDB::ScanMessages(const std::vector<unsigned char>& vchMessage, unsigned int nMax,
         std::vector<std::pair<std::vector<unsigned char>, CMessage> >& messageScan) {
 
-    CDBIterator *pcursor = pmessagedb->NewIterator();
-
-    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair(string("messagei"), vchMessage);
-    pcursor->Seek(ssKeySet.str());
-
+	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
+	pcursor->Seek(make_pair(string("messagei"), vchCert));
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
@@ -100,7 +96,6 @@ bool CMessageDB::ScanMessages(const std::vector<unsigned char>& vchMessage, unsi
             return error("%s() : deserialize error", __PRETTY_FUNCTION__);
         }
     }
-    delete pcursor;
     return true;
 }
 

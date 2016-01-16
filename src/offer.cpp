@@ -315,12 +315,9 @@ const vector<unsigned char> COffer::Serialize() {
 //TODO implement
 bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned int nMax,
 		std::vector<std::pair<std::vector<unsigned char>, COffer> >& offerScan) {
-    CDBIterator *pcursor = pofferdb->NewIterator();
 
-    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair(string("offeri"), vchOffer);
-    pcursor->Seek(ssKeySet.str());
-
+	boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
+	pcursor->Seek(make_pair(string("offeri"), vchCert));
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
 		pair<string, vector<unsigned char> > key;
@@ -342,7 +339,6 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
             return error("%s() : deserialize error", __PRETTY_FUNCTION__);
         }
     }
-    delete pcursor;
     return true;
 }
 
