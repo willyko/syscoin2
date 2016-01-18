@@ -35,7 +35,7 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     }
     return true;
 }
-static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs)
+static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx)
 {
 	switch(op)
 	{
@@ -194,7 +194,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 			// SYSCOIN
 			if (op > 0){
                 TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx);
                 sub.debit = -(nDebit - nChange);
                 parts.append(sub);
 			}
@@ -232,7 +232,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     sub.address = CSyscoinAddress(address).ToString();
 					// SYSCOIN
 					if (op > 0) {
-						CreateSyscoinTransactionRecord(sub, op, vvchArgs);
+						CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx);
 					} 
                 }
                 else
@@ -262,7 +262,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 			// SYSCOIN
 			if (op > 0){
                 TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs); 
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx); 
                 sub.debit = nNet;
                 parts.append(sub);
             } else {
