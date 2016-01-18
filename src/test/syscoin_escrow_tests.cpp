@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	// get buyer balance after release
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
 	// 10 mined block subsidy
-	balanceBefore += 10*8.4*COIN;
+	balanceBefore += 10*8.25*COIN;
 	CAmount balanceAfter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
 

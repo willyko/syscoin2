@@ -51,11 +51,11 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     CAmount nSum = GetBlockSubsidy(1, consensusParams);
     for (int nHeight = 0; nHeight < 20106176; nHeight += 1000) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
-        BOOST_CHECK(nSubsidy <= 8.4 * COIN);
+        BOOST_CHECK(nSubsidy <= 8.25 * COIN);
         nSum += nSubsidy * 1000; 
         BOOST_CHECK(MoneyRange(nSum));
     }
-    BOOST_CHECK_EQUAL(nSum, 668450430795000ULL);
+    BOOST_CHECK_EQUAL(nSum, 668863030795000ULL);
 }
 
 bool ReturnFalse() { return false; }

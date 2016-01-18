@@ -1491,8 +1491,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     if (halvings >= 64)
         return 0;
-	// SYSCOIN default 8.4 coins to start
-    CAmount nSubsidy = 8.4 * COIN;
+	// SYSCOIN default 8.24 coins to start
+    CAmount nSubsidy = 8.25 * COIN;
     // SYSCOIN Subsidy is cut in half approximately every 7 months.
     nSubsidy >>= halvings;
 
