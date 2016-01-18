@@ -478,13 +478,16 @@ bool CheckCertInputs(const CTransaction &tx,
 							"CheckCertInputs() : failed to read from cert DB");
 			}
             if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-				const CCert& dbCert = vtxPos.back();
-				if(theCert.vchData.empty())
-					theCert.vchData = dbCert.vchData;
-				if(theCert.vchTitle.empty())
-					theCert.vchTitle = dbCert.vchTitle;
-				if(theCert.vchPubKey.empty())
-					theCert.vchPubKey = dbCert.vchPubKey;
+				if(!vtxPos.empty())
+				{
+					const CCert& dbCert = vtxPos.back();
+					if(theCert.vchData.empty())
+						theCert.vchData = dbCert.vchData;
+					if(theCert.vchTitle.empty())
+						theCert.vchTitle = dbCert.vchTitle;
+					if(theCert.vchPubKey.empty())
+						theCert.vchPubKey = dbCert.vchPubKey;
+				}
                 int nHeight = chainActive.Tip()->nHeight;     
 				
                 // set the cert's txn-dependent values

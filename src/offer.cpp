@@ -841,27 +841,30 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// but first we assign the accepts/offerLinks/whitelists from the DB since
 				// they are not shipped in an update txn to keep size down
 				if(op == OP_OFFER_UPDATE) {
-					const COffer& dbOffer = vtxPos.back();
 					serializedOffer.accepts = theOffer.accepts;
 					serializedOffer.offerLinks = theOffer.offerLinks;
 					theOffer = serializedOffer;
-					// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
-					theOffer.linkWhitelist = dbOffer.linkWhitelist;
-					// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
-					if(serializedOffer.sCurrencyCode.empty())
-						theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
-					if(serializedOffer.sCategory.empty())
-						theOffer.sCategory = dbOffer.sCategory;
-					if(serializedOffer.sTitle.empty())
-						theOffer.sTitle = dbOffer.sTitle;
-					if(serializedOffer.sDescription.empty())
-						theOffer.sDescription = dbOffer.sDescription;
-					if(serializedOffer.vchPubKey.empty())
-						theOffer.vchPubKey = dbOffer.vchPubKey;
-					if(serializedOffer.aliasName.empty())
-						theOffer.aliasName = dbOffer.aliasName;
-					if(serializedOffer.vchLinkOffer.empty())
-						theOffer.vchLinkOffer = dbOffer.vchLinkOffer;
+					if(!vtxPos.empty())
+					{
+						const COffer& dbOffer = vtxPos.back();
+						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
+						theOffer.linkWhitelist = dbOffer.linkWhitelist;
+						// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
+						if(serializedOffer.sCurrencyCode.empty())
+							theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
+						if(serializedOffer.sCategory.empty())
+							theOffer.sCategory = dbOffer.sCategory;
+						if(serializedOffer.sTitle.empty())
+							theOffer.sTitle = dbOffer.sTitle;
+						if(serializedOffer.sDescription.empty())
+							theOffer.sDescription = dbOffer.sDescription;
+						if(serializedOffer.vchPubKey.empty())
+							theOffer.vchPubKey = dbOffer.vchPubKey;
+						if(serializedOffer.aliasName.empty())
+							theOffer.aliasName = dbOffer.aliasName;
+						if(serializedOffer.vchLinkOffer.empty())
+							theOffer.vchLinkOffer = dbOffer.vchLinkOffer;
+					}
 
 				}
 				else if(op == OP_OFFER_ACTIVATE)

@@ -388,11 +388,14 @@ bool CheckAliasInputs(const CTransaction &tx,
 			}
 
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-				const CAliasIndex& dbAlias = vtxPos.back();
-				if(theAlias.vchValue.empty())
-					theAlias.vchValue = dbAlias.vchValue;	
-				if(theAlias.vchPubKey.empty())
-					theAlias.vchPubKey = dbAlias.vchPubKey;
+				if(!vtxPos.empty())
+				{
+					const CAliasIndex& dbAlias = vtxPos.back();
+					if(theAlias.vchValue.empty())
+						theAlias.vchValue = dbAlias.vchValue;	
+					if(theAlias.vchPubKey.empty())
+						theAlias.vchPubKey = dbAlias.vchPubKey;
+				}
 				int nHeight = chainActive.Tip()->nHeight;
 	
 				theAlias.nHeight = nHeight;
