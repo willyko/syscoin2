@@ -11,7 +11,7 @@
 #include "wallet/wallet.h"
 #include "offer.h"
 #include <stdint.h>
-
+#include <QDebug>
 #include <boost/foreach.hpp>
 extern bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
