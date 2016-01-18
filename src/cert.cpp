@@ -173,12 +173,8 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
 
             // attempt to read cert from txn
             CCert txCert;
-            CCert txCA;
             if(!txCert.UnserializeFromTx(tx))
                 return error("ReconstructCertIndex() : failed to unserialize cert from tx");
-
-            // save serialized cert
-            CCert serializedCert = txCert;
 
             // read cert from DB if it exists
             vector<CCert> vtxPos;

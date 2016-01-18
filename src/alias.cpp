@@ -546,11 +546,15 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 
 				const vector<unsigned char> &vchName = vvchArgs[0];
 
-
 				if (!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
 					continue;
 
-				// if name exists in DB, read it to verify
+				// attempt to read cert from txn
+				CAliasIndex txAlias;
+				if(!txAlias.UnserializeFromTx(tx))
+					return error("ReconstructCertIndex() : failed to unserialize alias from tx");
+
+				// if alias exists in DB, read it to verify
 				vector<CAliasIndex> vtxPos;
 				if (ExistsAlias(vchName)) {
 					if (!ReadAlias(vchName, vtxPos))
@@ -559,7 +563,6 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 				}
 
 				// rebuild the alias, store to DB
-				CAliasIndex txName;
 				txName.nHeight = nHeight;
 				txName.txHash = tx.GetHash();
 
