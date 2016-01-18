@@ -563,10 +563,10 @@ bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
 				}
 
 				// rebuild the alias, store to DB
-				txName.nHeight = nHeight;
-				txName.txHash = tx.GetHash();
+				txAlias.nHeight = nHeight;
+				txAlias.txHash = tx.GetHash();
 
-				PutToAliasList(vtxPos, txName);
+				PutToAliasList(vtxPos, txAlias);
 
 				if (!WriteAlias(vchName, vtxPos))
 					return error(
