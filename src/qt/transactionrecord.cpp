@@ -209,17 +209,17 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             // Debit
             //
             CAmount nTxFee = nDebit - wtx.GetValueOut();
-			printf("allfromme\n");
+			qDebug() << "allfromme";
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
                 const CTxOut& txout = wtx.vout[nOut];
                 TransactionRecord sub(hash, nTime);
                 sub.idx = parts.size();
                 sub.involvesWatchAddress = involvesWatchAddress;
-				printf("check\n");
+				qDebug() << "check";
                 if(wallet->IsMine(txout))
                 {
-					printf("ismine\n");
+					qDebug() << "ismine";
                     // Ignore parts sent to self, as this is usually the change
                     // from a transaction sent back to our own address.
                     continue;
@@ -234,12 +234,12 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 					// SYSCOIN
 					if (op > 0) {
 						CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx);
-						printf("CreateSyscoinTransactionRecord\n");
+						qDebug() << "CreateSyscoinTransactionRecord";
 					} 
                 }
                 else
                 {
-					printf("sendtoother\n");
+					qDebug() << "sendtoother";
                     // Sent to IP, or other non-address transaction like OP_EVAL
                     sub.type = TransactionRecord::SendToOther;
                     sub.address = mapValue["to"];
