@@ -377,7 +377,8 @@ RES_ICONS = \
   qt/res/icons/mailout.png \
   qt/res/icons/message.png \
   qt/res/icons/search.png \
-  qt/res/icons/imageplaceholder.png
+  qt/res/icons/imageplaceholder.png \
+  qt/res/icons/refresh.png
   
 SYSCOIN_QT_CPP = \
   qt/bantablemodel.cpp \

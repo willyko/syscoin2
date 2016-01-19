@@ -64,6 +64,7 @@
         <file alias="overviewshade">res/icons/shade-overview.png</file>
         <file alias="splashshade">res/icons/shade-splash.png</file>
         <file alias="imageplaceholder">res/icons/imageplaceholder.png</file>
+        <file alias="refresh">res/icons/refresh.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>
