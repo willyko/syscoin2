@@ -97,8 +97,6 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 			sub.type = TransactionRecord::OfferAccept;
 		else if(type == RECV)
 			sub.type = TransactionRecord::OfferAcceptRecv;
-		else if(type == FEE)
-			sub.type = TransactionRecord::OfferAcceptFee;
 		break;
 	case OP_CERT_ACTIVATE:
 		if(type == SEND)
@@ -150,7 +148,7 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 		if(type == SEND)
 			sub.type = TransactionRecord::MessageActivate;
 		else if(type == RECV)
-			sub.type = TransactionRecord::MessageActivateRecv;
+			sub.type = TransactionRecord::MessageRecv;
 		else if(type == FEE)
 			sub.type = TransactionRecord::MessageActivateFee;
 		break;

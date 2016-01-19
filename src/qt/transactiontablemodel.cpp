@@ -436,8 +436,10 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
         return tr("Escrow Release Fee");
     case TransactionRecord::EscrowRefund:
         return tr("Escrow Refunded");
-    case TransactionRecord::EscrowRefund:
+    case TransactionRecord::EscrowRefundFee:
         return tr("Escrow Refund Fee");
+    case TransactionRecord::EscrowRefundRecv:
+        return tr("Escrow Refund Received");
     case TransactionRecord::EscrowComplete:
         return tr("Escrow Complete");
     case TransactionRecord::EscrowCompleteFee:
@@ -534,6 +536,7 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
 	case TransactionRecord::EscrowCompleteFee:
     case TransactionRecord::EscrowRefund:
 	case TransactionRecord::EscrowRefundFee:
+	case TransactionRecord::EscrowRecv:
 	case TransactionRecord::MessageActivate:
 	case TransactionRecord::MessageActivateFee:
 	case TransactionRecord::MessageRecv:

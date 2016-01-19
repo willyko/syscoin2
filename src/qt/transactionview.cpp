@@ -124,6 +124,7 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
 	typeWidget->addItem(tr("Escrow Release Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowReleaseFee));
     typeWidget->addItem(tr("Escrow Refunded"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefund));
 	typeWidget->addItem(tr("Escrow Refund Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefundFee));
+	typeWidget->addItem(tr("Escrow Refund Received"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefund));
 	typeWidget->addItem(tr("Escrow Complete"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowComplete));
 	typeWidget->addItem(tr("Escrow Complete Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowCompleteFee));
 

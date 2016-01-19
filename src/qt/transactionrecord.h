@@ -91,7 +91,7 @@ public:
         OfferUpdate,
 		OfferUpdateFee,
         OfferAccept,
-		OfferRecv,
+		OfferAcceptRecv,
 		OfferAcceptRefundInProgress,
 		OfferAcceptRefundInProgressFee,
 		OfferAcceptRefundComplete,
@@ -111,6 +111,7 @@ public:
 		EscrowReleaseFee,
         EscrowRefund,
 		EscrowRefundFee,
+		EscrowRefundRecv,
 		EscrowComplete,
 		EscrowCompleteFee,
 
