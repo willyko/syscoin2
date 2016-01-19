@@ -242,7 +242,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 				TransactionRecord sub(hash, nTime);
 				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, SEND);
 				sub.idx = parts.size();
-                sub.debit = -nNet;
+                sub.debit = nNet;
                 parts.append(sub);
 			} 
 			else
