@@ -54,7 +54,6 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
 		ui->transferLabel->setVisible(true);
 		ui->transferEdit->setVisible(true);
 		ui->transferDisclaimer->setVisible(true);
-		GUIUtil::setupAddressWidget(ui->transferEdit, this);
         break;
     }
     mapper = new QDataWidgetMapper(this);

@@ -42,7 +42,6 @@ EditAliasDialog::EditAliasDialog(Mode mode, QWidget *parent) :
 		ui->nameEdit->setEnabled(false);
 		ui->transferEdit->setVisible(true);
 		ui->transferLabel->setVisible(true);
-		GUIUtil::setupAddressWidget(ui->transferEdit, this);
         break;
     }
     mapper = new QDataWidgetMapper(this);

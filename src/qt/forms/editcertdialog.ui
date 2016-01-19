@@ -70,7 +70,7 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QValidatedLineEdit" name="transferEdit"/>
+      <widget class="QLineEdit" name="transferEdit"/>
      </item>
      <item row="5" column="1">
       <widget class="QLabel" name="transferDisclaimer">
@@ -126,13 +126,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QValidatedLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>qvalidatedlineedit.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>
