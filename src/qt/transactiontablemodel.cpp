@@ -463,23 +463,41 @@ QVariant TransactionTableModel::txAddressDecoration(const TransactionRecord *wtx
         return QIcon(":/icons/tx_mined");
     case TransactionRecord::RecvWithAddress:
     case TransactionRecord::RecvFromOther:
+	// SYSCOIN
+	case TransactionRecord::AliasRecv:
+	case TransactionRecord::CertRecv:
+	case TransactionRecord::OfferAcceptRecv:
+	case TransactionRecord::EscrowRefundRecv:
+	case TransactionRecord::MessageRecv:
         return QIcon(":/icons/tx_input");
     case TransactionRecord::SendToAddress:
     case TransactionRecord::SendToOther:
 	// SYSCOIN
 	case TransactionRecord::AliasActivate:
+	case TransactionRecord::AliasActivateFee:
     case TransactionRecord::AliasTransfer:
+	case TransactionRecord::AliasTransferFee:
     case TransactionRecord::OfferActivate:
+	case TransactionRecord::OfferActivateFee:
     case TransactionRecord::OfferAccept:
 	case TransactionRecord::OfferAcceptRefundInProgress:
+	case TransactionRecord::OfferAcceptRefundInProgressFee:
 	case TransactionRecord::OfferAcceptRefundComplete:
+	case TransactionRecord::OfferAcceptRefundCompleteFee:
     case TransactionRecord::CertActivate:
+	case TransactionRecord::CertActivateFee:
 	case TransactionRecord::CertTransfer:
+	case TransactionRecord::CertTransferFee:
     case TransactionRecord::EscrowActivate:
+	case TransactionRecord::EscrowActivateFee:
     case TransactionRecord::EscrowRelease:
+	case TransactionRecord::EscrowReleaseFee:
     case TransactionRecord::EscrowRefund:
+	case TransactionRecord::EscrowRefundFee:
 	case TransactionRecord::EscrowComplete:
+	case TransactionRecord::EscrowCompleteFee:
 	case TransactionRecord::MessageActivate:
+	case TransactionRecord::MessageActivateFee:
         return QIcon(":/icons/tx_output");
     default:
         return QIcon(":/icons/tx_inout");
