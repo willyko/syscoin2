@@ -51,7 +51,7 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 		if(type == SEND)
 			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
 		else if(type == RECV)
-			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasRecv;
+			sub.type = TransactionRecord::AliasRecv;
 		else if(type == FEE)
 			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdateFee : TransactionRecord::AliasTransferFee;
 		break;
