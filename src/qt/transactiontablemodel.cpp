@@ -381,25 +381,25 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
     case TransactionRecord::AliasActivate:
         return tr("Alias Activated");
     case TransactionRecord::AliasActivateFee:
-        return tr("Alias Activate Fee");
+        return tr("Alias Activate Data Fee");
     case TransactionRecord::AliasUpdate:
         return tr("Alias Updated");
     case TransactionRecord::AliasUpdateFee:
-        return tr("Alias Update Fee");
+        return tr("Alias Update Data Fee");
     case TransactionRecord::AliasTransfer:
         return tr("Alias Transferred");
     case TransactionRecord::AliasTransferFee:
-        return tr("Alias Transfer Fee");
+        return tr("Alias Transfer Data Fee");
     case TransactionRecord::AliasRecv:
         return tr("Alias Received");
     case TransactionRecord::OfferActivate:
         return tr("Offer Activated");
     case TransactionRecord::OfferActivateFee:
-        return tr("Offer Activate Fee");
+        return tr("Offer Activate Data Fee");
     case TransactionRecord::OfferUpdate:
         return tr("Offer Updated");
     case TransactionRecord::OfferUpdateFee:
-        return tr("Offer Update Fee");
+        return tr("Offer Update Data Fee");
     case TransactionRecord::OfferAccept:
         return tr("Offer Accepted");
     case TransactionRecord::OfferAcceptRecv:
@@ -407,47 +407,47 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
 	case TransactionRecord::OfferAcceptRefundInProgress:
 		return tr("Offer Refund In Progress");
 	case TransactionRecord::OfferAcceptRefundInProgressFee:
-		return tr("Offer Refund In Progress Fee");
+		return tr("Offer Refund In Progress Data Fee");
 	case TransactionRecord::OfferAcceptRefundComplete:
 		return tr("Offer Refund Complete");
 	case TransactionRecord::OfferAcceptRefundCompleteFee:
-		return tr("Offer Refund Complete Fee");
+		return tr("Offer Refund Complete Data Fee");
     case TransactionRecord::CertActivate:
         return tr("Cert. Activated");
     case TransactionRecord::CertActivateFee:
-        return tr("Cert. Activate Fee");
+        return tr("Cert. Activate Data Fee");
     case TransactionRecord::CertUpdate:
         return tr("Cert. Updated");
     case TransactionRecord::CertUpdateFee:
-        return tr("Cert. Update Fee");
+        return tr("Cert. Update Data Fee");
     case TransactionRecord::CertTransfer:
         return tr("Cert. Transferred");
     case TransactionRecord::CertTransferFee :
-        return tr("Cert. Transfer Fee");
+        return tr("Cert. Transfer Data Fee");
     case TransactionRecord::CertRecv:
         return tr("Cert. Received");
    case TransactionRecord::EscrowActivate:
         return tr("Escrow Activated");
    case TransactionRecord::EscrowActivateFee:
-        return tr("Escrow Activate Fee");
+        return tr("Escrow Activate Data Fee");
     case TransactionRecord::EscrowRelease:
         return tr("Escrow Released");
     case TransactionRecord::EscrowReleaseFee:
-        return tr("Escrow Release Fee");
+        return tr("Escrow Release Data Fee");
     case TransactionRecord::EscrowRefund:
         return tr("Escrow Refunded");
     case TransactionRecord::EscrowRefundFee:
-        return tr("Escrow Refund Fee");
+        return tr("Escrow Refund Data Fee");
     case TransactionRecord::EscrowRefundRecv:
         return tr("Escrow Refund Received");
     case TransactionRecord::EscrowComplete:
         return tr("Escrow Complete");
     case TransactionRecord::EscrowCompleteFee:
-        return tr("Escrow Complete Fee");
+        return tr("Escrow Complete Data Fee");
     case TransactionRecord::MessageActivate:
         return tr("Message Sent");
     case TransactionRecord::MessageActivateFee:
-        return tr("Message Fee");
+        return tr("Message Data Fee");
     case TransactionRecord::MessageRecv:
         return tr("Message Received");
     default:
