@@ -536,7 +536,7 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
 	case TransactionRecord::EscrowCompleteFee:
     case TransactionRecord::EscrowRefund:
 	case TransactionRecord::EscrowRefundFee:
-	case TransactionRecord::EscrowRecv:
+	case TransactionRecord::EscrowRefundRecv:
 	case TransactionRecord::MessageActivate:
 	case TransactionRecord::MessageActivateFee:
 	case TransactionRecord::MessageRecv:
