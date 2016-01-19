@@ -11,8 +11,9 @@
 #include "wallet/wallet.h"
 #include "offer.h"
 #include <stdint.h>
-#include <QDebug>
+
 #include <boost/foreach.hpp>
+// SYSCOIN
 extern bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
@@ -20,6 +21,7 @@ extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vec
 extern int GetSyscoinTxVersion();
 extern bool IsAliasMine(const CTransaction& tx);
 extern std::string stringFromVch(const std::vector<unsigned char> &vch);
+enum {RECV=0, SEND=1, FEE=2};
 using namespace std;
 /* Return positive answer if transaction should be shown in list.
  */
@@ -35,58 +37,122 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     }
     return true;
 }
-static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx)
+static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
 {
 	switch(op)
 	{
 	case OP_ALIAS_ACTIVATE:
-		sub.type = TransactionRecord::AliasActivate;
+		if(type == SEND)
+			sub.type = TransactionRecord::AliasActivate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::AliasActivateFee;
 		break;
 	case OP_ALIAS_UPDATE:
-		sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;							
+		if(type == SEND)
+			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
+		else if(type == RECV)
+			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasRecv;
+		else if(type == FEE)
+			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdateFee : TransactionRecord::AliasTransferFee;
 		break;
 	case OP_OFFER_ACTIVATE:
-		sub.type = TransactionRecord::OfferActivate;
+		if(type == SEND)
+			sub.type = TransactionRecord::OfferActivate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::OfferActivateFee;
 		break;
 	case OP_OFFER_UPDATE:
-		sub.type = TransactionRecord::OfferUpdate;
+		if(type == SEND)
+			sub.type = TransactionRecord::OfferUpdate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::OfferUpdateFee;
 		break;
 	case OP_OFFER_REFUND:
-		if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
+		if(type == SEND)
 		{
-			sub.type = TransactionRecord::OfferAcceptRefundInProgress;
+			if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
+			{
+				sub.type = TransactionRecord::OfferAcceptRefundInProgress;
+			}
+			else
+			{
+				sub.type = TransactionRecord::OfferAcceptRefundComplete;
+			}
 		}
-		else
+		else if(type == FEE)
 		{
-			sub.type = TransactionRecord::OfferAcceptRefundComplete;
+			if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
+			{
+				sub.type = TransactionRecord::OfferAcceptRefundInProgressFee;
+			}
+			else
+			{
+				sub.type = TransactionRecord::OfferAcceptRefundCompleteFee;
+			}
 		}
+
 		break;
 	case OP_OFFER_ACCEPT:
-		sub.type = TransactionRecord::OfferAccept;
+		if(type == SEND)
+			sub.type = TransactionRecord::OfferAccept;
+		else if(type == RECV)
+			sub.type = TransactionRecord::OfferAcceptRecv;
+		else if(type == FEE)
+			sub.type = TransactionRecord::OfferAcceptFee;
 		break;
 	case OP_CERT_ACTIVATE:
-		sub.type = TransactionRecord::CertActivate;
+		if(type == SEND)
+			sub.type = TransactionRecord::CertActivate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::CertActivateFee;
 		break;
 	case OP_CERT_UPDATE:
-		sub.type = TransactionRecord::CertUpdate;
+		if(type == SEND)
+			sub.type = TransactionRecord::CertUpdate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::CertUpdateFee;
 		break;
 	case OP_CERT_TRANSFER:
-		sub.type = TransactionRecord::CertTransfer;
+		if(type == SEND)
+			sub.type = TransactionRecord::CertTransfer;
+		else if(type == RECV)
+			sub.type = TransactionRecord::CertRecv;
+		else if(type == FEE)
+			sub.type = TransactionRecord::CertTransferFee;
 		break;
 	case OP_ESCROW_ACTIVATE:
-		sub.type = TransactionRecord::EscrowActivate;
+		if(type == SEND || type == RECV)
+			sub.type = TransactionRecord::EscrowActivate;
+		else if(type == FEE)
+			sub.type = TransactionRecord::EscrowActivateFee;
 		break;
 	case OP_ESCROW_RELEASE:
-		sub.type = TransactionRecord::EscrowRelease;
+		if(type == SEND)
+			sub.type = TransactionRecord::EscrowRelease;
+		else if(type == FEE)
+			sub.type = TransactionRecord::EscrowReleaseFee;
 		break;
 	case OP_ESCROW_COMPLETE:
-		sub.type = TransactionRecord::EscrowComplete;
+		if(type == SEND)
+			sub.type = TransactionRecord::EscrowComplete;
+		else if(type == FEE)
+			sub.type = TransactionRecord::EscrowCompleteFee;
 		break;
 	case OP_ESCROW_REFUND:
-		sub.type = TransactionRecord::EscrowRefund;
+		if(type == SEND)
+			sub.type = TransactionRecord::EscrowRefund;
+		else if(type == RECV)
+			sub.type = TransactionRecord::EscrowRefundRecv;
+		else if(type == FEE)
+			sub.type = TransactionRecord::EscrowRefundFee;
 		break;
 	case OP_MESSAGE_ACTIVATE:
-		sub.type = TransactionRecord::MessageActivate;
+		if(type == SEND)
+			sub.type = TransactionRecord::MessageActivate;
+		else if(type == RECV)
+			sub.type = TransactionRecord::MessageActivateRecv;
+		else if(type == FEE)
+			sub.type = TransactionRecord::MessageActivateFee;
 		break;
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
@@ -105,43 +171,6 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
     if (nNet > 0 || wtx.IsCoinBase())
-    {
-        //
-        // Credit
-        //
-        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-        {
-            isminetype mine = wallet->IsMine(txout);
-            if(mine)
-            {
-                TransactionRecord sub(hash, nTime);
-                CTxDestination address;
-                sub.idx = parts.size(); // sequence number
-                sub.credit = txout.nValue;
-                sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
-                if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
-                {
-                    // Received by Syscoin Address
-                    sub.type = TransactionRecord::RecvWithAddress;
-                    sub.address = CSyscoinAddress(address).ToString();
-                }
-                else
-                {
-                    // Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
-                    sub.type = TransactionRecord::RecvFromOther;
-                    sub.address = mapValue["from"];
-                }
-                if (wtx.IsCoinBase())
-                {
-                    // Generated
-                    sub.type = TransactionRecord::Generated;
-                }
-
-                parts.append(sub);
-            }
-        }
-    }
-    else
     {
 		// SYSCOIN Check if tx is a syscoin service
         vector<vector<unsigned char> > vvchArgs;
@@ -169,7 +198,47 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 
 			}
         }
+        //
+        // Credit
+        //
+        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        {
+            isminetype mine = wallet->IsMine(txout);
+            if(mine)
+            {
+                TransactionRecord sub(hash, nTime);
+                CTxDestination address;
+                sub.idx = parts.size(); // sequence number
+                sub.credit = txout.nValue;
+                sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
+                if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
+                {
+                    // Received by Syscoin Address
+                    sub.type = TransactionRecord::RecvWithAddress;
+                    sub.address = CSyscoinAddress(address).ToString();
+					// SYSCOIN - this should be a received service
+					if (op > 0) {
+						CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, RECV);
+					} 
+                }
+                else
+                {
+                    // Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
+                    sub.type = TransactionRecord::RecvFromOther;
+                    sub.address = mapValue["from"];
+                }
+                if (wtx.IsCoinBase())
+                {
+                    // Generated
+                    sub.type = TransactionRecord::Generated;
+                }
 
+                parts.append(sub);
+            }
+        }
+    }
+    else
+    {
         bool involvesWatchAddress = false;
         isminetype fAllFromMe = ISMINE_SPENDABLE;
         BOOST_FOREACH(const CTxIn& txin, wtx.vin)
@@ -191,15 +260,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         {
             // Payment to self
             CAmount nChange = wtx.GetChange();
-			// SYSCOIN
-			if (op > 0){
-                TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx);
-                sub.debit = -(nDebit - nChange);
-                parts.append(sub);
-			}
-			else
-				parts.append(TransactionRecord(hash, nTime, TransactionRecord::SendToSelf, "",
+			parts.append(TransactionRecord(hash, nTime, TransactionRecord::SendToSelf, "",
                             -(nDebit - nChange), nCredit - nChange));
             parts.last().involvesWatchAddress = involvesWatchAddress;   // maybe pass to TransactionRecord as constructor argument
         }
@@ -209,42 +270,47 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             // Debit
             //
             CAmount nTxFee = nDebit - wtx.GetValueOut();
-			qDebug() << "allfromme";
+
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
                 const CTxOut& txout = wtx.vout[nOut];
                 TransactionRecord sub(hash, nTime);
                 sub.idx = parts.size();
                 sub.involvesWatchAddress = involvesWatchAddress;
-				qDebug() << "check";
                 if(wallet->IsMine(txout))
                 {
-					qDebug() << "ismine";
-                    // Ignore parts sent to self, as this is usually the change
-                    // from a transaction sent back to our own address.
-                    continue;
-                }
-
-                CTxDestination address;
-                if (ExtractDestination(txout.scriptPubKey, address))
-                {
-                    // Sent to Syscoin Address
-                    sub.type = TransactionRecord::SendToAddress;
-                    sub.address = CSyscoinAddress(address).ToString();
-					// SYSCOIN
+					// SYSCOIN - this should be a new service you've created
 					if (op > 0) {
-						CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx);
-						qDebug() << "CreateSyscoinTransactionRecord";
+						CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, SEND);
 					} 
+					else
+					{
+						// Ignore parts sent to self, as this is usually the change
+						// from a transaction sent back to our own address.
+						continue;
+					}
                 }
-                else
-                {
-					qDebug() << "sendtoother";
-                    // Sent to IP, or other non-address transaction like OP_EVAL
-                    sub.type = TransactionRecord::SendToOther;
-                    sub.address = mapValue["to"];
-                }
+				else
+				{
 
+					CTxDestination address;
+					if (ExtractDestination(txout.scriptPubKey, address))
+					{
+						// Sent to Syscoin Address
+						sub.type = TransactionRecord::SendToAddress;
+						sub.address = CSyscoinAddress(address).ToString();
+					}
+					else
+					{
+						// Sent to IP, or other non-address transaction like OP_EVAL
+						sub.type = TransactionRecord::SendToOther;
+						sub.address = mapValue["to"];
+						// SYSCOIN - this should be the opreturn fee output carrying the data
+						if (op > 0) {
+							CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, FEE);
+						} 
+					}
+				}
                 CAmount nValue = txout.nValue;
                 /* Add fee to first output */
                 if (nTxFee > 0)
@@ -262,16 +328,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Mixed debit transaction, can't break down payees
             //
-			// SYSCOIN
-			if (op > 0){
-                TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx); 
-                sub.debit = nNet;
-                parts.append(sub);
-            } else {
-
-                parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
-            }
+            parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
             parts.last().involvesWatchAddress = involvesWatchAddress;
         }
     }
