@@ -92,41 +92,27 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
     // SYSCOIN
 	typeWidget->addItem(tr("Alias Activated"), TransactionFilterProxy::TYPE(TransactionRecord::AliasActivate));
-	typeWidget->addItem(tr("Alias Activate Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::AliasActivateFee));
     typeWidget->addItem(tr("Alias Updated"), TransactionFilterProxy::TYPE(TransactionRecord::AliasUpdate));
-	typeWidget->addItem(tr("Alias Update Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::AliasUpdateFee));
     typeWidget->addItem(tr("Alias Transferred"), TransactionFilterProxy::TYPE(TransactionRecord::AliasTransfer));
-	typeWidget->addItem(tr("Alias Transfer Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::AliasTransferFee));
 	typeWidget->addItem(tr("Alias Received"), TransactionFilterProxy::TYPE(TransactionRecord::AliasRecv));
    
     typeWidget->addItem(tr("Offer Activated"), TransactionFilterProxy::TYPE(TransactionRecord::OfferActivate));
-	typeWidget->addItem(tr("Offer Activate Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::OfferActivateFee));
     typeWidget->addItem(tr("Offer Updated"), TransactionFilterProxy::TYPE(TransactionRecord::OfferUpdate));
-	typeWidget->addItem(tr("Offer Update Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::OfferUpdateFee));
     typeWidget->addItem(tr("Offer Accepted"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAccept));
 	typeWidget->addItem(tr("Offer Accept Received"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRecv));
 	typeWidget->addItem(tr("Offer Refund In Progress"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundInProgress));
-	typeWidget->addItem(tr("Offer Refund In Progress Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundInProgressFee));
 	typeWidget->addItem(tr("Offer Refund Complete"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundComplete));
-	typeWidget->addItem(tr("Offer Refund Complete Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::OfferAcceptRefundCompleteFee));
   
     typeWidget->addItem(tr("Certificate Activated"), TransactionFilterProxy::TYPE(TransactionRecord::CertActivate));
-	typeWidget->addItem(tr("Certificate Activate Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::CertActivateFee));
     typeWidget->addItem(tr("Certificate Updated"), TransactionFilterProxy::TYPE(TransactionRecord::CertUpdate));
-	typeWidget->addItem(tr("Certificate Update Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::CertUpdateFee));
     typeWidget->addItem(tr("Certificate Transferred"), TransactionFilterProxy::TYPE(TransactionRecord::CertTransfer));
-	typeWidget->addItem(tr("Certificate Transfer Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::CertTransferFee));
 	typeWidget->addItem(tr("Certificate Received"), TransactionFilterProxy::TYPE(TransactionRecord::CertRecv));
 
     typeWidget->addItem(tr("Escrow Activated"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowActivate));
-	typeWidget->addItem(tr("Escrow Activate Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowActivateFee));
     typeWidget->addItem(tr("Escrow Released"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRelease));
-	typeWidget->addItem(tr("Escrow Release Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowReleaseFee));
     typeWidget->addItem(tr("Escrow Refunded"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefund));
-	typeWidget->addItem(tr("Escrow Refund Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefundFee));
 	typeWidget->addItem(tr("Escrow Refund Received"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowRefund));
 	typeWidget->addItem(tr("Escrow Complete"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowComplete));
-	typeWidget->addItem(tr("Escrow Complete Data Fee"), TransactionFilterProxy::TYPE(TransactionRecord::EscrowCompleteFee));
 
 	typeWidget->addItem(tr("Message Sent"), TransactionFilterProxy::TYPE(TransactionRecord::MessageActivate));
 	typeWidget->addItem(tr("Message Received"), TransactionFilterProxy::TYPE(TransactionRecord::MessageRecv));

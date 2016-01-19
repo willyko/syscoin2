@@ -21,7 +21,7 @@ extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vec
 extern int GetSyscoinTxVersion();
 extern bool IsAliasMine(const CTransaction& tx);
 extern std::string stringFromVch(const std::vector<unsigned char> &vch);
-enum {RECV=0, SEND=1, FEE=2};
+enum {RECV=0, SEND=1};
 using namespace std;
 /* Return positive answer if transaction should be shown in list.
  */
