@@ -16,7 +16,7 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
 {
     int maxHalvings = 64;
 	// SYSCOIN
-    CAmount nInitialSubsidy = 4.2 * COIN;
+    CAmount nInitialSubsidy = (8.25/2) * COIN;
 
     CAmount nPreviousSubsidy = nInitialSubsidy * 2; // for height == 0
     BOOST_CHECK_EQUAL(nPreviousSubsidy, nInitialSubsidy * 2);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
         nSum += nSubsidy * 1000; 
         BOOST_CHECK(MoneyRange(nSum));
     }
-    BOOST_CHECK_EQUAL(nSum, 668863030795000ULL);
+    BOOST_CHECK_EQUAL(nSum, 668863092700000ULL);
 }
 
 bool ReturnFalse() { return false; }
