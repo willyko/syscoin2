@@ -44,28 +44,20 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 	case OP_ALIAS_ACTIVATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::AliasActivate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::AliasActivateFee;
 		break;
 	case OP_ALIAS_UPDATE:
 		if(type == SEND)
 			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
 		else if(type == RECV)
 			sub.type = TransactionRecord::AliasRecv;
-		else if(type == FEE)
-			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdateFee : TransactionRecord::AliasTransferFee;
 		break;
 	case OP_OFFER_ACTIVATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::OfferActivate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::OfferActivateFee;
 		break;
 	case OP_OFFER_UPDATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::OfferUpdate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::OfferUpdateFee;
 		break;
 	case OP_OFFER_REFUND:
 		if(type == SEND)
@@ -79,18 +71,6 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 				sub.type = TransactionRecord::OfferAcceptRefundComplete;
 			}
 		}
-		else if(type == FEE)
-		{
-			if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
-			{
-				sub.type = TransactionRecord::OfferAcceptRefundInProgressFee;
-			}
-			else
-			{
-				sub.type = TransactionRecord::OfferAcceptRefundCompleteFee;
-			}
-		}
-
 		break;
 	case OP_OFFER_ACCEPT:
 		if(type == SEND)
@@ -101,56 +81,40 @@ static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vect
 	case OP_CERT_ACTIVATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::CertActivate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::CertActivateFee;
 		break;
 	case OP_CERT_UPDATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::CertUpdate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::CertUpdateFee;
 		break;
 	case OP_CERT_TRANSFER:
 		if(type == SEND)
 			sub.type = TransactionRecord::CertTransfer;
 		else if(type == RECV)
 			sub.type = TransactionRecord::CertRecv;
-		else if(type == FEE)
-			sub.type = TransactionRecord::CertTransferFee;
 		break;
 	case OP_ESCROW_ACTIVATE:
 		if(type == SEND || type == RECV)
 			sub.type = TransactionRecord::EscrowActivate;
-		else if(type == FEE)
-			sub.type = TransactionRecord::EscrowActivateFee;
 		break;
 	case OP_ESCROW_RELEASE:
 		if(type == SEND)
 			sub.type = TransactionRecord::EscrowRelease;
-		else if(type == FEE)
-			sub.type = TransactionRecord::EscrowReleaseFee;
 		break;
 	case OP_ESCROW_COMPLETE:
 		if(type == SEND)
 			sub.type = TransactionRecord::EscrowComplete;
-		else if(type == FEE)
-			sub.type = TransactionRecord::EscrowCompleteFee;
 		break;
 	case OP_ESCROW_REFUND:
 		if(type == SEND)
 			sub.type = TransactionRecord::EscrowRefund;
 		else if(type == RECV)
 			sub.type = TransactionRecord::EscrowRefundRecv;
-		else if(type == FEE)
-			sub.type = TransactionRecord::EscrowRefundFee;
 		break;
 	case OP_MESSAGE_ACTIVATE:
 		if(type == SEND)
 			sub.type = TransactionRecord::MessageActivate;
 		else if(type == RECV)
 			sub.type = TransactionRecord::MessageRecv;
-		else if(type == FEE)
-			sub.type = TransactionRecord::MessageActivateFee;
 		break;
 	}
 	sub.address = stringFromVch(vvchArgs[0]);

@@ -79,44 +79,29 @@ public:
         SendToSelf,
 		// SYSCOIN
         AliasActivate,
-		AliasActivateFee,
         AliasUpdate,
-		AliasUpdateFee,
         AliasTransfer,
-		AliasTransferFee,
 		AliasRecv,
         
         OfferActivate,
-		OfferActivateFee,
         OfferUpdate,
-		OfferUpdateFee,
         OfferAccept,
 		OfferAcceptRecv,
 		OfferAcceptRefundInProgress,
-		OfferAcceptRefundInProgressFee,
 		OfferAcceptRefundComplete,
-		OfferAcceptRefundCompleteFee,
       
         CertActivate,
-		CertActivateFee,
         CertUpdate,
-		CertUpdateFee,
         CertTransfer,
-		CertTransferFee,
 		CertRecv,
 
         EscrowActivate,
-		EscrowActivateFee,
         EscrowRelease,
-		EscrowReleaseFee,
         EscrowRefund,
-		EscrowRefundFee,
 		EscrowRefundRecv,
 		EscrowComplete,
-		EscrowCompleteFee,
 
 		MessageActivate,
-		MessageActivateFee,
 		MessageRecv
     };
 

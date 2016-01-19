@@ -380,74 +380,44 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
 	// SYSCOIN
     case TransactionRecord::AliasActivate:
         return tr("Alias Activated");
-    case TransactionRecord::AliasActivateFee:
-        return tr("Alias Activate Data Fee");
     case TransactionRecord::AliasUpdate:
         return tr("Alias Updated");
-    case TransactionRecord::AliasUpdateFee:
-        return tr("Alias Update Data Fee");
     case TransactionRecord::AliasTransfer:
         return tr("Alias Transferred");
-    case TransactionRecord::AliasTransferFee:
-        return tr("Alias Transfer Data Fee");
     case TransactionRecord::AliasRecv:
         return tr("Alias Received");
     case TransactionRecord::OfferActivate:
         return tr("Offer Activated");
-    case TransactionRecord::OfferActivateFee:
-        return tr("Offer Activate Data Fee");
     case TransactionRecord::OfferUpdate:
         return tr("Offer Updated");
-    case TransactionRecord::OfferUpdateFee:
-        return tr("Offer Update Data Fee");
     case TransactionRecord::OfferAccept:
         return tr("Offer Accepted");
     case TransactionRecord::OfferAcceptRecv:
         return tr("Offer Accept Received");
 	case TransactionRecord::OfferAcceptRefundInProgress:
 		return tr("Offer Refund In Progress");
-	case TransactionRecord::OfferAcceptRefundInProgressFee:
-		return tr("Offer Refund In Progress Data Fee");
 	case TransactionRecord::OfferAcceptRefundComplete:
 		return tr("Offer Refund Complete");
-	case TransactionRecord::OfferAcceptRefundCompleteFee:
-		return tr("Offer Refund Complete Data Fee");
     case TransactionRecord::CertActivate:
         return tr("Cert. Activated");
-    case TransactionRecord::CertActivateFee:
-        return tr("Cert. Activate Data Fee");
     case TransactionRecord::CertUpdate:
         return tr("Cert. Updated");
-    case TransactionRecord::CertUpdateFee:
-        return tr("Cert. Update Data Fee");
     case TransactionRecord::CertTransfer:
         return tr("Cert. Transferred");
-    case TransactionRecord::CertTransferFee :
-        return tr("Cert. Transfer Data Fee");
     case TransactionRecord::CertRecv:
         return tr("Cert. Received");
    case TransactionRecord::EscrowActivate:
         return tr("Escrow Activated");
-   case TransactionRecord::EscrowActivateFee:
-        return tr("Escrow Activate Data Fee");
     case TransactionRecord::EscrowRelease:
         return tr("Escrow Released");
-    case TransactionRecord::EscrowReleaseFee:
-        return tr("Escrow Release Data Fee");
     case TransactionRecord::EscrowRefund:
         return tr("Escrow Refunded");
-    case TransactionRecord::EscrowRefundFee:
-        return tr("Escrow Refund Data Fee");
     case TransactionRecord::EscrowRefundRecv:
         return tr("Escrow Refund Received");
     case TransactionRecord::EscrowComplete:
         return tr("Escrow Complete");
-    case TransactionRecord::EscrowCompleteFee:
-        return tr("Escrow Complete Data Fee");
     case TransactionRecord::MessageActivate:
         return tr("Message Sent");
-    case TransactionRecord::MessageActivateFee:
-        return tr("Message Data Fee");
     case TransactionRecord::MessageRecv:
         return tr("Message Received");
     default:
@@ -474,30 +444,18 @@ QVariant TransactionTableModel::txAddressDecoration(const TransactionRecord *wtx
     case TransactionRecord::SendToOther:
 	// SYSCOIN
 	case TransactionRecord::AliasActivate:
-	case TransactionRecord::AliasActivateFee:
     case TransactionRecord::AliasTransfer:
-	case TransactionRecord::AliasTransferFee:
     case TransactionRecord::OfferActivate:
-	case TransactionRecord::OfferActivateFee:
     case TransactionRecord::OfferAccept:
 	case TransactionRecord::OfferAcceptRefundInProgress:
-	case TransactionRecord::OfferAcceptRefundInProgressFee:
 	case TransactionRecord::OfferAcceptRefundComplete:
-	case TransactionRecord::OfferAcceptRefundCompleteFee:
     case TransactionRecord::CertActivate:
-	case TransactionRecord::CertActivateFee:
 	case TransactionRecord::CertTransfer:
-	case TransactionRecord::CertTransferFee:
     case TransactionRecord::EscrowActivate:
-	case TransactionRecord::EscrowActivateFee:
     case TransactionRecord::EscrowRelease:
-	case TransactionRecord::EscrowReleaseFee:
     case TransactionRecord::EscrowRefund:
-	case TransactionRecord::EscrowRefundFee:
 	case TransactionRecord::EscrowComplete:
-	case TransactionRecord::EscrowCompleteFee:
 	case TransactionRecord::MessageActivate:
-	case TransactionRecord::MessageActivateFee:
         return QIcon(":/icons/tx_output");
     default:
         return QIcon(":/icons/tx_inout");
@@ -523,40 +481,25 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
     case TransactionRecord::SendToOther:
 	// SYSCOIN
     case TransactionRecord::AliasActivate:
-	case TransactionRecord::AliasActivateFee:
     case TransactionRecord::AliasUpdate:
-	case TransactionRecord::AliasUpdateFee:
     case TransactionRecord::AliasTransfer:
-	case TransactionRecord::AliasTransferFee:
 	case TransactionRecord::AliasRecv:
     case TransactionRecord::OfferActivate:
-	case TransactionRecord::OfferActivateFee:
     case TransactionRecord::OfferUpdate:
-	case TransactionRecord::OfferUpdateFee:
     case TransactionRecord::OfferAccept:
 	case TransactionRecord::OfferAcceptRecv:
  	case TransactionRecord::OfferAcceptRefundInProgress:
-	case TransactionRecord::OfferAcceptRefundInProgressFee:
 	case TransactionRecord::OfferAcceptRefundComplete:
-	case TransactionRecord::OfferAcceptRefundCompleteFee:
     case TransactionRecord::CertActivate:
-	case TransactionRecord::CertActivateFee:
     case TransactionRecord::CertUpdate:
-	case TransactionRecord::CertUpdateFee:
     case TransactionRecord::CertTransfer:
-	case TransactionRecord::CertTransferFee:
 	case TransactionRecord::CertRecv:
     case TransactionRecord::EscrowActivate:
-	case TransactionRecord::EscrowActivateFee:
     case TransactionRecord::EscrowRelease:
-	case TransactionRecord::EscrowReleaseFee:
 	case TransactionRecord::EscrowComplete:
-	case TransactionRecord::EscrowCompleteFee:
     case TransactionRecord::EscrowRefund:
-	case TransactionRecord::EscrowRefundFee:
 	case TransactionRecord::EscrowRefundRecv:
 	case TransactionRecord::MessageActivate:
-	case TransactionRecord::MessageActivateFee:
 	case TransactionRecord::MessageRecv:
         return QString::fromStdString(wtx->address) + watchAddress;
     case TransactionRecord::SendToSelf:
