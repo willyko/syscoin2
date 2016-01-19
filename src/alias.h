@@ -12,7 +12,7 @@ class CReserveKey;
 class CValidationState;
 class CCoinsViewCache;
 class CCoins;
-class CRecipient;
+struct CRecipient;
 class CAliasIndex {
 public:
     uint256 txHash;

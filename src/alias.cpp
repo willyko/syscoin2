@@ -112,7 +112,7 @@ bool HasReachedMainNetForkB2()
 
 CAmount convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision)
 {
-	CAmount sysPrice;
+	CAmount sysPrice = 0;
 	CAmount nRate;
 	vector<string> rateList;
 	if(getCurrencyToSYSFromAlias(vchCurrencyCode, nRate, nHeight, rateList, precision) == "")
@@ -766,17 +766,21 @@ bool DecodeAliasScript(const CScript& script, int& op,
 }
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient)
 {
-	recipient = {scriptPubKey, 0, false};
-	CTxOut txout(recipient.nAmount,	recipient.scriptPubKey);
-	recipient.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+	CAmount defaultamt = 0;
+	CRecipient recipienttmp = {scriptPubKey, defaultamt, false};
+	CTxOut txout(recipienttmp.nAmount,	recipienttmp.scriptPubKey);
+	recipienttmp.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+	recipient = recipienttmp;
 }
 void CreateFeeRecipient(const CScript& scriptPubKey, const vector<unsigned char>& data, CRecipient& recipient)
 {
+	CAmount defaultamt = 0;
 	CScript script;
 	script += CScript() << data;
-	CTxOut txout(0,	script);
-	recipient = {scriptPubKey, 0, false};
-	recipient.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+	CTxOut txout(defaultamt,script);
+	CRecipient recipienttmp = {scriptPubKey, defaultamt, false};
+	recipienttmp.nAmount = txout.GetDustThreshold(::minRelayTxFee);
+	recipient = recipienttmp;
 }
 UniValue aliasnew(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() != 2 )
@@ -788,7 +792,6 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
-	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
 	vector<unsigned char> vchValue;
 	string strValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
