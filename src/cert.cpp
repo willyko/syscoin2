@@ -206,6 +206,8 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
     return true;
 }
 int IndexOfCertOutput(const CTransaction& tx) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
 	bool good = DecodeCertTx(tx, op, nOut, vvch, -1);

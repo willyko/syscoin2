@@ -187,6 +187,8 @@ bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
 }
 
 int IndexOfEscrowOutput(const CTransaction& tx) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
 	bool good = DecodeEscrowTx(tx, op, nOut, vvch, -1);

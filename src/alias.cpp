@@ -671,7 +671,8 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 
 int IndexOfAliasOutput(const CTransaction& tx) {
 	vector<vector<unsigned char> > vvch;
-
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
 	int op;
 	int nOut;
 	bool good = DecodeAliasTx(tx, op, nOut, vvch, -1);

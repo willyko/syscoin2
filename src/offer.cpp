@@ -472,6 +472,8 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 }
 
 int IndexOfOfferOutput(const CTransaction& tx) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
 	bool good = DecodeOfferTx(tx, op, nOut, vvch, -1);

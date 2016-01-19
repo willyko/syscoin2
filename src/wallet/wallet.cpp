@@ -1683,15 +1683,27 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
             continue;
 
         const CWalletTx *pcoin = output.tx;
-		// SYSCOIN txs are unspendable unless input to another syscoin tx
-		if(pcoin->nVersion == GetSyscoinTxVersion())
-			continue;
         if (output.nDepth < (pcoin->IsFromMe(ISMINE_ALL) ? nConfMine : nConfTheirs))
             continue;
 
         int i = output.i;
         CAmount n = pcoin->vout[i].nValue;
-
+		// SYSCOIN txs are unspendable unless input to another syscoin tx (passed into createtransaction)
+		if(pcoin->nVersion == GetSyscoinTxVersion())
+		{
+			const CTransaction& txIn = pcoin[0];
+			int nTxOut = IndexOfAliasOutput(txIn);
+			if (nTxOut < 0)
+				nTxOut = IndexOfCertOutput(txIn);
+			if (nTxOut < 0)
+				nTxOut = IndexOfOfferOutput(txIn);
+			if (nTxOut < 0)
+				nTxOut = IndexOfEscrowOutput(txIn);
+			if (nTxOut < 0)
+				nTxOut = IndexOfMessageOutput(txIn);
+			if(nTxOut >= 0 && nTxOut == i)
+				continue;
+		}
         pair<CAmount,pair<const CWalletTx*,unsigned int> > coin = make_pair(n,make_pair(pcoin, i));
 
         if (n == nTargetValue)
@@ -1796,9 +1808,22 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
         if (it != mapWallet.end())
         {
             const CWalletTx* pcoin = &it->second;
-			// SYSCOIN txs are unspendable unless input to another syscoin tx
+			// SYSCOIN txs are unspendable unless input to another syscoin tx (passed into createtransaction)
 			if(pcoin->nVersion == GetSyscoinTxVersion())
-				continue;
+			{
+				const CTransaction& txIn = pcoin[0];
+				int nTxOut = IndexOfAliasOutput(txIn);
+				if (nTxOut < 0)
+					nTxOut = IndexOfCertOutput(txIn);
+				if (nTxOut < 0)
+					nTxOut = IndexOfOfferOutput(txIn);
+				if (nTxOut < 0)
+					nTxOut = IndexOfEscrowOutput(txIn);
+				if (nTxOut < 0)
+					nTxOut = IndexOfMessageOutput(txIn);
+				if(nTxOut >= 0 && nTxOut == outpoint.n)
+					continue;
+			}
             // Clearly invalid input, fail
             if (pcoin->vout.size() <= outpoint.n)
                 return false;

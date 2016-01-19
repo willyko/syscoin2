@@ -173,6 +173,8 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
 }
 
 int IndexOfMessageOutput(const CTransaction& tx) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
 	bool good = DecodeMessageTx(tx, op, nOut, vvch, -1);
