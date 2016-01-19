@@ -175,8 +175,9 @@ bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
 int IndexOfMessageOutput(const CTransaction& tx) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-    if (!DecodeMessageTx(tx, op, nOut, vvch, -1))
-        throw runtime_error("IndexOfMessageOutput() : message output not found");
+	bool good = DecodeMessageTx(tx, op, nOut, vvch, -1);
+	if (!good)
+		return -1;
     return nOut;
 }
 

@@ -675,7 +675,6 @@ int IndexOfAliasOutput(const CTransaction& tx) {
 	int op;
 	int nOut;
 	bool good = DecodeAliasTx(tx, op, nOut, vvch, -1);
-
 	if (!good)
 		return -1;
 	return nOut;

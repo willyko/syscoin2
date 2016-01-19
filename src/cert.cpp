@@ -208,8 +208,9 @@ bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
 int IndexOfCertOutput(const CTransaction& tx) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-    if (!DecodeCertTx(tx, op, nOut, vvch, -1))
-        throw runtime_error("IndexOfCertOutput() : cert output not found");
+	bool good = DecodeCertTx(tx, op, nOut, vvch, -1);
+	if (!good)
+		return -1;
     return nOut;
 }
 

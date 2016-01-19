@@ -189,8 +189,9 @@ bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
 int IndexOfEscrowOutput(const CTransaction& tx) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch, -1))
-        throw runtime_error("IndexOfEscrowOutput() : escrow output not found");
+	bool good = DecodeEscrowTx(tx, op, nOut, vvch, -1);
+	if (!good)
+		return -1;
     return nOut;
 }
 

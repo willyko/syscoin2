@@ -474,8 +474,9 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 int IndexOfOfferOutput(const CTransaction& tx) {
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
-	if (!DecodeOfferTx(tx, op, nOut, vvch, -1))
-		throw runtime_error("IndexOfOfferOutput() : offer output not found");
+	bool good = DecodeOfferTx(tx, op, nOut, vvch, -1);
+	if (!good)
+		return -1;
 	return nOut;
 }
 
