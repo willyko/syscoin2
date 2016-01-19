@@ -2,7 +2,7 @@
 #include "utiltime.h"
 #include "rpcserver.h"
 #include <boost/test/unit_test.hpp>
-BOOST_GLOBAL_FIXTURE( SyscoinTestingSetup )
+BOOST_GLOBAL_FIXTURE( SyscoinTestingSetup );
 
 BOOST_FIXTURE_TEST_SUITE (syscoin_alias_tests, BasicSyscoinTestingSetup)
 
