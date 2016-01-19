@@ -444,6 +444,8 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
         return tr("Escrow Complete Fee");
     case TransactionRecord::MessageActivate:
         return tr("Message Sent");
+    case TransactionRecord::MessageActivateFee:
+        return tr("Message Fee");
     case TransactionRecord::MessageRecv:
         return tr("Message Received");
     default:
@@ -533,6 +535,7 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
     case TransactionRecord::EscrowRefund:
 	case TransactionRecord::EscrowRefundFee:
 	case TransactionRecord::MessageActivate:
+	case TransactionRecord::MessageActivateFee:
 	case TransactionRecord::MessageRecv:
         return QString::fromStdString(wtx->address) + watchAddress;
     case TransactionRecord::SendToSelf:
