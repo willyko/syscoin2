@@ -1223,6 +1223,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchCurrency = vchFromValue(params[6]);
 	vector<unsigned char> vchDesc;
 	vector<unsigned char> vchCert;
+	bool bOnlyAcceptBTC = false;
 	unsigned int nQty;
 	if(atof(params[3].get_str().c_str()) < 0)
 		throw runtime_error("invalid quantity value, must be greator than 0");
@@ -2284,7 +2285,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		{
 			if (!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkedOffer, tmpTx))
 				throw runtime_error("Trying to accept a linked offer but could not find parent offer, perhaps it is expired");
-			if (!linkedOffer.txBTCId.IsNull())
+			if (linkedOffer.bOnlyAcceptBTC)
 				throw runtime_error("Cannot accept a linked offer by paying in Bitcoins");
 		}
 	}
