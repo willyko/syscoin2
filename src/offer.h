@@ -374,7 +374,7 @@ public:
 		&& a.aliasName == b.aliasName
 		&& a.vchCert == b.vchCert
 		&& a.bPrivate == b.bPrivate
-		&& a.bOnlyAcceptBTC == bOnlyAcceptBTC
+		&& a.bOnlyAcceptBTC == b.bOnlyAcceptBTC
 		
         );
     }
