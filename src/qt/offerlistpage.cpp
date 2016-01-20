@@ -344,6 +344,7 @@ void OfferListPage::on_searchOffer_clicked()
 		string expired_str;
 		string exclusive_resell_str;
 		string private_str;
+		string acceptBTCOnly_str;
 		string alias_str;
 		int expired = 0;
         params.push_back(ui->lineEditOfferSearch->text().toStdString());
@@ -389,6 +390,7 @@ void OfferListPage::on_searchOffer_clicked()
 				private_str = "";
 				exclusive_resell_str = "";
 				alias_str = "";
+				acceptBTCOnly_str = "";
 				expired = 0;
 
 
@@ -425,6 +427,10 @@ void OfferListPage::on_searchOffer_clicked()
 				const UniValue& alias_value = find_value(o, "alias");
 				if (alias_value.type() == UniValue::VSTR)
 					alias_str = alias_value.get_str();
+				const UniValue& btconly_value = find_value(o, "btconly");
+				if (btconly_value.type() == UniValue::VSTR)
+					acceptBTCOnly_str = btconly_value.get_str();
+
 				const UniValue& expired_value = find_value(o, "expired");
 				if (expired_value.type() == UniValue::VNUM)
 					expired = expired_value.get_int();
@@ -452,7 +458,8 @@ void OfferListPage::on_searchOffer_clicked()
 						QString::fromStdString(expired_str), 
 						QString::fromStdString(exclusive_resell_str),
 						QString::fromStdString(private_str),
-						QString::fromStdString(alias_str));
+						QString::fromStdString(alias_str),
+						QString::fromStdString(acceptBTCOnly_str));
 					this->model->updateEntry(QString::fromStdString(name_str),
 						QString::fromStdString(cert_str),
 						QString::fromStdString(value_str),
@@ -464,7 +471,8 @@ void OfferListPage::on_searchOffer_clicked()
 						QString::fromStdString(expired_str),
 						QString::fromStdString(exclusive_resell_str),
 						QString::fromStdString(private_str), 
-						QString::fromStdString(alias_str), AllOffer, CT_NEW);	
+						QString::fromStdString(alias_str), 
+						QString::fromStdString(acceptBTCOnly_str), AllOffer, CT_NEW);	
 			  }
 
             
