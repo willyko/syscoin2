@@ -37,7 +37,7 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     }
     return true;
 }
-static CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
+static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
 {
 	switch(op)
 	{
