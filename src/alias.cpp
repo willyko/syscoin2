@@ -152,16 +152,6 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, CAmou
     }
 	if(foundAlias.IsNull())
 		foundAlias = vtxPos.back();
-	// get transaction pointed to by alias
-	uint256 blockHash;
-	uint256 txHash = foundAlias.txHash;
-	CTransaction tx;
-	if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-	{
-		if(fDebug)
-			LogPrintf("getCurrencyToSYSFromAlias() Failed to read transaction from disk\n");
-		return "1";
-	}
 
 
 	bool found = false;
