@@ -2397,6 +2397,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
 	{
 		// consult a block explorer for the btc txid and check to see if it pays offer address with correct amount
+		throw runtime_error("not implemented");
 	}
 	else if(!theOffer.bOnlyAcceptBTC)
 	{
