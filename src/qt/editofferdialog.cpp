@@ -262,7 +262,7 @@ void EditOfferDialog::loadRow(int row)
 		QModelIndex indexCurrency = model->index(row, OfferTableModel::Currency, tmpIndex);
 		QModelIndex indexPrivate = model->index(row, OfferTableModel::Private, tmpIndex);	
 		QModelIndex indexAlias = model->index(row, OfferTableModel::Alias, tmpIndex);
-		QModelIndex indexBTCOnly = model->index(row, OfferTableModel::BTCOnly, tmpIndex);
+		QModelIndex indexBTCOnly = model->index(row, OfferTableModel::AcceptBTCOnly, tmpIndex);
 		if(indexPrivate.isValid())
 		{
 			QString privateStr = indexPrivate.data(OfferTableModel::PrivateRole).toString();
