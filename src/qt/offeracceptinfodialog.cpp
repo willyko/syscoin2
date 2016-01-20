@@ -31,6 +31,7 @@ OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *pa
 	ui->linkGUIDLabel->setVisible(false);
 	ui->commissionEdit->setVisible(false);
 	ui->commissionLabel->setVisible(false);
+	ui->btctxidEdit->setVisible(false);
 
 	lookup();
 }
@@ -82,13 +83,24 @@ bool OfferAcceptInfoDialog::lookup()
 					continue;
 				ui->guidEdit->setText(offerAcceptHash);
 				ui->txidEdit->setText(QString::fromStdString(find_value(acceptObj, "txid").get_str()));
+				
 				ui->heightEdit->setText(QString::fromStdString(find_value(acceptObj, "height").get_str()));
 				int unixTime = atoi(find_value(acceptObj, "time").get_str().c_str());
 				timestamp.setTime_t(unixTime);
 				ui->timeEdit->setText(timestamp.toString());
 
 				ui->quantityEdit->setText(QString::fromStdString(find_value(acceptObj, "quantity").get_str()));
-				ui->currencyEdit->setText(QString::fromStdString(find_value(acceptObj, "currency").get_str()));
+				QString currencyStr = QString::fromStdString(find_value(acceptObj, "currency").get_str());
+				if(currencyStr == "BTC")
+				{
+					QString btctxidStr = QString::fromStdString(find_value(acceptObj, "btctxid").get_str());
+					if(btctxidStr != "")
+					{
+						ui->btctxidEdit->setVisible(true);
+						ui->btctxidEdit->setText(btctxidStr);
+					}
+				}
+				ui->currencyEdit->setText(currencyStr);
 				ui->priceEdit->setText(QString::fromStdString(find_value(acceptObj, "price").get_str()));
 				ui->totalEdit->setText(QString::fromStdString(find_value(acceptObj, "total").get_str()));
 				ui->discountEdit->setText(QString::fromStdString(find_value(acceptObj, "offer_discount_percentage").get_str()));

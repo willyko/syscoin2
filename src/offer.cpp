@@ -119,6 +119,12 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 			LogPrintf("makeOfferLinkAcceptTX() offer linked transaction already exists\n");
 		return "";
 	}
+	if(!theOfferAccept.txBTCId.IsNull())
+	{
+		if(fDebug)
+			LogPrintf("makeOfferLinkAcceptTX() cannot accept a linked offer by paying in Bitcoins\n");
+		return "";
+	}
 
 	int64_t heightToCheckAgainst = theOfferAccept.nHeight;
 	
@@ -146,6 +152,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 	params.push_back(stringFromVch(vchPubKey));
 	params.push_back(stringFromVch(theOfferAccept.vchMessage));
 	params.push_back(stringFromVch(vchRefundAddress));
+	params.push_back("");
 	params.push_back(stringFromVch(vchOfferAcceptLink));
 	params.push_back("");
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << heightToCheckAgainst) )->str());
@@ -734,6 +741,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer currency code too big");
 		}
+		if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+		{
+			return error("Can't accept BTC for an offer that isn't specified in BTC");
+		}
 		if(theOffer.accepts.size() > 1)
 		{
 			return error("offer has too many accepts, only one allowed per tx");
@@ -809,6 +820,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("OP_OFFER_ACCEPT cert link field too big");
 			if (theOfferAccept.vchEscrowLink.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT escrow link field too big");
+			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+				return error("Can't accept an offer for BTC that isn't specified in BTC by owner");
+			
 			if (fBlock && !fJustCheck) {
 				if(found && IsCertOp(prevOp) && theOfferAccept.vchCertLink != vvchPrevArgs[0])
 				{
@@ -955,15 +969,18 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-
-					int precision = 2;
-					// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-					CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
-					if(tx.vout[nOut].nValue != nPrice)
+					// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
+					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 					{
-						if(fDebug)
-							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
-						return true;
+						int precision = 2;
+						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
+						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+						if(tx.vout[nOut].nValue != nPrice)
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
+							return true;
+						}
 					}
 						
 					
@@ -1165,9 +1182,9 @@ void rescanforoffers(CBlockIndex *pindexRescan) {
 
 
 UniValue offernew(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() < 7 || params.size() > 10)
+	if (fHelp || params.size() < 7 || params.size() > 11)
 		throw runtime_error(
-		"offernew <alias> <category> <title> <quantity> <price> <description> <currency> [private=0] [cert. guid] [exclusive resell=1]\n"
+		"offernew <alias> <category> <title> <quantity> <price> <description> <currency> [private=0] [cert. guid] [exclusive resell=1] [accept btc only=0]\n"
 						"<alias> An alias you own\n"
 						"<category> category, 255 chars max.\n"
 						"<title> title, 255 chars max.\n"
@@ -1178,6 +1195,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 						"<private> Is this a private offer. Default 0 for false.\n"
 						"<cert. guid> Set this to the guid of a certificate you wish to sell\n"
 						"<exclusive resell> set to 1 if you only want those who control the whitelist certificates to be able to resell this offer via offerlink. Defaults to 1.\n"
+						"<accept btc only> set to 1 if you only want accept Bitcoins for payment and your currency is set to BTC, note you cannot resell or sell a cert in this mode. Defaults to 0.\n"
 						+ HelpRequiringPassphrase());
 	if(!HasReachedMainNetForkB2())
 		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
@@ -1274,7 +1292,15 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	{
 		bExclusiveResell = atoi(params[9].get_str().c_str()) == 1? true: false;
 	}
-	
+	if(params.size() >= 11)
+	{
+		bOnlyAcceptBTC = atoi(params[10].get_str().c_str()) == 1? true: false;
+		if(bOnlyAcceptBTC && !vchCert.empty())
+			throw runtime_error("Cannot sell a certificate accepting only Bitcoins");
+		if(bOnlyAcceptBTC && stringFromVch(vchCurrency) != "BTC")
+			throw runtime_error("Can only accept Bitcoins for offer's that set their currency to BTC");
+
+	}	
 	CAmount nRate;
 	vector<string> rateList;
 	int precision;
@@ -1317,6 +1343,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	newOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 	newOffer.sCurrencyCode = vchCurrency;
 	newOffer.bPrivate = bPrivate;
+	newOffer.bOnlyAcceptBTC = bOnlyAcceptBTC;
 	
 	scriptPubKeyOrig= GetScriptForDestination(aliasAddress.Get());
 	CScript scriptPubKey;
@@ -1455,7 +1482,10 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("cannot link to this offer because you don't own a cert from its whitelist (the offer is in exclusive mode)");
 	}
-
+	if(linkOffer.bOnlyAcceptBTC)
+	{
+		throw runtime_error("Cannot link to an offer that only accepts Bitcoins as payment");
+	}
 
 	// this is a syscoin transaction
 	CWalletTx wtx;
@@ -2135,14 +2165,15 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 }
 
 UniValue offeraccept(const UniValue& params, bool fHelp) {
-	if (fHelp || 1 > params.size() || params.size() > 8)
-		throw runtime_error("offeraccept <guid> [quantity] [pubkey] [message] [refund address] [linkedguid] [escrowTxHash] [height]\n"
+	if (fHelp || 1 > params.size() || params.size() > 9)
+		throw runtime_error("offeraccept <guid> [quantity] [pubkey] [message] [refund address] [BTC TxId] [linkedguid] [escrowTxHash] [height]\n"
 				"Accept&Pay for a confirmed offer.\n"
 				"<guid> guidkey from offer.\n"
 				"<pubkey> Public key of buyer address (to transfer certificate).\n"
 				"<quantity> quantity to buy. Defaults to 1.\n"
 				"<message> payment message to seller, 1KB max.\n"
 				"<refund address> In case offer not accepted refund to this address. Leave empty to use a new address from your wallet. \n"
+				"<BTC TxId> If you have paid in Bitcoin and the offer is in Bitcoin, enter the transaction ID here\n"
 				"<linkedguid> guidkey from offer accept linking to this offer accept. For internal use only, leave blank\n"
 				"<escrowTxHash> If this offer accept is done by an escrow release. For internal use only, leave blank\n"
 				"<height> Height to index into price calculation function. For internal use only, leave blank\n"
@@ -2153,10 +2184,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CSyscoinAddress refundAddr;	
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	vector<unsigned char> vchPubKey = vchFromValue(params.size()>=3?params[2]:"");
-	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 6? params[5]:"");
+	vector<unsigned char> vchBTCTxId = vchFromValue(params.size()>=6?params[5]:"");
+	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
 	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
-	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=7?params[6]:"");
-	int64_t nHeight = params.size()>=8?atoi64(params[7].get_str()):0;
+	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=8?params[7]:"");
+	int64_t nHeight = params.size()>=8?atoi64(params[8].get_str()):0;
 	unsigned int nQty = 1;
 	if (params.size() >= 2) {
 		if(atof(params[1].get_str().c_str()) < 0)
@@ -2202,6 +2234,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<vector<unsigned char> > escrowVvch;
 	if(!vchEscrowTxHash.empty())
 	{
+		if(!vchBTCTxId.empty())
+			throw runtime_error("Cannot release an escrow transaction by paying in Bitcoins");
 		uint256 escrowTxHash(uint256S(stringFromVch(vchEscrowTxHash)));
 		// make sure escrow is in wallet
 		wtxEscrowIn = pwalletMain->GetWalletTx(escrowTxHash);
@@ -2243,10 +2277,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// check if parent to linked offer is still valid
 	if (!theOffer.vchLinkOffer.empty())
 	{
+		if(!vchBTCTxId.empty())
+			throw runtime_error("Cannot accept a linked offer by paying in Bitcoins");
+
 		if(pofferdb->ExistsOffer(theOffer.vchLinkOffer))
 		{
 			if (!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkedOffer, tmpTx))
 				throw runtime_error("Trying to accept a linked offer but could not find parent offer, perhaps it is expired");
+			if (!linkedOffer.txBTCId.IsNull())
+				throw runtime_error("Cannot accept a linked offer by paying in Bitcoins");
 		}
 	}
 	COfferLinkWhitelistEntry foundCert;
@@ -2289,10 +2328,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
 			throw runtime_error("could not encrypt message to seller");
 	}
+	if(!vchLinkOfferAccept.empty() && !vchBTCTxId.empty())
+		throw runtime_error("Cannot accept a linked offer by paying in Bitcoins");
+
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 	if(!theOffer.vchCert.empty())
 	{
+		if(!vchBTCTxId.empty())
+			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
 		CCert theCert;
 		// make sure this cert is still valid
@@ -2322,6 +2366,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	txAccept.bPaid = true;
 	txAccept.vchCertLink = foundCert.certLinkVchRand;
 	txAccept.vchBuyerKey = vchPubKey;
+	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
+	{
+		uint256 txBTCId(uint256S(stringFromVch(vchBTCTxId)));
+		txAccept.txBTCId = txBTCId;
+	}
 	if(!escrowVvch.empty())
 		txAccept.vchEscrowLink = escrowVvch[0];
 	theOffer.ClearOffer();
@@ -2343,7 +2392,20 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	vector<CRecipient> vecSend;
 	CRecipient paymentRecipient = {scriptPubKey, nTotalValue, false};
-	vecSend.push_back(paymentRecipient);
+	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
+	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
+	{
+		// consult a block explorer for the btc txid and check to see if it pays offer address with correct amount
+	}
+	else if(!theOffer.bOnlyAcceptBTC)
+	{
+		vecSend.push_back(paymentRecipient);
+	}
+	else
+	{
+		throw runtime_error("This offer must be paid with Bitcoins as per requirements of the seller");
+	}
+	
 
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
@@ -2454,6 +2516,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
+			oOfferAccept.push_back(Pair("btctxid", ca.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("time", sTime));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
@@ -2470,7 +2533,10 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(txA) ? "true" : "false"));
 			if(ca.bPaid) {
-				oOfferAccept.push_back(Pair("paid","true"));
+				if(!ca.txBTCId.IsNull())
+					oOfferAccept.push_back(Pair("paid","check"));
+				else
+					oOfferAccept.push_back(Pair("paid","true"));
 				string strMessage = string("");
 				if(!DecryptMessage(theOffer.vchPubKey, ca.vchMessage, strMessage))
 					strMessage = string("Encrypted for owner of offer");
@@ -2553,6 +2619,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		}
 		oOffer.push_back(Pair("exclusive_resell", theOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 		oOffer.push_back(Pair("private", theOffer.bPrivate ? "Yes" : "No"));
+		oOffer.push_back(Pair("btconly", theOffer.bOnlyAcceptBTC ? "Yes" : "No"));
 		oOffer.push_back(Pair("description", stringFromVch(theOffer.sDescription)));
 		oOffer.push_back(Pair("alias", theOffer.aliasName));
 		oOffer.push_back(Pair("accepts", aoOfferAccepts));
@@ -2622,6 +2689,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
+			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
@@ -2641,7 +2709,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			// this accept is for me(something ive sold) if this offer is mine
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
-				oOfferAccept.push_back(Pair("status","paid"));
+				if(!theOfferAccept.txBTCId.IsNull())
+					oOfferAccept.push_back(Pair("paid","check"));
+				else
+					oOfferAccept.push_back(Pair("paid","true"));
 			}
 			else if(!theOfferAccept.bRefunded)
 			{
@@ -2717,6 +2788,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
+			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
@@ -2731,7 +2803,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			// this accept is for me(something ive sold) if this offer is mine
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
-				oOfferAccept.push_back(Pair("status","paid"));
+				if(!theOfferAccept.txBTCId.IsNull())
+					oOfferAccept.push_back(Pair("paid","check"));
+				else
+					oOfferAccept.push_back(Pair("paid","true"));
 			}
 			else if(!theOfferAccept.bRefunded)
 			{
@@ -2853,6 +2928,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			else
 				oName.push_back(Pair("address", address.ToString()));
 			oName.push_back(Pair("exclusive_resell", theOfferA.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
+			oName.push_back(Pair("btconly", theOfferA.bOnlyAcceptBTC ? "Yes" : "No"));
 			oName.push_back(Pair("private", theOfferA.bPrivate ? "Yes" : "No"));
 			expired_block = nHeight + GetOfferExpirationDepth();
             if(pending == 0 && (nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0))
@@ -3033,6 +3109,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("commission", strprintf("%d%%", txOffer.nCommission)));
         oOffer.push_back(Pair("quantity", strprintf("%u", txOffer.nQty)));
 		oOffer.push_back(Pair("exclusive_resell", txOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
+		oOffer.push_back(Pair("btconly", txOffer.bOnlyAcceptBTC ? "Yes" : "No"));
 		expired_block = nHeight + GetOfferExpirationDepth();
 		if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 		{

@@ -38,6 +38,10 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->privateEdit->clear();
 	ui->privateEdit->addItem(QString("No"));
 	ui->privateEdit->addItem(QString("Yes"));
+	ui->privateEdit->clear();
+	ui->acceptBTCOnlyEdit->addItem(QString("No"));
+	ui->acceptBTCOnlyEdit->addItem(QString("Yes"));
+	ui->btcOnlyDisclaimer->setText(tr("<font color='red'>You will receive payment in Bitcoin's if you have selected <b>Yes>/b> to this option and <b>BTC</b> as the currency for the offer.</font>"));
 	for(int i =0;i<rateList.size();i++)
 	{
 		ui->currencyEdit->addItem(QString::fromStdString(rateList[i]));
@@ -258,6 +262,7 @@ void EditOfferDialog::loadRow(int row)
 		QModelIndex indexCurrency = model->index(row, OfferTableModel::Currency, tmpIndex);
 		QModelIndex indexPrivate = model->index(row, OfferTableModel::Private, tmpIndex);	
 		QModelIndex indexAlias = model->index(row, OfferTableModel::Alias, tmpIndex);
+		QModelIndex indexBTCOnly = model->index(row, OfferTableModel::BTCOnly, tmpIndex);
 		if(indexPrivate.isValid())
 		{
 			QString privateStr = indexPrivate.data(OfferTableModel::PrivateRole).toString();
@@ -267,6 +272,11 @@ void EditOfferDialog::loadRow(int row)
 		{
 			QString currencyStr = indexCurrency.data(OfferTableModel::CurrencyRole).toString();
 			ui->currencyEdit->setCurrentIndex(ui->currencyEdit->findText(currencyStr));
+		}
+		if(indexBTCOnly.isValid())
+		{
+			QString btcOnlyStr = indexBTCOnly.data(OfferTableModel::BTCOnlyRole).toString();
+			ui->acceptBTCOnlyEdit->setCurrentIndex(ui->acceptBTCOnlyEdit->findText(btcOnlyStr));
 		}
 		if(indexAlias.isValid())
 		{
@@ -311,6 +321,10 @@ bool EditOfferDialog::saveCurrentRow()
 		params.push_back(ui->privateEdit->currentText() == QString("Yes")? "1": "0");
 		if(ui->certEdit->currentIndex() > 0)
 			params.push_back(ui->certEdit->itemData(ui->certEdit->currentIndex()).toString().toStdString());
+		else
+			params.push_back("");
+		params.push_back("1");
+		params.push_back(ui->acceptBTCOnlyEdit->currentText() == QString("Yes")? "1": "0");
 		try {
             UniValue result = tableRPC.execute(strMethod, params);
 			const UniValue &arr = result.get_array();

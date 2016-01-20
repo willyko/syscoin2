@@ -31,7 +31,8 @@ public:
 		Expired = 8,
 		ExclusiveResell = 9,
 		Private = 10,
-		Alias = 11
+		Alias = 11,
+		AcceptBTCOnly = 12
     };
 
     enum RoleIndex {
@@ -47,7 +48,8 @@ public:
 		DescriptionRole,
 		ExclusiveWhitelistRole,
 		PrivateRole,
-		AliasRole
+		AliasRole,
+		BTCOnlyRole
     };
 
     /** Return status of edit/insert operation */
@@ -75,7 +77,7 @@ public:
     /* Add an offer to the model.
        Returns the added offer on success, and an empty string otherwise.
      */
-    QString addRow(const QString &type, const QString &offer, const QString &cert, const QString &value, const QString &description, const QString &category,const QString &price, const QString &currency, const QString &qty, const QString &expired, const QString &exclusive_resell, const QString &private_str, const QString &alias);
+    QString addRow(const QString &type, const QString &offer, const QString &cert, const QString &value, const QString &description, const QString &category,const QString &price, const QString &currency, const QString &qty, const QString &expired, const QString &exclusive_resell, const QString &private_str, const QString &alias, const QString &acceptBTCOnly);
 
     /* Look up row index of an offer in the model.
        Return -1 if not found.
@@ -97,7 +99,7 @@ private:
 public Q_SLOTS:
     /* Update offer list from core.
      */
-    void updateEntry(const QString &offer, const QString &cert, const QString &value, const QString &description, const QString &category, const QString &price, const QString &currency, const QString &qty, const QString &expired, const QString &exclusive_resell, const QString &private_str, const QString &alias, OfferModelType type, int status);
+    void updateEntry(const QString &offer, const QString &cert, const QString &value, const QString &description, const QString &category, const QString &price, const QString &currency, const QString &qty, const QString &expired, const QString &exclusive_resell, const QString &private_str, const QString &alias, const QString &acceptBTCOnly, OfferModelType type, int status);
 
     friend class OfferTablePriv;
 };
