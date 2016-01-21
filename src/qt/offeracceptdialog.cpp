@@ -23,8 +23,8 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	int precision;
 	double dblPrice = qstrPrice.toDouble()*quantity.toUInt();
 	string strCurrencyCode = currencyCode.toStdString();
-	ui->acceptBtcButton.SetEnabled(false);
-	ui->acceptBtcButton.SetVisible(false);
+	ui->acceptBtcButton.setEnabled(false);
+	ui->acceptBtcButton.setVisible(false);
 	CAmount iPrice = convertCurrencyCodeToSyscoin(vchFromString(strCurrencyCode), dblPrice, chainActive.Tip()->nHeight, precision);
 	iPrice = ValueFromAmount(iPrice).get_real()*quantity.toUInt();
 	string strPrice = strprintf("%llu", iPrice);
@@ -33,8 +33,8 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	{
 		string strfPrice = strprintf("%f", dblPrice);
 		QString fprice = QString::fromStdString(strfPrice);
-		ui->acceptBtcButton.SetEnabled(true);
-		ui->acceptBtcButton.SetVisible(true);
+		ui->acceptBtcButton.setEnabled(true);
+		ui->acceptBtcButton.setVisible(true);
 		ui->escrowDisclaimer->setText(tr("<font color='red'>Select an arbiter that is mutally trusted between yourself and the merchant. Note that escrow is not available if you pay with BTC</font>"));
 		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS (%5 BTC)").arg(quantity).arg(title).arg(price).arg(sellerAlias).arg(fprice));
 	}
