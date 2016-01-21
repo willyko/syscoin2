@@ -2367,7 +2367,12 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CSyscoinAddress address(theOffer.aliasName);
 	if(!address.IsValid())
 	{
-		throw runtime_error("payment to invalid address");
+		string err = "payment to invalid address of seller alias: " + theOffer.aliasName;
+		throw runtime_error(err.c_str());
+	}
+	if(!address.isAlias)
+	{
+		throw runtime_error("Offer owner's alias is invalid, perhaps it has expired");
 	}
     scriptPayment= GetScriptForDestination(address.Get());
 	scriptPubKey += scriptPayment;
