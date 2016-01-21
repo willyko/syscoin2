@@ -60,6 +60,7 @@
         <file alias="message">res/icons/message.png</file>
         <file alias="search">res/icons/search.png</file>
         <file alias="aboutshade">res/icons/about-shade.png</file>
+        <file alias="aboutshadebtc">res/icons/about-shadebtc.png</file>
         <file alias="aboutshade1">res/icons/about-shade1.png</file>
         <file alias="overviewshade">res/icons/shade-overview.png</file>
         <file alias="splashshade">res/icons/shade-splash.png</file>

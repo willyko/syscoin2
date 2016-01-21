@@ -3,9 +3,6 @@
 #include "init.h"
 #include "util.h"
 #include "offerpaydialog.h"
-#include "offerescrowdialog.h"
-#include "offer.h"
-#include "alias.h"
 #include "syscoingui.h"
 #include <QMessageBox>
 #include "rpcserver.h"

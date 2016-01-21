@@ -5,7 +5,6 @@
 namespace Ui {
     class OfferAcceptDialogBTC;
 }
-
 class OfferAcceptDialogBTC : public QDialog
 {
     Q_OBJECT
@@ -17,6 +16,7 @@ public:
     bool getPaymentStatus();
 
 private:
+
     Ui::OfferAcceptDialogBTC *ui;
 	QString quantity;
 	QString notes;

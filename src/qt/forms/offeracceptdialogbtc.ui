@@ -106,7 +106,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="../syscoin.qrc">:/icons/aboutshade</pixmap>
+      <pixmap resource="../syscoin.qrc">:/icons/aboutshadebtc</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
