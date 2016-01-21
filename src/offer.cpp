@@ -112,20 +112,21 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 	UniValue params(UniValue::VARR);
 
 	CPubKey newDefaultKey;
-	
+	printf("makeOfferLinkAccept\n");
 	if(foundOfferLinkInWallet(vchOffer, vchOfferAcceptLink))
 	{
 		if(fDebug)
 			LogPrintf("makeOfferLinkAcceptTX() offer linked transaction already exists\n");
 		return "";
 	}
+	printf("1\n");
 	if(!theOfferAccept.txBTCId.IsNull())
 	{
 		if(fDebug)
 			LogPrintf("makeOfferLinkAcceptTX() cannot accept a linked offer by paying in Bitcoins\n");
 		return "";
 	}
-
+	printf("2\n");
 	int64_t heightToCheckAgainst = theOfferAccept.nHeight;
 	
 	// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
@@ -143,7 +144,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 		}
 
 	}
-
+	printf("3\n");
 	pwalletMain->GetKeyFromPool(newDefaultKey);
 	CSyscoinAddress refundAddr = CSyscoinAddress(newDefaultKey.GetID());
 	const vector<unsigned char> vchRefundAddress = vchFromString(refundAddr.ToString());
@@ -156,18 +157,21 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 	params.push_back(stringFromVch(vchOfferAcceptLink));
 	params.push_back("");
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << heightToCheckAgainst) )->str());
-	
+	printf("4\n");
     try {
         tableRPC.execute(strMethod, params);
 	}
 	catch (UniValue& objError)
 	{
+		printf("4a\n");
 		return find_value(objError, "message").get_str().c_str();
 	}
 	catch(std::exception& e)
 	{
+		printf("4b\n");
 		return string(e.what()).c_str();
 	}
+	printf("5\n");
 	return "";
 
 }
