@@ -614,6 +614,23 @@ bool DecodeOfferScript(const CScript& script, int& op,
 		return true;
 	return false;
 }
+
+bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
+	int op, nOut = 0;
+	vector<vector<unsigned char> > vvch;
+
+	if (!DecodeOfferTx(tx, op, nOut, vvch, -1))
+		return error("GetOfferAddress() : could not decode offer tx.");
+
+	const CTxOut& txout = tx.vout[nOut];
+
+	const CScript& scriptPubKey = RemoveOfferScriptPrefix(txout.scriptPubKey);
+	CTxDestination dest;
+	ExtractDestination(scriptPubKey, dest);
+	strAddress = CSyscoinAddress(dest).ToString();
+	return true;
+}
+
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 	int op;
 	vector<vector<unsigned char> > vvch;
@@ -2332,17 +2349,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		}
 		nQty = 1;
 	}
-    CScript scriptPayment;
-	CSyscoinAddress address(theOffer.aliasName);
-	if(!address.IsValid())
-	{
-		string err = "payment to invalid address of seller alias: " + theOffer.aliasName;
-		throw runtime_error(err.c_str());
-	}
-	if(!address.isAlias)
-	{
-		throw runtime_error("Offer owner's alias is invalid, perhaps it has expired");
-	}
 	// create accept
 	COfferAccept txAccept;
 	txAccept.vchAcceptRand = vchAccept;
@@ -2374,6 +2380,14 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     int64_t nTotalValue = ( nPrice * nQty );
     
 
+    CScript scriptPayment;
+	string strAddress = "";
+    GetOfferAddress(tx, strAddress);
+	CSyscoinAddress address(strAddress);
+	if(!address.IsValid())
+	{
+		throw runtime_error("payment to invalid address");
+	}
     scriptPayment= GetScriptForDestination(address.Get());
 	scriptPubKey += scriptPayment;
 
@@ -2575,8 +2589,9 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("expired_block", expired_block));
 		oOffer.push_back(Pair("expired", expired));
 		oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
-		CSyscoinAddress address(theOffer.aliasName);
-		oOffer.push_back(Pair("address", address.ToString()));
+		string strAddress = "";
+        GetOfferAddress(tx, strAddress);
+		oOffer.push_back(Pair("address", strAddress));
 		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
 		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 		oOffer.push_back(Pair("quantity", strprintf("%u", theOffer.nQty)));
@@ -2903,8 +2918,9 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			oName.push_back(Pair("currency", stringFromVch(theOfferA.sCurrencyCode) ) );
 			oName.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
             oName.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
-			CSyscoinAddress address(theOfferA.aliasName);
-			oName.push_back(Pair("address", address.ToString()));
+			string strAddress = "";
+            GetOfferAddress(tx, strAddress);
+			oName.push_back(Pair("address", strAddress));
 			oName.push_back(Pair("exclusive_resell", theOfferA.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 			oName.push_back(Pair("btconly", theOfferA.bOnlyAcceptBTC ? "Yes" : "No"));
 			oName.push_back(Pair("private", theOfferA.bPrivate ? "Yes" : "No"));
