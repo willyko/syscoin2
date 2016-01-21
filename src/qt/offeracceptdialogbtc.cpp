@@ -35,7 +35,7 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString offer, QString quantity, QStr
 	
 	this->offerPaid = false;
 	connect(ui->confirmButton, SIGNAL(clicked()), this, SLOT(acceptPayment()));
-	connect(ui->openBtcWallet, SIGNAL(clicked()), this, SLOT(openBTCWallet()));
+	connect(ui->openBtcWalletButton, SIGNAL(clicked()), this, SLOT(openBTCWallet()));
 
 }
 void OfferAcceptDialogBTC::on_cancelButton_clicked()
@@ -129,7 +129,7 @@ void OfferAcceptDialogBTC::acceptOffer()
 void OfferAcceptDialogBTC::OpenBTCWallet()
 {
 	QString message = "Payment for offer ID: " + this->offer + " on Syscoin Decentralized Marketplace";
-	QString qURI = "bitcoin:" + address + "?amount=" + price + "&label=" + sellerAlias + "&message=" + QUrl::toPercentEncoding(message);
+	QString qURI = "bitcoin:" + this->address + "?amount=" + price + "&label=" + this->sellerAlias + "&message=" + QUrl::toPercentEncoding(message);
 	QDesktopServices::openUrl(QUrl(qURI, QUrl::TolerantMode));
 }
 bool OfferAcceptDialogBTC::getPaymentStatus()

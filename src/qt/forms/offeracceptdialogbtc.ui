@@ -28,7 +28,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="openBtcWallet">
+      <widget class="QPushButton" name="openBtcWalletButton">
        <property name="text">
         <string>Open BTC Wallet</string>
        </property>

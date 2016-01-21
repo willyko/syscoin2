@@ -5,8 +5,6 @@
 namespace Ui {
     class OfferAcceptDialogBTC;
 }
-
-class COffer;
 class OfferAcceptDialogBTC : public QDialog
 {
     Q_OBJECT
@@ -24,6 +22,8 @@ private:
 	QString price;
 	QString title;
 	QString offer;
+	QString sellerAlias;
+	QString address;
 	bool offerPaid; 
 	
 

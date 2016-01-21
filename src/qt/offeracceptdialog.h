@@ -5,8 +5,6 @@
 namespace Ui {
     class OfferAcceptDialog;
 }
-
-class COffer;
 class OfferAcceptDialog : public QDialog
 {
     Q_OBJECT
