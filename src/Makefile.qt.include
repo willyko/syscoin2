@@ -120,7 +120,7 @@ QT_FORMS_UI = \
   qt/forms/offerpaydialog.ui \
   qt/forms/offerescrowdialog.ui \
   qt/forms/offeracceptdialog.ui \
-  qt/forms/offeracceptdialogbtc.ui \ 
+  qt/forms/offeracceptdialogbtc.ui \
   qt/forms/editcertdialog.ui \
   qt/forms/certlistpage.ui
 
@@ -201,7 +201,7 @@ QT_MOC_CPP = \
   qt/moc_offerpaydialog.cpp \
   qt/moc_offerescrowdialog.cpp \
   qt/moc_offeracceptdialog.cpp \
-  qt/moc_offeracceptdialogbtc.cpp \  
+  qt/moc_offeracceptdialogbtc.cpp \
   qt/moc_acceptandpayofferlistpage.cpp \
   qt/moc_certtablemodel.cpp \
   qt/moc_editcertdialog.cpp \
@@ -312,7 +312,7 @@ SYSCOIN_QT_H = \
   qt/offerpaydialog.h \
   qt/offerescrowdialog.h \
   qt/offeracceptdialog.h \
-  qt/offeracceptdialogbtc.h \  
+  qt/offeracceptdialogbtc.h \
   qt/acceptandpayofferlistpage.h \
   qt/certtablemodel.h \
   qt/editcertdialog.h \
@@ -470,7 +470,7 @@ SYSCOIN_QT_CPP += \
   qt/offerpaydialog.cpp \
   qt/offerescrowdialog.cpp \
   qt/offeracceptdialog.cpp \
-  qt/offeracceptdialogbtc.cpp \  
+  qt/offeracceptdialogbtc.cpp \
   qt/acceptandpayofferlistpage.cpp \
   qt/certtablemodel.cpp \
   qt/editcertdialog.cpp \
