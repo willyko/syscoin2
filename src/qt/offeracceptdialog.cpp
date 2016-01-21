@@ -3,6 +3,7 @@
 #include "init.h"
 #include "util.h"
 #include "offerpaydialog.h"
+#include "offeracceptdialogbtc.h"
 #include "offerescrowdialog.h"
 #include "offer.h"
 #include "alias.h"
@@ -15,9 +16,9 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QWidget *parent) :
+OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OfferAcceptDialog), offer(offer), notes(notes), quantity(quantity), title(title)
+    ui(new Ui::OfferAcceptDialog), offer(offer), notes(notes), quantity(quantity), title(title), offer(offer), currency(currencyCode), seller(sellerAlias), address(address)
 {
     ui->setupUi(this);
 	int precision;
@@ -32,11 +33,11 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	if(strCurrencyCode == "BTC")
 	{
 		string strfPrice = strprintf("%f", dblPrice*quantity.toUInt());
-		QString fprice = QString::fromStdString(strfPrice);
+		fprice = QString::fromStdString(strfPrice);
 		ui->acceptBtcButton->setEnabled(true);
 		ui->acceptBtcButton->setVisible(true);
 		ui->escrowDisclaimer->setText(tr("<font color='red'>Select an arbiter that is mutally trusted between yourself and the merchant. Note that escrow is not available if you pay with BTC</font>"));
-		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS (%5 BTC)").arg(quantity).arg(title).arg(price).arg(sellerAlias).arg(fprice));
+		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS (%5 BTC)").arg(quantity).arg(title).arg(sellerAlias).arg(price).arg(fprice));
 	}
 	else
 	{
@@ -47,6 +48,7 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	connect(ui->checkBox,SIGNAL(clicked(bool)),SLOT(onEscrowCheckBoxChanged(bool)));
 	this->offerPaid = false;
 	connect(ui->acceptButton, SIGNAL(clicked()), this, SLOT(acceptPayment()));
+	connect(ui->acceptBtcButton, SIGNAL(clicked()), this, SLOT(acceptBTCPayment()));
 	setupEscrowCheckboxState();
 
 }
@@ -76,6 +78,18 @@ void OfferAcceptDialog::setupEscrowCheckboxState()
 void OfferAcceptDialog::onEscrowCheckBoxChanged(bool toggled)
 {
 	setupEscrowCheckboxState();
+}
+void OfferAcceptDialog::acceptBTCPayment()
+{
+	OfferAcceptDialogBTC dlg(this->offer, this->quantity, this->notes, this->title, this->currency, this->fprice, this->seller, this->address, this);
+	if(dlg.exec())
+	{
+		this->offerPaid = dlg.getPaymentStatus();
+		if(this->offerPaid)
+		{
+			OfferAcceptDialog::accept();
+		}
+	}	
 }
 void OfferAcceptDialog::acceptPayment()
 {

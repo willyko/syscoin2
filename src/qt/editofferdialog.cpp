@@ -38,10 +38,10 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->privateEdit->clear();
 	ui->privateEdit->addItem(QString("No"));
 	ui->privateEdit->addItem(QString("Yes"));
-	ui->privateEdit->clear();
+	ui->acceptBTCOnlyEdit->clear();
 	ui->acceptBTCOnlyEdit->addItem(QString("No"));
 	ui->acceptBTCOnlyEdit->addItem(QString("Yes"));
-	ui->btcOnlyDisclaimer->setText(tr("<font color='red'>You will receive payment in Bitcoin's if you have selected <b>Yes>/b> to this option and <b>BTC</b> as the currency for the offer.</font>"));
+	ui->btcOnlyDisclaimer->setText(tr("<font color='red'>You will receive payment in Bitcoin if you have selected <b>Yes</b> to this option and <b>BTC</b> as the currency for the offer.</font>"));
 	for(int i =0;i<rateList.size();i++)
 	{
 		ui->currencyEdit->addItem(QString::fromStdString(rateList[i]));

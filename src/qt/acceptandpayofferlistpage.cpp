@@ -106,7 +106,7 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), this);
+	OfferAcceptDialog dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();

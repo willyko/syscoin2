@@ -123,7 +123,7 @@ void OfferAcceptDialogBTC::acceptOffer()
 }
 void OfferAcceptDialogBTC::openBTCWallet()
 {
-	QString message = "Payment for offer ID: " + this->offer + " on Syscoin Decentralized Marketplace";
+	QString message = "Payment for offer ID " + this->offer + " on Syscoin Decentralized Marketplace";
 	QString qURI = "bitcoin:" + this->address + "?amount=" + price + "&label=" + this->sellerAlias + "&message=" + QUrl::toPercentEncoding(message);
 	QDesktopServices::openUrl(QUrl(qURI, QUrl::TolerantMode));
 }

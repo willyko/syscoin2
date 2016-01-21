@@ -10,7 +10,7 @@ class OfferAcceptDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QString sellerAlias, QWidget *parent=0);
+    explicit OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QString sellerAlias, QString address, QWidget *parent=0);
     ~OfferAcceptDialog();
 
     bool getPaymentStatus();
@@ -19,10 +19,15 @@ private:
 	void setupEscrowCheckboxState();
     Ui::OfferAcceptDialog *ui;
 	QString quantity;
+	QString offer;
 	QString notes;
 	QString price;
+	QString fprice;
 	QString title;
 	QString offer;
+	QString currency;
+	QString seller;
+	QString address;
 	bool offerPaid; 
 	
 
@@ -32,6 +37,7 @@ private Q_SLOTS:
 	void on_cancelButton_clicked();
     void acceptOffer();
 	void acceptEscrow();
+	void acceptBTCPayment();
 };
 
 #endif // OFFERACCEPTDIALOG_H

@@ -422,6 +422,15 @@ bool OfferAcceptTableModel::setData(const QModelIndex &index, const QVariant &va
             }
 
             break;
+        case Status:
+            // Do nothing, if old offer == new offer
+            if(rec->status == value.toString())
+            {
+                editStatus = NO_CHANGES;
+                return false;
+            }
+
+            break;
         case BuyerKey:
             // Do nothing, if old offer == new offer
             if(rec->buyerkey == value.toString())
