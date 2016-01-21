@@ -18,7 +18,7 @@ using namespace std;
 extern const CRPCTable tableRPC;
 OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OfferAcceptDialog), offer(offer), notes(notes), quantity(quantity), title(title), offer(offer), currency(currencyCode), seller(sellerAlias), address(address)
+    ui(new Ui::OfferAcceptDialog), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
 {
     ui->setupUi(this);
 	int precision;
