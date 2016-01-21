@@ -5,6 +5,7 @@
 namespace Ui {
     class OfferAcceptDialogBTC;
 }
+
 class OfferAcceptDialogBTC : public QDialog
 {
     Q_OBJECT
@@ -31,7 +32,7 @@ private Q_SLOTS:
 	void acceptPayment();
 	void on_cancelButton_clicked();
     void acceptOffer();
-	void OpenBTCWallet();
+	void openBTCWallet();
 };
 
 #endif // OFFERACCEPTDIALOGBTC_H
