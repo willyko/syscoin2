@@ -2332,6 +2332,17 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		}
 		nQty = 1;
 	}
+    CScript scriptPayment;
+	CSyscoinAddress address(theOffer.aliasName);
+	if(!address.IsValid())
+	{
+		string err = "payment to invalid address of seller alias: " + theOffer.aliasName;
+		throw runtime_error(err.c_str());
+	}
+	if(!address.isAlias)
+	{
+		throw runtime_error("Offer owner's alias is invalid, perhaps it has expired");
+	}
 	// create accept
 	COfferAccept txAccept;
 	txAccept.vchAcceptRand = vchAccept;
@@ -2363,17 +2374,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     int64_t nTotalValue = ( nPrice * nQty );
     
 
-    CScript scriptPayment;
-	CSyscoinAddress address(theOffer.aliasName);
-	if(!address.IsValid())
-	{
-		string err = "payment to invalid address of seller alias: " + theOffer.aliasName;
-		throw runtime_error(err.c_str());
-	}
-	if(!address.isAlias)
-	{
-		throw runtime_error("Offer owner's alias is invalid, perhaps it has expired");
-	}
     scriptPayment= GetScriptForDestination(address.Get());
 	scriptPubKey += scriptPayment;
 
