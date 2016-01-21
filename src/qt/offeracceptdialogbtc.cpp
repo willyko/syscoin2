@@ -13,6 +13,7 @@
 #include "wallet/wallet.h"
 #include "main.h"
 #include <QDesktopServices>
+#include <QUrl>
 using namespace std;
 
 extern const CRPCTable tableRPC;
