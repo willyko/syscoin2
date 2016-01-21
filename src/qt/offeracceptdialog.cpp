@@ -21,7 +21,7 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 {
     ui->setupUi(this);
 	int precision;
-	double dblPrice = qstrPrice.toDouble()*quantity.toUInt();
+	double dblPrice = qstrPrice.toDouble();
 	string strCurrencyCode = currencyCode.toStdString();
 	ui->acceptBtcButton->setEnabled(false);
 	ui->acceptBtcButton->setVisible(false);
@@ -31,7 +31,7 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	price = QString::fromStdString(strPrice);
 	if(strCurrencyCode == "BTC")
 	{
-		string strfPrice = strprintf("%f", dblPrice);
+		string strfPrice = strprintf("%f", dblPrice*quantity.toUInt());
 		QString fprice = QString::fromStdString(strfPrice);
 		ui->acceptBtcButton->setEnabled(true);
 		ui->acceptBtcButton->setVisible(true);
