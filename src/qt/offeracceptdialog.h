@@ -12,7 +12,7 @@ class OfferAcceptDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QWidget *parent=0);
+    explicit OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QString sellerAlias, QWidget *parent=0);
     ~OfferAcceptDialog();
 
     bool getPaymentStatus();
