@@ -114,7 +114,7 @@
     </widget>
    </item>
    <item row="4" column="0">
-    <widget class="QLabel" name="txidDisclaimer">
+    <widget class="QLabel" name="escrowDisclaimer">
      <property name="text">
       <string/>
      </property>
