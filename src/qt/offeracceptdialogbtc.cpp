@@ -127,8 +127,9 @@ void OfferAcceptDialogBTC::acceptOffer()
 }
 void OfferAcceptDialogBTC::OpenBTCWallet()
 {
-	QString URI = "bitcoin:" + address + "?amount=" + price + "&label=" + sellerAlias + "&message=Payment for offer ID: " + this->offer + " on Syscoin Decentralized Marketplace";
-	QDesktopServices::openUrl(QUrl(URI, QUrl::TolerantMode));
+	QString message = "Payment for offer ID: " + this->offer + " on Syscoin Decentralized Marketplace";
+	QString qURI = "bitcoin:" + address + "?amount=" + price + "&label=" + sellerAlias + "&message=" + QUrl::toPercentEncoding(message);
+	QDesktopServices::openUrl(QUrl(qURI, QUrl::TolerantMode));
 }
 bool OfferAcceptDialogBTC::getPaymentStatus()
 {
