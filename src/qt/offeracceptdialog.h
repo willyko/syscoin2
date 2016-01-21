@@ -7,8 +7,6 @@ namespace Ui {
 }
 
 class COffer;
-/** Dialog for editing an address and associated information.
- */
 class OfferAcceptDialog : public QDialog
 {
     Q_OBJECT

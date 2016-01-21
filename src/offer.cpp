@@ -614,23 +614,6 @@ bool DecodeOfferScript(const CScript& script, int& op,
 		return true;
 	return false;
 }
-
-bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
-	int op, nOut = 0;
-	vector<vector<unsigned char> > vvch;
-
-	if (!DecodeOfferTx(tx, op, nOut, vvch, -1))
-		return error("GetOfferAddress() : could not decode offer tx.");
-
-	const CTxOut& txout = tx.vout[nOut];
-
-	const CScript& scriptPubKey = RemoveOfferScriptPrefix(txout.scriptPubKey);
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-	return true;
-}
-
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 	int op;
 	vector<vector<unsigned char> > vvch;
@@ -2174,7 +2157,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				"<quantity> quantity to buy. Defaults to 1.\n"
 				"<message> payment message to seller, 1KB max.\n"
 				"<refund address> In case offer not accepted refund to this address. Leave empty to use a new address from your wallet. \n"
-				"<BTC TxId> If you have paid in Bitcoin and the offer is in Bitcoin, enter the transaction ID here\n"
+				"<BTC TxId> If you have paid in Bitcoin and the offer is in Bitcoin, enter the transaction ID here. Default is empty.\n"
 				"<linkedguid> guidkey from offer accept linking to this offer accept. For internal use only, leave blank\n"
 				"<escrowTxHash> If this offer accept is done by an escrow release. For internal use only, leave blank\n"
 				"<height> Height to index into price calculation function. For internal use only, leave blank\n"
@@ -2189,7 +2172,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
 	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
 	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=8?params[7]:"");
-	int64_t nHeight = params.size()>=8?atoi64(params[8].get_str()):0;
+	int64_t nHeight = params.size()>=9?atoi64(params[8].get_str()):0;
 	unsigned int nQty = 1;
 	if (params.size() >= 2) {
 		if(atof(params[1].get_str().c_str()) < 0)
@@ -2381,9 +2364,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     
 
     CScript scriptPayment;
-	string strAddress = "";
-    GetOfferAddress(tx, strAddress);
-	CSyscoinAddress address(strAddress);
+	CSyscoinAddress address(theOffer.aliasName);
 	if(!address.IsValid())
 	{
 		throw runtime_error("payment to invalid address");
@@ -2590,12 +2571,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("expired", expired));
 		oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
 		string strAddress = "";
-        GetOfferAddress(tx, strAddress);
-		CSyscoinAddress address(strAddress);
-		if(address.IsValid() && address.isAlias)
-			oOffer.push_back(Pair("address", address.aliasName));
-		else
-			oOffer.push_back(Pair("address", address.ToString()));
+		CSyscoinAddress address(theOffer.aliasName);
+		oOffer.push_back(Pair("address", address.ToString()));
 		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
 		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 		oOffer.push_back(Pair("quantity", strprintf("%u", theOffer.nQty)));
@@ -2923,12 +2900,8 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			oName.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
             oName.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
 			string strAddress = "";
-            GetOfferAddress(tx, strAddress);
-			CSyscoinAddress address(strAddress);
-			if(address.IsValid() && address.isAlias)
-				oName.push_back(Pair("address", address.aliasName));
-			else
-				oName.push_back(Pair("address", address.ToString()));
+			CSyscoinAddress address(theOfferA.aliasName);
+			oName.push_back(Pair("address", address.ToString()));
 			oName.push_back(Pair("exclusive_resell", theOfferA.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 			oName.push_back(Pair("btconly", theOfferA.bOnlyAcceptBTC ? "Yes" : "No"));
 			oName.push_back(Pair("private", theOfferA.bPrivate ? "Yes" : "No"));

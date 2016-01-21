@@ -3,7 +3,7 @@
 #include "init.h"
 #include "util.h"
 #include "offeracceptdialog.h"
-
+#include "offeracceptdialogbtc.h"
 #include "offer.h"
 
 #include "syscoingui.h"
@@ -33,7 +33,9 @@ extern const CRPCTable tableRPC;
 AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AcceptandPayOfferListPage)
-{
+{	
+	sAddress = "";
+	bOnlyAcceptBTC = false;
     ui->setupUi(this);
 	this->offerPaid = false;
 	this->URIHandled = false;	
@@ -104,14 +106,28 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(),  this);
+	OfferAcceptDialog dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
 		if(this->offerPaid)
 		{
 			COffer offer;
-			setValue(ui->offeridEdit->text(), offer, "");
+			setValue(ui->offeridEdit->text(), offer, "", "");
+		}
+	}
+	updateCaption();
+}
+void AcceptandPayOfferListPage::OpenBTCPayDialog()
+{
+	OfferAcceptDialogBTC dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	if(dlg.exec())
+	{
+		this->offerPaid = dlg.getPaymentStatus();
+		if(this->offerPaid)
+		{
+			COffer offer;
+			setValue(ui->offeridEdit->text(), offer, "", "");
 		}
 	}
 	updateCaption();
@@ -136,7 +152,10 @@ void AcceptandPayOfferListPage::acceptOffer()
 	
 	this->offerPaid = false;
 	ui->labelExplanation->setText(tr("Waiting for confirmation on the purchase of this offer"));
-	OpenPayDialog();
+	if(bOnlyAcceptBTC)
+		OpenBTCPayDialog();
+	else
+		OpenPayDialog();
 }
 
 bool AcceptandPayOfferListPage::lookup(const QString &lookupid)
@@ -160,12 +179,16 @@ bool AcceptandPayOfferListPage::lookup(const QString &lookupid)
 			const UniValue &offerObj = result.get_obj();
 			COffer offerOut;
 			const string &strRand = find_value(offerObj, "offer").get_str();
+			const string &strAddress = find_value(offerObj, "address").get_str();
 			offerOut.vchCert = vchFromString(find_value(offerObj, "cert").get_str());
+			offerOut.aliasName = vchFromString(find_value(offerObj, "alias").get_str());
 			offerOut.sTitle = vchFromString(find_value(offerObj, "title").get_str());
 			offerOut.sCategory = vchFromString(find_value(offerObj, "category").get_str());
 			offerOut.sCurrencyCode = vchFromString(find_value(offerObj, "currency").get_str());
 			offerOut.nQty = QString::fromStdString(find_value(offerObj, "quantity").get_str()).toUInt();	
+			offerOut.bOnlyAcceptBTC = find_value(offerObj, "btconly").get_str() == "Yes"? true: false;	
 			string descString = find_value(offerObj, "description").get_str();
+
 			offerOut.sDescription = vchFromString(descString);
 			UniValue outerDescValue(UniValue::VSTR);
 			bool read = outerDescValue.read(descString);
@@ -182,7 +205,7 @@ bool AcceptandPayOfferListPage::lookup(const QString &lookupid)
 				}
 
 			}
-			setValue(QString::fromStdString(strRand), offerOut, QString::fromStdString(find_value(offerObj, "price").get_str()));
+			setValue(QString::fromStdString(strRand), offerOut, QString::fromStdString(find_value(offerObj, "price").get_str()), QString::fromStdString(strAddress));
 			return true;
 		}
 		 
@@ -227,7 +250,7 @@ bool AcceptandPayOfferListPage::handlePaymentRequest(const SendCoinsRecipient *r
 	}
     return true;
 }
-void AcceptandPayOfferListPage::setValue(const QString& strRand, COffer &offer, QString price)
+void AcceptandPayOfferListPage::setValue(const QString& strRand, COffer &offer, QString price, QString address)
 {
     ui->offeridEdit->setText(strRand);
 	if(!offer.vchCert.empty())
@@ -242,7 +265,7 @@ void AcceptandPayOfferListPage::setValue(const QString& strRand, COffer &offer, 
 		ui->infoCert->setVisible(false);
 		ui->certLabel->setVisible(false);
 	}
-
+	ui->sellerEdit->setText(QString::fromStdString(stringFromVch(offer.aliasName)));
 	ui->infoTitle->setText(QString::fromStdString(stringFromVch(offer.sTitle)));
 	ui->infoCategory->setText(QString::fromStdString(stringFromVch(offer.sCategory)));
 	ui->infoCurrency->setText(QString::fromStdString(stringFromVch(offer.sCurrencyCode)));
@@ -251,6 +274,8 @@ void AcceptandPayOfferListPage::setValue(const QString& strRand, COffer &offer, 
 	ui->infoDescription->setPlainText(QString::fromStdString(stringFromVch(offer.sDescription)));
 	ui->qtyEdit->setText(QString("1"));
 	ui->notesEdit->setPlainText(QString(""));
+	bOnlyAcceptBTC = offer.bOnlyAcceptBTC;
+	sAddress = address;
 	QRegExp rx("(?:https?|ftp)://\\S+");
 
     rx.indexIn(QString::fromStdString(stringFromVch(offer.sDescription)));

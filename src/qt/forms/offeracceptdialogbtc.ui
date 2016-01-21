@@ -14,7 +14,7 @@
    <string>Accept Syscoin Offer</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="6" column="0">
+   <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QPushButton" name="cancelButton">
@@ -28,9 +28,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="acceptBtcButton">
+      <widget class="QPushButton" name="openBtcWallet">
        <property name="text">
-        <string>Pay with BTC</string>
+        <string>Open BTC Wallet</string>
        </property>
        <property name="icon">
         <iconset resource="../syscoin.qrc">
@@ -39,13 +39,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="acceptButton">
+      <widget class="QPushButton" name="confirmButton">
        <property name="text">
-        <string>&amp;Pay with SYS</string>
+        <string>&amp;Confirm Payment</string>
        </property>
        <property name="icon">
         <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/send</normaloff>:/icons/send</iconset>
+         <normaloff>:/icons/transaction_confirmed</normaloff>:/icons/transaction_confirmed</iconset>
        </property>
       </widget>
      </item>
@@ -79,14 +79,7 @@
     </layout>
    </item>
    <item row="3" column="0">
-    <widget class="QCheckBox" name="checkBox">
-     <property name="text">
-      <string>Use Escrow</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLineEdit" name="escrowEdit"/>
+    <widget class="QLineEdit" name="btctxidEdit"/>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="copyrightLabel">
@@ -94,7 +87,7 @@
       <cursorShape>IBeamCursor</cursorShape>
      </property>
      <property name="text">
-      <string notr="true">After paying for this item, you should wait until confirmation however this is not strictly necessary.</string>
+      <string notr="true">After paying for this item, please enter the Bitcoin Transaction ID below and click on the confirm button below.</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
@@ -120,8 +113,8 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="escrowDisclaimer">
+   <item row="4" column="0">
+    <widget class="QLabel" name="txidDisclaimer">
      <property name="text">
       <string/>
      </property>

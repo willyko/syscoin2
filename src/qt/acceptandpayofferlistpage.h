@@ -42,9 +42,10 @@ public:
 
     const QString &getReturnValue() const { return returnValue; }
 	bool handlePaymentRequest(const SendCoinsRecipient *rv);
-	void setValue(const QString& strRand, COffer &offer, QString price);
+	void setValue(const QString& strRand, COffer &offer, QString price, QString address);
 	void updateCaption();
 	void OpenPayDialog();
+	void OpenBTCPayDialog();
 	void RefreshImage();
 public Q_SLOTS:
     void acceptOffer();
@@ -63,6 +64,8 @@ private:
 	QPixmap m_placeholderImage;
 	QUrl m_url;
 	QStringList m_imageList;
+	QString sAddress;
+	bool bOnlyAcceptBTC;
 	
 };
 
