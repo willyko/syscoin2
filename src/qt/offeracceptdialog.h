@@ -24,7 +24,6 @@ private:
 	QString price;
 	QString fprice;
 	QString title;
-	QString offer;
 	QString currency;
 	QString seller;
 	QString address;
