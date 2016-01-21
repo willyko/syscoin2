@@ -181,7 +181,7 @@ bool AcceptandPayOfferListPage::lookup(const QString &lookupid)
 			const string &strRand = find_value(offerObj, "offer").get_str();
 			const string &strAddress = find_value(offerObj, "address").get_str();
 			offerOut.vchCert = vchFromString(find_value(offerObj, "cert").get_str());
-			offerOut.aliasName = vchFromString(find_value(offerObj, "alias").get_str());
+			offerOut.aliasName = find_value(offerObj, "alias").get_str();
 			offerOut.sTitle = vchFromString(find_value(offerObj, "title").get_str());
 			offerOut.sCategory = vchFromString(find_value(offerObj, "category").get_str());
 			offerOut.sCurrencyCode = vchFromString(find_value(offerObj, "currency").get_str());
@@ -265,7 +265,7 @@ void AcceptandPayOfferListPage::setValue(const QString& strRand, COffer &offer, 
 		ui->infoCert->setVisible(false);
 		ui->certLabel->setVisible(false);
 	}
-	ui->sellerEdit->setText(QString::fromStdString(stringFromVch(offer.aliasName)));
+	ui->sellerEdit->setText(QString::fromStdString(offer.aliasName));
 	ui->infoTitle->setText(QString::fromStdString(stringFromVch(offer.sTitle)));
 	ui->infoCategory->setText(QString::fromStdString(stringFromVch(offer.sCategory)));
 	ui->infoCurrency->setText(QString::fromStdString(stringFromVch(offer.sCurrencyCode)));
