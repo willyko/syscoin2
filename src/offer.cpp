@@ -890,33 +890,33 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if (op == OP_OFFER_ACCEPT) {
 
-					if(!fRescan)
-					{
-						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
-						
-						COffer myOffer,linkOffer;
-						CTransaction offerTx, linkedTx;			
-						// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-						uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
-						COfferLinkWhitelistEntry entry;
-						if(IsCertOp(prevOp) && found)
-						{	
-							theOffer.linkWhitelist.GetLinkEntryByHash(theOfferAccept.vchCertLink, entry);						
-						}
-						// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-						if(!theOfferAccept.vchEscrowLink.empty())
-						{	
-							vector<CEscrow> escrowVtxPos;
-							if (pescrowdb->ExistsEscrow(theOfferAccept.vchEscrowLink)) {
-								if (pescrowdb->ReadEscrow(theOfferAccept.vchEscrowLink, escrowVtxPos) && !escrowVtxPos.empty())
-								{	
-									// we want the initial funding escrow transaction height as when to calculate this offer accept price
-									CEscrow fundingEscrow = escrowVtxPos.front();
-									heightToCheckAgainst = fundingEscrow.nHeight;
-								}
+					if(!fRescan && stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
+					
+					COffer myOffer,linkOffer;
+					CTransaction offerTx, linkedTx;			
+					// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
+					uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
+					COfferLinkWhitelistEntry entry;
+					if(IsCertOp(prevOp) && found)
+					{	
+						theOffer.linkWhitelist.GetLinkEntryByHash(theOfferAccept.vchCertLink, entry);						
+					}
+					// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
+					if(!theOfferAccept.vchEscrowLink.empty())
+					{	
+						vector<CEscrow> escrowVtxPos;
+						if (pescrowdb->ExistsEscrow(theOfferAccept.vchEscrowLink)) {
+							if (pescrowdb->ReadEscrow(theOfferAccept.vchEscrowLink, escrowVtxPos) && !escrowVtxPos.empty())
+							{	
+								// we want the initial funding escrow transaction height as when to calculate this offer accept price
+								CEscrow fundingEscrow = escrowVtxPos.front();
+								heightToCheckAgainst = fundingEscrow.nHeight;
 							}
 						}
+					}
+					if(!fRescan)
+					{
 						// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 						{
@@ -931,7 +931,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-						
+					
+					
 					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
 
