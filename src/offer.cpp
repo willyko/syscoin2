@@ -10,6 +10,7 @@
 #include "base58.h"
 #include "rpcserver.h"
 #include "wallet/wallet.h"
+#include "consensus/validation.h"
 #include "chainparams.h"
 #include <boost/algorithm/hex.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
