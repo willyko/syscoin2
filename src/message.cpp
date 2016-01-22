@@ -99,79 +99,6 @@ bool CMessageDB::ScanMessages(const std::vector<unsigned char>& vchMessage, unsi
     return true;
 }
 
-/**
- * [CMessageDB::ReconstructMessageIndex description]
- * @param  pindexRescan [description]
- * @return              [description]
- */
-bool CMessageDB::ReconstructMessageIndex(CBlockIndex *pindexRescan) {
-    CBlockIndex* pindex = pindexRescan;
-	if(!HasReachedMainNetForkB2())
-		return true;
-    {
-    TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-    while (pindex) {
-
-        int nHeight = pindex->nHeight;
-        CBlock block;
-        ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-        uint256 txblkhash;
-
-        BOOST_FOREACH(CTransaction& tx, block.vtx) {
-
-            if (tx.nVersion != SYSCOIN_TX_VERSION)
-                continue;
-
-            vector<vector<unsigned char> > vvchArgs;
-            int op, nOut;
-
-            // decode the message op, params, height
-            bool o = DecodeMessageTx(tx, op, nOut, vvchArgs, -1);
-            if (!o || !IsMessageOp(op)) continue;
-
-            vector<unsigned char> vchMessage = vvchArgs[0];
-
-            // get the transaction
-            if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
-                continue;
-
-            // attempt to read message from txn
-            CMessage txMessage;
-            if(!txMessage.UnserializeFromTx(tx))
-                return error("ReconstructMessageIndex() : failed to unserialize message from tx");
-
-            // save serialized message
-            CMessage serializedMessage = txMessage;
-
-            // read message from DB if it exists
-            vector<CMessage> vtxPos;
-            if (ExistsMessage(vchMessage)) {
-                if (!ReadMessage(vchMessage, vtxPos))
-                    return error("ReconstructMessageIndex() : failed to read message from DB");
-            }
-
-            txMessage.txHash = tx.GetHash();
-            txMessage.nHeight = nHeight;
- 
-            PutToMessageList(vtxPos, txMessage);
-
-            if (!WriteMessage(vchMessage, vtxPos))
-                return error("ReconstructMessageIndex() : failed to write to message DB");
-
-          
-            LogPrintf( "RECONSTRUCT MESSAGE: op=%s message=%s hash=%s height=%d\n",
-                    messageFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-        }
-        pindex = chainActive.Next(pindex);
-        
-    }
-    }
-    return true;
-}
-
 int IndexOfMessageOutput(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return -1;
@@ -443,13 +370,6 @@ bool CheckMessageInputs(const CTransaction &tx,
     return true;
 }
 
-void rescanformessages(CBlockIndex *pindexRescan) {
-    LogPrintf("Scanning blockchain for messages to create fast index...\n");
-    pmessagedb->ReconstructMessageIndex(pindexRescan);
-}
-
-
-
 UniValue messagenew(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 4 )
         throw runtime_error(
@@ -459,8 +379,6 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 						"<fromalias> Alias to send message from.\n"
 						"<toalias> Alias to send message to.\n"					
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	vector<unsigned char> vchMySubject = vchFromValue(params[0]);
     if (vchMySubject.size() > MAX_NAME_LENGTH)
         throw runtime_error("Subject cannot exceed 255 bytes!");

@@ -116,75 +116,6 @@ bool CEscrowDB::ScanEscrows(const std::vector<unsigned char>& vchEscrow, unsigne
     return true;
 }
 
-/**
- * [CEscrowDB::ReconstructEscrowIndex description]
- * @param  pindexRescan [description]
- * @return              [description]
- */
-bool CEscrowDB::ReconstructEscrowIndex(CBlockIndex *pindexRescan) {
-    CBlockIndex* pindex = pindexRescan;
-	if(!HasReachedMainNetForkB2())
-		return true;
-    {
-    TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-    while (pindex) {
-
-        int nHeight = pindex->nHeight;
-        CBlock block;
-		ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-
-        uint256 txblkhash;
-
-        BOOST_FOREACH(CTransaction& tx, block.vtx) {
-
-            if (tx.nVersion != SYSCOIN_TX_VERSION)
-                continue;
-
-            vector<vector<unsigned char> > vvchArgs;
-            int op, nOut;
-
-            // decode the escrow op, params, height
-            bool o = DecodeEscrowTx(tx, op, nOut, vvchArgs, -1);
-            if (!o || !IsEscrowOp(op)) continue;
-
-            vector<unsigned char> vchEscrow = vvchArgs[0];
-
-            // get the transaction
-            if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
-                continue;
-
-            // attempt to read escrow from txn
-            CEscrow txEscrow;
-            if(!txEscrow.UnserializeFromTx(tx))
-                return error("ReconstructEscrowIndex() : failed to unserialize escrow from tx");
-
-            // read escrow from DB if it exists
-            vector<CEscrow> vtxPos;
-            if (ExistsEscrow(vchEscrow)) {
-                if (!ReadEscrow(vchEscrow, vtxPos))
-                    return error("ReconstructEscrowIndex() : failed to read escrow from DB");
-            }
-
-            txEscrow.txHash = tx.GetHash();
-            txEscrow.nHeight = nHeight;
-            PutToEscrowList(vtxPos, txEscrow);
-
-            if (!WriteEscrow(vchEscrow, vtxPos))
-                return error("ReconstructEscrowIndex() : failed to write to escrow DB");
-
-          
-            LogPrintf( "RECONSTRUCT ESCROW: op=%s escrow=%s hash=%s height=%d\n",
-                    escrowFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-        }
-        pindex = chainActive.Next(pindex);
-        
-    }
-    }
-    return true;
-}
 
 int IndexOfEscrowOutput(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
@@ -450,12 +381,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
     return true;
 }
 
-void rescanforescrows(CBlockIndex *pindexRescan) {
-    LogPrintf("Scanning blockchain for escrows to create fast index...\n");
-    pescrowdb->ReconstructEscrowIndex(pindexRescan);
-}
-
-
 
 UniValue escrownew(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 4 )
@@ -466,8 +391,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 						"<message> Delivery details to seller.\n"
 						"<arbiter alias> Alias of Arbiter.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	string strArbiter = params[3].get_str();
 	CSyscoinAddress arbiterAddress = CSyscoinAddress(strArbiter);
@@ -641,8 +564,6 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		"escrowrelease <escrow guid>\n"
                         "Releases escrow funds to seller, seller needs to sign the output transaction and send to the network.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
@@ -849,8 +770,6 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		"escrowclaimrelease <escrow guid>\n"
                         "Claim escrow funds released from buyer or arbiter using escrowrelease.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
@@ -1061,8 +980,6 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		"escrowcomplete <escrow guid>\n"
                          "Accepts an offer that's in escrow, to complete the escrow process.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
@@ -1177,8 +1094,6 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		"escrowrefund <escrow guid>\n"
                          "Refunds escrow funds back to buyer, buyer needs to sign the output transaction and send to the network.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 
@@ -1384,8 +1299,6 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 		"escrowclaimrefund <escrow guid>\n"
                         "Claim escrow funds released from seller or arbiter using escrowrefund.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
 

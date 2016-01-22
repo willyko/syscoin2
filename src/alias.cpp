@@ -102,13 +102,6 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 	return false;
 
 }
-bool HasReachedMainNetForkB2()
-{
-	bool fTestNet = false;
-    if (Params().NetworkIDString() != "main")
-		fTestNet = true;
-	return fTestNet || (!fTestNet && chainActive.Tip()->nHeight >= 1);
-}
 
 CAmount convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision)
 {
@@ -501,77 +494,6 @@ bool CAliasDB::ScanNames(const std::vector<unsigned char>& vchName,
 			return error("%s() : deserialize error", __PRETTY_FUNCTION__);
 		}
 	}
-	return true;
-}
-
-void rescanforaliases(CBlockIndex *pindexRescan) {
-	LogPrintf("Scanning blockchain for names to create fast index...\n");
-	paliasdb->ReconstructAliasIndex(pindexRescan);
-}
-
-bool CAliasDB::ReconstructAliasIndex(CBlockIndex *pindexRescan) {
-	CBlockIndex* pindex = pindexRescan;
-	if(!HasReachedMainNetForkB2())
-		return true;
-	{
-		TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-		while (pindex) {
-			CBlock block;
-			ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-			int nHeight = pindex->nHeight;
-			uint256 txblkhash;
-
-			BOOST_FOREACH(CTransaction& tx, block.vtx) {
-
-				if (tx.nVersion != SYSCOIN_TX_VERSION)
-					continue;
-
-				vector<vector<unsigned char> > vvchArgs;
-				int op, nOut;
-
-				// decode the alias op
-				bool o = DecodeAliasTx(tx, op, nOut, vvchArgs, -1);
-				if (!o || !IsAliasOp(op))
-					continue;
-
-				const vector<unsigned char> &vchName = vvchArgs[0];
-
-				if (!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
-					continue;
-
-				// attempt to read cert from txn
-				CAliasIndex txAlias;
-				if(!txAlias.UnserializeFromTx(tx))
-					return error("ReconstructCertIndex() : failed to unserialize alias from tx");
-
-				// if alias exists in DB, read it to verify
-				vector<CAliasIndex> vtxPos;
-				if (ExistsAlias(vchName)) {
-					if (!ReadAlias(vchName, vtxPos))
-						return error(
-								"ReconstructAliasIndex() : failed to read from alias DB");
-				}
-
-				// rebuild the alias, store to DB
-				txAlias.nHeight = nHeight;
-				txAlias.txHash = tx.GetHash();
-
-				PutToAliasList(vtxPos, txAlias);
-
-				if (!WriteAlias(vchName, vtxPos))
-					return error(
-							"ReconstructAliasIndex() : failed to write to alias DB");
-
-			
-				LogPrintf(
-						"RECONSTRUCT ALIAS: op=%s alias=%s hash=%s height=%d\n",
-						aliasFromOp(op).c_str(), stringFromVch(vchName).c_str(),
-						tx.GetHash().ToString().c_str(), nHeight);
-
-			} /* TX */
-			pindex = chainActive.Next(pindex);
-		} /* BLOCK */
-	} /* LOCK */
 	return true;
 }
 

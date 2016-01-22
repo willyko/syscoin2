@@ -11,6 +11,7 @@ class CReserveKey;
 class CValidationState;
 class CCoinsViewCache;
 class CCoins;
+class CBlockIndex;
 
 bool CheckOfferInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight);
 
@@ -27,7 +28,7 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
 bool DecodeOfferScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch,
 		CScript::const_iterator& pc);
-
+void rescanforsyscoinservices(CBlockIndex *pindexRescan);
 static const char* norefund = "norefund";
 static const char* inprogress = "inprogress";
 static const char* complete = "complete";

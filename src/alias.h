@@ -122,7 +122,6 @@ bool DecodeAliasScript(const CScript& script, int& op,
 bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);
 void GetAliasValue(const std::string& strName, std::string& strAddress);
 CAmount convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision);
-bool HasReachedMainNetForkB2();
 bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type);
 unsigned int QtyOfPendingAcceptsInMempool(const std::vector<unsigned char>& vchToFind);
 std::string getCurrencyToSYSFromAlias(const std::vector<unsigned char> &vchCurrency, CAmount &nFee, const unsigned int &nHeightToFind, std::vector<std::string>& rateList, int &precision);

@@ -350,132 +350,57 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
 }
 
 /**
- * [COfferDB::ReconstructOfferIndex description]
+ * [ReconstructSyscoinServicesIndex description]
  * @param  pindexRescan [description]
  * @return              [description]
  */
-bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
+void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
     CBlockIndex* pindex = pindexRescan;  
-	if(!HasReachedMainNetForkB2())
-		return true;
     {
-	TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-    while (pindex) {  
+		TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
+		CValidationState state;
+		bool fBlock = true;
+		bool fMiner = false;
+		bool bCheckInputs = false;
+		CCoinsViewCache inputs(pcoinsTip);
+		while (pindex) {  
 
-        int nHeight = pindex->nHeight;
-        CBlock block;
-        ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-        uint256 txblkhash;
-        
-        BOOST_FOREACH(CTransaction& tx, block.vtx) {
-            if (tx.nVersion != SYSCOIN_TX_VERSION)
-                continue;
+			int nHeight = pindex->nHeight;
+			CBlock block;
+			ReadBlockFromDisk(block, pindex, Params().GetConsensus());
+			uint256 txblkhash;
+	        
+			BOOST_FOREACH(CTransaction& tx, block.vtx) {
+				if (tx.nVersion != SYSCOIN_TX_VERSION)
+					continue;
 
-            vector<vector<unsigned char> > vvchArgs;
-            int op, nOut;
+				vector<vector<unsigned char> > vvch;
+				int op, nOut;
+				if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+				{
+					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				}
+				else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+				{
+					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				}
+				else if(DecodeCertTx(tx, op, nOut, vvch, -1))
+				{
+					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				}
+				else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+				{
+					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				}
+				else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+				{
+					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				}
 
-            // decode the offer op, params, height
-            bool o = DecodeOfferTx(tx, op, nOut, vvchArgs, -1);
-            if (!o || !IsOfferOp(op)) continue;         
-            vector<unsigned char> vchOffer = vvchArgs[0];
-        
-            // get the transaction
-            if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
-                continue;
-
-            // attempt to read offer from txn
-            COffer txOffer;
-            COfferAccept txCA;
-            if(!txOffer.UnserializeFromTx(tx))
-				return error("ReconstructOfferIndex() : failed to unserialize offer from tx");
-
-			// save serialized offer
-			COffer serializedOffer = txOffer;
-
-            // read offer from DB if it exists
-            vector<COffer> vtxPos;
-            if (ExistsOffer(vchOffer)) {
-                if (!ReadOffer(vchOffer, vtxPos))
-                    return error("ReconstructOfferIndex() : failed to read offer from DB");
-                if(vtxPos.size()!=0) {
-                	txOffer.nHeight = nHeight;
-                	txOffer.GetOfferFromList(vtxPos);
-                }
-            }
-			// use the txn offer as master on updates,
-			// but grab the accepts from the DB first
-			if(op == OP_OFFER_UPDATE || op == OP_OFFER_REFUND) {
-				serializedOffer.accepts = txOffer.accepts;
-				txOffer = serializedOffer;
 			}
-
-			if(op == OP_OFFER_REFUND)
-			{
-            	vector<unsigned char> vchOfferAccept = vvchArgs[1];
-	            if (ExistsOfferAccept(vchOfferAccept)) {
-	                if (!ReadOfferAccept(vchOfferAccept, vchOffer))
-	                    return error("ReconstructOfferIndex() : failed to read offer accept from offer DB\n");
-	            }
-				if(!txOffer.GetAcceptByHash(vchOfferAccept, txCA))
-					 return error("ReconstructOfferIndex() OP_OFFER_REFUND: failed to read offer accept from serializedOffer\n");
-
-				if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
-					txCA.bRefunded = true;
-					txCA.txRefundId = tx.GetHash();
-				}	
-				txCA.bPaid = true;
-		        txCA.txHash = tx.GetHash();
-				txOffer.PutOfferAccept(txCA);
-				
-			}
-            // read the offer accept from db if exists
-            if(op == OP_OFFER_ACCEPT) {
-            	bool bReadOffer = false;
-            	vector<unsigned char> vchOfferAccept = vvchArgs[1];
-	            if (ExistsOfferAccept(vchOfferAccept)) {
-	                if (!ReadOfferAccept(vchOfferAccept, vchOffer))
-	                    LogPrintf("ReconstructOfferIndex() : warning - failed to read offer accept from offer DB\n");
-	                else bReadOffer = true;
-	            }
-				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
-					 return error("ReconstructOfferIndex() OP_OFFER_ACCEPT: failed to read offer accept from offer\n");
-
-				// add txn-specific values to offer accept
-				txCA.bPaid = true;
-				txCA.vchAcceptRand = vchOfferAccept;
-		        txCA.txHash = tx.GetHash();
-				txOffer.PutOfferAccept(txCA);
-			}
-
-
-			if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE || op == OP_OFFER_REFUND) {
-				txOffer.txHash = tx.GetHash();
-	            txOffer.nHeight = nHeight;
-			}
-
-
-            txOffer.PutToOfferList(vtxPos);
-
-            if (!WriteOffer(vchOffer, vtxPos))
-                return error("ReconstructOfferIndex() : failed to write to offer DB");
-            if(op == OP_OFFER_ACCEPT || op == OP_OFFER_REFUND)
-	            if (!WriteOfferAccept(vvchArgs[1], vchOffer))
-	                return error("ReconstructOfferIndex() : failed to write to offer DB");
-			
-			if(fDebug)
-				LogPrintf( "RECONSTRUCT OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
-					offerFromOp(op).c_str(),
-					stringFromVch(vchOffer).c_str(),
-					stringFromVch(txOffer.sTitle).c_str(),
-					txOffer.nQty,
-					tx.GetHash().ToString().c_str(), 
-					nHeight);
-			
-        }
-        pindex = chainActive.Next(pindex);
-    }
-    }
-    return true;
+			pindex = chainActive.Next(pindex);
+		}
+	}
 }
 
 int IndexOfOfferOutput(const CTransaction& tx) {
@@ -1173,9 +1098,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 }
 
 
-void rescanforoffers(CBlockIndex *pindexRescan) {
-    LogPrintf("Scanning blockchain for offers to create fast index...\n");
-    pofferdb->ReconstructOfferIndex(pindexRescan);
+void rescanforsyscoinservices(CBlockIndex *pindexRescan) {
+   LogPrintf("Scanning blockchain for syscoin services to create fast index...\n");
+   ReconstructSyscoinServicesIndex(pindexRescan);
 }
 
 
@@ -1196,8 +1121,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 						"<exclusive resell> set to 1 if you only want those who control the whitelist certificates to be able to resell this offer via offerlink. Defaults to 1.\n"
 						"<accept btc only> set to 1 if you only want accept Bitcoins for payment and your currency is set to BTC, note you cannot resell or sell a cert in this mode. Defaults to 0.\n"
 						+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	// gather inputs
 	string baSig;
 	float nPrice;
@@ -1406,8 +1329,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 						"<commission> percentage of profit desired over original offer price, > 0, ie: 5 for 5%\n"
 						"<description> description, 1 KB max. Defaults to original description. Leave as '' to use default.\n"
 						+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	// gather inputs
 	string baSig;
 	COfferLinkWhitelistEntry whiteListEntry;
@@ -1563,8 +1484,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 						"<discount percentage> percentage of discount given to reseller for this offer. Negative discount adds on top of offer price, acts as an extra commission. -99 to 99.\n"						
 						+ HelpRequiringPassphrase());
 
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
 	// gather & validate inputs
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	vector<unsigned char> vchCert =  vchFromValue(params[1]);
@@ -1664,8 +1583,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 		"offerremovewhitelist <offer guid> <cert guid>\n"
 		"Remove from the whitelist of your offer(controls who can resell).\n"
 						+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
 	// gather & validate inputs
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	vector<unsigned char> vchCert = vchFromValue(params[1]);
@@ -1741,8 +1658,6 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 		"offerclearwhitelist <offer guid>\n"
 		"Clear the whitelist of your offer(controls who can resell).\n"
 						+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
 	// gather & validate inputs
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 
@@ -1817,8 +1732,6 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
     if (fHelp || 1 != params.size())
         throw runtime_error("offerwhitelist <offer guid>\n"
                 "List all whitelist entries for this offer.\n");
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
     UniValue oRes(UniValue::VARR);
     vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	// look for a transaction with this key
@@ -1862,9 +1775,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		"offerupdate <guid> <category> <title> <quantity> <price> [description] [private=0] [cert. guid] [exclusive resell=1]\n"
 						"Perform an update on an offer you control.\n"
 						+ HelpRequiringPassphrase());
-
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
 	// gather & validate inputs
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	vector<unsigned char> vchCat = vchFromValue(params[1]);
@@ -2122,8 +2032,6 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 				"Refund an offer accept of an offer you control.\n"
 				"<guid> guidkey of offer accept to refund.\n"
 				+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	vector<unsigned char> vchAcceptRand = vchFromString(params[0].get_str());
 
 	EnsureWalletIsUnlocked();
@@ -2178,8 +2086,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				"<escrowTxHash> If this offer accept is done by an escrow release. For internal use only, leave blank\n"
 				"<height> Height to index into price calculation function. For internal use only, leave blank\n"
 				+ HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");	
 	vector<unsigned char> vchRefundAddress;	
 	CSyscoinAddress refundAddr;	
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);

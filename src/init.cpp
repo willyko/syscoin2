@@ -66,12 +66,6 @@
 #endif
 
 using namespace std;
-// SYSCOIN rescan functions
-void rescanforaliases(CBlockIndex *pindexRescan);
-void rescanforoffers(CBlockIndex *pindexRescan);
-void rescanforcerts(CBlockIndex *pindexRescan);
-void rescanforescrows(CBlockIndex *pindexRescan);
-void rescanformessages(CBlockIndex *pindexRescan);
 #ifdef ENABLE_WALLET
 CWallet* pwalletMain = NULL;
 #endif
@@ -1554,6 +1548,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
             nStart = GetTimeMillis();
             pwalletMain->ScanForWalletTransactions(pindexRescan, true);
+			// SYSCOIN rescan sys tx's
+			rescanforsyscoinservices(pindexRescan);
             LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
             pwalletMain->SetBestChain(chainActive.GetLocator());
             nWalletDBUpdated++;

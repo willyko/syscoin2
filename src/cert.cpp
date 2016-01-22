@@ -134,77 +134,6 @@ bool CCertDB::ScanCerts(const std::vector<unsigned char>& vchCert, unsigned int 
     }
     return true;
 }
-
-/**
- * [CCertDB::ReconstructCertIndex description]
- * @param  pindexRescan [description]
- * @return              [description]
- */
-bool CCertDB::ReconstructCertIndex(CBlockIndex *pindexRescan) {
-    CBlockIndex* pindex = pindexRescan;
-	if(!HasReachedMainNetForkB2())
-		return true;
-    {
-    TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-    while (pindex) {
-
-        int nHeight = pindex->nHeight;
-        CBlock block;
-        ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-        uint256 txblkhash;
-
-        BOOST_FOREACH(CTransaction& tx, block.vtx) {
-
-            if (tx.nVersion != SYSCOIN_TX_VERSION)
-                continue;
-
-            vector<vector<unsigned char> > vvchArgs;
-            int op, nOut;
-
-            // decode the cert op, params, height
-            bool o = DecodeCertTx(tx, op, nOut, vvchArgs, -1);
-            if (!o || !IsCertOp(op)) continue;
-
-            vector<unsigned char> vchCert = vvchArgs[0];
-
-            // get the transaction
-            if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
-                continue;
-
-            // attempt to read cert from txn
-            CCert txCert;
-            if(!txCert.UnserializeFromTx(tx))
-                return error("ReconstructCertIndex() : failed to unserialize cert from tx");
-
-            // read cert from DB if it exists
-            vector<CCert> vtxPos;
-            if (ExistsCert(vchCert)) {
-                if (!ReadCert(vchCert, vtxPos))
-                    return error("ReconstructCertIndex() : failed to read cert from DB");
-            }
-
-            txCert.txHash = tx.GetHash();
-            txCert.nHeight = nHeight;
-
-            PutToCertList(vtxPos, txCert);
-
-            if (!WriteCert(vchCert, vtxPos))
-                return error("ReconstructCertIndex() : failed to write to cert DB");
-
-          
-            LogPrintf( "RECONSTRUCT CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
-                    certFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    stringFromVch(txCert.vchTitle).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-        }
-        pindex = chainActive.Next(pindex);
-        
-    }
-    }
-    return true;
-}
 int IndexOfCertOutput(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return -1;
@@ -517,10 +446,6 @@ bool CheckCertInputs(const CTransaction &tx,
 }
 
 
-void rescanforcerts(CBlockIndex *pindexRescan) {
-    LogPrintf("Scanning blockchain for certs to create fast index...\n");
-    pcertdb->ReconstructCertIndex(pindexRescan);
-}
 
 
 
@@ -532,8 +457,6 @@ UniValue certnew(const UniValue& params, bool fHelp) {
                         "<data> data, 1KB max.\n"
 						"<private> set to 1 if you only want to make the cert data private, only the owner of the cert can view it. Off by default.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
 	vector<unsigned char> vchTitle = vchFromString(params[0].get_str());
     vector<unsigned char> vchData = vchFromString(params[1].get_str());
 	bool bPrivate = false;
@@ -627,8 +550,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
                         "<data> certificate data, 1KB max.\n"
 						"<private> set to 1 if you only want to make the cert data private, only the owner of the cert can view it.\n"
                         + HelpRequiringPassphrase());
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
     vector<unsigned char> vchCert = vchFromValue(params[0]);
     vector<unsigned char> vchTitle = vchFromValue(params[1]);
@@ -735,8 +656,6 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 				"<alias> Alias to transfer this certificate to.\n"
                  + HelpRequiringPassphrase());
 
-	if(!HasReachedMainNetForkB2())
-		throw runtime_error("Please wait until B2 hardfork starts in before executing this command.");
     // gather & validate inputs
 	vector<unsigned char> vchCert = vchFromValue(params[0]);
 

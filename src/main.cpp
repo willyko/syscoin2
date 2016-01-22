@@ -1743,7 +1743,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 		vector<vector<unsigned char> > vvchArgs;
 		int op;
 		int nOut;
-		if(HasReachedMainNetForkB2() && tx.nVersion == SYSCOIN_TX_VERSION)
+		if(tx.nVersion == SYSCOIN_TX_VERSION)
 		{
 			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
 			{
@@ -2203,7 +2203,7 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
         outs->Clear();
         }
 		// SYSCOIN disconnect syscoin related block
-		if (tx.nVersion == SYSCOIN_TX_VERSION && HasReachedMainNetForkB2()) {
+		if (tx.nVersion == SYSCOIN_TX_VERSION) {
 		    vector<vector<unsigned char> > vvchArgs;
 		    int op, nOut;
 			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
