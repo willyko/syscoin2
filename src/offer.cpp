@@ -357,51 +357,49 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
  */
 void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
     CBlockIndex* pindex = pindexRescan;  
-    {
-		TRY_LOCK(pwalletMain->cs_wallet, cs_trylock);
-		CValidationState state;
-		bool fBlock = true;
-		bool fMiner = false;
-		bool bCheckInputs = false;
-		CCoinsViewCache inputs(pcoinsTip);
-		while (pindex) {  
+	CValidationState state;
+	bool fBlock = true;
+	bool fMiner = false;
+	bool bCheckInputs = false;
+	CCoinsViewCache inputs(pcoinsTip);
+	while (pindex) {  
 
-			int nHeight = pindex->nHeight;
-			CBlock block;
-			ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-			uint256 txblkhash;
-	        
-			BOOST_FOREACH(CTransaction& tx, block.vtx) {
-				if (tx.nVersion != SYSCOIN_TX_VERSION)
-					continue;
+		int nHeight = pindex->nHeight;
+		CBlock block;
+		ReadBlockFromDisk(block, pindex, Params().GetConsensus());
+		uint256 txblkhash;
+        
+		BOOST_FOREACH(CTransaction& tx, block.vtx) {
+			if (tx.nVersion != SYSCOIN_TX_VERSION)
+				continue;
 
-				vector<vector<unsigned char> > vvch;
-				int op, nOut;
-				if(DecodeAliasTx(tx, op, nOut, vvch, -1))
-				{
-					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-				}
-				else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
-				{
-					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-				}
-				else if(DecodeCertTx(tx, op, nOut, vvch, -1))
-				{
-					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-				}
-				else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
-				{
-					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-				}
-				else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
-				{
-					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-				}
-
+			vector<vector<unsigned char> > vvch;
+			int op, nOut;
+			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+			{
+				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
-			pindex = chainActive.Next(pindex);
+			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+			{
+				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			{
+				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			{
+				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			{
+				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+
 		}
+		pindex = chainActive.Next(pindex);
 	}
+	
 }
 
 int IndexOfOfferOutput(const CTransaction& tx) {
