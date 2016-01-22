@@ -377,7 +377,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             // decode the offer op, params, height
             bool o = DecodeOfferTx(tx, op, nOut, vvchArgs, -1);
             if (!o || !IsOfferOp(op)) continue;         
-            const vector<unsigned char> &vchOffer = vvchArgs[0];
+            vector<unsigned char> vchOffer = vvchArgs[0];
         
             // get the transaction
             if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
