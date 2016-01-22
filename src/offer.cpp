@@ -488,12 +488,12 @@ bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch, int nHeight) {
 	bool found = false;
 
-
+	LogPrintf("DecodeOfferTx for tx hash%s\n", tx.GetHash.GetHex().c_str());
 	// Strict check - bug disallowed
 	for (unsigned int i = 0; i < tx.vout.size(); i++) {
 		const CTxOut& out = tx.vout[i];
 		vector<vector<unsigned char> > vvchRead;
-		LogPrintf("out.scriptPubKey %s\n", HexStr(out.scriptPubKey.begin(), out.scriptPubKey.end()).c_str())
+		LogPrintf("out.scriptPubKey %s\n", HexStr(out.scriptPubKey.begin(), out.scriptPubKey.end()).c_str());
 		if (DecodeOfferScript(out.scriptPubKey, op, vvch)) {
 			nOut = i; found = true;
 			LogPrintf("found\n");
