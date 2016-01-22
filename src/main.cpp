@@ -2037,7 +2037,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	if(fDebug)
 		LogPrintf("DISCONNECTED offer TXN: offer=%s op=%s hash=%s  height=%d\n",
 			stringFromVch(vvchArgs[0]).c_str(),
-			aliasFromOp(op).c_str(),
+			opName.c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
 
@@ -2075,8 +2075,9 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to offer DB");
 	if(fDebug)
-		LogPrintf("DISCONNECTED CERT TXN: title=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED CERT TXN: cert=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
+			opName.c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
 
@@ -2114,8 +2115,9 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to escrow DB");
 	if(fDebug)
-		LogPrintf("DISCONNECTED ESCROW TXN: escrow=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED ESCROW TXN: escrow=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
+			opName.c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
 
@@ -2153,8 +2155,9 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to message DB");
 	if(fDebug)
-		LogPrintf("DISCONNECTED MESSAGE TXN: message=%s hash=%s height=%d\n",
+		LogPrintf("DISCONNECTED MESSAGE TXN: message=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
+		   	opName.c_str(),
 			tx.GetHash().ToString().c_str(),
 			pindex->nHeight);
 

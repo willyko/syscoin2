@@ -159,7 +159,7 @@ static const unsigned int MIN_BLOCKS_TO_KEEP = 2880;
 
 static const signed int DEFAULT_CHECKBLOCKS = MIN_BLOCKS_TO_KEEP;
 // SYSCOIN
-static const unsigned int DEFAULT_CHECKLEVEL = 4;
+static const unsigned int DEFAULT_CHECKLEVEL = 2;
 
 // Require that user allocate at least 550MB for block & undo files (blk???.dat and rev???.dat)
 // At 1MB per block, 288 blocks = 288MB.
