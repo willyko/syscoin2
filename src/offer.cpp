@@ -791,7 +791,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// get the latest offer from the db
             	theOffer.nHeight = nHeight;
             	theOffer.GetOfferFromList(vtxPos);
-				if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+				if(!fRescan && stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
 				}
@@ -890,42 +890,45 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if (op == OP_OFFER_ACCEPT) {
 
-					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
-					
-					COffer myOffer,linkOffer;
-					CTransaction offerTx, linkedTx;			
-					// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-					uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
-					COfferLinkWhitelistEntry entry;
-					if(IsCertOp(prevOp) && found)
-					{	
-						theOffer.linkWhitelist.GetLinkEntryByHash(theOfferAccept.vchCertLink, entry);						
-					}
-					// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-					if(!theOfferAccept.vchEscrowLink.empty())
-					{	
-						vector<CEscrow> escrowVtxPos;
-						if (pescrowdb->ExistsEscrow(theOfferAccept.vchEscrowLink)) {
-							if (pescrowdb->ReadEscrow(theOfferAccept.vchEscrowLink, escrowVtxPos) && !escrowVtxPos.empty())
-							{	
-								// we want the initial funding escrow transaction height as when to calculate this offer accept price
-								CEscrow fundingEscrow = escrowVtxPos.front();
-								heightToCheckAgainst = fundingEscrow.nHeight;
+					if(!fRescan)
+					{
+						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+							return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
+						
+						COffer myOffer,linkOffer;
+						CTransaction offerTx, linkedTx;			
+						// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
+						uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
+						COfferLinkWhitelistEntry entry;
+						if(IsCertOp(prevOp) && found)
+						{	
+							theOffer.linkWhitelist.GetLinkEntryByHash(theOfferAccept.vchCertLink, entry);						
+						}
+						// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
+						if(!theOfferAccept.vchEscrowLink.empty())
+						{	
+							vector<CEscrow> escrowVtxPos;
+							if (pescrowdb->ExistsEscrow(theOfferAccept.vchEscrowLink)) {
+								if (pescrowdb->ReadEscrow(theOfferAccept.vchEscrowLink, escrowVtxPos) && !escrowVtxPos.empty())
+								{	
+									// we want the initial funding escrow transaction height as when to calculate this offer accept price
+									CEscrow fundingEscrow = escrowVtxPos.front();
+									heightToCheckAgainst = fundingEscrow.nHeight;
+								}
 							}
 						}
-					}
-					// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
-					{
-						int precision = 2;
-						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
-						if(tx.vout[nOut].nValue != nPrice)
+						// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
+						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
-							return true;
+							int precision = 2;
+							// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
+							CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+							if(tx.vout[nOut].nValue != nPrice)
+							{
+								if(fDebug)
+									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
+								return true;
+							}
 						}
 					}
 						
@@ -946,16 +949,19 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)
 					// this is to ensure that the coins sent during accept are available to spend to refund to avoid having to hold double the balance of an accept amount
 					// in order to refund.
-					if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
-						if(!fInit && !fRescan)
-						{
-							string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
-							if (strError != "" && fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
+					if(!fRescan)
+					{
+						if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
+							if(!fInit)
+							{
+								string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+								if (strError != "" && fDebug)
+									LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
+							}
+							if(fDebug)
+								LogPrintf("txn %s accepted but offer not fulfilled because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+							return true;
 						}
-						if(fDebug)
-							LogPrintf("txn %s accepted but offer not fulfilled because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-						return true;
 					}
 					if(theOffer.vchLinkOffer.empty())
 					{
