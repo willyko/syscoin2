@@ -1032,7 +1032,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 								theOffer.linkWhitelist.SetNull();
 							}
 							// the stored offer has this entry meaning we want to remove this entry
-							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
+							// also check we are not rescanning (rescan can update the DB), thus call this function
+							// with a whitelist entry which already exists in the DB when it wouldn't normally (hint: we don't want to remove it)
+							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry)  && !fRescan)
 							{
 								theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
 							}
