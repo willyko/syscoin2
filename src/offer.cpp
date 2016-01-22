@@ -20,6 +20,11 @@
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
+bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
+bool DisconnectCert(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
+bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
+bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 // check wallet transactions to see if there was a refund for an accept already
 // need this because during a reorg blocks are disconnected (deleted from db) and we can't rely on looking in db to see if refund was made for an accept
 bool foundRefundInWallet(const vector<unsigned char> &vchAcceptRand, const vector<unsigned char>& acceptCode)
@@ -382,22 +387,28 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			int op, nOut;
 			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 			{
+				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
+				DisconnectAlias(pindex, tx, op, vvch);	
 				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
+				DisconnectOffer(pindex, tx, op, vvch);	
 				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectCert(pindex, tx, op, vvch);	
 				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectEscrow(pindex, tx, op, vvch);
 				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectMessage(pindex, tx, op, vvch);
 				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 
@@ -1032,9 +1043,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 								theOffer.linkWhitelist.SetNull();
 							}
 							// the stored offer has this entry meaning we want to remove this entry
-							// also check we are not rescanning (rescan can update the DB), thus call this function
-							// with a whitelist entry which already exists in the DB when it wouldn't normally (hint: we don't want to remove it)
-							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry)  && !fRescan)
+							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
 							{
 								theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
 							}

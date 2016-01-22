@@ -312,6 +312,7 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 				cert_expiresin_str = strprintf("%d Blocks", cert_expiresin);
 				model->addRow(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(mine_str), QString::fromStdString(cert_address_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str));
 				model->updateEntry(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(mine_str), QString::fromStdString(cert_address_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str), CT_NEW); 
+				ui->removeAllButton->setEnabled(true);
 			}
 		}
 		if(exclusiveWhitelist == QString("ON"))
@@ -358,7 +359,6 @@ void EditWhitelistOfferDialog::selectionChanged()
     if(table->selectionModel()->hasSelection())
     {
         ui->removeButton->setEnabled(true);
-		ui->removeAllButton->setEnabled(true);
     }
     else
     {
