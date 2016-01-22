@@ -363,7 +363,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 		bool fBlock = true;
 		bool fMiner = false;
 		bool bCheckInputs = false;
-		CCoinsViewCache inputs(pcoinsTip);
+		CCoinsViewCache inputs;
 		while (pindex) {  
 
 			int nHeight = pindex->nHeight;
@@ -853,7 +853,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept))
 						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from serializedOffer txn");	
             		
-					if(!fInit && pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
+					if(!fInit && !fRescan &&  pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
 						string strError = makeOfferRefundTX(tx, vvchArgs[1], OFFER_REFUND_COMPLETE);
 						if (strError != "" && fDebug)							
 							LogPrintf("CheckOfferInputs() - OFFER_REFUND_COMPLETE %s\n", strError.c_str());
@@ -936,10 +936,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// this is to ensure that the coins sent during accept are available to spend to refund to avoid having to hold double the balance of an accept amount
 					// in order to refund.
 					if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
-						string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
-						if (strError != "" && fDebug)
-							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
-							
+						if(!fInit && !fRescan)
+						{
+							string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							if (strError != "" && fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
+						}
 						if(fDebug)
 							LogPrintf("txn %s accepted but offer not fulfilled because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
 						return true;
@@ -948,7 +950,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					{
 						theOffer.nQty -= theOfferAccept.nQty;
 						// purchased a cert so xfer it
-						if(!fInit && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
+						if(!fInit && !fRescan && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
 						{
 							string strError = makeTransferCertTX(theOffer, theOfferAccept);
 							if(strError != "")
@@ -978,7 +980,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-					if (!fInit && pwalletMain && !linkOffer.IsNull() && IsOfferMine(offerTx))
+					if (!fInit && !fRescan && pwalletMain && !linkOffer.IsNull() && IsOfferMine(offerTx))
 					{	
 						// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
 						// myOffer.vchLinkOffer is the linked offer guid
