@@ -182,13 +182,13 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	if(GetTxOfOfferAccept(*pofferdb, vchAcceptRand, theOffer, myOfferTx))
 	{
 		if(!IsOfferMine(myOfferTx))
-			return "";
+			return string("makeOfferRefundTX(): cannot refund an accept of an offer that isn't mine");
 		if(theOfferAccept.nQty <= 0)
 			return string("makeOfferRefundTX(): cannot refund an accept with 0 quantity");
 
 	}
 	else
-		return "";
+		return string("makeOfferRefundTX(): cannot find accept transaction");
 	if(myPrevTx.IsNull())
 		myPrevTx = myOfferTx;
 	if(!pwalletMain)
@@ -197,7 +197,7 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	}
 	if(theOfferAccept.bRefunded)
 	{
-		return string("This offer accept has already been refunded");
+		return string("makeOfferRefundTX(): this offer accept has already been refunded");
 	}	
 	const CWalletTx *wtxPrevIn;
 	wtxPrevIn = pwalletMain->GetWalletTx(myPrevTx.GetHash());
@@ -240,12 +240,12 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	scriptPubKey += scriptPubKeyOrig;
 	
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		return string("there are pending operations or refunds on that offer");
+		return string("makeOfferRefundTX(): there are pending operations or refunds on that offer");
 	}
 
 	if(foundRefundInWallet(vchAcceptRand, refundCode))
 	{
-		return string("foundRefundInWallet - This offer accept has already been refunded");
+		return string("makeOfferRefundTX(): foundRefundInWallet - This offer accept has already been refunded");
 	}
     // add a copy of the offer with just
     // the one accept to save bandwidth
@@ -2045,19 +2045,26 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 	// look for a transaction with this key
 	COffer theOffer;
-	CTransaction txOffer;
+	CTransaction txOffer, acceptTx;
 	COfferAccept theOfferAccept;
-	uint256 hashBlock;
+	uint256 blockHash;
 
 	if (!GetTxOfOfferAccept(*pofferdb, vchAcceptRand, theOffer, txOffer))
 		throw runtime_error("could not find an offer accept with this identifier");
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
-	
-	if(DecodeOfferTx(txOffer, op, nOut, vvch, -1)) 
-		throw runtime_error("could not could offer tx");
+
+	// check for existence of offeraccept in txn offer obj
+	if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
+		continue;	
+
+    if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
+        continue;
+
+	if(DecodeOfferTx(acceptTx, op, nOut, vvch, -1)) 
+		throw runtime_error("could not decode offer tx");
 	const CWalletTx *wtxIn;
-	wtxIn = pwalletMain->GetWalletTx(txOffer.GetHash());
+	wtxIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 	if (wtxIn == NULL)
 	{
 		throw runtime_error("can't find this offer in your wallet");
@@ -2624,13 +2631,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				else
 					oOfferAccept.push_back(Pair("paid","true"));
 			}
-			else if(!theOfferAccept.bRefunded)
-			{
-				oOfferAccept.push_back(Pair("status","not paid"));
-			}
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
 			}
+			else 
+			{
+				oOfferAccept.push_back(Pair("status","not paid"));
+			}
+			
 			string strMessage = string("");
 			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
@@ -2675,6 +2683,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOfferAcceptLink, theOffer, offerTx))
 				continue;
 
+			// check for existence of offeraccept in txn offer obj
+			if(!theOffer.GetAcceptByHash(theEscrow.vchOfferAcceptLink, theOfferAccept))
+				continue;	
+
             if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
                 continue;
             // decode txn, skip non-alias txns
@@ -2685,9 +2697,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
                 continue;
 			if(offerVvch[0] != vchOfferToFind && !vchOfferToFind.empty())
 				continue;
-			// check for existence of offeraccept in txn offer obj
-			if(!theOffer.GetAcceptByHash(theEscrow.vchOfferAcceptLink, theOfferAccept))
-				continue;	
 			const vector<unsigned char> &vchAcceptRand = offerVvch[1];
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
@@ -2718,13 +2727,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				else
 					oOfferAccept.push_back(Pair("paid","true"));
 			}
-			else if(!theOfferAccept.bRefunded)
-			{
-				oOfferAccept.push_back(Pair("status","not paid"));
-			}
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
 			}
+			else
+			{
+				oOfferAccept.push_back(Pair("status","not paid"));
+			}
+
 			string strMessage = string("");
 			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
