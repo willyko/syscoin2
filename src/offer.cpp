@@ -488,20 +488,16 @@ bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch, int nHeight) {
 	bool found = false;
 
-	LogPrintf("DecodeOfferTx for tx hash %s\n", tx.GetHash().GetHex().c_str());
 	// Strict check - bug disallowed
 	for (unsigned int i = 0; i < tx.vout.size(); i++) {
 		const CTxOut& out = tx.vout[i];
 		vector<vector<unsigned char> > vvchRead;
-		LogPrintf("out.scriptPubKey %s\n", HexStr(out.scriptPubKey.begin(), out.scriptPubKey.end()).c_str());
 		if (DecodeOfferScript(out.scriptPubKey, op, vvch)) {
 			nOut = i; found = true;
-			LogPrintf("found\n");
 			break;
 		}
 	}
 	if (!found) vvch.clear();
-	LogPrintf("found %d IsOfferOp(op) %d, op %s\n", found, IsOfferOp(op), offerFromOp(op).c_str());
 	return found && IsOfferOp(op);
 }
 
@@ -2053,7 +2049,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 	// look for a transaction with this key
 	COffer theOffer;
-	CTransaction txOffer, acceptTx;
+	CTransaction txOffer;
 	COfferAccept theOfferAccept;
 	uint256 blockHash;
 
@@ -2066,15 +2062,9 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
 		throw runtime_error("could not find an offer accept in offer txn");
 
-    if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
+	if(!DecodeOfferTx(txOffer, op, nOut, vvch, -1)) 
 	{
-		string err = "could not find offer accept transaction from txn db hash of transaction: " +  theOfferAccept.txHash.GetHex();
-        throw runtime_error(err.c_str());
-	}
-
-	if(DecodeOfferTx(acceptTx, op, nOut, vvch, -1)) 
-	{
-		string err = "could not decode offeraccept tx with hash: " +  acceptTx.GetHash().GetHex();
+		string err = "could not decode offeraccept tx with hash: " +  txOffer.GetHash().GetHex();
         throw runtime_error(err.c_str());
 	}
 	const CWalletTx *wtxIn;
@@ -2092,7 +2082,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if (!theOffer.vchLinkOffer.empty())
 		throw runtime_error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 	
-	string strError = makeOfferRefundTX(acceptTx, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
+	string strError = makeOfferRefundTX(txOffer, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
 	if (strError != "")
 	{
 		throw runtime_error(strError);
@@ -2684,7 +2674,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CTransaction escrowTx;
 			CEscrow theEscrow;
 			COffer theOffer;
-			CTransaction offerTx, acceptTx;
+			CTransaction offerTx;
 			
 			if(!GetTxOfEscrow(*pescrowdb, vchEscrow, theEscrow, escrowTx))	
 				continue;
@@ -2700,12 +2690,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			// check for existence of offeraccept in txn offer obj
 			if(!theOffer.GetAcceptByHash(theEscrow.vchOfferAcceptLink, theOfferAccept))
 				continue;	
-
-            if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
-                continue;
+ 
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > offerVvch;
-            if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch, -1) 
+            if (!DecodeOfferTx(offerTx, op, nOut, offerVvch, -1) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT))
                 continue;
