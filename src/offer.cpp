@@ -2061,10 +2061,11 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 	// check for existence of offeraccept in txn offer obj
 	if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
-		continue;	
+		throw runtime_error("could not find an offer accept in offer txn");
+
 
     if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
-        continue;
+        throw runtime_error("could not find offer accept transaction from txn db");
 
 	if(DecodeOfferTx(acceptTx, op, nOut, vvch, -1)) 
 		throw runtime_error("could not decode offer tx");
