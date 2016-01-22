@@ -459,7 +459,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             if (!WriteOffer(vchOffer, vtxPos))
                 return error("ReconstructOfferIndex() : failed to write to offer DB");
             if(op == OP_OFFER_ACCEPT || op == OP_OFFER_REFUND)
-	            if (!WriteOfferAccept(vchOfferAccept, vchOffer))
+	            if (!WriteOfferAccept(vvchArgs[1], vchOffer))
 	                return error("ReconstructOfferIndex() : failed to write to offer DB");
 			
 			if(fDebug)
