@@ -377,7 +377,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             // decode the offer op, params, height
             bool o = DecodeOfferTx(tx, op, nOut, vvchArgs, -1);
             if (!o || !IsOfferOp(op)) continue;         
-            vector<unsigned char> vchOffer = vvchArgs[0];
+            const vector<unsigned char> &vchOffer = vvchArgs[0];
         
             // get the transaction
             if(!GetTransaction(tx.GetHash(), tx, Params().GetConsensus(), txblkhash, true))
@@ -440,7 +440,7 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
 				if(!bReadOffer && !txOffer.GetAcceptByHash(vchOfferAccept, txCA))
 					 return error("ReconstructOfferIndex() OP_OFFER_ACCEPT: failed to read offer accept from offer\n");
 
-				// add txn-specific values to offer accept UniValue
+				// add txn-specific values to offer accept
 				txCA.bPaid = true;
 				txCA.vchAcceptRand = vchOfferAccept;
 		        txCA.txHash = tx.GetHash();
@@ -459,13 +459,13 @@ bool COfferDB::ReconstructOfferIndex(CBlockIndex *pindexRescan) {
             if (!WriteOffer(vchOffer, vtxPos))
                 return error("ReconstructOfferIndex() : failed to write to offer DB");
             if(op == OP_OFFER_ACCEPT || op == OP_OFFER_REFUND)
-	            if (!WriteOfferAccept(vvchArgs[1], vvchArgs[0]))
+	            if (!WriteOfferAccept(vchOfferAccept, vchOffer))
 	                return error("ReconstructOfferIndex() : failed to write to offer DB");
 			
 			if(fDebug)
 				LogPrintf( "RECONSTRUCT OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
 					offerFromOp(op).c_str(),
-					stringFromVch(vvchArgs[0]).c_str(),
+					stringFromVch(vchOffer).c_str(),
 					stringFromVch(txOffer.sTitle).c_str(),
 					txOffer.nQty,
 					tx.GetHash().ToString().c_str(), 

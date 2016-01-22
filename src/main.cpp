@@ -1963,12 +1963,16 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		return error("DisconnectBlock() : failed to read from alias DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if (vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
+	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
 	
 	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
@@ -1997,13 +2001,18 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
         return error("DisconnectBlock() : failed to read from offer DB for %s %s\n",
         		opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
+	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
+
 
     if(op == OP_OFFER_ACCEPT ) {
     	vector<unsigned char> vvchOfferAccept = vvchArgs[1];
@@ -2050,12 +2059,16 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 		return error("DisconnectBlock() : failed to read from certificate DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
+	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
 
 	// write new offer state to db
@@ -2085,12 +2098,16 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 		return error("DisconnectBlock() : failed to read from escrow DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
+	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
 
 	// write new escrow state to db
@@ -2120,12 +2137,16 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 		return error("DisconnectBlock() : failed to read from message DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	// vtxPos might be empty if we pruned expired transactions.  However, it should normally still not
-	// be empty, since a reorg cannot go that far back.  Be safe anyway and do not try to pop if empty.
-	if (vtxPos.size()) {
-		if(vtxPos.back().txHash == tx.GetHash())
-			vtxPos.pop_back();
-		// TODO validate that the first pos is the current tx pos
+	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
 	}
 
 	// write new message state to db
@@ -2195,8 +2216,7 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
 			}
 			else if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
 			{
-				DisconnectCertificate(pindex, tx, op, vvchArgs);
-				
+				DisconnectCertificate(pindex, tx, op, vvchArgs);				
 			}
 			else if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
 			{

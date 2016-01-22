@@ -42,7 +42,7 @@ OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString no
 	else
 	{
 		ui->escrowDisclaimer->setText(tr("<font color='red'>Select an arbiter that is mutally trusted between yourself and the merchant.</font>"));
-		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %3 SYS").arg(quantity).arg(title).arg(sellerAlias).arg(price));
+		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS").arg(quantity).arg(title).arg(sellerAlias).arg(price));
 	}
 		
 	connect(ui->checkBox,SIGNAL(clicked(bool)),SLOT(onEscrowCheckBoxChanged(bool)));

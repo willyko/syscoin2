@@ -1554,12 +1554,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
             nStart = GetTimeMillis();
             pwalletMain->ScanForWalletTransactions(pindexRescan, true);
-			// SYSCOIN rescan sys tx's
-			rescanforaliases(pindexRescan);
-    		rescanforoffers(pindexRescan);
-    		rescanforcerts(pindexRescan);
-			rescanforescrows(pindexRescan);
-			rescanformessages(pindexRescan);
             LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
             pwalletMain->SetBestChain(chainActive.GetLocator());
             nWalletDBUpdated++;
