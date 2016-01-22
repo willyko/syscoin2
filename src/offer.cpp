@@ -363,7 +363,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 		bool fBlock = true;
 		bool fMiner = false;
 		bool bCheckInputs = false;
-		CCoinsViewCache inputs;
+		CCoinsViewCache inputs(pcoinsTip);
 		while (pindex) {  
 
 			int nHeight = pindex->nHeight;
