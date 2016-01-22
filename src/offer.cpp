@@ -2084,7 +2084,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if (!theOffer.vchLinkOffer.empty())
 		throw runtime_error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 	
-	string strError = makeOfferRefundTX(txOffer, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
+	string strError = makeOfferRefundTX(acceptTx, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
 	if (strError != "")
 	{
 		throw runtime_error(strError);
