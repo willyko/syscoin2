@@ -2068,7 +2068,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
         throw runtime_error(err.c_str());
 	}
 	const CWalletTx *wtxIn;
-	wtxIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
+	wtxIn = pwalletMain->GetWalletTx(txOffer.GetHash());
 	if (wtxIn == NULL)
 	{
 		throw runtime_error("can't find this offer in your wallet");
