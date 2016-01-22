@@ -667,10 +667,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer currency code too big");
 		}
-		if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
-		{
-			return error("Can't accept BTC for an offer that isn't specified in BTC");
-		}
 		if(theOffer.accepts.size() > 1)
 		{
 			return error("offer has too many accepts, only one allowed per tx");
@@ -777,7 +773,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// get the latest offer from the db
             	theOffer.nHeight = nHeight;
             	theOffer.GetOfferFromList(vtxPos);
-
+				if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+				{
+					return error("An offer that only accepts BTC must have BTC specified as its currency");
+				}
 				// If update, we make the serialized offer the master
 				// but first we assign the accepts/offerLinks/whitelists from the DB since
 				// they are not shipped in an update txn to keep size down
@@ -790,9 +789,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 						const COffer& dbOffer = vtxPos.back();
 						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
 						theOffer.linkWhitelist = dbOffer.linkWhitelist;
+						// btc setting cannot change on update
+						theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
+						// currency cannot change after creation
+						theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
 						// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
-						if(serializedOffer.sCurrencyCode.empty())
-							theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
 						if(serializedOffer.sCategory.empty())
 							theOffer.sCategory = dbOffer.sCategory;
 						if(serializedOffer.sTitle.empty())
