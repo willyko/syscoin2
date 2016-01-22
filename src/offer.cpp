@@ -379,12 +379,12 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 				int op, nOut;
 				if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 				{
-					printf("aliasbegin\n");
+					LogPrintf("aliasbegin\n");
 					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
 				}
 				else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 				{
-					printf("offerbegin\n");
+					LogPrintf("offerbegin\n");
 					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
 				}
 				else if(DecodeCertTx(tx, op, nOut, vvch, -1))
