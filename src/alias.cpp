@@ -290,7 +290,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-	LogPrintf("checkaliasin\n");
 		bool found = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
@@ -309,7 +308,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				}
 			}
 		}
-		LogPrintf("strict check done\n");
 		if(!found)vvchPrevArgs.clear();
 		// Make sure alias outputs are not spent by a regular transaction, or the alias would be lost
 		if (tx.nVersion != SYSCOIN_TX_VERSION) {
@@ -319,7 +317,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 			LogPrintf("CheckAliasInputs() : non-syscoin transaction\n");
 			return true;
 		}
-	LogPrintf("1\n");
 		// decode alias info from transaction
 		vector<vector<unsigned char> > vvchArgs;
 		int op, nOut;
@@ -327,7 +324,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 			return error(
 					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
 					tx.GetHash().GetHex().c_str());
-		LogPrintf("2\n");
 		// unserialize alias UniValue from txn, check for valid
 		CAliasIndex theAlias(tx);
 		if (theAlias.IsNull())
@@ -342,7 +338,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		LogPrintf("3\n");
 		if(!fRescan)
 		{
 			switch (op) {
@@ -378,7 +373,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 					return error(
 							"CheckAliasInputs() : failed to read from alias DB");
 			}
-			LogPrintf("4\n");
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
 				if(!vtxPos.empty())
 				{
@@ -394,13 +388,11 @@ bool CheckAliasInputs(const CTransaction &tx,
 				theAlias.txHash = tx.GetHash();
 
 				PutToAliasList(vtxPos, theAlias);
-				LogPrintf("5\n");
 				{
 				TRY_LOCK(cs_main, cs_trymain);
 
 				if (!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
-				LogPrintf("6\n");
 				if(fDebug)
 					LogPrintf(
 						"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
