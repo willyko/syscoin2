@@ -297,7 +297,7 @@ CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
 
 bool CheckCertInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight) {
+        bool fJustCheck, int nHeight, bool fRescan) {
 
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
@@ -312,25 +312,28 @@ bool CheckCertInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-        // Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch, vvch2;
-			prevOutput = &tx.vin[i].prevout;
-			inputs.GetCoins(prevOutput->hash, prevCoins);
-			if(DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-			{
-				vvchPrevArgs = vvch;
-				found = true;
-				break;
+		if(!fRescan)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch, vvch2;
+				prevOutput = &tx.vin[i].prevout;
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				if(DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
+				{
+					vvchPrevArgs = vvch;
+					found = true;
+					break;
+				}
+				else if(DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
+				{
+					found = true; 
+					vvchPrevArgs = vvch2;
+					break;
+				}
+				if(!found)vvchPrevArgs.clear();
+				
 			}
-			else if(DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
-			{
-				found = true; 
-				vvchPrevArgs = vvch2;
-				break;
-			}
-			if(!found)vvchPrevArgs.clear();
-			
 		}
 		
         // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
@@ -363,36 +366,39 @@ bool CheckCertInputs(const CTransaction &tx,
 		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
-        switch (op) {
-        case OP_CERT_ACTIVATE:
-            if (found)
-                return error(
-                        "CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+		if(!fRescan)
+		{
+			switch (op) {
+			case OP_CERT_ACTIVATE:
+				if (found)
+					return error(
+							"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
 
-            break;
+				break;
 
-        case OP_CERT_UPDATE:
-			// if previous op was a cert or an offeraccept its ok
-            if ( !found || (!IsCertOp(prevOp) && !IsOfferOp(prevOp)))
-                return error("certupdate previous op is invalid");
-            if (vvchPrevArgs[0] != vvchArgs[0] && !IsOfferOp(prevOp))
-                return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
+			case OP_CERT_UPDATE:
+				// if previous op was a cert or an offeraccept its ok
+				if ( !found || (!IsCertOp(prevOp) && !IsOfferOp(prevOp)))
+					return error("certupdate previous op is invalid");
+				if (vvchPrevArgs[0] != vvchArgs[0] && !IsOfferOp(prevOp))
+					return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-            break;
+				break;
 
-        
+	        
 
-        case OP_CERT_TRANSFER:
-            // validate conditions
-            if ( !found || !IsCertOp(prevOp))
-                return error("certtransfer previous op is invalid");
-            if (vvchPrevArgs[0] != vvchArgs[0])
-                return error("CheckCertInputs() : certtransfer cert mismatch");
-            break;
+			case OP_CERT_TRANSFER:
+				// validate conditions
+				if ( !found || !IsCertOp(prevOp))
+					return error("certtransfer previous op is invalid");
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckCertInputs() : certtransfer cert mismatch");
+				break;
 
-        default:
-            return error( "CheckCertInputs() : cert transaction has unknown op");
-        }
+			default:
+				return error( "CheckCertInputs() : cert transaction has unknown op");
+			}
+		}
 
 
 

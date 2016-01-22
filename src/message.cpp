@@ -243,7 +243,7 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
 
 bool CheckMessageInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight) {
+        bool fJustCheck, int nHeight, bool fRescan) {
 
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
@@ -258,19 +258,22 @@ bool CheckMessageInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-        // Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			prevOutput = &tx.vin[i].prevout;
-			inputs.GetCoins(prevOutput->hash, prevCoins);
-			if(DecodeMessageScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-			{
-				vvchPrevArgs = vvch;
-				found = true;
-				break;
+		if(!fRescan)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				prevOutput = &tx.vin[i].prevout;
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				if(DecodeMessageScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
+				{
+					vvchPrevArgs = vvch;
+					found = true;
+					break;
+				}
+				if(!found)vvchPrevArgs.clear();
+				
 			}
-			if(!found)vvchPrevArgs.clear();
-			
 		}
 		
         // Make sure message outputs are not spent by a regular transaction, or the message would be lost
@@ -321,12 +324,15 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-        switch (op) {
-        case OP_MESSAGE_ACTIVATE:
-            break;
-        default:
-            return error( "CheckMessageInputs() : message transaction has unknown op");
-        }
+		if(!fRescan)
+		{
+			switch (op) {
+			case OP_MESSAGE_ACTIVATE:
+				break;
+			default:
+				return error( "CheckMessageInputs() : message transaction has unknown op");
+			}
+		}
 
 
 

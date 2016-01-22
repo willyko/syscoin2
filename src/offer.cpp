@@ -380,24 +380,24 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 				if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 				{
 					LogPrintf("aliasbegin\n");
-					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 				}
 				else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 				{
 					LogPrintf("offerbegin\n");
-					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 				}
 				else if(DecodeCertTx(tx, op, nOut, vvch, -1))
 				{
-					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 				}
 				else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 				{
-					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 				}
 				else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 				{
-					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 				}
 
 			}
@@ -575,7 +575,7 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 
 bool CheckOfferInputs(const CTransaction &tx,
 		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-		bool fJustCheck, int nHeight) {
+		bool fJustCheck, int nHeight, bool fRescan) {
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
@@ -589,40 +589,43 @@ bool CheckOfferInputs(const CTransaction &tx,
 		int prevOp, prevOp1;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevArgs1;
 		vvchPrevArgs.clear();
-		// Strict check - bug disallowed, find 2 inputs max
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			prevOutput = &tx.vin[i].prevout;
-			inputs.GetCoins(prevOutput->hash, prevCoins);
-			vector<vector<unsigned char> > vvch, vvch2, vvch3;
-			if(!found)
-			{
-				if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch)) {
-					found = true; 
-					vvchPrevArgs = vvch;
-					break;
-				}
-				else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
+		if(!fRescan)
+		{
+			// Strict check - bug disallowed, find 2 inputs max
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				prevOutput = &tx.vin[i].prevout;
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				vector<vector<unsigned char> > vvch, vvch2, vvch3;
+				if(!found)
 				{
-					found = true; 
-					vvchPrevArgs = vvch2;
-					break;
+					if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch)) {
+						found = true; 
+						vvchPrevArgs = vvch;
+						break;
+					}
+					else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
+					{
+						found = true; 
+						vvchPrevArgs = vvch2;
+						break;
+					}
 				}
-			}
-			else
-			{
-				if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch)) {
-					found = true; 
-					vvchPrevArgs1 = vvch;
-					break;
-				}
-				else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch2))
+				else
 				{
-					found = true; 
-					vvchPrevArgs1 = vvch2;
-					break;
+					if (DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch)) {
+						found = true; 
+						vvchPrevArgs1 = vvch;
+						break;
+					}
+					else if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp1, vvch2))
+					{
+						found = true; 
+						vvchPrevArgs1 = vvch2;
+						break;
+					}
 				}
+				if(!found)vvchPrevArgs.clear();
 			}
-			if(!found)vvchPrevArgs.clear();
 		}
 
 		// Make sure offer outputs are not spent by a regular transaction, or the offer would be lost
@@ -684,77 +687,79 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("offer hex guid too long");
+		if(!fRescan)
+			{
+			switch (op) {
+			case OP_OFFER_ACTIVATE:
+				if (found && !IsCertOp(prevOp) )
+					return error("offeractivate previous op is invalid");		
+				if (found && vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckOfferInputs() : offernew cert mismatch");
+				break;
 
-		switch (op) {
-		case OP_OFFER_ACTIVATE:
-			if (found && !IsCertOp(prevOp) )
-				return error("offeractivate previous op is invalid");		
-			if (found && vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckOfferInputs() : offernew cert mismatch");
-			break;
 
-
-		case OP_OFFER_UPDATE:
-			if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE 
-				&& prevOp != OP_OFFER_REFUND ) )
-				return error("offerupdate previous op %s is invalid", offerFromOp(prevOp).c_str());
-			
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckOfferInputs() : offerupdate offer mismatch");
-			break;
-		case OP_OFFER_REFUND:
-			int nDepth;
-			if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND ))
-				return error("offerrefund previous op %s is invalid", offerFromOp(prevOp).c_str());		
-			if(op == OP_OFFER_REFUND && vvchArgs[2] == OFFER_REFUND_COMPLETE && vvchPrevArgs[2] != OFFER_REFUND_PAYMENT_INPROGRESS)
-				return error("offerrefund complete tx must be linked to an inprogress tx");
-			
-			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-				return error("offerrefund tx with guid too big");
-			if (vvchArgs[2].size() > MAX_ID_LENGTH)
-				return error("offerrefund refund status too long");
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckOfferInputs() : offerrefund offer mismatch");
-			if (fBlock && !fJustCheck) {
-				// Check hash
-				const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
-				// check for existence of offeraccept in txn offer obj
-				if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
-					return error("OP_OFFER_REFUND could not read accept from offer txn");
-			}
-			break;
-		case OP_OFFER_ACCEPT:
-			// if only cert input
-			if (found && !vvchPrevArgs.empty() && !IsCertOp(prevOp))
-				return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
-			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-				return error("offeraccept tx with guid too big");
-			// check for existence of offeraccept in txn offer obj
-			if(!theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
-				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
-			if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offer accept hex guid too long");
-			if (theOfferAccept.vchMessage.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-				return error("OP_OFFER_ACCEPT message field too big");
-			if (theOfferAccept.vchRefundAddress.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT refund field too big");
-			if (theOfferAccept.vchLinkOfferAccept.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offer accept link field too big");
-			if (theOfferAccept.vchCertLink.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT cert link field too big");
-			if (theOfferAccept.vchEscrowLink.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT escrow link field too big");
-			
-			if (fBlock && !fJustCheck) {
-				if(found && IsCertOp(prevOp) && theOfferAccept.vchCertLink != vvchPrevArgs[0])
-				{
-					return error("theOfferAccept.vchCertlink and vvchPrevArgs[0] don't match");
+			case OP_OFFER_UPDATE:
+				if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE 
+					&& prevOp != OP_OFFER_REFUND ) )
+					return error("offerupdate previous op %s is invalid", offerFromOp(prevOp).c_str());
+				
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckOfferInputs() : offerupdate offer mismatch");
+				break;
+			case OP_OFFER_REFUND:
+				int nDepth;
+				if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND ))
+					return error("offerrefund previous op %s is invalid", offerFromOp(prevOp).c_str());		
+				if(op == OP_OFFER_REFUND && vvchArgs[2] == OFFER_REFUND_COMPLETE && vvchPrevArgs[2] != OFFER_REFUND_PAYMENT_INPROGRESS)
+					return error("offerrefund complete tx must be linked to an inprogress tx");
+				
+				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
+					return error("offerrefund tx with guid too big");
+				if (vvchArgs[2].size() > MAX_ID_LENGTH)
+					return error("offerrefund refund status too long");
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckOfferInputs() : offerrefund offer mismatch");
+				if (fBlock && !fJustCheck) {
+					// Check hash
+					const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
+					// check for existence of offeraccept in txn offer obj
+					if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
+						return error("OP_OFFER_REFUND could not read accept from offer txn");
 				}
-	   		}
-			break;
+				break;
+			case OP_OFFER_ACCEPT:
+				// if only cert input
+				if (found && !vvchPrevArgs.empty() && !IsCertOp(prevOp))
+					return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
+				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
+					return error("offeraccept tx with guid too big");
+				// check for existence of offeraccept in txn offer obj
+				if(!theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+					return error("OP_OFFER_ACCEPT could not read accept from offer txn");
+				if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT offer accept hex guid too long");
+				if (theOfferAccept.vchMessage.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+					return error("OP_OFFER_ACCEPT message field too big");
+				if (theOfferAccept.vchRefundAddress.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT refund field too big");
+				if (theOfferAccept.vchLinkOfferAccept.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT offer accept link field too big");
+				if (theOfferAccept.vchCertLink.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT cert link field too big");
+				if (theOfferAccept.vchEscrowLink.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT escrow link field too big");
+				
+				if (fBlock && !fJustCheck) {
+					if(found && IsCertOp(prevOp) && theOfferAccept.vchCertLink != vvchPrevArgs[0])
+					{
+						return error("theOfferAccept.vchCertlink and vvchPrevArgs[0] don't match");
+					}
+	   			}
+				break;
 
-		default:
-			return error( "CheckOfferInputs() : offer transaction has unknown op");
+			default:
+				return error( "CheckOfferInputs() : offer transaction has unknown op");
+			}
 		}
 
 		

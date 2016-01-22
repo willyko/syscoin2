@@ -282,7 +282,7 @@ bool IsAliasMine(const CTransaction& tx) {
 
 bool CheckAliasInputs(const CTransaction &tx,
 		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock,
-		bool fMiner, bool fJustCheck, int nHeight) {
+		bool fMiner, bool fJustCheck, int nHeight, bool fRescan) {
 
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
@@ -297,13 +297,16 @@ bool CheckAliasInputs(const CTransaction &tx,
 		int prevOp;
 		vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			prevOutput = &tx.vin[i].prevout;
-			inputs.GetCoins(prevOutput->hash, prevCoins);
-			if (DecodeAliasScript(prevCoins.vout[prevOutput->n].scriptPubKey,
-					prevOp, vvchPrevArgs)) {
-				found = true;
-				break;
+		if(!fRescan)
+		{
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				prevOutput = &tx.vin[i].prevout;
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				if (DecodeAliasScript(prevCoins.vout[prevOutput->n].scriptPubKey,
+						prevOp, vvchPrevArgs)) {
+					found = true;
+					break;
+				}
 			}
 		}
 		LogPrintf("strict check done\n");
@@ -340,27 +343,30 @@ bool CheckAliasInputs(const CTransaction &tx,
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
 		LogPrintf("3\n");
-		switch (op) {
+		if(!fRescan)
+		{
+			switch (op) {
 
-		case OP_ALIAS_ACTIVATE:
-			break;
+			case OP_ALIAS_ACTIVATE:
+				break;
 
-		case OP_ALIAS_UPDATE:
+			case OP_ALIAS_UPDATE:
 
-			if (!found)
-				return error("aliasupdate previous tx not found");
-			if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
-				return error("aliasupdate tx without correct previous alias tx");
+				if (!found)
+					return error("aliasupdate previous tx not found");
+				if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
+					return error("aliasupdate tx without correct previous alias tx");
 
-			// Check name
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckAliasInputs() : aliasupdate alias mismatch");
+				// Check name
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckAliasInputs() : aliasupdate alias mismatch");
 
-			break;
+				break;
 
-		default:
-			return error(
-					"CheckAliasInputs() : alias transaction has unknown op");
+			default:
+				return error(
+						"CheckAliasInputs() : alias transaction has unknown op");
+			}
 		}
 
 		if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {

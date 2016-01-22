@@ -262,7 +262,7 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
 
 bool CheckEscrowInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight) {
+        bool fJustCheck, int nHeight, bool fRescan) {
 
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
@@ -277,19 +277,22 @@ bool CheckEscrowInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-        // Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			prevOutput = &tx.vin[i].prevout;
-			inputs.GetCoins(prevOutput->hash, prevCoins);
-			if(DecodeEscrowScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-			{
-				vvchPrevArgs = vvch;
-				found = true;
-				break;
+		if(!fRescan)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				prevOutput = &tx.vin[i].prevout;
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				if(DecodeEscrowScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
+				{
+					vvchPrevArgs = vvch;
+					found = true;
+					break;
+				}
+				if(!found)vvchPrevArgs.clear();
+				
 			}
-			if(!found)vvchPrevArgs.clear();
-			
 		}
 		
         // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
@@ -312,18 +315,21 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-        switch (op) {
-			case OP_ESCROW_ACTIVATE:
-				break;
-			case OP_ESCROW_RELEASE:
-			case OP_ESCROW_COMPLETE:
-			case OP_ESCROW_REFUND:
-				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-					return error("escrow tx with offer GUID too long");
-				break;
-			default:
-				return error( "CheckEscrowInputs() : escrow transaction has unknown op");
-        }
+		if(!fRescan)
+		{
+			switch (op) {
+				case OP_ESCROW_ACTIVATE:
+					break;
+				case OP_ESCROW_RELEASE:
+				case OP_ESCROW_COMPLETE:
+				case OP_ESCROW_REFUND:
+					if (vvchArgs[1].size() > MAX_NAME_LENGTH)
+						return error("escrow tx with offer GUID too long");
+					break;
+				default:
+					return error( "CheckEscrowInputs() : escrow transaction has unknown op");
+			}
+		}
         // these ifs are problably total bullshit except for the escrownew
         if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
 			// save serialized escrow for later use
