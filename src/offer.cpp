@@ -183,6 +183,11 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	{
 		if(!IsOfferMine(myOfferTx))
 			return string("makeOfferRefundTX(): cannot refund an accept of an offer that isn't mine");
+
+		// check for existence of offeraccept in txn offer obj
+		if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
+			return string("makeOfferRefundTX(): cannot find accept in offer txn");
+
 		if(theOfferAccept.nQty <= 0)
 			return string("makeOfferRefundTX(): cannot refund an accept with 0 quantity");
 
