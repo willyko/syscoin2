@@ -22,7 +22,7 @@ extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
 bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
-bool DisconnectCert(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
+bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 // check wallet transactions to see if there was a refund for an accept already
@@ -398,7 +398,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			}
 			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
-				DisconnectCert(pindex, tx, op, vvch);	
+				DisconnectCertificate(pindex, tx, op, vvch);	
 				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
