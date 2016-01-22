@@ -2070,7 +2070,10 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	}
 
 	if(DecodeOfferTx(acceptTx, op, nOut, vvch, -1)) 
-		throw runtime_error("could not decode offer tx");
+	{
+		string err = "could not decode offeraccept tx with hash: " +  acceptTx.GetHash().GetHex();
+        throw runtime_error(err.c_str());
+	}
 	const CWalletTx *wtxIn;
 	wtxIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 	if (wtxIn == NULL)
