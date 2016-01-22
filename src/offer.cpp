@@ -493,12 +493,15 @@ bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 	for (unsigned int i = 0; i < tx.vout.size(); i++) {
 		const CTxOut& out = tx.vout[i];
 		vector<vector<unsigned char> > vvchRead;
+		LogPrintf("out.scriptPubKey %s\n", HexStr(out.scriptPubKey.begin(), out.scriptPubKey.end()).c_str())
 		if (DecodeOfferScript(out.scriptPubKey, op, vvch)) {
 			nOut = i; found = true;
+			LogPrintf("found\n");
 			break;
 		}
 	}
 	if (!found) vvch.clear();
+	LogPrintf("found %d IsOfferOp(op) %d, op %s\n", found, IsOfferOp(op), offerFromOp(op).c_str());
 	return found && IsOfferOp(op);
 }
 
