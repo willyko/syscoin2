@@ -1963,7 +1963,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		return error("DisconnectBlock() : failed to read from alias DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
 		if (it->txHash == tx.GetHash())
 		{
@@ -2001,7 +2001,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
         return error("DisconnectBlock() : failed to read from offer DB for %s %s\n",
         		opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
 		if (it->txHash == tx.GetHash())
 		{
@@ -2059,7 +2059,7 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 		return error("DisconnectBlock() : failed to read from certificate DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
 		if (it->txHash == tx.GetHash())
 		{
@@ -2098,7 +2098,7 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 		return error("DisconnectBlock() : failed to read from escrow DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
 		if (it->txHash == tx.GetHash())
 		{
@@ -2137,7 +2137,7 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 		return error("DisconnectBlock() : failed to read from message DB for %s %s\n",
 				opName.c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-	for(iterator it = vtxPos.begin(); it != vtxPos.end();)
+	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
 		if (it->txHash == tx.GetHash())
 		{
