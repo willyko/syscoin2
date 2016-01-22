@@ -2065,7 +2065,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
     if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
 	{
-		string err = "could not find offer accept transaction from txn db hash of transaction: " +  theOfferAccept.txHash.GetHash().GetHex();
+		string err = "could not find offer accept transaction from txn db hash of transaction: " +  theOfferAccept.txHash.GetHex();
         throw runtime_error(err.c_str());
 	}
 
