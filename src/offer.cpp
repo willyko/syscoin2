@@ -1037,7 +1037,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// if the txn whitelist entry exists (meaning we want to remove or add)
 						if(serializedOffer.linkWhitelist.entries.size() == 1)
 						{
-							LogPrintf("link whitelist entry\n");
+							LogPrintf("link whitelist entry discount pct %d, guid %s\n", serializedOffer.linkWhitelist.entries[0].nDiscountPct, stringFromVch(serializedOffer.linkWhitelist.entries[0].certLinkVchRand).c_str());
 							COfferLinkWhitelistEntry entry;
 							// special case we use to remove all entries
 							if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == -1)
