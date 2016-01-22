@@ -2063,9 +2063,11 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if(!theOffer.GetAcceptByHash(vchAcceptRand, theOfferAccept))
 		throw runtime_error("could not find an offer accept in offer txn");
 
-
     if (!GetTransaction(theOfferAccept.txHash, acceptTx, Params().GetConsensus(), blockHash, true))
-        throw runtime_error("could not find offer accept transaction from txn db");
+	{
+		string err = "could not find offer accept transaction from txn db hash of transaction: " +  theOfferAccept.txHash.GetHash().GetHex();
+        throw runtime_error(err.c_str());
+	}
 
 	if(DecodeOfferTx(acceptTx, op, nOut, vvch, -1)) 
 		throw runtime_error("could not decode offer tx");
@@ -2633,9 +2635,9 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
 				if(!theOfferAccept.txBTCId.IsNull())
-					oOfferAccept.push_back(Pair("paid","check"));
+					oOfferAccept.push_back(Pair("status","check payment"));
 				else
-					oOfferAccept.push_back(Pair("paid","true"));
+					oOfferAccept.push_back(Pair("status","paid"));
 			}
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
@@ -2729,9 +2731,9 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
 				if(!theOfferAccept.txBTCId.IsNull())
-					oOfferAccept.push_back(Pair("paid","check"));
+					oOfferAccept.push_back(Pair("status","check"));
 				else
-					oOfferAccept.push_back(Pair("paid","true"));
+					oOfferAccept.push_back(Pair("status","paid"));
 			}
 			else if(theOfferAccept.bRefunded) { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
