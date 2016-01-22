@@ -1033,29 +1033,25 @@ bool CheckOfferInputs(const CTransaction &tx,
 					theOffer.txHash = tx.GetHash();
 					if(op == OP_OFFER_UPDATE)
 					{
-						LogPrintf("offerupdate\n");
 						// if the txn whitelist entry exists (meaning we want to remove or add)
 						if(serializedOffer.linkWhitelist.entries.size() == 1)
 						{
-							LogPrintf("link whitelist entry discount pct %d, guid %s\n", serializedOffer.linkWhitelist.entries[0].nDiscountPct, stringFromVch(serializedOffer.linkWhitelist.entries[0].certLinkVchRand).c_str());
 							COfferLinkWhitelistEntry entry;
 							// special case we use to remove all entries
-							if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == -1)
+							if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == 127)
 							{
-								LogPrintf("whitelist setnull\n");
 								theOffer.linkWhitelist.SetNull();
 							}
 							// the stored offer has this entry meaning we want to remove this entry
 							else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
 							{
-								LogPrintf("remove entry\n");
 								theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
 							}
 							// we want to add it to the whitelist
 							else
 							{
-								LogPrintf("add entry\n");
-								theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist.entries[0]);
+								if(!serializedOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && serializedOffer.linkWhitelist.entries[0].nDiscountPct <= 99)
+									theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist.entries[0]);
 							}
 						}
 						// if this offer is linked to a parent update it with parent information
@@ -1735,7 +1731,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 
 	COfferLinkWhitelistEntry entry;
 	// special case to clear all entries for this offer
-	entry.nDiscountPct = -1;
+	entry.nDiscountPct = 127;
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 
 	vector<CRecipient> vecSend;

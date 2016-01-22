@@ -128,7 +128,7 @@ public:
 class COfferLinkWhitelistEntry {
 public:
 	std::vector<unsigned char> certLinkVchRand;
-	int nDiscountPct;
+	char nDiscountPct;
 	COfferLinkWhitelistEntry() {
 		SetNull();
 	}
@@ -236,7 +236,7 @@ public:
 	std::vector<unsigned char> sTitle;
 	std::vector<unsigned char> sDescription;
 	float nPrice;
-	int nCommission;
+	unsigned char nCommission;
 	unsigned int nQty;
 	std::vector<COfferAccept>accepts;
 	std::vector<unsigned char> vchLinkOffer;
