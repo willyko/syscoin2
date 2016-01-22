@@ -820,8 +820,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("OP_OFFER_ACCEPT cert link field too big");
 			if (theOfferAccept.vchEscrowLink.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT escrow link field too big");
-			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-				return error("Can't accept an offer for BTC that isn't specified in BTC by owner");
 			
 			if (fBlock && !fJustCheck) {
 				if(found && IsCertOp(prevOp) && theOfferAccept.vchCertLink != vvchPrevArgs[0])
@@ -946,6 +944,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 					
 				}
 				else if (op == OP_OFFER_ACCEPT) {
+
+					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
 					
 					COffer myOffer,linkOffer;
 					CTransaction offerTx, linkedTx;			
@@ -983,7 +984,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 						
-					
 					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
 
@@ -996,7 +996,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// check for existence of offeraccept in txn offer obj
 					if(!serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not read accept from offer txn");					
-
 
 					// 2 step refund: send an offer accept with nRefunded property set to inprogress and then send another with complete later
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)
@@ -2201,7 +2200,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("invalid quantity value. Quantity must be less than 4294967296.");
 		}
 	}
-	if(params.size() < 5)
+	if(params.size() < 5 || params[4].size() <= 0)
 	{
 		CPubKey newDefaultKey;
 		pwalletMain->GetKeyFromPool(newDefaultKey);
@@ -2213,6 +2212,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		vchRefundAddress = vchFromValue(params[4]);
 		refundAddr = CSyscoinAddress(stringFromVch(vchRefundAddress));
 	}
+
     if (vchMessage.size() <= 0 && vchPubKey.empty())
         throw runtime_error("offeraccept message data cannot be empty!");
 
@@ -2367,15 +2367,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	txAccept.bPaid = true;
 	txAccept.vchCertLink = foundCert.certLinkVchRand;
 	txAccept.vchBuyerKey = vchPubKey;
-	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
-	{
-		uint256 txBTCId(uint256S(stringFromVch(vchBTCTxId)));
-		txAccept.txBTCId = txBTCId;
-	}
-	if(!escrowVvch.empty())
-		txAccept.vchEscrowLink = escrowVvch[0];
-	theOffer.ClearOffer();
-	theOffer.PutOfferAccept(txAccept);
 
     int64_t nTotalValue = ( nPrice * nQty );
     
@@ -2393,9 +2384,13 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	vector<CRecipient> vecSend;
 	CRecipient paymentRecipient = {scriptPubKey, nTotalValue, false};
+	
+
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
 	{
+		uint256 txBTCId(uint256S(stringFromVch(vchBTCTxId)));
+		txAccept.txBTCId = txBTCId;
 		// consult a block explorer for the btc txid and check to see if it pays offer address with correct amount
 		throw runtime_error("not implemented");
 	}
@@ -2407,7 +2402,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("This offer must be paid with Bitcoins as per requirements of the seller");
 	}
-	
+	if(!escrowVvch.empty())
+		txAccept.vchEscrowLink = escrowVvch[0];
+	theOffer.ClearOffer();
+	theOffer.PutOfferAccept(txAccept);
+
 
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
