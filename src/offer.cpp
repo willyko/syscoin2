@@ -930,18 +930,15 @@ bool CheckOfferInputs(const CTransaction &tx,
 								return true;
 							}
 						}
-						if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
+					}				
+					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
 
-						if(!myOffer.vchLinkOffer.empty())
-						{
-							if(!GetTxOfOffer(*pofferdb, myOffer.vchLinkOffer, linkOffer, linkedTx))
-								linkOffer.SetNull();
-						}											
+					if(!myOffer.vchLinkOffer.empty())
+					{
+						if(!GetTxOfOffer(*pofferdb, myOffer.vchLinkOffer, linkOffer, linkedTx))
+							linkOffer.SetNull();
 					}
-					
-					
-			
 
 					// 2 step refund: send an offer accept with nRefunded property set to inprogress and then send another with complete later
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)

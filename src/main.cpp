@@ -1957,6 +1957,9 @@ static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const CO
 bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
 	
 	TRY_LOCK(cs_main, cs_maintry);
+	CAliasIndex theAlias(tx);
+	if (theAlias.IsNull())
+		return false;
 	string opName = aliasFromOp(op);
 	vector<CAliasIndex> vtxPos;
 	if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
@@ -1964,9 +1967,10 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 
 	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it->txHash == tx.GetHash())
+		if (it == theAlias)
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
@@ -2001,9 +2005,10 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 
 	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it->txHash == tx.GetHash())
+		if (it == theOffer)
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
@@ -2046,6 +2051,9 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	string opName = certFromOp(op);
 	
 	TRY_LOCK(cs_main, cs_maintry);
+	CCert theCert(tx);
+	if (theCert.IsNull())
+		return false;
 	// make sure a DB record exists for this cert
 	vector<CCert> vtxPos;
 	if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
@@ -2053,9 +2061,10 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 
 	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it->txHash == tx.GetHash())
+		if (it == theCert)
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
@@ -2080,6 +2089,9 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	string opName = escrowFromOp(op);
 	
 	TRY_LOCK(cs_main, cs_maintry);
+	CEscrow theEscrow(tx);
+	if (theEscrow.IsNull())
+		return false;
 	// make sure a DB record exists for this cert
 	vector<CEscrow> vtxPos;
 	if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
@@ -2087,9 +2099,10 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 
 	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it->txHash == tx.GetHash())
+		if (it == theEscrow)
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
@@ -2112,7 +2125,9 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 
 bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
 	string opName = messageFromOp(op);
-	
+	CMessage theMessage(tx);
+	if (theMessage.IsNull())
+		return false;	
 	TRY_LOCK(cs_main, cs_maintry);
 	// make sure a DB record exists for this cert
 	vector<CMessage> vtxPos;
@@ -2121,9 +2136,10 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 
 	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it->txHash == tx.GetHash())
+		if (it == theMessage)
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
