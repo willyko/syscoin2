@@ -790,6 +790,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				int nHeight = chainActive.Tip()->nHeight;
 				// get the latest offer from the db
             	theOffer.nHeight = nHeight;
+				theOffer.txHash = tx.GetHash();
             	theOffer.GetOfferFromList(vtxPos);
 				if(!fRescan && stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
 				{
@@ -1034,8 +1035,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				
 				// only modify the offer's height on an activate or update or refund
 				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE ||  op == OP_OFFER_REFUND) {
-					theOffer.nHeight = chainActive.Tip()->nHeight;					
-					theOffer.txHash = tx.GetHash();
 					if(op == OP_OFFER_UPDATE)
 					{
 						// if the txn whitelist entry exists (meaning we want to remove or add)
