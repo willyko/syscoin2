@@ -336,7 +336,7 @@ public:
     void PutToOfferList(std::vector<COffer> &offerList) {
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
-            if(o.nHeight == nHeight) {
+            if(o.txHash == txHash) {
                 offerList[i] = *this;
                 return;
             }
@@ -348,7 +348,7 @@ public:
         if(offerList.size() == 0) return false;
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
-            if(o.nHeight == nHeight) {
+            if(o.txHash == txHash) {
                 *this = offerList[i];
                 return true;
             }

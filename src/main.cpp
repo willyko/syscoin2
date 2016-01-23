@@ -1962,10 +1962,17 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
 		return false;
 
-    if (vtxPos.size()) {
-        if(vtxPos.back().txHash == tx.GetHash())
-            vtxPos.pop_back();
-    }
+	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 	
 	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
@@ -1992,10 +1999,17 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
         return false;
 
-    if (vtxPos.size()) {
-        if(vtxPos.back().txHash == tx.GetHash())
-            vtxPos.pop_back();
-    }
+	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 
 
     if(op == OP_OFFER_ACCEPT ) {
@@ -2037,10 +2051,18 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
 		return false;
 
-    if (vtxPos.size()) {
-        if(vtxPos.back().txHash == tx.GetHash())
-            vtxPos.pop_back();
-    }
+	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+
 	// write new offer state to db
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to offer DB");
@@ -2063,10 +2085,17 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
 		return false;
 
-    if (vtxPos.size()) {
-        if(vtxPos.back().txHash == tx.GetHash())
-            vtxPos.pop_back();
-    }
+	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 
 	// write new escrow state to db
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
@@ -2090,10 +2119,17 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 	if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
 		return false;
 
-    if (vtxPos.size()) {
-        if(vtxPos.back().txHash == tx.GetHash())
-            vtxPos.pop_back();
-    }
+	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	{
+		if (it->txHash == tx.GetHash())
+		{
+			it = vtxPos.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
 
 	// write new message state to db
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
