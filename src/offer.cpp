@@ -967,6 +967,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(theOffer.vchLinkOffer.empty())
 					{
 						theOffer.nQty -= theOfferAccept.nQty;
+						if(theOffer.nQty < 0)
+							theOffer.nQty = 0;
 						// purchased a cert so xfer it
 						if(!fInit && !fRescan && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
 						{
