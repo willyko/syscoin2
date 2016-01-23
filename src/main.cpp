@@ -1967,7 +1967,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 
 	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it == theAlias)
+		if (it->first == theAlias)
 		{
 			it = vtxPos.erase(it);
 			break;
@@ -2005,7 +2005,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 
 	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it == theOffer)
+		if (it->first == theOffer)
 		{
 			it = vtxPos.erase(it);
 			break;
@@ -2061,7 +2061,7 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 
 	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it == theCert)
+		if (it->first == theCert)
 		{
 			it = vtxPos.erase(it);
 			break;
@@ -2099,7 +2099,7 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 
 	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it == theEscrow)
+		if (it->first == theEscrow)
 		{
 			it = vtxPos.erase(it);
 			break;
@@ -2136,7 +2136,7 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 
 	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
 	{
-		if (it == theMessage)
+		if (it->first == theMessage)
 		{
 			it = vtxPos.erase(it);
 			break;
