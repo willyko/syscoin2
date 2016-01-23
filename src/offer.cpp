@@ -964,13 +964,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 							return true;
 						}
 					}
-					if(theOffer.vchLinkOffer.empty() && !fRescan)
+					if(theOffer.vchLinkOffer.empty())
 					{
 						theOffer.nQty -= theOfferAccept.nQty;
 						if(theOffer.nQty < 0)
 							theOffer.nQty = 0;
 						// purchased a cert so xfer it
-						if(!fInit && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
+						if(!fInit && !fRescan && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
 						{
 							string strError = makeTransferCertTX(theOffer, theOfferAccept);
 							if(strError != "")
