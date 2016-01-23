@@ -880,7 +880,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if (op == OP_OFFER_ACCEPT) {		
 					// check for existence of offeraccept in txn offer obj
-					if(fExternal && !theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+					if(fExternal && !serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
 						return error("OP_OFFER_ACCEPT could not read accept from offer txn");				
 					if(!fExternal && stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
