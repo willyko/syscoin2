@@ -1957,26 +1957,15 @@ static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const CO
 bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
 	
 	TRY_LOCK(cs_main, cs_maintry);
-	CAliasIndex theAlias(tx);
-	if (theAlias.IsNull())
-		return false;
 	string opName = aliasFromOp(op);
 	vector<CAliasIndex> vtxPos;
 	if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
 		return false;
 
-	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
-	{
-		if (it->first == theAlias)
-		{
-			it = vtxPos.erase(it);
-			break;
-		}
-		else
-		{
-			++it;
-		}
-	}
+    if (vtxPos.size()) {
+        if(vtxPos.back().txHash == tx.GetHash())
+            vtxPos.pop_back();
+    }
 	
 	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
@@ -2003,18 +1992,10 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
         return false;
 
-	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
-	{
-		if (it->first == theOffer)
-		{
-			it = vtxPos.erase(it);
-			break;
-		}
-		else
-		{
-			++it;
-		}
-	}
+    if (vtxPos.size()) {
+        if(vtxPos.back().txHash == tx.GetHash())
+            vtxPos.pop_back();
+    }
 
 
     if(op == OP_OFFER_ACCEPT ) {
@@ -2051,27 +2032,15 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	string opName = certFromOp(op);
 	
 	TRY_LOCK(cs_main, cs_maintry);
-	CCert theCert(tx);
-	if (theCert.IsNull())
-		return false;
 	// make sure a DB record exists for this cert
 	vector<CCert> vtxPos;
 	if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
 		return false;
 
-	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
-	{
-		if (it->first == theCert)
-		{
-			it = vtxPos.erase(it);
-			break;
-		}
-		else
-		{
-			++it;
-		}
-	}
-
+    if (vtxPos.size()) {
+        if(vtxPos.back().txHash == tx.GetHash())
+            vtxPos.pop_back();
+    }
 	// write new offer state to db
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to offer DB");
@@ -2089,26 +2058,15 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	string opName = escrowFromOp(op);
 	
 	TRY_LOCK(cs_main, cs_maintry);
-	CEscrow theEscrow(tx);
-	if (theEscrow.IsNull())
-		return false;
 	// make sure a DB record exists for this cert
 	vector<CEscrow> vtxPos;
 	if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
 		return false;
 
-	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
-	{
-		if (it->first == theEscrow)
-		{
-			it = vtxPos.erase(it);
-			break;
-		}
-		else
-		{
-			++it;
-		}
-	}
+    if (vtxPos.size()) {
+        if(vtxPos.back().txHash == tx.GetHash())
+            vtxPos.pop_back();
+    }
 
 	// write new escrow state to db
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
@@ -2125,27 +2083,17 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 
 bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs ) {
 	string opName = messageFromOp(op);
-	CMessage theMessage(tx);
-	if (theMessage.IsNull())
-		return false;	
+	
 	TRY_LOCK(cs_main, cs_maintry);
 	// make sure a DB record exists for this cert
 	vector<CMessage> vtxPos;
 	if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
 		return false;
 
-	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
-	{
-		if (it->first == theMessage)
-		{
-			it = vtxPos.erase(it);
-			break;
-		}
-		else
-		{
-			++it;
-		}
-	}
+    if (vtxPos.size()) {
+        if(vtxPos.back().txHash == tx.GetHash())
+            vtxPos.pop_back();
+    }
 
 	// write new message state to db
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
