@@ -290,13 +290,14 @@ bool CheckAliasInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
+		bool fExternal = fInit || fRescan;
 		bool found = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp;
 		vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
-		if(!fRescan)
+		if(!fExternal)
 		{
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
 				prevOutput = &tx.vin[i].prevout;
@@ -338,7 +339,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		if(!fRescan)
+		if(!fExternal)
 		{
 			switch (op) {
 
@@ -373,7 +374,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					return error(
 							"CheckAliasInputs() : failed to read from alias DB");
 			}
-			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
+			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				if(!vtxPos.empty())
 				{
 					const CAliasIndex& dbAlias = vtxPos.back();
@@ -382,7 +383,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					if(theAlias.vchPubKey.empty())
 						theAlias.vchPubKey = dbAlias.vchPubKey;
 				}
-				int nHeight = chainActive.Tip()->nHeight;
+			
 	
 				theAlias.nHeight = nHeight;
 				theAlias.txHash = tx.GetHash();

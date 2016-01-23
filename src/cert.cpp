@@ -304,7 +304,7 @@ bool CheckCertInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-
+		bool fExternal = fInit || fRescan;
         bool found = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
@@ -312,7 +312,7 @@ bool CheckCertInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-		if(!fRescan)
+		if(!fExternal)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -366,7 +366,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
-		if(!fRescan)
+		if(!fExternal)
 		{
 			switch (op) {
 			case OP_CERT_ACTIVATE:
@@ -411,7 +411,7 @@ bool CheckCertInputs(const CTransaction &tx,
 					return error(
 							"CheckCertInputs() : failed to read from cert DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
+            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternaln) {
 				if(!vtxPos.empty())
 				{
 					const CCert& dbCert = vtxPos.back();
@@ -422,10 +422,9 @@ bool CheckCertInputs(const CTransaction &tx,
 					if(theCert.vchPubKey.empty())
 						theCert.vchPubKey = dbCert.vchPubKey;
 				}
-                int nHeight = chainActive.Tip()->nHeight;     
-				
+        
                 // set the cert's txn-dependent values
-				theCert.nHeight = chainActive.Tip()->nHeight;
+				theCert.nHeight = nHeight;
 				theCert.txHash = tx.GetHash();
 				PutToCertList(vtxPos, theCert);
 				{

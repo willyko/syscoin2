@@ -593,14 +593,14 @@ bool CheckOfferInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-
+		bool fExternal = fInit || fRescan;
 		bool found = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp, prevOp1;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevArgs1;
 		vvchPrevArgs.clear();
-		if(!fRescan)
+		if(!fExternal)
 		{
 			// Strict check - bug disallowed, find 2 inputs max
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -698,8 +698,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("offer hex guid too long");
-		if(!fRescan)
-			{
+		if(!fExternal)
+		{
 			switch (op) {
 			case OP_OFFER_ACTIVATE:
 				if (found && !IsCertOp(prevOp) )
@@ -786,13 +786,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 							"CheckOfferInputs() : failed to read from offer DB");
 			}
 
-			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-				int nHeight = chainActive.Tip()->nHeight;
+			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				// get the latest offer from the db
-            	theOffer.nHeight = nHeight;
-				theOffer.txHash = tx.GetHash();
-            	theOffer.GetOfferFromList(vtxPos);
-				if(!fRescan && stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+				if(!vtxPos.empty())
+            		theOffer = vtxPos.back();
+				if(!fExternal && stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
 				}
@@ -854,19 +852,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 				else if(op == OP_OFFER_REFUND)
 				{
 					vector<unsigned char> vchOfferAccept = vvchArgs[1];
-					if (pofferdb->ExistsOfferAccept(vchOfferAccept)) {
-						if (!pofferdb->ReadOfferAccept(vchOfferAccept, vvchArgs[0]))
-						{
-							return error("CheckOfferInputs()- OP_OFFER_REFUND: failed to read offer accept from offer DB\n");
-						}
-
-					}
-
 					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept))
-						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from serializedOffer txn");	
-            		
-					if(!fInit && !fRescan &&  pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
-						string strError = makeOfferRefundTX(tx, vvchArgs[1], OFFER_REFUND_COMPLETE);
+						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from db offer txn");
+					if(!fExternal &&  pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
+						string strError = makeOfferRefundTX(tx, vchOfferAccept, OFFER_REFUND_COMPLETE);
 						if (strError != "" && fDebug)							
 							LogPrintf("CheckOfferInputs() - OFFER_REFUND_COMPLETE %s\n", strError.c_str());
 						// if this accept was done via offer linking (makeOfferLinkAcceptTX) then walk back up and refund
@@ -884,15 +873,17 @@ bool CheckOfferInputs(const CTransaction &tx,
 					{
 					TRY_LOCK(cs_main, cs_trymain);
 					// write the offer / offer accept mapping to the database
-					if (!pofferdb->WriteOfferAccept(vvchArgs[1], vvchArgs[0]))
+					if (!pofferdb->WriteOfferAccept(vchOfferAccept, vvchArgs[0]))
 						return error( "CheckOfferInputs() : failed to write to offer DB");
 					}
 					
 				}
-				else if (op == OP_OFFER_ACCEPT) {
-
-					if(!fRescan && stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");		
+				else if (op == OP_OFFER_ACCEPT) {		
+					// check for existence of offeraccept in txn offer obj
+					if(fExternal && !theOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
+						return error("OP_OFFER_ACCEPT could not read accept from offer txn");				
+					if(!fExternal && stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
 					
 					COffer myOffer,linkOffer;
 					CTransaction offerTx, linkedTx;			
@@ -916,7 +907,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-					if(!fRescan)
+					if(!fExternal)
 					{
 						// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
@@ -935,6 +926,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
 
+
 					if(!myOffer.vchLinkOffer.empty())
 					{
 						if(!GetTxOfOffer(*pofferdb, myOffer.vchLinkOffer, linkOffer, linkedTx))
@@ -945,29 +937,23 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)
 					// this is to ensure that the coins sent during accept are available to spend to refund to avoid having to hold double the balance of an accept amount
 					// in order to refund.
-					if(!fRescan)
-					{
-						if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
-							if(!fInit)
-							{
-								string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
-								if (strError != "" && fDebug)
-									LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
-							}
-							if(fDebug)
-								LogPrintf("txn %s accepted but offer not fulfilled because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-							return true;
+					if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
+						if(!fExternal)
+						{
+							string strError = makeOfferRefundTX(offerTx, vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							if (strError != "" && fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
 						}
+						if(fDebug)
+							LogPrintf("txn %s accepted but offer not fulfilled because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+						return true;
 					}
 					if(theOffer.vchLinkOffer.empty())
-					{
-						if(theOfferAccept.nQty > theOffer.nQty)
-							theOffer.nQty = 0;
-						else
-							theOffer.nQty -= theOfferAccept.nQty;
+					{						
+						theOffer.nQty -= theOfferAccept.nQty;
 
 						// purchased a cert so xfer it
-						if(!fInit && !fRescan && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
+						if(!fExternal && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty())
 						{
 							string strError = makeTransferCertTX(theOffer, theOfferAccept);
 							if(strError != "")
@@ -997,7 +983,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-					if (!fInit && !fRescan && pwalletMain && !linkOffer.IsNull() && IsOfferMine(offerTx))
+					if (!fExternal && pwalletMain && !linkOffer.IsNull() && IsOfferMine(offerTx))
 					{	
 						// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
 						// myOffer.vchLinkOffer is the linked offer guid
@@ -1021,7 +1007,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					
 					
 					theOfferAccept.bPaid = true;
-					
 					theOfferAccept.vchAcceptRand = vvchArgs[1];
 					theOfferAccept.txHash = tx.GetHash();
 					theOffer.PutOfferAccept(theOfferAccept);
@@ -1100,6 +1085,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 				}
+            	theOffer.nHeight = nHeight;
+				theOffer.txHash = tx.GetHash();
 				theOffer.PutToOfferList(vtxPos);
 				{
 				TRY_LOCK(cs_main, cs_trymain);

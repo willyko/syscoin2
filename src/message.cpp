@@ -250,7 +250,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-
+		bool fExternal = fInit || fRescan;
         bool found = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
@@ -258,7 +258,7 @@ bool CheckMessageInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-		if(!fRescan)
+		if(!fExternal)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -324,7 +324,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-		if(!fRescan)
+		if(!fExternal)
 		{
 			switch (op) {
 			case OP_MESSAGE_ACTIVATE:
@@ -348,8 +348,8 @@ bool CheckMessageInputs(const CTransaction &tx,
 					return error(
 							"CheckMessageInputs() : failed to read from message DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-                int nHeight = chainActive.Tip()->nHeight;
+            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+                
                 // set the message's txn-dependent values
 				theMessage.txHash = tx.GetHash();
 				theMessage.nHeight = nHeight;

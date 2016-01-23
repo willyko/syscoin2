@@ -2025,7 +2025,12 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
         // make sure offer accept db record already exists
         if (pofferdb->ExistsOfferAccept(vvchOfferAccept))
         	pofferdb->EraseOfferAccept(vvchOfferAccept);
-		
+		if(vtxPos.empty())
+			return error("DisconnectBlock() : offer cannot be empty after disconnecting accept %s\n",
+            		HexStr(vvchOfferAccept).c_str());
+		// if not linked offer add qty back into offer which was removed on connectinput
+		if(theOffer.vchLinkOffer.empty())					
+			vtxPos.back().nQty += theOfferAccept.nQty;
     }
 
     // write new offer state to db

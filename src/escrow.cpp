@@ -269,7 +269,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-
+		bool fExternal = fInit || fRescan;
         bool found = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
@@ -277,7 +277,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
 		vvchPrevArgs.clear();
-		if(!fRescan)
+		if(!fExternal)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -315,7 +315,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if(!fRescan)
+		if(!fExternal)
 		{
 			switch (op) {
 				case OP_ESCROW_ACTIVATE:
@@ -342,8 +342,8 @@ bool CheckEscrowInputs(const CTransaction &tx,
 					return error(
 							"CheckEscrowInputs() : failed to read from escrow DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight) {
-                int nHeight = chainActive.Tip()->nHeight;
+            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+ 
 				// make sure escrow settings don't change (besides rawTx) outside of activation
 				if(op != OP_ESCROW_ACTIVATE) 
 				{
