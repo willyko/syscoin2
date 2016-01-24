@@ -801,6 +801,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					serializedOffer.accepts = theOffer.accepts;
 					serializedOffer.offerLinks = theOffer.offerLinks;
 					theOffer = serializedOffer;
+					// nHeight must not change
+					theOffer.nHeight = nHeight;
 					if(!vtxPos.empty())
 					{
 						const COffer& dbOffer = vtxPos.back();
