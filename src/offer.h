@@ -336,12 +336,25 @@ public:
     void PutToOfferList(std::vector<COffer> &offerList) {
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
-            if(o.txHash == txHash) {
+            if(o.nHeight == nHeight) {
                 offerList[i] = *this;
                 return;
             }
         }
         offerList.push_back(*this);
+    }
+
+    bool GetOfferFromList(const std::vector<COffer> &offerList) {
+        if(offerList.size() == 0) return false;
+        for(unsigned int i=0;i<offerList.size();i++) {
+            COffer o = offerList[i];
+            if(o.nHeight == nHeight) {
+                *this = offerList[i];
+                return true;
+            }
+        }
+        *this = offerList.back();
+        return false;
     }
 
     friend bool operator==(const COffer &a, const COffer &b) {

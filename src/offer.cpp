@@ -788,8 +788,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				// get the latest offer from the db
-				if(!vtxPos.empty())
-            		theOffer = vtxPos.back();
+				theOffer.nHeight = nHeight;
+				theOffer.GetOfferFromList(vtxPos);
 				if(stringFromVch(serializedOffer.sCurrencyCode) != "BTC" && serializedOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
@@ -917,10 +917,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 						{
 							theOfferAccept.bPaid = false;
 							if(fDebug)
-								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);
-							// sanity to make sure ppl dont send dust accepts to annoy vendor
+								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);					
 							if(tx.vout[nOut].nValue < nPrice/2)
-								return true;						
+								return true;								
 						}
 						else
 							theOfferAccept.bPaid = true;
@@ -1088,7 +1087,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 				}
-            	theOffer.nHeight = nHeight;
 				theOffer.txHash = tx.GetHash();
 				theOffer.PutToOfferList(vtxPos);
 				{
