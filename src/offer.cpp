@@ -788,8 +788,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				// get the latest offer from the db
-				theOffer.nHeight = nHeight;
-				theOffer.GetOfferFromList(vtxPos);
+				if(!vtxPos.empty())
+					theOffer = vtxPos.back();
 				if(stringFromVch(serializedOffer.sCurrencyCode) != "BTC" && serializedOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
@@ -800,9 +800,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(op == OP_OFFER_UPDATE) {
 					serializedOffer.accepts = theOffer.accepts;
 					serializedOffer.offerLinks = theOffer.offerLinks;
+					serializedOffer.nHeight = theOffer.nHeight;
 					theOffer = serializedOffer;
-					// nHeight must not change
-					theOffer.nHeight = nHeight;
 					if(!vtxPos.empty())
 					{
 						const COffer& dbOffer = vtxPos.back();
@@ -853,6 +852,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if(op == OP_OFFER_REFUND)
 				{
+					theOffer.nHeight = nHeight;
+					theOffer.GetOfferFromList(vtxPos);
 					vector<unsigned char> vchOfferAccept = vvchArgs[1];
 					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept))
 						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from db offer txn");
@@ -880,7 +881,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 					
 				}
-				else if (op == OP_OFFER_ACCEPT) {		
+				else if (op == OP_OFFER_ACCEPT) {	
+					theOffer.nHeight = nHeight;
+					theOffer.GetOfferFromList(vtxPos);
 					// check for existence of offeraccept in txn offer obj
 					if(fExternal && !serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
 						return error("OP_OFFER_ACCEPT could not read accept from offer txn");				
@@ -1022,8 +1025,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 				}
 				
-				// only modify the offer's height on an activate or update or refund
-				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE ||  op == OP_OFFER_REFUND) {
+				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
 					if(op == OP_OFFER_UPDATE)
 					{
 						// if the txn whitelist entry exists (meaning we want to remove or add)
