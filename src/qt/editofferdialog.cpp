@@ -24,7 +24,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	CAmount nFee;
 	vector<string> rateList;
 	int precision;
-	if(getCurrencyToSYSFromAlias(vchFromString(""), nFee, chainActive.Tip()->nHeight, rateList, precision) == "1")
+	if(getCurrencyToSYSFromAlias(vchFromString("USD"), nFee, chainActive.Tip()->nHeight, rateList, precision) == "1")
 	{
 		QMessageBox::warning(this, windowTitle(),
 			tr("Warning: SYS_RATES alias not found. No currency information available!"),

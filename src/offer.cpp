@@ -790,7 +790,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// get the latest offer from the db
 				if(!vtxPos.empty())
             		theOffer = vtxPos.back();
-				if(!fExternal && stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+				if(stringFromVch(serializedOffer.sCurrencyCode) != "BTC" && serializedOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
 				}
@@ -882,7 +882,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// check for existence of offeraccept in txn offer obj
 					if(fExternal && !serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
 						return error("OP_OFFER_ACCEPT could not read accept from offer txn");				
-					if(!fExternal && stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
 					
 					COffer myOffer,linkOffer;
@@ -907,22 +907,20 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-					if(!fExternal)
+					// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
+					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 					{
-						// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-						if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
+						int precision = 2;
+						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
+						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+						if(tx.vout[nOut].nValue != nPrice)
 						{
-							int precision = 2;
-							// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-							CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
-							if(tx.vout[nOut].nValue != nPrice)
-							{
-								if(fDebug)
-									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld\n", nPrice);
-								return true;
-							}
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);
+							return true;
 						}
-					}				
+					}
+								
 					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find an offer with this name");
 
@@ -1246,10 +1244,10 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		string err = strprintf("Could not find currency %s in the SYS_RATES alias!\n", stringFromVch(vchCurrency));
 		throw runtime_error(err.c_str());
 	}
-	float minPrice = 1/pow(10,precision);
-	float price = nPrice;
+	double minPrice = pow(10.0,-precision);
+	double price = nPrice;
 	if(price < minPrice)
-		price = minPrice;
+		price = minPrice; 
 	// this is a syscoin transaction
 	CWalletTx wtx;
 
@@ -1275,7 +1273,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	newOffer.sDescription = vchDesc;
 	newOffer.nQty = nQty;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
-	newOffer.SetPrice(nPrice);
+	newOffer.SetPrice(price);
 	newOffer.vchCert = vchCert;
 	newOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 	newOffer.sCurrencyCode = vchCurrency;
@@ -1433,15 +1431,15 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	// get precision
 	convertCurrencyCodeToSyscoin(linkOffer.sCurrencyCode, linkOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
-	float minPrice = 1/pow(10,precision);
-	float price = linkOffer.GetPrice();
+	double minPrice = pow(10.0,-precision);
+	double price = linkOffer.GetPrice();
 	if(price < minPrice)
 		price = minPrice;
 
 	EnsureWalletIsUnlocked();
 	
-	// unserialize offer UniValue from txn, serialize back
-	// build offer UniValue
+	// unserialize offer from txn, serialize back
+	// build offer
 	COffer newOffer;
 	newOffer.vchPubKey = linkOffer.vchPubKey;
 	newOffer.aliasName = linkOffer.aliasName;
@@ -1799,7 +1797,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	bool bExclusiveResell = true;
 	int bPrivate = false;
 	unsigned int nQty;
-	float price;
+	double price;
 	if (params.size() >= 6) vchDesc = vchFromValue(params[5]);
 	if (params.size() >= 7) bPrivate = atoi(params[6].get_str().c_str()) == 1? true: false;
 	if (params.size() >= 8) vchCert = vchFromValue(params[7]);
@@ -1877,7 +1875,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	// get precision
 	convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
-	float minPrice = 1/pow(10,precision);
+	double minPrice = pow(10.0,-precision);
 	if(price < minPrice)
 		price = minPrice;
 	// update offer values
@@ -2295,7 +2293,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	txAccept.vchCertLink = foundCert.certLinkVchRand;
 	txAccept.vchBuyerKey = vchPubKey;
 
-    int64_t nTotalValue = ( nPrice * nQty );
+    CAmount nTotalValue = ( nPrice * nQty );
     
 
     CScript scriptPayment;

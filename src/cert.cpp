@@ -411,7 +411,7 @@ bool CheckCertInputs(const CTransaction &tx,
 					return error(
 							"CheckCertInputs() : failed to read from cert DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternaln) {
+            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				if(!vtxPos.empty())
 				{
 					const CCert& dbCert = vtxPos.back();
