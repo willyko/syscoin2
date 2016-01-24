@@ -852,8 +852,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if(op == OP_OFFER_REFUND)
 				{
-					theOffer.nHeight = nHeight;
-					theOffer.GetOfferFromList(vtxPos);
 					vector<unsigned char> vchOfferAccept = vvchArgs[1];
 					if(!theOffer.GetAcceptByHash(vchOfferAccept, theOfferAccept))
 						return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from db offer txn");
@@ -882,8 +880,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					
 				}
 				else if (op == OP_OFFER_ACCEPT) {	
-					theOffer.nHeight = nHeight;
-					theOffer.GetOfferFromList(vtxPos);
 					// check for existence of offeraccept in txn offer obj
 					if(fExternal && !serializedOffer.GetAcceptByHash(vvchArgs[1], theOfferAccept))
 						return error("OP_OFFER_ACCEPT could not read accept from offer txn");				
@@ -913,11 +909,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 					// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-					if(stringFromVch(vtxPos.back().sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
+					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 					{
 						int precision = 2;
 						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-						CAmount nPrice = convertCurrencyCodeToSyscoin(vtxPos.back().sCurrencyCode, vtxPos.back().GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
 						if(tx.vout[nOut].nValue != nPrice)
 						{
 							theOfferAccept.bPaid = false;
@@ -1025,8 +1021,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 				}
 				
-				// only modify the offer's height on an activate or update or refund
 				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
+					theOffer.nHeight = nHeight;
 					if(op == OP_OFFER_UPDATE)
 					{
 						// if the txn whitelist entry exists (meaning we want to remove or add)
