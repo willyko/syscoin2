@@ -711,7 +711,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 			case OP_OFFER_UPDATE:
 				if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE 
-					&& prevOp != OP_OFFER_REFUND ) )
+					&& prevOp != OP_OFFER_REFUND && prevOp != OP_OFFER_ACCEPT ) )
 					return error("offerupdate previous op %s is invalid", offerFromOp(prevOp).c_str());
 				
 				if (vvchPrevArgs[0] != vvchArgs[0])
@@ -719,7 +719,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				break;
 			case OP_OFFER_REFUND:
 				int nDepth;
-				if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND ))
+				if ( !found || ( prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND && prevOp != OP_OFFER_ACCEPT  ))
 					return error("offerrefund previous op %s is invalid", offerFromOp(prevOp).c_str());		
 				if(op == OP_OFFER_REFUND && vvchArgs[2] == OFFER_REFUND_COMPLETE && vvchPrevArgs[2] != OFFER_REFUND_PAYMENT_INPROGRESS)
 					return error("offerrefund complete tx must be linked to an inprogress tx");
