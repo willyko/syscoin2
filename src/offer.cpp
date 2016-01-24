@@ -800,7 +800,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(op == OP_OFFER_UPDATE) {
 					serializedOffer.accepts = theOffer.accepts;
 					serializedOffer.offerLinks = theOffer.offerLinks;
-					serializedOffer.nHeight = theOffer.nHeight;
+					serializedOffer.nHeight = nHeight;
 					theOffer = serializedOffer;
 					if(!vtxPos.empty())
 					{
