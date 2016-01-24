@@ -915,10 +915,16 @@ bool CheckOfferInputs(const CTransaction &tx,
 						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
 						if(tx.vout[nOut].nValue != nPrice)
 						{
+							theOfferAccept.bPaid = false;
 							if(fDebug)
 								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);
-							return true;
+							// sanity to make sure ppl dont send dust accepts to annoy vendor
+							if(tx.vout[nOut].nValue < nPrice/2)
+								return true;						
 						}
+						else
+							theOfferAccept.bPaid = true;
+
 					}
 								
 					if (!GetTxOfOffer(*pofferdb, vvchArgs[0], myOffer, offerTx))
@@ -1004,7 +1010,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 					
 					
-					theOfferAccept.bPaid = true;
 					theOfferAccept.vchAcceptRand = vvchArgs[1];
 					theOfferAccept.txHash = tx.GetHash();
 					theOffer.PutOfferAccept(theOfferAccept);
