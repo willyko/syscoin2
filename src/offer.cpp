@@ -860,7 +860,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					else if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
 						theOfferAccept.bRefunded = true;
 						theOfferAccept.txRefundId = tx.GetHash();
-						PutOfferAccept(vtxPos, theOfferAccept);
+						PutOfferAccept(vtxPos, theOffer, theOfferAccept);
 					}
 					
 					
@@ -1002,7 +1002,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 					theOfferAccept.vchAcceptRand = vvchArgs[1];
 					theOfferAccept.txHash = tx.GetHash();
-					PutOfferAccept(vtxPos, theOfferAccept);
+					PutOfferAccept(vtxPos, theOffer, theOfferAccept);
 				}
 				
 				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
@@ -1055,7 +1055,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 									{
 										COffer myLinkOffer = myVtxPos.back();
 										myLinkOffer.nQty = theOffer.nQty;	
-										myLinkOffer.nHeight = theOffer.nHeight;
 										myLinkOffer.SetPrice(theOffer.nPrice);
 										myLinkOffer.PutToOfferList(myVtxPos);
 										{
@@ -1071,6 +1070,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 				}
+				theOffer.nHeight = nHeight;
 				theOffer.txHash = tx.GetHash();
 				theOffer.PutToOfferList(vtxPos);
 				{
@@ -2688,7 +2688,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CSyscoinAddress buyerAddress(buyerKey.GetID());
 			if(!buyerAddress.IsValid() || !IsMine(*pwalletMain, buyerAddress.Get()))
 				continue;
-			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOfferAcceptLink, theOfferAccept, offerTx))
+			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOffer, theEscrow.vchOfferAcceptLink, theOfferAccept, offerTx))
 				continue;
 
 			// check for existence of offeraccept in txn offer obj
@@ -3128,7 +3128,7 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
-void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA){
+void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA){
 	if(offerList.empty())
 		return;
     for(unsigned int i=0;i<offerList.size();i++) {
@@ -3139,11 +3139,9 @@ void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA){
             return;
         }
     }
-	COffer lastOffer = offerList.back();
-	lastOffer.accept = theOA;
-    offerList.push_back(lastOffer);
+	theOffer.accept = theOA;
 }
-bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca) {
+bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
 		return false;
     for(unsigned int i=0;i<offerList.size();i++) {

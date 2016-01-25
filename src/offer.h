@@ -326,14 +326,22 @@ public:
 
     bool GetOfferFromList(const std::vector<COffer> &offerList) {
         if(offerList.size() == 0) return false;
+		COffer myOffer = offerList.front();
+		// find the closes offer without going over in height, assuming offerList orders entries by nHeight ascending
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
-            if(o.nHeight == nHeight) {
-                *this = offerList[i];
-                return true;
+            if(o.nHeight < nHeight) {
+                myOffer = offerList[i];
             }
+			else if(o.nHeight == nHeight)
+			{
+				*this = offerList.back();
+				return true;
+			}
+			else
+				break;
         }
-        *this = offerList.back();
+        *this = myOffer;
         return false;
     }
 
@@ -421,8 +429,8 @@ public:
 
     bool ReconstructOfferIndex(CBlockIndex *pindexRescan);
 };
-void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA);
-bool GetAcceptByHash(std::vector<COffer> &offerList,  COfferAccept &ca);
+void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA);
+bool GetAcceptByHash(const std::vector<COffer> &offerList,  COfferAccept &ca);
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COfferAccept &theOfferAccept, CTransaction& tx);
 bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx);
