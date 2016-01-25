@@ -2090,7 +2090,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if (fHelp || 1 > params.size() || params.size() > 9)
-		throw runtime_error("offeraccept <guid> [quantity] [message] [refund address] [BTC TxId] [linkedguid] [escrowTxHash] [height]\n"
+		throw runtime_error("offeraccept <guid> [quantity] [message] [refund address] [BTC TxId] [linkedguid] [linkedacceptguid] [escrowTxHash] [height]\n"
 				"Accept&Pay for a confirmed offer.\n"
 				"<guid> guidkey from offer.\n"
 				"<quantity> quantity to buy. Defaults to 1.\n"
@@ -2145,9 +2145,9 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
             throw runtime_error("Refund address does not refer to a key!");
         CPubKey PubKey;
         if (!pwalletMain->GetPubKey(keyID, vchPubKey))
-            throw runtime_error("Refund address does not refer to a public key!);
+            throw runtime_error("Refund address does not refer to a public key!");
         if (!PubKey.IsFullyValid())
-            throw runtime_error("Refund address refers to an invalid public key!);
+            throw runtime_error("Refund address refers to an invalid public key!");
 		std::vector<unsigned char> vchKey(PubKey.begin(), PubKey.end());
 		vchPubKey = vchKey;
 	}
