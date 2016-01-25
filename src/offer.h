@@ -238,7 +238,7 @@ public:
 	float nPrice;
 	unsigned char nCommission;
 	unsigned int nQty;
-	std::vector<COfferAccept>accepts;
+	COfferAccept accept;
 	std::vector<unsigned char> vchLinkOffer;
 	std::vector<unsigned char> sCurrencyCode;
 	std::vector<unsigned char> vchCert;
@@ -257,7 +257,7 @@ public:
 	// clear everything but the necessary information for an offer to prepare it to go into a txn
 	void ClearOffer()
 	{
-		accepts.clear();
+		accept.SetNull();
 		linkWhitelist.SetNull();
 		offerLinks.clear();
 		vchLinkOffer.clear();
@@ -279,7 +279,7 @@ public:
 		READWRITE(VARINT(nHeight));
     	READWRITE(nPrice);
     	READWRITE(VARINT(nQty));
-    	READWRITE(accepts);
+    	READWRITE(accept);
 		READWRITE(vchLinkOffer);
 		READWRITE(linkWhitelist);
 		READWRITE(sCurrencyCode);
@@ -312,26 +312,6 @@ public:
 	}
 	void SetPrice(float price){
 		nPrice = price;
-	}
-	bool GetAcceptByHash(const std::vector<unsigned char> &ahash, COfferAccept &ca, const CTransaction &intx);	
-    void PutOfferAccept(COfferAccept &theOA) {
-    	for(unsigned int i=0;i<accepts.size();i++) {
-    		COfferAccept oa = accepts[i];
-    		if(theOA.txHash == oa.txHash) {
-    			accepts[i] = theOA;
-    			return;
-    		}
-    	}
-    	accepts.push_back(theOA);
-    }
-	bool GetAcceptByHash(const std::vector<unsigned char> &ahash, COfferAccept &ca) {
-		for(unsigned int i=0;i<accepts.size();i++) {		
-			if(accepts[i].vchAcceptRand == ahash) {
-				ca = accepts[i];
-				return true;
-			}
-		}
-		return false;
 	}
     void PutToOfferList(std::vector<COffer> &offerList) {
         for(unsigned int i=0;i<offerList.size();i++) {
@@ -366,7 +346,7 @@ public:
         && a.nQty == b.nQty 
         && a.txHash == b.txHash
         && a.nHeight == b.nHeight
-        && a.accepts == b.accepts
+        && a.accept == b.accept
 		&& a.vchLinkOffer == b.vchLinkOffer
 		&& a.linkWhitelist == b.linkWhitelist
 		&& a.sCurrencyCode == b.sCurrencyCode
@@ -388,7 +368,7 @@ public:
         nQty = b.nQty;
         txHash = b.txHash;
         nHeight = b.nHeight;
-        accepts = b.accepts;
+        accept = b.accept;
 		vchLinkOffer = b.vchLinkOffer;
 		linkWhitelist = b.linkWhitelist;
 		sCurrencyCode = b.sCurrencyCode;
@@ -406,7 +386,7 @@ public:
         return !(a == b);
     }
     
-    void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPrivate = false; bOnlyAcceptBTC = false; aliasName = ""; accepts.clear(); sTitle.clear(); sDescription.clear();vchLinkOffer.clear();linkWhitelist.SetNull();sCurrencyCode.clear();offerLinks.clear();nCommission=0;vchPubKey.clear();vchCert.clear();}
+    void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPrivate = false; bOnlyAcceptBTC = false; aliasName = ""; accept.SetNull(); sTitle.clear(); sDescription.clear();vchLinkOffer.clear();linkWhitelist.SetNull();sCurrencyCode.clear();offerLinks.clear();nCommission=0;vchPubKey.clear();vchCert.clear();}
     bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false && bOnlyAcceptBTC == false); }
 
     bool UnserializeFromTx(const CTransaction &tx);
@@ -433,28 +413,6 @@ public:
 	    return Exists(make_pair(std::string("offeri"), name));
 	}
 
-	bool WriteOfferAccept(const std::vector<unsigned char>& name, std::vector<unsigned char>& vchValue) {
-		return Write(make_pair(std::string("offera"), name), vchValue);
-	}
-
-	bool EraseOfferAccept(const std::vector<unsigned char>& name) {
-	    return Erase(make_pair(std::string("offera"), name));
-	}
-
-	bool ReadOfferAccept(const std::vector<unsigned char>& name, std::vector<unsigned char>& vchValue) {
-		return Read(make_pair(std::string("offera"), name), vchValue);
-	}
-
-	bool ExistsOfferAccept(const std::vector<unsigned char>& name) {
-	    return Exists(make_pair(std::string("offera"), name));
-	}
-    bool WriteOfferIndex(std::vector<std::vector<unsigned char> >& vtxPos) {
-        return Write(make_pair(std::string("offera"), std::string("offerndx")), vtxPos);
-    }
-
-    bool ReadOfferIndex(std::vector<std::vector<unsigned char> >& vtxPos) {
-        return Read(make_pair(std::string("offera"), std::string("offerndx")), vtxPos);
-    }
 
     bool ScanOffers(
             const std::vector<unsigned char>& vchName,
@@ -463,7 +421,9 @@ public:
 
     bool ReconstructOfferIndex(CBlockIndex *pindexRescan);
 };
-bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOfferAccept,
-		COffer &txPos, CTransaction& tx);
+void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA);
+bool GetAcceptByHash(std::vector<COffer> &offerList,  COfferAccept &ca);
+bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAccept,
+		COfferAccept &theOfferAccept, CTransaction& tx);
 bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx);
 #endif // OFFER_H

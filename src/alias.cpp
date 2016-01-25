@@ -49,10 +49,10 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 				if(vvch.size() >= 1 && vvch[0] == vchToFind)
 				{
 					COffer theOffer(tx);
-					COfferAccept theOfferAccept;
-					if (theOffer.IsNull())
+					COfferAccept theOfferAccept = theOffer.accept;
+					if (theOffer.IsNull() || theOfferAccept.IsNull())
 						continue;
-					if(theOffer.GetAcceptByHash(vvch[1], theOfferAccept))
+					if(theOfferAccept.vchAcceptRand = vvch[1])
 					{
 						nQty += theOfferAccept.nQty;
 					}
@@ -814,16 +814,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		vchPubKey = xferAlias.vchPubKey;
 		scriptPubKeyOrig = GetScriptForDestination(myAddress.Get());
 
-	} else {
-		CPubKey newDefaultKey;
-		pwalletMain->GetKeyFromPool(newDefaultKey);
-		scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
 	}
-
-	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
-	scriptPubKey += scriptPubKeyOrig;
-
 
 	EnsureWalletIsUnlocked();
 
@@ -855,6 +846,16 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		theAlias.vchValue = vchValue;
 	if(!vchPubKey.empty() && copyAlias.vchPubKey != vchPubKey)
 		theAlias.vchPubKey = vchPubKey;
+	else
+	{
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(copyAlias.vchPubKey.begin(), copyAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+		CPubKey currentKey(vchKeyByte);
+		scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
+	}
+	CScript scriptPubKey;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
+	scriptPubKey += scriptPubKeyOrig;
 
     vector<CRecipient> vecSend;
 	CRecipient recipient;

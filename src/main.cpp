@@ -2017,20 +2017,13 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     	COfferAccept theOfferAccept;
 
     	// make sure the offeraccept is also in the serialized offer in the txn
-    	if(!theOffer.GetAcceptByHash(vvchOfferAccept, theOfferAccept))
+    	if(!theOffer.accept.IsNull() || theOffer.accept.vchAcceptRand != vvchOfferAccept)
             return error("DisconnectBlock() : not found in offer for offer accept %s %s\n",
             		opName.c_str(), HexStr(vvchOfferAccept).c_str());
-		
-		
-        // make sure offer accept db record already exists
-        if (pofferdb->ExistsOfferAccept(vvchOfferAccept))
-        	pofferdb->EraseOfferAccept(vvchOfferAccept);
-		if(vtxPos.empty())
-			return error("DisconnectBlock() : offer cannot be empty after disconnecting accept %s\n",
-            		HexStr(vvchOfferAccept).c_str());
+				
 		// if not linked offer add qty back into offer which was removed on connectinput
 		if(theOffer.vchLinkOffer.empty())					
-			vtxPos.back().nQty += theOfferAccept.nQty;
+			vtxPos.back().nQty += theOffer.accept.nQty;
     }
 
     // write new offer state to db

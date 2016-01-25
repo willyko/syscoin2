@@ -1064,17 +1064,17 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	if (wtxAcceptIn == NULL)
 		throw runtime_error("offer accept is not in your wallet");
 
+    CScript scriptPubKey,scriptPubKeyOrig;
+	std::vector<unsigned char> vchKeyByte;
+	boost::algorithm::unhex(escrow.vchSellerKey.begin(), escrow.vchSellerKey.end(), std::back_inserter(vchKeyByte));
+	CPubKey currentKey(vchKeyByte);
+	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
+    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
+    scriptPubKey += scriptPubKeyOrig;
+
 	escrow.ClearEscrow();
 	escrow.vchOfferAcceptLink = vchFromString(acceptGUID);
 	escrow.nHeight = chainActive.Tip()->nHeight;
-  	CPubKey newDefaultKey;
-	pwalletMain->GetKeyFromPool(newDefaultKey); 
-	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-
-    CScript scriptPubKey,scriptPubKeyOrig;
-	scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
-    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
-    scriptPubKey += scriptPubKeyOrig;
 
 
 	vector<CRecipient> vecSend;

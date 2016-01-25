@@ -602,11 +602,11 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
-    // get a key from our wallet set dest as ourselves
-    CPubKey newDefaultKey;
-    pwalletMain->GetKeyFromPool(newDefaultKey);
-    scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
-	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
+
+	std::vector<unsigned char> vchKeyByte;
+	boost::algorithm::unhex(copyCert.vchPubKey.begin(), copyCert.vchPubKey.end(), std::back_inserter(vchKeyByte));
+	CPubKey currentKey(vchKeyByte);
+	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
     // create CERTUPDATE txn keys
     CScript scriptPubKey;
