@@ -791,7 +791,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// they are not shipped in an update txn to keep size down
 				if(op == OP_OFFER_UPDATE) {
 					serializedOffer.offerLinks = theOffer.offerLinks;
-					serializedOffer.nHeight = nHeight;
 					serializedOffer.accept.SetNull();
 					theOffer = serializedOffer;
 					if(!vtxPos.empty())
@@ -2938,6 +2937,13 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 				error("could not read txpos");
 				continue;
 			}
+            // decode txn, skip non-alias txns
+            vector<vector<unsigned char> > vvch;
+            int op, nOut;
+            if (!DecodeOfferTx(tx, op, nOut, vvch, -1) 
+            	|| !IsOfferOp(op) )
+                continue;
+
 			int expired = 0;
 			int expires_in = 0;
 			int expired_block = 0;
@@ -2945,9 +2951,23 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			vector<unsigned char> vchValue;
 			uint64_t nHeight;
 			nHeight = txPos2.nHeight;
+			const COffer &theOfferA = txPos2;
 			oOffer.push_back(Pair("offer", offer));
-			string value = stringFromVch(vchValue);
-			oOffer.push_back(Pair("value", value));
+			string opName = offerFromOp(op);
+			oOffer.push_back(Pair("offertype", opName));
+            oOffer.push_back(Pair("offer", stringFromVch(vchName)));
+			oOffer.push_back(Pair("cert", stringFromVch(theOfferA.vchCert)));
+            oOffer.push_back(Pair("title", stringFromVch(theOfferA.sTitle)));
+            oOffer.push_back(Pair("category", stringFromVch(theOfferA.sCategory)));
+            oOffer.push_back(Pair("description", stringFromVch(theOfferA.sDescription)));
+			int precision = 2;
+			convertCurrencyCodeToSyscoin(theOfferA.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
+			oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOfferA.GetPrice() ))); 	
+
+			oOffer.push_back(Pair("currency", stringFromVch(theOfferA.sCurrencyCode) ) );
+			oOffer.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
+            oOffer.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
+
 			oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
 			expired_block = nHeight + GetOfferExpirationDepth();
 			if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
