@@ -52,7 +52,7 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 					COfferAccept theOfferAccept = theOffer.accept;
 					if (theOffer.IsNull() || theOfferAccept.IsNull())
 						continue;
-					if(theOfferAccept.vchAcceptRand = vvch[1])
+					if(theOfferAccept.vchAcceptRand == vvch[1])
 					{
 						nQty += theOfferAccept.nQty;
 					}
