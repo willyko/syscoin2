@@ -223,10 +223,8 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	if(refundCode == OFFER_REFUND_COMPLETE)
 	{
 		int precision = 2;
-		COfferLinkWhitelistEntry entry;
-		theOffer.linkWhitelist.GetLinkEntryByHash(theOfferAccept.vchCertLink, entry);
 		// lookup the price of the offer in syscoin based on pegged alias at the block # when accept was made (sets nHeight in offeraccept serialized UniValue in tx)
-		nTotalValue = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(entry), theOfferAccept.nHeight, precision)*theOfferAccept.nQty;
+		nTotalValue = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision)*theOfferAccept.nQty;
 	} 
 
 
