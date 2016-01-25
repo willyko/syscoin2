@@ -2955,7 +2955,6 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			oOffer.push_back(Pair("offer", offer));
 			string opName = offerFromOp(op);
 			oOffer.push_back(Pair("offertype", opName));
-            oOffer.push_back(Pair("offer", stringFromVch(vchName)));
 			oOffer.push_back(Pair("cert", stringFromVch(theOfferA.vchCert)));
             oOffer.push_back(Pair("title", stringFromVch(theOfferA.sTitle)));
             oOffer.push_back(Pair("category", stringFromVch(theOfferA.sCategory)));
