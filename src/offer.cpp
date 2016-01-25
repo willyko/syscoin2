@@ -862,7 +862,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					else if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
 						theOfferAccept.bRefunded = true;
 						theOfferAccept.txRefundId = tx.GetHash();
-						PutOfferAccept(vtxPos, theOffer, theOfferAccept);
+						theOffer.accept = theOfferAccept;
+						nHeight = theOfferAccept.nHeight;
 					}
 					
 					
@@ -1002,9 +1003,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 						}
 					}
+					theOfferAccept.nHeight = nHeight;
 					theOfferAccept.vchAcceptRand = vvchArgs[1];
 					theOfferAccept.txHash = tx.GetHash();
-					PutOfferAccept(vtxPos, theOffer, theOfferAccept);
+					theOffer.accept = theOfferAccept;
 				}
 				
 				if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
@@ -1617,7 +1619,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
-	// unserialize offer UniValue from txn
+	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
 
