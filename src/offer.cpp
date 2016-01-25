@@ -3134,7 +3134,7 @@ void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA){
     for(unsigned int i=0;i<offerList.size();i++) {
 		if(offerList[i].accept.IsNull())
 			continue;
-        if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
+        if(offerList[i].accept.vchAcceptRand == theOA.vchAcceptRand) {
             offerList[i].accept = theOA;
             return;
         }
@@ -3151,7 +3151,7 @@ bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca) {
 			continue;
         if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
             ca = offerList[i].accept;
-            return;
+            return true;
         }
     }
     ca = offerList.back().accept;
