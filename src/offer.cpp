@@ -2105,7 +2105,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchRefundAddress;	
 	CSyscoinAddress refundAddr;	
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	vector<unsigned char> vchPubKey = vchFromValue(params.size()>=2?params[3]:"");
+	vector<unsigned char> vchPubKey;
 	vector<unsigned char> vchBTCTxId = vchFromValue(params.size()>=5?params[4]:"");
 	vector<unsigned char> vchLinkOffer = vchFromValue(params.size()>= 6? params[5]:"");
 	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
@@ -2144,7 +2144,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
         if (!refundAddr.GetKeyID(keyID))
             throw runtime_error("Refund address does not refer to a key!");
         CPubKey PubKey;
-        if (!pwalletMain->GetPubKey(keyID, vchPubKey))
+        if (!pwalletMain->GetPubKey(keyID, PubKey))
             throw runtime_error("Refund address does not refer to a public key!");
         if (!PubKey.IsFullyValid())
             throw runtime_error("Refund address refers to an invalid public key!");
