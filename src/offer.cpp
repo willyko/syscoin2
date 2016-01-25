@@ -2978,9 +2978,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 				expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 			}
 			oOffer.push_back(Pair("alias", txPos2.aliasName));
-			oOffer.push_back(Pair("expires_in", expires_in));
-			oOffer.push_back(Pair("expires_on", expired_block));
-			oOffer.push_back(Pair("expired", expired));
+			oOffer.push_back(Pair("height", strprintf("%d", theOfferA.nHeight)));
 			oRes.push_back(oOffer);
 		}
 	}
