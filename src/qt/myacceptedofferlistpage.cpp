@@ -113,6 +113,7 @@ void MyAcceptedOfferListPage::on_refundButton_clicked()
         return;
     }
 	QString offerAcceptGUID = selection.at(0).data(OfferAcceptTableModel::GUIDRole).toString();
+	QString offerGUID = selection.at(0).data(OfferAcceptTableModel::Name).toString();
 
     QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm refund"),
              tr("Warning: If this offer accept was resold you should ensure the reseller's wallet is online to process the refund to the buyer!") + "<br><br>" + tr("Coins will be returned to the buyer. Are you sure you wish to refund this offer accept?"),
@@ -124,6 +125,7 @@ void MyAcceptedOfferListPage::on_refundButton_clicked()
 		string strMethod = string("offerrefund");
 		UniValue params(UniValue::VARR);
 		UniValue result;
+		params.push_back(offerGUID.toStdString());
 		params.push_back(offerAcceptGUID.toStdString());
 
 		try {

@@ -71,7 +71,7 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 					COfferAccept theOfferAccept = theOffer.accept;
 					if (theOffer.IsNull() || theOfferAccept.IsNull())
 						continue;
-					if(theOfferAccept.vchAcceptRand = vvchArgs[1])
+					if(theOfferAccept.vchAcceptRand == vvchArgs[1])
 					{
 						if(theOfferAccept.vchLinkOfferAccept == vchAcceptRandLink)
 							return true;
@@ -211,18 +211,9 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 		return string("makeOfferRefundTX() : can't find this offer in your wallet");
 	}
 
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-    // decode the offer op, params, height
-    if(!DecodeOfferTx(myOfferAcceptTx, op, nOut, vvch, -1))
-	{
-		return string("makeOfferRefundTX(): could not decode offeraccept transaction");
-	}
 	COffer theOffer(myOfferAcceptTx);
 	if(theOffer.IsNull())
 		return string("makeOfferRefundTX(): could not decode offer");
-	
-	const vector<unsigned char> &vchOffer = vvch[0];
 
 	// this is a syscoin txn
 	CWalletTx wtx, wtx2;
@@ -475,9 +466,10 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAccept,
 		COfferAccept &theOfferAccept, CTransaction& tx) {
 	vector<COffer> vtxPos;
-	vector<unsigned char> vchOffer;
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty()) return false;
-	GetAcceptByHash(vtxPos, vchOfferAccept, theOfferAccept);
+	theOfferAccept.SetNull();
+	theOfferAccept.vchAcceptRand = vchOfferAccept;
+	GetAcceptByHash(vtxPos, theOfferAccept);
 
 	int nHeight = theOfferAccept.nHeight;
 	if (nHeight + GetOfferExpirationDepth()
@@ -1904,10 +1896,11 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		CWalletTx wtx;
 		const CWalletTx *wtxCertIn;
 		CCert theCert;
+		vector<unsigned char> vchPubKey;
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		{
-			std::vector<unsigned char> vchPubKey = theCert.vchPubKey;
+			vchPubKey = theCert.vchPubKey;
 			theCert.ClearCert();
 			// make sure its in your wallet (you control this cert)	
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
@@ -2045,7 +2038,8 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 				"<offerguid> guidkey of offer.\n"
 				"<acceptguid> guidkey of offer accept of offer to refund.\n"
 				+ HelpRequiringPassphrase());
-	vector<unsigned char> vchAcceptRand = vchFromString(params[0].get_str());
+	const vector<unsigned char> &vchAcceptRand = vchFromString(params[1].get_str());
+	const vector<unsigned char> &vchOffer = vchFromString(params[0].get_str());
 
 	EnsureWalletIsUnlocked();
 
@@ -2068,7 +2062,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 		string err = "could not decode offeraccept tx with hash: " +  txOffer.GetHash().GetHex();
         throw runtime_error(err.c_str());
 	}
-	COffer theOffer(offerTx);
+	COffer theOffer(txOffer);
 	if(theOffer.IsNull())
 		return string("could not decode offer");
 	const CWalletTx *wtxIn;
@@ -3135,25 +3129,31 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 	return oRes;
 }
 void PutOfferAccept(std::vector<COffer> &offerList, const COfferAccept &theOA){
+	if(offerList.empty())
+		return;
     for(unsigned int i=0;i<offerList.size();i++) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
-            offerList[i] = theOA;
+            offerList[i].accept = theOA;
             return;
         }
     }
-    offerList.push_back(theOA);
+	COffer lastOffer = offerList.back();
+	lastOffer.accept = theOA;
+    offerList.push_back(lastOffer);
 }
 bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca) {
+	if(offerList.empty())
+		return false;
     for(unsigned int i=0;i<offerList.size();i++) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
-            ca = offerList[i];
+            ca = offerList[i].accept;
             return;
         }
     }
-    ca = offerList.back();
+    ca = offerList.back().accept;
 	return false;
 }
