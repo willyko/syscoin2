@@ -2951,7 +2951,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			vector<unsigned char> vchValue;
 			uint64_t nHeight;
 			nHeight = txPos2.nHeight;
-			const COffer &theOfferA = txPos2;
+			COffer theOfferA = txPos2;
 			oOffer.push_back(Pair("offer", offer));
 			string opName = offerFromOp(op);
 			oOffer.push_back(Pair("offertype", opName));
