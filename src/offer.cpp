@@ -110,7 +110,7 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 
 }
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
-string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAcceptLink)
+string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAcceptLink)
 {
 	string strError;
 	string strMethod = string("offeraccept");
@@ -151,10 +151,10 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 
 	params.push_back(stringFromVch(vchOffer));
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << theOfferAccept.nQty) )->str());
-	params.push_back(stringFromVch(vchPubKey));
 	params.push_back(stringFromVch(theOfferAccept.vchMessage));
 	params.push_back("");
 	params.push_back("");
+	params.push_back(stringFromVch(vchOffer));
 	params.push_back(stringFromVch(vchOfferAcceptLink));
 	params.push_back("");
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << heightToCheckAgainst) )->str());
@@ -743,6 +743,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("OP_OFFER_ACCEPT refund field too big");
 				if (theOfferAccept.vchLinkOfferAccept.size() > MAX_NAME_LENGTH)
 					return error("OP_OFFER_ACCEPT offer accept link field too big");
+				if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
+					return error("OP_OFFER_ACCEPT offer link field too big");
 				if (theOfferAccept.vchCertLink.size() > MAX_NAME_LENGTH)
 					return error("OP_OFFER_ACCEPT cert link field too big");
 				if (theOfferAccept.vchEscrowLink.size() > MAX_NAME_LENGTH)
@@ -851,7 +853,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// if this accept was done via offer linking (makeOfferLinkAcceptTX) then walk back up and refund
 						// special case for tmp it will get overwritten by theOfferAccept.vchLinkOfferAccept tx inside makeOfferRefundTX (used for input transaction to this refund tx)
 						CTransaction tmp;
-						strError = makeOfferRefundTX(tmp, theOfferAccept.vchLinkOfferAccept, OFFER_REFUND_PAYMENT_INPROGRESS);
+						strError = makeOfferRefundTX(tmp, theOfferAccept.vchLinkOffer, theOfferAccept.vchLinkOfferAccept, OFFER_REFUND_PAYMENT_INPROGRESS);
 						if (strError != "" && fDebug)							
 							LogPrintf("CheckOfferInputs() - OFFER_REFUND_PAYMENT_INPROGRESS %s\n", strError.c_str());			
 					}
@@ -984,7 +986,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
 						// we are now accepting the linked	 offer, up the link offer stack.
 
-						string strError = makeOfferLinkAcceptTX(theOfferAccept, vchFromString(""), myOffer.vchLinkOffer, vvchArgs[1]);
+						string strError = makeOfferLinkAcceptTX(theOfferAccept, myOffer.vchLinkOffer, vvchArgs[1]);
 						if(strError != "")
 						{
 							if(fDebug)
@@ -2088,25 +2090,26 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if (fHelp || 1 > params.size() || params.size() > 9)
-		throw runtime_error("offeraccept <guid> [quantity] [pubkey] [message] [refund address] [BTC TxId] [linkedguid] [escrowTxHash] [height]\n"
+		throw runtime_error("offeraccept <guid> [quantity] [message] [refund address] [BTC TxId] [linkedguid] [escrowTxHash] [height]\n"
 				"Accept&Pay for a confirmed offer.\n"
 				"<guid> guidkey from offer.\n"
-				"<pubkey> Public key of buyer address (to transfer certificate).\n"
 				"<quantity> quantity to buy. Defaults to 1.\n"
 				"<message> payment message to seller, 1KB max.\n"
 				"<refund address> In case offer not accepted refund to this address. Leave empty to use a new address from your wallet. \n"
 				"<BTC TxId> If you have paid in Bitcoin and the offer is in Bitcoin, enter the transaction ID here. Default is empty.\n"
-				"<linkedguid> guidkey from offer accept linking to this offer accept. For internal use only, leave blank\n"
+				"<linkedguid> guidkey from offer linking to offer accept in <linkedacceptguid>. For internal use only, leave blank\n"
+				"<linkedacceptguid> guidkey from offer accept linking to this offer accept. For internal use only, leave blank\n"
 				"<escrowTxHash> If this offer accept is done by an escrow release. For internal use only, leave blank\n"
 				"<height> Height to index into price calculation function. For internal use only, leave blank\n"
 				+ HelpRequiringPassphrase());
 	vector<unsigned char> vchRefundAddress;	
 	CSyscoinAddress refundAddr;	
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	vector<unsigned char> vchPubKey = vchFromValue(params.size()>=3?params[2]:"");
-	vector<unsigned char> vchBTCTxId = vchFromValue(params.size()>=6?params[5]:"");
+	vector<unsigned char> vchPubKey = vchFromValue(params.size()>=2?params[3]:"");
+	vector<unsigned char> vchBTCTxId = vchFromValue(params.size()>=5?params[4]:"");
+	vector<unsigned char> vchLinkOffer = vchFromValue(params.size()>= 6? params[5]:"");
 	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
-	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
+	vector<unsigned char> vchMessage = vchFromValue(params.size()>=3?params[2]:"");
 	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=8?params[7]:"");
 	int64_t nHeight = params.size()>=9?atoi64(params[8].get_str()):0;
 	unsigned int nQty = 1;
@@ -2120,19 +2123,33 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("invalid quantity value. Quantity must be less than 4294967296.");
 		}
 	}
-	if(params.size() < 5 || params[4].size() <= 0)
+	if(params.size() < 4 || params[3].size() <= 0)
 	{
 		CPubKey newDefaultKey;
 		pwalletMain->GetKeyFromPool(newDefaultKey);
 		refundAddr = CSyscoinAddress(newDefaultKey.GetID());
 		vchRefundAddress = vchFromString(refundAddr.ToString());
+		if(!refundAddr.IsValid())
+			throw runtime_error("Refund address is not valid!");
+		std::vector<unsigned char> vchKey(newDefaultKey.begin(), newDefaultKey.end());
+		vchPubKey = vchKey;
 	}
 	else
 	{
-		vchRefundAddress = vchFromValue(params[4]);
+		vchRefundAddress = vchFromValue(params[3]);
 		refundAddr = CSyscoinAddress(stringFromVch(vchRefundAddress));
 		if(!refundAddr.IsValid())
 			throw runtime_error("Refund address is not valid!");
+        CKeyID keyID;
+        if (!refundAddr.GetKeyID(keyID))
+            throw runtime_error("Refund address does not refer to a key!");
+        CPubKey PubKey;
+        if (!pwalletMain->GetPubKey(keyID, vchPubKey))
+            throw runtime_error("Refund address does not refer to a public key!);
+        if (!PubKey.IsFullyValid())
+            throw runtime_error("Refund address refers to an invalid public key!);
+		std::vector<unsigned char> vchKey(PubKey.begin(), PubKey.end());
+		vchPubKey = vchKey;
 	}
 
     if (vchMessage.size() <= 0 && vchPubKey.empty())
@@ -2256,6 +2273,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
+
+	if(vchLinkOfferAccept.empty() && !vchLinkOffer.empty() || vchLinkOffer.empty() && !vchLinkOfferAccept.empty())
+		throw runtime_error("If you are accepting a linked offer you must provide the offer guid AND the offer accept guid");
+
 	if(!theOffer.vchCert.empty())
 	{
 		if(!vchBTCTxId.empty())
@@ -2281,6 +2302,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	txAccept.nQty = nQty;
 	txAccept.nPrice = theOffer.GetPrice(foundCert);
 	txAccept.vchLinkOfferAccept = vchLinkOfferAccept;
+	txAccept.vchLinkOffer = vchLinkOffer;
 	txAccept.vchRefundAddress = vchRefundAddress;
 	// if we have a linked offer accept then use height from linked accept (the one buyer makes, not the reseller). We need to do this to make sure we convert price at the time of initial buyer's accept.
 	// in checkescrowinput we override this if its from an escrow release, just like above.
@@ -2442,6 +2464,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
             string sHeight = strprintf("%llu", ca.nHeight);
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
+			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(ca.vchLinkOffer)));
 			oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
 			oOfferAccept.push_back(Pair("btctxid", ca.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("height", sHeight));
@@ -2615,6 +2638,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
 			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
+			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
 			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
@@ -2717,6 +2741,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
 			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
+			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
 			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));

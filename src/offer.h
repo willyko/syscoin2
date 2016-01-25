@@ -51,6 +51,7 @@ public:
 	std::vector<unsigned char> vchRefundAddress;
 	std::vector<unsigned char> vchLinkOfferAccept;
 	std::vector<unsigned char> vchCertLink;
+	std::vector<unsigned char> vchLinkOffer;
 	std::vector<unsigned char> vchEscrowLink;
 	std::vector<unsigned char> vchBuyerKey;	
 	COfferAccept() {
@@ -74,6 +75,7 @@ public:
 		READWRITE(vchCertLink);
 		READWRITE(vchEscrowLink);
 		READWRITE(vchBuyerKey);	
+		READWRITE(vchLinkOffer);
 		READWRITE(txBTCId);	
 		
 	}
@@ -94,6 +96,7 @@ public:
 		&& a.vchCertLink == b.vchCertLink
 		&& a.vchEscrowLink == b.vchEscrowLink
 		&& a.vchBuyerKey == b.vchBuyerKey
+		&& a.vchLinkOffer == b.vchLinkOffer 
 		&& a.txBTCId == b.txBTCId
         );
     }
@@ -113,6 +116,7 @@ public:
 		vchCertLink = b.vchCertLink;
 		vchEscrowLink = b.vchEscrowLink;
 		vchBuyerKey = b.vchBuyerKey;
+		vchLinkOffer = b.vchLinkOffer;
 		txBTCId = b.txBTCId;
         return *this;
     }
@@ -121,8 +125,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
-    bool IsNull() const { return (vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == 0 && bRefunded == false && txRefundId.IsNull() && txBTCId.IsNull()); }
+    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
+    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == 0 && bRefunded == false && txRefundId.IsNull() && txBTCId.IsNull()); }
 
 };
 class COfferLinkWhitelistEntry {

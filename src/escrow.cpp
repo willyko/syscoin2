@@ -1037,7 +1037,6 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	UniValue acceptParams(UniValue::VARR);
 	acceptParams.push_back(stringFromVch(escrow.vchOffer));
 	acceptParams.push_back(static_cast<ostringstream*>( &(ostringstream() << escrow.nQty) )->str());
-	acceptParams.push_back(stringFromVch(escrow.vchBuyerKey));
 	acceptParams.push_back(stringFromVch(escrow.vchPaymentMessage));
 	acceptParams.push_back(buyerAddress.ToString());
 	acceptParams.push_back("");
