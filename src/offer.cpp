@@ -733,6 +733,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("offeraccept tx with guid too big");
 				// check for existence of offeraccept in txn offer obj
 				theOfferAccept = theOffer.accept;
+				if(theOfferAccept.IsNull())
+					return error("OP_OFFER_ACCEPT null accept object");
 				if(theOfferAccept.vchAcceptRand != vvchArgs[1])
 					return error("OP_OFFER_ACCEPT could not read accept from offer txn");
 				if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)

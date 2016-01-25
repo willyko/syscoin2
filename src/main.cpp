@@ -2014,12 +2014,10 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 
     if(op == OP_OFFER_ACCEPT ) {
     	vector<unsigned char> vvchOfferAccept = vvchArgs[1];
-    	COfferAccept theOfferAccept;
-
     	// make sure the offeraccept is also in the serialized offer in the txn
     	if(!theOffer.accept.IsNull() || theOffer.accept.vchAcceptRand != vvchOfferAccept)
             return error("DisconnectBlock() : not found in offer for offer accept %s %s\n",
-            		opName.c_str(), HexStr(vvchOfferAccept).c_str());
+            		opName.c_str(), stringFromVch(vvchOfferAccept).c_str());
 				
 		// if not linked offer add qty back into offer which was removed on connectinput
 		if(theOffer.vchLinkOffer.empty())					
