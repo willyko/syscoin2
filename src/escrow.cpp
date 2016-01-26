@@ -990,7 +990,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 
     // look for a transaction with this key
 	CWalletTx wtx;
-
+	CTransaction tx;
 	CEscrow escrow;
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
