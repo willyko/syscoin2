@@ -2411,24 +2411,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	res.push_back(stringFromVch(vchAccept));
 	return res;
 }
-bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams)
-{
-	CBlockIndex *pindexSlow = NULL; 
-	LOCK(cs_main);
-	pindexSlow = chainActive[nHeight];
-    if (pindexSlow) {
-        CBlock block;
-        if (ReadBlockFromDisk(block, pindexSlow, consensusParams)) {
-            BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-                if (tx.GetHash() == hash) {
-                    txOut = tx;
-                    return true;
-                }
-            }
-        }
-    }
-	return false;
-}
 
 UniValue offerinfo(const UniValue& params, bool fHelp) {
 	if (fHelp || 1 != params.size())

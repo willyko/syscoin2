@@ -30,6 +30,24 @@ CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams)
+{
+	CBlockIndex *pindexSlow = NULL; 
+	LOCK(cs_main);
+	pindexSlow = chainActive[nHeight];
+    if (pindexSlow) {
+        CBlock block;
+        if (ReadBlockFromDisk(block, pindexSlow, consensusParams)) {
+            BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+                if (tx.GetHash() == hash) {
+                    txOut = tx;
+                    return true;
+                }
+            }
+        }
+    }
+	return false;
+}
 unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind)
 {
 	LOCK(mempool.cs);

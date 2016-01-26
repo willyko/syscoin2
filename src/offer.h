@@ -30,7 +30,6 @@ bool DecodeOfferScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch,
 		CScript::const_iterator& pc);
 void rescanforsyscoinservices(CBlockIndex *pindexRescan);
-bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams);
 static const char* norefund = "norefund";
 static const char* inprogress = "inprogress";
 static const char* complete = "complete";
