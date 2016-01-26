@@ -367,8 +367,9 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 		CBlock block;
 		ReadBlockFromDisk(block, pindex, Params().GetConsensus());
 		uint256 txblkhash;
-        
-		BOOST_FOREACH(CTransaction& tx, block.vtx) {
+		// undo syscoin transactions in reverse order -- similar to disconnectblock()
+        for (int i = block.vtx.size() - 1; i >= 0; i--) {
+			const CTransaction &tx = block.vtx[i];
 			if (tx.nVersion != SYSCOIN_TX_VERSION)
 				continue;
 
@@ -378,26 +379,51 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			{
 				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
 				DisconnectAlias(pindex, tx, op, vvch);	
-				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
 				DisconnectOffer(pindex, tx, op, vvch);	
-				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
 				DisconnectCertificate(pindex, tx, op, vvch);	
-				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
 				DisconnectEscrow(pindex, tx, op, vvch);
-				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
 				DisconnectMessage(pindex, tx, op, vvch);
+			}
+
+		}
+		// connect syscoin transactions in forward order -- similar to connectblock()
+        for (int i = 0; i < block.vtx.size(); i++) {
+			const CTransaction &tx = block.vtx[i];
+			if (tx.nVersion != SYSCOIN_TX_VERSION)
+				continue;
+
+			vector<vector<unsigned char> > vvch;
+			int op, nOut;
+			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+			{
+				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+			{
+				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			{
+				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			{
+				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			{
 				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 
