@@ -1997,16 +1997,12 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     // make sure a DB record exists for this offer
     vector<COffer> vtxPos;
     pofferdb->ReadOffer(vvchArgs[0], vtxPos);    
-	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();it++;)
+	for(vector<COffer>::iterator it = vtxPos.end(); it != vtxPos.begin();it--;)
 	{
+		it = vtxPos.erase(it);
 		if (it->txHash == tx.GetHash())
 		{
-			it = vtxPos.erase(it);
 			break;
-		}
-		else
-		{
-			it = vtxPos.erase(it);
 		}
 	}
 
