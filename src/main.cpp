@@ -1994,9 +1994,9 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		return false;
 
 	TRY_LOCK(cs_main, cs_maintry);
-    // make sure a DB record exists for this offer
     vector<COffer> vtxPos;
-    pofferdb->ReadOffer(vvchArgs[0], vtxPos);    
+    pofferdb->ReadOffer(vvchArgs[0], vtxPos);  
+	// erase from back to front up to the reorg affected service tx position
 	for(vector<COffer>::iterator it = vtxPos.end(); it != vtxPos.begin();it--;)
 	{
 		it = vtxPos.erase(it);
