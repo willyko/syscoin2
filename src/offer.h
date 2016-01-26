@@ -126,7 +126,7 @@ public:
     }
 
     void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
-    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == 0 && bRefunded == false && txRefundId.IsNull() && txBTCId.IsNull()); }
+    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false && txRefundId.IsNull() && txBTCId.IsNull()); }
 
 };
 class COfferLinkWhitelistEntry {

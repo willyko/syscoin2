@@ -2432,7 +2432,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
         uint256 blockHash;
         uint256 txHash = vtxPos.back().txHash;
         if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
-            throw runtime_error("failed to read transaction from disk");
+            throw runtime_error("failed to read offer transaction from disk");
 
         COffer theOffer = vtxPos.back();
 
@@ -2451,7 +2451,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	        uint256 blockHashA;
 	        uint256 txHashA= ca.txHash;
 	        if (!GetTransaction(txHashA, txA, Params().GetConsensus(), blockHashA, true))
-	            throw runtime_error("failed to read transaction from disk");
+	            throw runtime_error("failed to accept read transaction from disk");
             vector<vector<unsigned char> > vvch;
             int op, nOut;
             if (!DecodeOfferTx(txA, op, nOut, vvch, -1) 
