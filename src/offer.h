@@ -5,7 +5,6 @@
 #include "dbwrapper.h"
 #include "script/script.h"
 #include "serialize.h"
-#include "consensus/params.h"
 class CWalletTx;
 class CTransaction;
 class CReserveKey;
