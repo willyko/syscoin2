@@ -1996,18 +1996,17 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	TRY_LOCK(cs_main, cs_maintry);
     // make sure a DB record exists for this offer
     vector<COffer> vtxPos;
-    if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-        return false;
-
-	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+    pofferdb->ReadOffer(vvchArgs[0], vtxPos);    
+	for(vector<COffer>::iterator it = vtxPos.begin(); it != vtxPos.end();it++;)
 	{
 		if (it->txHash == tx.GetHash())
 		{
 			it = vtxPos.erase(it);
+			break;
 		}
 		else
 		{
-			++it;
+			it = vtxPos.erase(it);
 		}
 	}
 
@@ -2019,7 +2018,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
             		opName.c_str(), stringFromVch(vvchArgs[1]).c_str());
 				
 		// if not linked offer add qty back into offer which was removed on connectinput
-		if(theOffer.vchLinkOffer.empty())					
+		if(!vtxPos.empty() && theOffer.vchLinkOffer.empty())					
 			vtxPos.back().nQty += theOffer.accept.nQty;
     }
 
