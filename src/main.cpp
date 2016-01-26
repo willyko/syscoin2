@@ -1997,16 +1997,29 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     vector<COffer> vtxPos;
     pofferdb->ReadOffer(vvchArgs[0], vtxPos);  
 	// erase from back to front up to the reorg affected service tx position
-	while(!vtxPos.empty())
+	bool found = false;
+	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
-		if (vtxPos.back().txHash == tx.GetHash())
+		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			vtxPos.pop_back();
+			found = true;
 			break;
 		}
-		else
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
 		{
-			vtxPos.pop_back();
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
 
@@ -2018,7 +2031,7 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
             		opName.c_str(), stringFromVch(vvchArgs[1]).c_str());
 				
 		// if not linked offer add qty back into offer which was removed on connectinput
-		if(!vtxPos.empty() && theOffer.vchLinkOffer.empty())					
+		if(!vtxPos.empty() && found && theOffer.vchLinkOffer.empty())					
 			vtxPos.back().nQty += theOffer.accept.nQty;
     }
 
