@@ -1997,7 +1997,8 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
     vector<COffer> vtxPos;
     pofferdb->ReadOffer(vvchArgs[0], vtxPos);  
 	// erase from back to front up to the reorg affected service tx position
-	for(vector<COffer>::iterator it = vtxPos.end(); it != vtxPos.begin();it--;)
+	vector<COffer>::iterator it = vtxPos.end();
+	while(it != vtxPos.begin())
 	{
 		it = vtxPos.erase(it);
 		if (it->txHash == tx.GetHash())
