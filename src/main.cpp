@@ -2000,11 +2000,13 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	vector<COffer>::iterator it = vtxPos.end();
 	while(it != vtxPos.begin())
 	{
-		it = vtxPos.erase(it);
 		if (it->txHash == tx.GetHash())
 		{
+			it = vtxPos.erase(it);
 			break;
 		}
+		it = vtxPos.erase(it);
+
 	}
 
 
