@@ -2702,6 +2702,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
 			CTransaction escrowTx;
 			CEscrow theEscrow;
+			COffer theOffer;
 			CTransaction offerTx, acceptTx;
 			
 			if(!GetTxOfEscrow(*pescrowdb, vchEscrow, theEscrow, escrowTx))	
