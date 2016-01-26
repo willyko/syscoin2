@@ -570,7 +570,7 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 		// get transaction pointed to by alias
 		CTransaction tx;
 		uint256 txHash = vtxPos.back().txHash;
-		if (!GetSyscoinTransaction(vtxPos.back().nHeight, vtxPos.back().txHash, tx, Params().GetConsensus()))
+		if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
 			throw runtime_error("failed to read transaction from disk");
 
 		GetAliasAddress(tx, strAddress);

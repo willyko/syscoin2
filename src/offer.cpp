@@ -2465,9 +2465,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	        // get transaction pointed to by offer
 
 	        CTransaction txA;
-	        uint256 blockHashA;
 	        uint256 txHashA= ca.txHash;
-	        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus(), blockHashA, true))
+	        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus()))
 			{
 				error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
 				continue;
