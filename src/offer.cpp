@@ -1111,7 +1111,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 void rescanforsyscoinservices(CBlockIndex *pindexRescan) {
    LogPrintf("Scanning blockchain for syscoin services to create fast index...\n");
-   //ReconstructSyscoinServicesIndex(pindexRescan);
+   ReconstructSyscoinServicesIndex(pindexRescan);
 }
 
 
