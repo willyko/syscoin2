@@ -480,7 +480,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 
 	uint256 hashBlock;
 	if (!GetTransaction(theOfferAccept.txHash, tx, Params().GetConsensus(), hashBlock, true))
-		return error("GetTxOfOfferAccept() : could not read tx from disk");
+		return false
 
 	return true;
 }
