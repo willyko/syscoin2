@@ -1050,6 +1050,7 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			txHash = txPos2.txHash;
 			CTransaction tx;
 			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus()))
+			{
 				error("could not read txpos");
 				continue;
 			}
