@@ -379,51 +379,26 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			{
 				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
 				DisconnectAlias(pindex, tx, op, vvch);	
-			}
-			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
-			{
-				DisconnectOffer(pindex, tx, op, vvch);	
-			}
-			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
-			{
-				DisconnectCertificate(pindex, tx, op, vvch);	
-			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
-			{
-				DisconnectEscrow(pindex, tx, op, vvch);
-			}
-			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
-			{
-				DisconnectMessage(pindex, tx, op, vvch);
-			}
-
-		}
-		// connect syscoin transactions in forward order -- similar to connectblock()
-        for (int i = 0; i < block.vtx.size(); i++) {
-			const CTransaction &tx = block.vtx[i];
-			if (tx.nVersion != SYSCOIN_TX_VERSION)
-				continue;
-
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
-			{
 				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
+				DisconnectOffer(pindex, tx, op, vvch);	
 				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectCertificate(pindex, tx, op, vvch);
 				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectEscrow(pindex, tx, op, vvch);
 				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
+				DisconnectMessage(pindex, tx, op, vvch);
 				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 
@@ -494,7 +469,8 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 	theOfferAccept.SetNull();
 	theOfferAccept.vchAcceptRand = vchOfferAccept;
 	GetAcceptByHash(vtxPos, theOfferAccept);
-
+	if(theOfferAccept.IsNull())
+		return false;
 	int nHeight = theOfferAccept.nHeight;
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
@@ -504,6 +480,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 		return false;
 	}
 
+	LogPrintf("GetTxOfOfferAccept(%s)", theOfferAccept.txHash.GetHex().c_str());
 	uint256 hashBlock;
 	if (!GetTransaction(theOfferAccept.txHash, tx, Params().GetConsensus(), hashBlock, true))
 		return false;
