@@ -2016,8 +2016,24 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	{
 		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			vtxPos.pop_back();
+			found = true;
 			break;
+		}
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
+		{
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
 
