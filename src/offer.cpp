@@ -471,12 +471,6 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		return false;
 	txPos = vtxPos.back();
-	vtxPos.pop_back();
-	while(!txPos.accept.IsNull() && !vtxPos.empty())
-	{
-		txPos = vtxPos.back();
-		vtxPos.pop_back();
-	}
 	int nHeight = txPos.nHeight;
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
