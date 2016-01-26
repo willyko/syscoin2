@@ -2724,7 +2724,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
  
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > offerVvch;
-            if (!DecodeOfferTx(offerTx, op, nOut, offerVvch, -1) 
+            if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch, -1) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT))
                 continue;
@@ -2734,7 +2734,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
 				continue;
-			COffer theOffer(offerTx);
 			if(theOffer.IsNull())
 				continue;
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
