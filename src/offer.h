@@ -337,16 +337,14 @@ public:
             if(o.nHeight < nHeight) {
                 myOffer = offerList[i];
             }
-			else if(o.nHeight == nHeight)
+			else if(o.nHeight >= nHeight)
 			{
-				*this = offerList.back();
-				return true;
-			}
-			else
+				myOffer = offerList[i];
 				break;
+			}
         }
         *this = myOffer;
-        return false;
+        return true;
     }
 
     friend bool operator==(const COffer &a, const COffer &b) {

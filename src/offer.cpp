@@ -780,8 +780,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
 				// get the latest offer from the db
-				theOffer.nHeight = nHeight;
-				theOffer.GetOfferFromList(vtxPos);			
+				if(!vtxPos.empty())
+					theOffer = vtxPos.back();				
 				if(stringFromVch(serializedOffer.sCurrencyCode) != "BTC" && serializedOffer.bOnlyAcceptBTC)
 				{
 					return error("An offer that only accepts BTC must have BTC specified as its currency");
