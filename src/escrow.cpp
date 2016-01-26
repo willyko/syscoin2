@@ -164,8 +164,7 @@ bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
         return false;
     }
 
-    uint256 hashBlock;
-    if (!GetTransaction(txPos.txHash, tx, Params().GetConsensus(), hashBlock, true))
+    if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
         return error("GetTxOfEscrow() : could not read tx from disk");
 
     return true;
@@ -596,8 +595,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     if(!theEscrow.UnserializeFromTx(tx))
         throw runtime_error("cannot unserialize escrow from txn");
     CTransaction fundingTx;
-	uint256 blockHash;
-	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
+	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to escrow transaction");
 
 	std::vector<unsigned char> vchArbiterKeyByte;
@@ -788,8 +786,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
 	CTransaction fundingTx;
-	uint256 blockHash;
-	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
+	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to read escrow transaction");
 
  	int nOutMultiSig = 0;
@@ -992,27 +989,23 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	EnsureWalletIsUnlocked();
 
     // look for a transaction with this key
-    CTransaction tx;
 	CWalletTx wtx;
 
 	CEscrow escrow;
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	uint256 hash, blockHash;
+	uint256 hash;
 	bool foundEscrowRelease = false;
 	
 	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
 		// get txn hash, read txn index
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		hash = item.second.GetHash();
-		if (!GetTransaction(hash, tx, Params().GetConsensus(), blockHash, true))
-			continue;
 		// skip non-syscoin txns
-		if (tx.nVersion != SYSCOIN_TX_VERSION)
+		if (item.second.nVersion != SYSCOIN_TX_VERSION)
 			continue;
-		if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
+		if (!DecodeEscrowTx(item.second, op, nOut, vvch, -1) 
     		|| !IsEscrowOp(op) 
 			|| vvch[0] != vchEscrow
     		|| op != OP_ESCROW_RELEASE)
@@ -1125,8 +1118,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     if(!theEscrow.UnserializeFromTx(tx))
         throw runtime_error("cannot unserialize escrow from txn");
     CTransaction fundingTx;
-	uint256 blockHash;
-	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
+	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to escrow transaction");
 
 	std::vector<unsigned char> vchArbiterKeyByte;
@@ -1317,8 +1309,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
 	CTransaction fundingTx;
-	uint256 blockHash;
-	if (!GetTransaction(escrow.escrowInputTxHash, fundingTx, Params().GetConsensus(), blockHash, true))
+	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to read escrow transaction");
 
  	int nOutMultiSig = 0;
@@ -1538,7 +1529,6 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
     map< vector<unsigned char>, int > vNamesI;
     map< vector<unsigned char>, UniValue > vNamesO;
 
-    uint256 blockHash;
     uint256 hash;
     CTransaction tx, dbtx;
 
@@ -1570,7 +1560,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		if (vNamesI.find(vchName) != vNamesI.end() && (escrow.nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 			continue;
 
-		if (!GetTransaction(escrow.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(escrow.nHeight, escrow.txHash, tx, Params().GetConsensus()))
 			continue;
 		nHeight = escrow.nHeight;
         // build the output UniValue
@@ -1637,7 +1627,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
         BOOST_FOREACH(txPos2, vtxPos) {
             txHash = txPos2.txHash;
 			CTransaction tx;
-			if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true)) {
+			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus())) {
 				error("could not read txpos");
 				continue;
 			}
@@ -1736,8 +1726,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
         if (nCountFrom < nFrom + 1)
             continue;
         CTransaction tx;
-        uint256 blockHash;
-		if (!GetTransaction(txEscrow.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(txEscrow.nHeight, txEscrow.txHash, tx, Params().GetConsensus()))
 			continue;
 
 		int expired = 0;
@@ -1816,7 +1805,7 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 		int expired = 0;
         int nHeight = txEscrow.nHeight;
         
-		if (!GetTransaction(txEscrow.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(nHeight, txEscrow.txHash, tx, Params().GetConsensus()))
 			continue;
 
 

@@ -530,8 +530,7 @@ bool GetTxOfAlias(const vector<unsigned char> &vchName,
 		return false;
 	}
 
-	uint256 hashBlock;
-	if (!GetTransaction(txPos.txHash, tx, Params().GetConsensus(), hashBlock, true))
+	if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
 		return error("GetTxOfAlias() : could not read tx from disk");
 
 	return true;
@@ -569,10 +568,9 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 			throw runtime_error("no alias result returned");
 
 		// get transaction pointed to by alias
-		uint256 blockHash;
 		CTransaction tx;
 		uint256 txHash = vtxPos.back().txHash;
-		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(vtxPos.back().nHeight, txPos.txHash, tx, Params().GetConsensus()))
 			throw runtime_error("failed to read transaction from disk");
 
 		GetAliasAddress(tx, strAddress);
@@ -893,7 +891,6 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 	map<vector<unsigned char>, UniValue> vNamesO;
 
 	{
-		uint256 blockHash;
 		uint256 hash;
 		CTransaction tx;
 	
@@ -927,7 +924,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
 				continue;
 			CAliasIndex alias = vtxPos.back();	
-			if (!GetTransaction(alias.txHash, tx, Params().GetConsensus(), blockHash, true))
+			if (!GetSyscoinTransaction(alias.nHeight, alias.txHash, tx, Params().GetConsensus()))
 				continue;
 			if(!IsAliasMine(tx))
 				continue;
@@ -988,9 +985,8 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 			throw runtime_error("no result returned");
 
 		// get transaction pointed to by alias
-		uint256 blockHash;
 		uint256 txHash = vtxPos.back().txHash;
-		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
 			throw runtime_error("failed to read transaction from disk");
 
 		UniValue oName(UniValue::VOBJ);
@@ -1050,11 +1046,10 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 
 		CAliasIndex txPos2;
 		uint256 txHash;
-		uint256 blockHash;
 		BOOST_FOREACH(txPos2, vtxPos) {
 			txHash = txPos2.txHash;
 			CTransaction tx;
-			if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true)) {
+			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus()))
 				error("could not read txpos");
 				continue;
 			}
@@ -1169,9 +1164,8 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 		UniValue oName(UniValue::VOBJ);
 		oName.push_back(Pair("name", name));
 		CTransaction tx;
-		uint256 blockHash;
 		uint256 txHash = txName.txHash;
-		if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(txName.nHeight, txHash, tx, Params().GetConsensus()))
 			continue;
 
 		oName.push_back(Pair("value", stringFromVch(txName.vchValue)));
@@ -1247,7 +1241,7 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 		int expires_in = 0;
 		int expired_block = 0;
 		int nHeight = txName.nHeight;
-		if (!GetTransaction(txName.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(nHeight, txName.txHash, tx, Params().GetConsensus()))
 			continue;
 
 		oName.push_back(Pair("txid", txName.txHash.GetHex()));

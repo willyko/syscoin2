@@ -148,8 +148,7 @@ bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessa
         return false;
     }
 
-    uint256 hashBlock;
-    if (!GetTransaction(txPos.txHash, tx, Params().GetConsensus(), hashBlock, true))
+    if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
         return error("GetTxOfMessage() : could not read tx from disk");
 
     return true;
@@ -588,7 +587,6 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		vchName = vchFromValue(params[0]);
 
     UniValue oRes(UniValue::VARR);
-    uint256 blockHash;
     uint256 hash;
     CTransaction tx, dbtx;
 
@@ -613,7 +611,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		if (!pmessagedb->ReadMessage(vchName, vtxPos))
 			continue;
 		CMessage message = vtxPos.back();
-		if (!GetTransaction(message.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
 		if(!IsMessageMine(tx))
 			continue;
@@ -654,7 +652,6 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		vchName = vchFromValue(params[0]);
 
     UniValue oRes(UniValue::VARR);
-    uint256 blockHash;
     uint256 hash;
     CTransaction tx, dbtx;
 
@@ -677,7 +674,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		if (!pmessagedb->ReadMessage(vchName, vtxPos) || vtxPos.empty())
 			continue;
 		CMessage message = vtxPos.back();
-		if (!GetTransaction(message.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
 		if(IsMessageMine(tx))
 			continue;
@@ -725,7 +722,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
         BOOST_FOREACH(txPos2, vtxPos) {
             txHash = txPos2.txHash;
 			CTransaction tx;
-			if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true)) {
+			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus())) {
 				error("could not read txpos");
 				continue;
 			}

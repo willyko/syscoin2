@@ -181,8 +181,7 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
         return false;
     }
 
-    uint256 hashBlock;
-    if (!GetTransaction(txPos.txHash, tx, Params().GetConsensus(), hashBlock, true))
+    if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
         return error("GetTxOfCert() : could not read tx from disk");
 
     return true;
@@ -826,8 +825,7 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
 		throw runtime_error("failed to read from cert DB");
 	CCert ca = vtxPos.back();
-	uint256 blockHash;
-	if (!GetTransaction(ca.txHash, tx, Params().GetConsensus(), blockHash, true))
+	if (!GetSyscoinTransaction(ca.nHeight, ca.txHash, tx, Params().GetConsensus()))
 		throw runtime_error("failed to read transaction from disk");   
     string sHeight = strprintf("%llu", ca.nHeight);
     oCert.push_back(Pair("cert", stringFromVch(vchCert)));
@@ -885,7 +883,6 @@ UniValue certlist(const UniValue& params, bool fHelp) {
     map< vector<unsigned char>, int > vNamesI;
     map< vector<unsigned char>, UniValue > vNamesO;
 
-    uint256 blockHash;
     uint256 hash;
     CTransaction tx;
 
@@ -925,7 +922,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 			continue;
 		
 		CCert cert = vtxPos.back();
-		if (!GetTransaction(cert.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(cert.nHeight, cert.txHash, tx, Params().GetConsensus()))
 			continue;
 		
 		if(!IsCertMine(tx))
@@ -991,11 +988,10 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 
         CCert txPos2;
         uint256 txHash;
-        uint256 blockHash;
         BOOST_FOREACH(txPos2, vtxPos) {
             txHash = txPos2.txHash;
 			CTransaction tx;
-			if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true)) {
+			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus())) {
 				error("could not read txpos");
 				continue;
 			}
@@ -1103,8 +1099,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
         if (nCountFrom < nFrom + 1)
             continue;
         CTransaction tx;
-        uint256 blockHash;
-		if (!GetTransaction(txCert.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(txCert.nHeight, txCert.txHash, tx, Params().GetConsensus()))
 			continue;
 
 		int expired = 0;
@@ -1190,14 +1185,13 @@ UniValue certscan(const UniValue& params, bool fHelp) {
         oCert.push_back(Pair("cert", cert));
         CTransaction tx;
         CCert txCert = pairScan.second;
-        uint256 blockHash;
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
         int nHeight = txCert.nHeight;
         vector<unsigned char> vchValue = txCert.vchTitle;
         string value = stringFromVch(vchValue);
-		if (!GetTransaction(txCert.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(nHeight, txCert.txHash, tx, Params().GetConsensus()))
 			continue;
 
         //string strAddress = "";

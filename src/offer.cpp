@@ -447,11 +447,6 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 		return false;
 	txPos = vtxPos.back();
 	vtxPos.pop_back();
-	while(!txPos.accept.IsNull() && !vtxPos.empty())
-	{
-		txPos = vtxPos.back();
-		vtxPos.pop_back();
-	}
 	int nHeight = txPos.nHeight;
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
@@ -461,8 +456,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 		return false;
 	}
 
-	uint256 hashBlock;
-	if (!GetTransaction(txPos.txHash, tx, Params().GetConsensus(), hashBlock, true))
+	if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
 		return false;
 
 	return true;
@@ -486,9 +480,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 		return false;
 	}
 
-	LogPrintf("GetTxOfOfferAccept(%s)", theOfferAccept.txHash.GetHex().c_str());
-	uint256 hashBlock;
-	if (!GetTransaction(theOfferAccept.txHash, tx, Params().GetConsensus(), hashBlock, true))
+	if (!GetSyscoinTransaction(nHeight, theOfferAccept.txHash, tx, Params().GetConsensus()))
 		return false;
 
 	return true;
@@ -1756,7 +1748,6 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 		CTransaction txCert;
 		CCert theCert;
 		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
-		uint256 blockHash;
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
 			UniValue oList(UniValue::VOBJ);
@@ -1767,9 +1758,10 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			GetCertAddress(txCert, strAddress);
 			oList.push_back(Pair("cert_address", strAddress));
 			int expires_in = 0;
-			if (!GetTransaction(txCert.GetHash(), txCert, Params().GetConsensus(), blockHash, true))
-				continue;
 			uint64_t nHeight = theCert.nHeight;
+			if (!GetSyscoinTransaction(nHeight, txCert.GetHash(), txCert, Params().GetConsensus()))
+				continue;
+			
             if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight > 0)
 			{
 				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
@@ -2419,7 +2411,24 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	res.push_back(stringFromVch(vchAccept));
 	return res;
 }
-
+bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams)
+{
+	CBlockIndex *pindexSlow = NULL; 
+	LOCK(cs_main);
+	pindexSlow = chainActive[nHeight];
+    if (pindexSlow) {
+        CBlock block;
+        if (ReadBlockFromDisk(block, pindexSlow, consensusParams)) {
+            BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+                if (tx.GetHash() == hash) {
+                    txOut = tx;
+                    return true;
+                }
+            }
+        }
+    }
+	return false;
+}
 
 UniValue offerinfo(const UniValue& params, bool fHelp) {
 	if (fHelp || 1 != params.size())
@@ -2438,9 +2447,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 
         // get transaction pointed to by offer
         CTransaction tx;
-        uint256 blockHash;
         uint256 txHash = vtxPos.back().txHash;
-        if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true))
+        if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
             throw runtime_error("failed to read offer transaction from disk");
 
         COffer theOffer = vtxPos.back();
@@ -2459,7 +2467,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	        CTransaction txA;
 	        uint256 blockHashA;
 	        uint256 txHashA= ca.txHash;
-	        if (!GetTransaction(txHashA, txA, Params().GetConsensus(), blockHashA, true))
+	        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus(), blockHashA, true))
 			{
 				error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
 				continue;
@@ -2693,18 +2701,13 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
 			UniValue oOfferAccept(UniValue::VOBJ);
-            // get txn hash, read txn index
-            hash = item.second.GetHash();
-
-            if (!GetTransaction(hash, tx, Params().GetConsensus(), blockHash, true))
-                continue;
-            if (tx.nVersion != SYSCOIN_TX_VERSION)
+            if (item.second.nVersion != SYSCOIN_TX_VERSION)
                 continue;
 
             // decode txn
             vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
+            if (!DecodeEscrowTx(item.second, op, nOut, vvch, -1) 
             	|| !IsEscrowOp(op))
                 continue;
 			
@@ -2871,7 +2874,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 				theOfferA = vtxPos.back();
 			}
 			uint256 blockHash;
-			if (!GetTransaction(theOfferA.txHash, tx, Params().GetConsensus(), blockHash, true))
+			if (!GetSyscoinTransaction(theOfferA.nHeight, theOfferA.txHash, tx, Params().GetConsensus()))
 				continue;
 			nHeight = theOfferA.nHeight;
             // build the output UniValue
@@ -2941,11 +2944,10 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 
 		COffer txPos2;
 		uint256 txHash;
-		uint256 blockHash;
 		BOOST_FOREACH(txPos2, vtxPos) {
 			txHash = txPos2.txHash;
 			CTransaction tx;
-			if (!GetTransaction(txHash, tx, Params().GetConsensus(), blockHash, true)) {
+			if (!GetSyscoinTransaction(txPos2.nHeight, txHash, tx, Params().GetConsensus())) {
 				error("could not read txpos");
 				continue;
 			}
@@ -3073,8 +3075,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		if (nCountFrom < nFrom + 1)
 			continue;
         CTransaction tx;
-        uint256 blockHash;
-		if (!GetTransaction(txOffer.txHash, tx, Params().GetConsensus(), blockHash, true))
+		if (!GetSyscoinTransaction(txOffer.nHeight, txOffer.txHash, tx, Params().GetConsensus()))
 			continue;
 		// dont return sold out offers
 		if(txOffer.nQty <= 0)
