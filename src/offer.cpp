@@ -2624,14 +2624,13 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			// Check hash
 			const vector<unsigned char> &vchAcceptRand = vvch[1];			
 
-			CTransaction offerTx;
+			CTransaction offerTx, acceptTx;
 			COffer theOffer;
 
 			if(!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))	
 				continue;
-
-			// check for existence of offeraccept in txn offer obj
-			theOfferAccept = theOffer.accept;
+			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, acceptTx))
+				continue;
 			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
 				continue;					
 			string offer = stringFromVch(vchOffer);
@@ -2703,7 +2702,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
 			CTransaction escrowTx;
 			CEscrow theEscrow;
-			CTransaction offerTx;
+			CTransaction offerTx, acceptTx;
 			
 			if(!GetTxOfEscrow(*pescrowdb, vchEscrow, theEscrow, escrowTx))	
 				continue;
@@ -2713,11 +2712,12 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CSyscoinAddress buyerAddress(buyerKey.GetID());
 			if(!buyerAddress.IsValid() || !IsMine(*pwalletMain, buyerAddress.Get()))
 				continue;
-			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOffer, theEscrow.vchOfferAcceptLink, theOfferAccept, offerTx))
+			if(!GetTxOfOffer(*pofferdb, theEscrow.vchOffer, theOffer, offerTx))	
+				continue;
+			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOffer, theEscrow.vchOfferAcceptLink, theOfferAccept, acceptTx))
 				continue;
 
 			// check for existence of offeraccept in txn offer obj
-
 			if(theOfferAccept.vchAcceptRand != theEscrow.vchOfferAcceptLink)
 				continue;	
  
