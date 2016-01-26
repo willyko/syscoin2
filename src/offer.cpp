@@ -2451,8 +2451,11 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	        uint256 blockHashA;
 	        uint256 txHashA= ca.txHash;
 	        if (!GetTransaction(txHashA, txA, Params().GetConsensus(), blockHashA, true))
-				throw runtime_error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
-            vector<vector<unsigned char> > vvch;
+			{
+				error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
+				continue;
+			}
+			vector<vector<unsigned char> > vvch;
             int op, nOut;
             if (!DecodeOfferTx(txA, op, nOut, vvch, -1) 
             	|| !IsOfferOp(op) 

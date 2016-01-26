@@ -1959,20 +1959,34 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	TRY_LOCK(cs_main, cs_maintry);
 	string opName = aliasFromOp(op);
 	vector<CAliasIndex> vtxPos;
-	if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-		return false;
-
-	for(vector<CAliasIndex>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	paliasdb->ReadAlias(vvchArgs[0], vtxPos);
+	// erase from back to front up to the reorg affected service tx position
+	bool found = false;
+	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
-		if (it->txHash == tx.GetHash())
+		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			it = vtxPos.erase(it);
+			found = true;
+			break;
 		}
-		else
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
 		{
-			++it;
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
+
 	
 	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
@@ -2023,18 +2037,6 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		}
 	}
 
-
-    if(op == OP_OFFER_ACCEPT ) {
-    	// make sure the offeraccept is also in the serialized offer in the txn
-    	if(theOffer.accept.IsNull() || theOffer.accept.vchAcceptRand != vvchArgs[1])
-            return error("DisconnectBlock() : not found in %s %s\n",
-            		opName.c_str(), stringFromVch(vvchArgs[1]).c_str());
-				
-		// if not linked offer add qty back into offer which was removed on connectinput
-		if(!vtxPos.empty() && found && theOffer.vchLinkOffer.empty())					
-			vtxPos.back().nQty += theOffer.accept.nQty;
-    }
-
     // write new offer state to db
 	if(!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
 		return error("DisconnectBlock() : failed to write to offer DB");
@@ -2055,20 +2057,35 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	TRY_LOCK(cs_main, cs_maintry);
 	// make sure a DB record exists for this cert
 	vector<CCert> vtxPos;
-	if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-		return false;
+	pcertdb->ReadCert(vvchArgs[0], vtxPos);
 
-	for(vector<CCert>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	// erase from back to front up to the reorg affected service tx position
+	bool found = false;
+	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
-		if (it->txHash == tx.GetHash())
+		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			it = vtxPos.erase(it);
+			found = true;
+			break;
 		}
-		else
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
 		{
-			++it;
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
+
 
 	// write new offer state to db
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
@@ -2089,20 +2106,35 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	TRY_LOCK(cs_main, cs_maintry);
 	// make sure a DB record exists for this cert
 	vector<CEscrow> vtxPos;
-	if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-		return false;
+	pescrowdb->ReadEscrow(vvchArgs[0], vtxPos);
 
-	for(vector<CEscrow>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	// erase from back to front up to the reorg affected service tx position
+	bool found = false;
+	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
-		if (it->txHash == tx.GetHash())
+		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			it = vtxPos.erase(it);
+			found = true;
+			break;
 		}
-		else
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
 		{
-			++it;
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
+
 
 	// write new escrow state to db
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
@@ -2123,20 +2155,35 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 	TRY_LOCK(cs_main, cs_maintry);
 	// make sure a DB record exists for this cert
 	vector<CMessage> vtxPos;
-	if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-		return false;
+	pmessagedb->ReadMessage(vvchArgs[0], vtxPos);
 
-	for(vector<CMessage>::iterator it = vtxPos.begin(); it != vtxPos.end();)
+	// erase from back to front up to the reorg affected service tx position
+	bool found = false;
+	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
-		if (it->txHash == tx.GetHash())
+		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			it = vtxPos.erase(it);
+			found = true;
+			break;
 		}
-		else
+
+	}
+	if(found)
+	{
+		while(!vtxPos.empty())
 		{
-			++it;
+			if (vtxPos.back().txHash == tx.GetHash())
+			{
+				vtxPos.pop_back();
+				break;
+			}
+			else
+			{
+				vtxPos.pop_back();
+			}
 		}
 	}
+
 
 	// write new message state to db
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
