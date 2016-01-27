@@ -717,6 +717,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("offerrefund refund status too long");
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckOfferInputs() : offerrefund offer mismatch");
+				if (!theOffer.vchLinkOffer.empty())
+					throw error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 				if (fBlock && !fJustCheck) {
 					// Check hash
 					const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
@@ -2049,26 +2051,20 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 
 	// look for a transaction with this key
 	CTransaction txOffer;
-	COfferAccept theOfferAccept;
+	COffer theOffer;
 	uint256 blockHash;
 
-	if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, txOffer))
+	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
 		throw runtime_error("could not find an offer accept with this identifier");
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
-
-	// check for existence of offeraccept in txn offer obj
-	if(theOfferAccept.vchAcceptRand != vchAcceptRand)
-		throw runtime_error("could not find an offer accept in offer txn");
 
 	if(!DecodeOfferTx(txOffer, op, nOut, vvch, -1)) 
 	{
 		string err = "could not decode offeraccept tx with hash: " +  txOffer.GetHash().GetHex();
         throw runtime_error(err.c_str());
 	}
-	COffer theOffer(txOffer);
-	if(theOffer.IsNull())
-		return string("could not decode offer");
+
 	const CWalletTx *wtxIn;
 	wtxIn = pwalletMain->GetWalletTx(txOffer.GetHash());
 	if (wtxIn == NULL)
