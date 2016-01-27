@@ -2443,10 +2443,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			COfferAccept ca = vtxPos[i].accept;
 			if(ca.IsNull())
 				continue;
-			// get last active accept only
-			if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
-				continue;
-			vNamesI[ca.vchAcceptRand] = ca.nHeight;
 			UniValue oOfferAccept(UniValue::VOBJ);
 
 	        // get transaction pointed to by offer
@@ -2464,7 +2460,11 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
-			const vector<unsigned char> &vchAcceptRand = vvch[1];	
+			const vector<unsigned char> &vchAcceptRand = vvch[1];
+			// get last active accept only
+			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
+				continue;
+			vNamesI[vchAcceptRand] = ca.nHeight;
 			string sTime;
 			CBlockIndex *pindex = chainActive[ca.nHeight];
 			if (pindex) {
