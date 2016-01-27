@@ -24,7 +24,6 @@ OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *pa
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
 	offerGUID = idx.data(OfferAcceptTableModel::NameRole).toString();
 	offerAcceptGUID = idx.data(OfferAcceptTableModel::GUIDRole).toString();
-	ui->paytxidEdit->setVisible(false);
 	ui->linkGUIDEdit->setVisible(false);
 	ui->linkGUIDLabel->setVisible(false);
 	ui->commissionEdit->setVisible(false);
