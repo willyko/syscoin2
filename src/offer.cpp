@@ -3185,7 +3185,7 @@ void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COff
 			continue;
         if(offerList[i].accept.vchAcceptRand == theOA.vchAcceptRand) {
             offerList[i].accept = theOA;
-			return
+			return;
         }
     }
 	theOffer.accept = theOA;
