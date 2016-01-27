@@ -2419,7 +2419,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 
 	UniValue oLastOffer(UniValue::VOBJ);
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	map< vector<unsigned char>, int > vNamesI;
 	string offer = stringFromVch(vchOffer);
 	{
 		vector<COffer> vtxPos;
@@ -2443,21 +2442,12 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			COfferAccept ca = vtxPos[i].accept;
 			if(ca.IsNull())
 				continue;
-			// get last active accept only
-			if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
-				continue;
-			vNamesI[ca.vchAcceptRand] = ca.nHeight;
+
 			UniValue oOfferAccept(UniValue::VOBJ);
-
-	        // get transaction pointed to by offer
-
 	        CTransaction txA;
-	        uint256 txHashA= ca.txHash;
-	        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus()))
-			{
-				error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
+			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, ca.vchAcceptRand, ca, txA))
 				continue;
-			}
+	        uint256 txHashA= ca.txHash;
 			vector<vector<unsigned char> > vvch;
             int op, nOut;
             if (!DecodeOfferTx(txA, op, nOut, vvch, -1) 
@@ -2591,7 +2581,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
     if (params.size() == 1)
         vchOfferToFind = vchFromValue(params[0]);
-    map< vector<unsigned char>, int > vNamesI;
 	vector<unsigned char> vchEscrow;	
     UniValue oRes(UniValue::VARR);
     {
@@ -2636,10 +2625,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				continue;
 			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
 				continue;
-			// get last active accept only
-			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
-				continue;
-			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
@@ -2685,7 +2670,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
 			oRes.push_back(oOfferAccept);	
         }
-		vNamesI.clear();
        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
 			UniValue oOfferAccept(UniValue::VOBJ);
@@ -2734,12 +2718,8 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(offerVvch[0] != vchOfferToFind && !vchOfferToFind.empty())
 				continue;
 			const vector<unsigned char> &vchAcceptRand = offerVvch[1];
-			// get last active accept only
-			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
-				continue;
 			if(theOffer.IsNull())
 				continue;
-			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
@@ -2836,7 +2816,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
             	|| (op == OP_OFFER_ACCEPT))
                 continue;
 
-            // get the txn alias name
+            // get the txn name
             vchName = vvch[0];
 
 			// skip this offer if it doesn't match the given filter value
@@ -3179,7 +3159,7 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA){
 	if(offerList.empty())
 		return;
-    for(unsigned int i=offerList.size()-1;i>=0;i--) {
+    for(int i=offerList.size()-1;i>=0;i--) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == theOA.vchAcceptRand) {
@@ -3192,7 +3172,7 @@ void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COff
 bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
 		return false;
-    for(unsigned int i=offerList.size()-1;i>=0;i--) {
+    for(int i=offerList.size()-1;i>=0;i--) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
