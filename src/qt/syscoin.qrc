@@ -55,8 +55,8 @@
         <file alias="escrow">res/icons/escrow.png</file>
         <file alias="escrow1">res/icons/escrow1.png</file>
         <file alias="mail">res/icons/mail.png</file>
-        <file alias="mailin">res/icons/mailin.png</file>
-        <file alias="mailout">res/icons/mailout.png</file>
+        <file alias="inmail">res/icons/mailin.png</file>
+        <file alias="outmail">res/icons/mailout.png</file>
         <file alias="message">res/icons/message.png</file>
         <file alias="search">res/icons/search.png</file>
         <file alias="aboutshade">res/icons/about-shade.png</file>
