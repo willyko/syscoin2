@@ -867,10 +867,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 							LogPrintf("CheckOfferInputs() - OFFER_REFUND_PAYMENT_INPROGRESS %s\n", strError.c_str());			
 					}
 					else if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
+						theOfferAccept.nHeight = nHeight;
 						theOfferAccept.bRefunded = true;
-						theOfferAccept.txRefundId = tx.GetHash();
+						theOfferAccept.txHash = tx.GetHash();
 						theOffer.accept = theOfferAccept;
-						nHeight = theOfferAccept.nHeight;
 					}
 					
 					
@@ -2420,6 +2420,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 
 	UniValue oLastOffer(UniValue::VOBJ);
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
+	map< vector<unsigned char>, int > vNamesI;
 	string offer = stringFromVch(vchOffer);
 	{
 		vector<COffer> vtxPos;
@@ -2443,6 +2444,10 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			COfferAccept ca = vtxPos[i].accept;
 			if(ca.IsNull())
 				continue;
+			// get last active accept only
+			if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
+				continue;
+			vNamesI[ca.vchAcceptRand] = ca.nHeight;
 			UniValue oOfferAccept(UniValue::VOBJ);
 
 	        // get transaction pointed to by offer
@@ -2458,7 +2463,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
             int op, nOut;
             if (!DecodeOfferTx(txA, op, nOut, vvch, -1) 
             	|| !IsOfferOp(op) 
-            	|| (op != OP_OFFER_ACCEPT))
+            	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
 			const vector<unsigned char> &vchAcceptRand = vvch[1];	
 			string sTime;
@@ -2505,12 +2510,10 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			}
 			if(ca.bRefunded) { 
 				oOfferAccept.push_back(Pair("refunded", "true"));
-				oOfferAccept.push_back(Pair("refund_txid", ca.txRefundId.GetHex()));
 			}
 			else
 			{
 				oOfferAccept.push_back(Pair("refunded", "false"));
-				oOfferAccept.push_back(Pair("refund_txid", ""));
 			}
 			
 			
@@ -2615,7 +2618,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             int op, nOut;
             if (!DecodeOfferTx(wtx, op, nOut, vvch, -1) 
             	|| !IsOfferOp(op) 
-            	|| (op != OP_OFFER_ACCEPT))
+            	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
 			if(vvch[0] != vchOfferToFind && !vchOfferToFind.empty())
 				continue;
@@ -2625,7 +2628,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
 			// Check hash
 			const vector<unsigned char> &vchAcceptRand = vvch[1];			
-
 			CTransaction offerTx, acceptTx;
 			COffer theOffer;
 
@@ -2634,7 +2636,11 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, acceptTx))
 				continue;
 			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
-				continue;					
+				continue;
+			// get last active accept only
+			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
+				continue;
+			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
@@ -2680,6 +2686,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
 			oRes.push_back(oOfferAccept);	
         }
+		vNamesI.clear();
        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
 			UniValue oOfferAccept(UniValue::VOBJ);
@@ -2723,7 +2730,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             vector<vector<unsigned char> > offerVvch;
             if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch, -1) 
             	|| !IsOfferOp(op) 
-            	|| (op != OP_OFFER_ACCEPT))
+            	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
 			if(offerVvch[0] != vchOfferToFind && !vchOfferToFind.empty())
 				continue;

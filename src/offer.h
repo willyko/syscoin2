@@ -46,7 +46,6 @@ public:
 	float nPrice;
 	bool bPaid;
 	bool bRefunded;
-	uint256 txRefundId;
 	uint256 txBTCId;
 	std::vector<unsigned char> vchRefundAddress;
 	std::vector<unsigned char> vchLinkOfferAccept;
@@ -69,7 +68,6 @@ public:
     	READWRITE(nPrice);
     	READWRITE(bPaid);
 		READWRITE(bRefunded);
-		READWRITE(txRefundId);
 		READWRITE(vchRefundAddress);
 		READWRITE(vchLinkOfferAccept);
 		READWRITE(vchCertLink);
@@ -90,7 +88,6 @@ public:
         && a.nPrice == b.nPrice
         && a.bPaid == b.bPaid
 		&& a.bRefunded == b.bRefunded
-		&& a.txRefundId == b.txRefundId
 		&& a.vchRefundAddress == b.vchRefundAddress
 		&& a.vchLinkOfferAccept == b.vchLinkOfferAccept
 		&& a.vchCertLink == b.vchCertLink
@@ -110,7 +107,6 @@ public:
         nPrice = b.nPrice;
         bPaid = b.bPaid;
 		bRefunded = b.bRefunded;
-		txRefundId = b.txRefundId;
 		vchRefundAddress = b.vchRefundAddress;
 		vchLinkOfferAccept = b.vchLinkOfferAccept;
 		vchCertLink = b.vchCertLink;
@@ -125,8 +121,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txRefundId.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
-    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false && txRefundId.IsNull() && txBTCId.IsNull()); }
+    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
+    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false  && txBTCId.IsNull()); }
 
 };
 class COfferLinkWhitelistEntry {
