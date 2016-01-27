@@ -3180,12 +3180,12 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA){
 	if(offerList.empty())
 		return;
-    for(unsigned int i=0;i<offerList.size();i++) {
+    for(unsigned int i=offerList.size()-1;i<=0;i--) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == theOA.vchAcceptRand) {
             offerList[i].accept = theOA;
-            return;
+			return
         }
     }
 	theOffer.accept = theOA;
@@ -3193,12 +3193,12 @@ void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COff
 bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
 		return false;
-    for(unsigned int i=0;i<offerList.size();i++) {
+    for(unsigned int i=offerList.size()-1;i<=0;i--) {
 		if(offerList[i].accept.IsNull())
 			continue;
         if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
             ca = offerList[i].accept;
-            return true;
+			return true;
         }
     }
     ca = offerList.back().accept;
