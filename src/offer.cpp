@@ -2137,7 +2137,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		if(!refundAddr.IsValid())
 			throw runtime_error("Refund address is not valid!");
 		std::vector<unsigned char> vchKey(newDefaultKey.begin(), newDefaultKey.end());
-		vchPubKey = vchKey;
+		vchPubKey = vchFromString(HexStr(vchKey));
 	}
 	else
 	{
@@ -2154,7 +2154,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
         if (!PubKey.IsFullyValid())
             throw runtime_error("Refund address refers to an invalid public key!");
 		std::vector<unsigned char> vchKey(PubKey.begin(), PubKey.end());
-		vchPubKey = vchKey;
+		vchPubKey = vchFromString(HexStr(vchKey));
 	}
 
     if (vchMessage.size() <= 0 && vchPubKey.empty())
