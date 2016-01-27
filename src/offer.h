@@ -299,6 +299,8 @@ public:
 	}
 	float GetPrice(const COfferLinkWhitelistEntry& entry=COfferLinkWhitelistEntry()){
 		float price = nPrice;
+		if(price==0 && !accept.IsNull())
+			return accept.nPrice;
 		float fCommission = nCommission;
 		if(!entry.IsNull())
 		{

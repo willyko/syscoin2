@@ -177,7 +177,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchAcceptRand, const vector<unsigned char> &refundCode)
 {
 	CTransaction myPrevTx = prevTx;
-	CTransaction myOfferAcceptTx;
+	CTransaction myOfferAcceptTx, offerTx;
 	COfferAccept theOfferAccept;
 	if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, myOfferAcceptTx))
 	{
@@ -214,6 +214,8 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	COffer theOffer(myOfferAcceptTx);
 	if(theOffer.IsNull())
 		return string("makeOfferRefundTX(): could not decode offer");
+	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))
+		return string("makeOfferRefundTX(): could not find an offer with this name");
 
 	// this is a syscoin txn
 	CWalletTx wtx, wtx2;
@@ -226,6 +228,11 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 		// lookup the price of the offer in syscoin based on pegged alias at the block # when accept was made (sets nHeight in offeraccept serialized UniValue in tx)
 		nTotalValue = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision)*theOfferAccept.nQty;
 	} 
+	else
+	{
+		if (!theOffer.vchLinkOffer.empty())
+			string("makeOfferRefundTX() :You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
+	}
 
 
 	// create OFFERACCEPT txn keys
@@ -717,8 +724,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("offerrefund refund status too long");
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckOfferInputs() : offerrefund offer mismatch");
-				if (!theOffer.vchLinkOffer.empty())
-					throw error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 				if (fBlock && !fJustCheck) {
 					// Check hash
 					const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
@@ -910,7 +915,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						myPriceOffer.GetOfferFromList(vtxPos);
 						int precision = 2;
 						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-						CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
 						if(tx.vout[nOut].nValue != nPrice)
 						{
 							theOfferAccept.bPaid = false;
@@ -2055,7 +2060,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	uint256 blockHash;
 
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
-		throw runtime_error("could not find an offer accept with this identifier");
+		throw runtime_error("could not find an offer with this identifier");
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
 
