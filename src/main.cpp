@@ -889,27 +889,27 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
 		LogPrintf("CheckTransaction failed, validation state: %s\n", FormatStateMessage(state).c_str());
         return false;
 	}
-	LogPrintf("AcceptToMemoryPoolWorker1\n");
+
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
-	LogPrintf("2\n");
+
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
     if (fRequireStandard && !IsStandardTx(tx, reason))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
-	LogPrintf("3\n");
+
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
     if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
-	LogPrintf("4\n");
+
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
         return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-in-mempool");
-LogPrintf("5\n");
+
     // Check for conflicts with in-memory transactions
     set<uint256> setConflicts;
     {
@@ -968,7 +968,7 @@ LogPrintf("5\n");
                 vHashTxnToUncache.push_back(hash);
             return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-known");
         }
-LogPrintf("6\n");
+
         // do all inputs exist?
         // Note that this does not check for the presence of actual outputs (see the next check for that),
         // and only helps with filling in pfMissingInputs (to determine missing vs spent).
@@ -981,11 +981,11 @@ LogPrintf("6\n");
                 return false; // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
             }
         }
-LogPrintf("7\n");
+
         // are the actual inputs available?
         if (!view.HaveInputs(tx))
             return state.Invalid(false, REJECT_DUPLICATE, "bad-txns-inputs-spent");
-LogPrintf("8\n");
+
         // Bring the best block into scope
         view.GetBestBlock();
 
@@ -998,7 +998,7 @@ LogPrintf("8\n");
         // Check for non-standard pay-to-script-hash in inputs
         if (fRequireStandard && !AreInputsStandard(tx, view))
             return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
-LogPrintf("9\n");
+
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
 
@@ -1034,7 +1034,7 @@ LogPrintf("9\n");
         if ((nSigOps > MAX_STANDARD_TX_SIGOPS) || (nBytesPerSigOp && nSigOps > nSize / nBytesPerSigOp))
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                 strprintf("%d", nSigOps));
-LogPrintf("10\n");
+
         CAmount mempoolRejectFee = pool.GetMinFee(GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false, strprintf("%d < %d", nFees, mempoolRejectFee));
@@ -1042,7 +1042,7 @@ LogPrintf("10\n");
             // Require that free transactions have sufficient priority to be mined in the next block.
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
-LogPrintf("11\n");
+
         // Continuously rate-limit free (really, very-low-fee) transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make others' transactions take longer to confirm.
@@ -1070,7 +1070,7 @@ LogPrintf("11\n");
             return state.Invalid(false,
                 REJECT_HIGHFEE, "absurdly-high-fee",
                 strprintf("%d > %d", nFees, ::minRelayTxFee.GetFee(nSize) * 10000));
-LogPrintf("12\n");
+
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
         size_t nLimitAncestors = GetArg("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
@@ -1081,7 +1081,7 @@ LogPrintf("12\n");
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
             return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
         }
-LogPrintf("13\n");
+
         // A transaction that spends outputs that would be replaced by it is invalid. Now
         // that we have the set of all ancestors we can detect this
         // pathological case by making sure setConflicts and setAncestors don't
@@ -1097,7 +1097,7 @@ LogPrintf("13\n");
                                  REJECT_INVALID, "bad-txns-spends-conflicting-tx");
             }
         }
-LogPrintf("14\n");
+
         // Check if it's economically rational to mine this transaction rather
         // than the ones it replaces.
         CAmount nConflictingFees = 0;
@@ -1137,7 +1137,7 @@ LogPrintf("14\n");
                                 mi->GetTx().GetHash().ToString()),
                             REJECT_NONSTANDARD, "too many potential replacements");
                 }
-LogPrintf("15\n");
+
                 // Don't allow the replacement to reduce the feerate of the
                 // mempool.
                 //
@@ -1235,12 +1235,12 @@ LogPrintf("15\n");
                         REJECT_INSUFFICIENTFEE, "insufficient fee");
             }
         }
-LogPrintf("16\n");
+
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         if (!CheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true))
             return false;
-LogPrintf("17\n");
+
         // Check again against just the consensus-critical mandatory script
         // verification flags, in case of bugs in the standard flags that cause
         // transactions to pass as valid when they're actually invalid. For
@@ -1255,7 +1255,7 @@ LogPrintf("17\n");
             return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
         }
-LogPrintf("18\n");
+
         // Remove conflicting transactions from the mempool
         BOOST_FOREACH(const CTxMemPool::txiter it, allConflicting)
         {
@@ -1277,7 +1277,7 @@ LogPrintf("18\n");
                 return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool full");
         }
     }
-LogPrintf("19\n");
+
     SyncWithWallets(tx, NULL);
 
     return true;
