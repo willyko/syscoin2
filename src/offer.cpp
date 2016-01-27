@@ -867,12 +867,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 							LogPrintf("CheckOfferInputs() - OFFER_REFUND_PAYMENT_INPROGRESS %s\n", strError.c_str());			
 					}
 					else if(vvchArgs[2] == OFFER_REFUND_COMPLETE){
-						theOfferAccept.nHeight = nHeight;
 						theOfferAccept.bRefunded = true;
-						theOfferAccept.txHash = tx.GetHash();
-						theOffer.accept = theOfferAccept;
 					}
-					
+					theOfferAccept.nHeight = nHeight;
+					theOfferAccept.txHash = tx.GetHash();
+					theOffer.accept = theOfferAccept;	
 					
 				}
 				else if (op == OP_OFFER_ACCEPT) {	
