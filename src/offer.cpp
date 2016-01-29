@@ -2169,12 +2169,14 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not find an offer with this identifier");
 	}
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
-	if (!vchLinkOfferAccept.empty() && GetTxOfOfferAccept(*pofferdb, vchOffer, vchLinkOfferAccept, theLinkedOfferAccept, acceptTx))
+	if (!vchLinkOfferAccept.empty())
 	{
-		nHeight = theLinkedOfferAccept.nHeight;
+		if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchLinkOfferAccept, theLinkedOfferAccept, acceptTx))
+			nHeight = theLinkedOfferAccept.nHeight;
+		else
+			throw runtime_error("could not find an offer accept with this identifier");
 	}
-	else
-		throw runtime_error("could not find an offer accept with this identifier");
+
 	COffer linkedOffer;
 	CTransaction tmpTx;
 	// check if parent to linked offer is still valid
