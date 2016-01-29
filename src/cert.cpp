@@ -320,7 +320,7 @@ bool CheckCertInputs(const CTransaction &tx,
 			}
 			else
 				GetPreviousInput(tx.vin[i].prevout, op, vvch);
-			}
+			
 			vector<vector<unsigned char> > vvch;
 			if(found)
 				break;

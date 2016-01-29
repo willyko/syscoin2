@@ -30,7 +30,7 @@ CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
-void GetPreviousInput(const COutput & outpoint, int &op, vector<unsigned char> vvchArgs)
+bool GetPreviousInput(const COutPoint & outpoint, int &op, vector<unsigned char> &vvchArgs)
 {
 
     map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
@@ -390,7 +390,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			}
 			else
 				GetPreviousInput(tx.vin[i].prevout, op, vvch);
-			}
+			
 			vector<vector<unsigned char> > vvch;
 			if(found)
 				break;
