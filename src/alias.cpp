@@ -38,15 +38,7 @@ bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigne
     if (it != mapWallet.end())
     {
         const CWalletTx* pcoin = &it->second;
-		if (DecodeAliasScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
-			return true;
-		else if(DecodeOfferScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
-			return true;
-		else if(DecodeCertScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
-			return true;
-		else if(DecodeMessageScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
-			return true;
-		else if(DecodeEscrowScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
+		if(IsSyscoinScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
 
     } else
@@ -71,10 +63,8 @@ bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut
     }
 	return false;
 }
-bool IsSyscoinScript(const CScript& scriptPubKey)
+bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs)
 {
-	vector<vector<unsigned char> > vvch;
-	int op;
 	if (DecodeAliasScript(scriptPubKey, op, vvch))
 		return true;
 	else if(DecodeOfferScript(scriptPubKey, op, vvch))
@@ -391,7 +381,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 				
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
 			else
 				GetPreviousInput(prevOutput, op, vvch);

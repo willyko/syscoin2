@@ -33,7 +33,7 @@
 using namespace std;
 // SYSCOIN services
 extern bool IndexOfSyscoinOutput(const CTransaction& tx);
-extern bool IsSyscoinScript(const CScript& scriptPubKey);
+extern bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs);
 extern int GetSyscoinTxVersion();
 extern vector<unsigned char> vchFromString(const string &str);
 
@@ -1688,7 +1688,9 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
 		// SYSCOIN txs are unspendable unless input to another syscoin tx (passed into createtransaction)
 		if(pcoin->nVersion == GetSyscoinTxVersion())
 		{
-			if (IsSyscoinScript(pcoin->vout[i].scriptPubKey))
+			int op;
+			vector<vector<unsigned char> > vvchArgs;
+			if (IsSyscoinScript(pcoin->vout[i].scriptPubKey, op, vvchArgs))
 				continue;
 		}
         pair<CAmount,pair<const CWalletTx*,unsigned int> > coin = make_pair(n,make_pair(pcoin, i));
@@ -1798,7 +1800,9 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
 			// SYSCOIN txs are unspendable unless input to another syscoin tx (passed into createtransaction)
 			if(pcoin->nVersion == GetSyscoinTxVersion())
 			{
-				if (IsSyscoinScript(pcoin->vout[outpoint.n].scriptPubKey))
+				int op;
+				vector<vector<unsigned char> > vvchArgs;
+				if (IsSyscoinScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
 					continue;
 			}
             // Clearly invalid input, fail

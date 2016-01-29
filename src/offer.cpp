@@ -590,7 +590,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			{
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
 			else
 				GetPreviousInput(prevOutput, op, vvch);

@@ -185,27 +185,6 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
 
     return true;
 }
-
-bool DecodeCertTxInputs(const CTransaction& tx, int& op, int& nOut,
-        vector<vector<unsigned char> >& vvch, CCoinsViewCache &inputs) {
-    bool found = false;
-
-	const COutPoint *prevOutput = NULL;
-	CCoins prevCoins;
-    // Strict check - bug disallowed
-    for (unsigned int i = 0; i < tx.vin.size(); i++) {
-        const CTxIn& in = tx.vin[i];
-		prevOutput = &in.prevout;
-		inputs.GetCoins(prevOutput->hash, prevCoins);
-        vector<vector<unsigned char> > vvchRead;
-        if (DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvchRead)) {
-            nOut = i; found = true; vvch = vvchRead;
-            break;
-        }
-    }
-    if (!found) vvch.clear();
-    return found && IsCertOp(op);
-}
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,
         vector<vector<unsigned char> >& vvch, int nHeight) {
     bool found = false;
@@ -318,7 +297,7 @@ bool CheckCertInputs(const CTransaction &tx,
 			{
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
 			else
 				GetPreviousInput(prevOutput, op, vvch);
