@@ -117,8 +117,10 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
 }
-static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
+static bool CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
 {
+	if(wtx.nVersion != GetSyscoinTxVersion())
+		return false;	
 	uint256 hash = wtx.GetHash();
 	BOOST_FOREACH(const CTxOut& txout, wtx.vout)
 	{
@@ -127,8 +129,6 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 		isminetype mine = wallet->IsMine(txout);
 		if(mine)
 		{
-			if(wtx.nVersion != GetSyscoinTxVersion())
-				continue;	
 			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
 			// we want to display the data carrying one and not the empty utxo		
 			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
@@ -144,7 +144,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 					else if(type == SEND)
 						sub.debit = nNet;
 					parts.append(sub);
-					return;
+					return true;
 				}
 			}
 			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
@@ -160,7 +160,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 					else if(type == SEND)
 						sub.debit = nNet;
 					parts.append(sub);
-					return;
+					return true;
 				}
 			}
 			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
@@ -176,7 +176,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 					else if(type == SEND)
 						sub.debit = nNet;
 					parts.append(sub);
-					return;	
+					return true;
 				}
 			}
 			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
@@ -192,7 +192,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 					else if(type == SEND)
 						sub.debit = nNet;
 					parts.append(sub);
-					return;
+					return true;
 				}
 			}
 			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
@@ -208,12 +208,13 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 					else if(type == SEND)
 						sub.debit = nNet;
 					parts.append(sub);
-					return;
+					return true;
 				}
 			}
 			
 		}
 	}
+	return true;
 }
 
 /*
@@ -239,36 +240,38 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         // Credit
         //
 		// SYSCOIN - this should be a received service
-		CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, RECV);		
-		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+		if(!CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, RECV))
 		{
-			isminetype mine = wallet->IsMine(txout);
-			if(mine)
+			BOOST_FOREACH(const CTxOut& txout, wtx.vout)
 			{
-				TransactionRecord sub(hash, nTime);
-				CTxDestination address;
-				sub.idx = parts.size(); // sequence number
-				sub.credit = txout.nValue;
-				sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
-				if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
+				isminetype mine = wallet->IsMine(txout);
+				if(mine)
 				{
-					// Received by Syscoin Address
-					sub.type = TransactionRecord::RecvWithAddress;
-					sub.address = CSyscoinAddress(address).ToString();
-				}
-				else
-				{
-					// Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
-					sub.type = TransactionRecord::RecvFromOther;
-					sub.address = mapValue["from"];
-				}
-				if (wtx.IsCoinBase())
-				{
-					// Generated
-					sub.type = TransactionRecord::Generated;
-				}
+					TransactionRecord sub(hash, nTime);
+					CTxDestination address;
+					sub.idx = parts.size(); // sequence number
+					sub.credit = txout.nValue;
+					sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
+					if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
+					{
+						// Received by Syscoin Address
+						sub.type = TransactionRecord::RecvWithAddress;
+						sub.address = CSyscoinAddress(address).ToString();
+					}
+					else
+					{
+						// Received by IP connection (deprecated features), or a multisignature or other non-simple transaction
+						sub.type = TransactionRecord::RecvFromOther;
+						sub.address = mapValue["from"];
+					}
+					if (wtx.IsCoinBase())
+					{
+						// Generated
+						sub.type = TransactionRecord::Generated;
+					}
 
-				parts.append(sub);
+					parts.append(sub);
+				}
 			}
 		}
 		
@@ -306,45 +309,47 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             // Debit
             //
 			// SYSCOIN - this should be a new service you've created
-			CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, SEND);	
-			CAmount nTxFee = nDebit - wtx.GetValueOut();
-
-			for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
+			if(!CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, SEND))
 			{
-				const CTxOut& txout = wtx.vout[nOut];
-				TransactionRecord sub(hash, nTime);
-				sub.idx = parts.size();
-				sub.involvesWatchAddress = involvesWatchAddress;
-				if(wallet->IsMine(txout))
-				{
-					// Ignore parts sent to self, as this is usually the change
-					// from a transaction sent back to our own address.
-					continue;
-				}
-				CTxDestination address;
-				if (ExtractDestination(txout.scriptPubKey, address))
-				{
-					// Sent to Syscoin Address
-					sub.type = TransactionRecord::SendToAddress;
-					sub.address = CSyscoinAddress(address).ToString();
-				}
-				else
-				{
-					// Sent to IP, or other non-address transaction like OP_EVAL
-					sub.type = TransactionRecord::SendToOther;
-					sub.address = mapValue["to"];
-				}
-				
-				CAmount nValue = txout.nValue;
-				/* Add fee to first output */
-				if (nTxFee > 0)
-				{
-					nValue += nTxFee;
-					nTxFee = 0;
-				}
-				sub.debit = -nValue;
+				CAmount nTxFee = nDebit - wtx.GetValueOut();
 
-				parts.append(sub);
+				for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
+				{
+					const CTxOut& txout = wtx.vout[nOut];
+					TransactionRecord sub(hash, nTime);
+					sub.idx = parts.size();
+					sub.involvesWatchAddress = involvesWatchAddress;
+					if(wallet->IsMine(txout))
+					{
+						// Ignore parts sent to self, as this is usually the change
+						// from a transaction sent back to our own address.
+						continue;
+					}
+					CTxDestination address;
+					if (ExtractDestination(txout.scriptPubKey, address))
+					{
+						// Sent to Syscoin Address
+						sub.type = TransactionRecord::SendToAddress;
+						sub.address = CSyscoinAddress(address).ToString();
+					}
+					else
+					{
+						// Sent to IP, or other non-address transaction like OP_EVAL
+						sub.type = TransactionRecord::SendToOther;
+						sub.address = mapValue["to"];
+					}
+					
+					CAmount nValue = txout.nValue;
+					/* Add fee to first output */
+					if (nTxFee > 0)
+					{
+						nValue += nTxFee;
+						nTxFee = 0;
+					}
+					sub.debit = -nValue;
+
+					parts.append(sub);
+				}
 			}
         }
         else
