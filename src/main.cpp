@@ -803,10 +803,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     int nOut;
 	string err = "";
 
-    if(DecodeAliasTx(tx, op, nOut, vvch, -1))
-	{
-	}
-    else if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
+    if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
 		switch (op) {		
 			case OP_OFFER_ACCEPT: 
 				if (vvch[1].size() > MAX_NAME_LENGTH)
@@ -823,10 +820,12 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 		
         }
     }
-   else if(DecodeCertTx(tx, op, nOut, vvch, -1)) 
+   if(DecodeCertTx(tx, op, nOut, vvch, -1)
+	|| DecodeAliasTx(tx, op, nOut, vvch, -1)
+	|| DecodeMessageTx(tx, op, nOut, vvch, -1)) 
    {
    }
-   else if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) 
+   if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) 
    {
 		switch (op) {		
 			case OP_ESCROW_RELEASE: 
@@ -838,9 +837,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 			default:
 				break;
         }
-   }
-   else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
-   {
    }
    else
    {
@@ -1749,24 +1745,23 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 			{
 				if (!CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;
-				
 			}
-			else if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
 			{	
 				if (!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;		 
 			}
-			else if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
 			{
 				if (!CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
 			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
 			{
 				if (!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
 			}
-			else if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
 			{
 				if (!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
@@ -2247,19 +2242,19 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
 			{
 				DisconnectAlias(pindex, tx, op, vvchArgs);	
 			}
-			else if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
 			{
 				DisconnectOffer(pindex, tx, op, vvchArgs); 
 			}
-			else if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
 			{
 				DisconnectCertificate(pindex, tx, op, vvchArgs);				
 			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
 			{
 				DisconnectEscrow(pindex, tx, op, vvchArgs);	
 			}
-			else if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
 			{
 				DisconnectMessage(pindex, tx, op, vvchArgs);	
 			}

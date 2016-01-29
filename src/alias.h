@@ -8,6 +8,7 @@
 #include "consensus/params.h"
 class CWalletTx;
 class CTransaction;
+class CTxOut;
 class COutPoint;
 class CReserveKey;
 class CValidationState;
@@ -131,6 +132,7 @@ bool IsAliasOp(int op);
 int GetAliasExpirationDepth();
 CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
 int GetSyscoinDataOutput(const CTransaction& tx);
+int GetSyscoinDataOutput(const CTxOut& out);
 bool GetSyscoinData(const CTransaction &tx, std::vector<unsigned char> &vchData);
 bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams);
 int FirstIndexOfSyscoinOutput(const CTransaction& tx);

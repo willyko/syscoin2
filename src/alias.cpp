@@ -138,28 +138,18 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 			continue;
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+		if(DecodeAliasTx(tx, op, nOut, vvch, -1)
+		|| DecodeOfferTx(tx, op, nOut, vvch, -1)
+		|| DecodeCertTx(tx, op, nOut, vvch, -1)
+		|| DecodeEscrowTx(tx, op, nOut, vvch, -1)
+		|| DecodeMessageTx(tx, op, nOut, vvch, -1))
 		{
-		}
-		else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
-		{
-		}
-		else if(DecodeCertTx(tx, op, nOut, vvch, -1))
-		{
-		}
-		else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
-		{
-		}
-		else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
-		{
-		}
-		else
-			continue;
-		if(op == type)
-		{
-			if(vvch.size() >= 1 && vchToFind == vvch[0])
+			if(op == type)
 			{
-				return true;
+				if(vvch.size() >= 1 && vchToFind == vvch[0])
+				{
+					return true;
+				}
 			}
 		}
 	}
@@ -316,16 +306,22 @@ int FirstIndexOfSyscoinOutput(const CTransaction& txIn) {
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
    for(unsigned int i = 0; i<tx.vout.size();i++) {
-		if (!IsStandard(tx.vout[i].scriptPubKey, whichType))
-			continue;
-		if (whichType == TX_NULL_DATA)
-		{
-			return i;
-		}
+	   if(GetSyscoinDataOutput(tx.vout[i]))
+		   return i;
 	}
    return -1;
 }
-
+bool GetSyscoinDataOutput(const CTxOut& out) {
+   txnouttype whichType;
+	if (!IsStandard(out.scriptPubKey, whichType))
+		continue;
+	if (whichType == TX_NULL_DATA)
+	{
+		return true;
+	}
+	
+   return false;
+}
 int GetSyscoinTxVersion()
 {
 	return SYSCOIN_TX_VERSION;

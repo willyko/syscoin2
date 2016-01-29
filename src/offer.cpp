@@ -361,36 +361,55 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			const CTransaction &tx = block.vtx[i];
 			if (tx.nVersion != SYSCOIN_TX_VERSION)
 				continue;
-
+			int nDataOut = GetSyscoinDataOutput(tx);
 			vector<vector<unsigned char> > vvch;
 			int op, nOut;
 			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 			{
-				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
-				DisconnectAlias(pindex, tx, op, vvch);	
-				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				if(nDataOut == nOut)
+				{
+					// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
+					DisconnectAlias(pindex, tx, op, vvch);	
+					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+					continue;
+				}
 			}
-			else if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+			if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
-				DisconnectOffer(pindex, tx, op, vvch);	
-				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				if(nDataOut == nOut)
+				{
+					DisconnectOffer(pindex, tx, op, vvch);	
+					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+					continue;
+				}
 			}
-			else if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
-				DisconnectCertificate(pindex, tx, op, vvch);
-				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				if(nDataOut == nOut)
+				{
+					DisconnectCertificate(pindex, tx, op, vvch);
+					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+					continue;
+				}
 			}
-			else if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
-				DisconnectEscrow(pindex, tx, op, vvch);
-				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				if(nDataOut == nOut)
+				{
+					DisconnectEscrow(pindex, tx, op, vvch);
+					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+					continue;
+				}
 			}
-			else if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
-				DisconnectMessage(pindex, tx, op, vvch);
-				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				if(nDataOut == nOut)
+				{
+					DisconnectMessage(pindex, tx, op, vvch);
+					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+					continue;
+				}
 			}
-
 		}
 		pindex = chainActive.Next(pindex);
 	}
