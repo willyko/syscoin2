@@ -38,83 +38,6 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     }
     return true;
 }
-static void CreateSyscoinTransactions(const CWalletTx& wtx, QList<TransactionRecord>& parts, int64_t nTime, int type)
-{
-	BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-	{
-		isminetype mine = wallet->IsMine(txout);
-		if(mine || type == SEND)
-		{
-			if(wtx.nVersion != GetSyscoinTxVersion())
-				continue;	
-			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
-			// we want to display the data carrying one and not the empty utxo
-			if(!GetSyscoinDataOutput(txout))
-				continue;			
-			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
-			}
-			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
-			}
-			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;			
-			}
-			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
-			}
-			else if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
-			}
-			
-		}
-	}
-}
 static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
 {
 	switch(op)
@@ -197,6 +120,87 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
 }
+static void CreateSyscoinTransactions(const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
+{
+	uint256 hash = wtx.GetHash();
+	BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+	{
+        vector<vector<unsigned char> > vvchArgs;
+        int op, nOut;
+		isminetype mine = wallet->IsMine(txout);
+		if(mine || type == SEND)
+		{
+			if(wtx.nVersion != GetSyscoinTxVersion())
+				continue;	
+			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
+			// we want to display the data carrying one and not the empty utxo
+			if(!GetSyscoinDataOutput(txout))
+				continue;			
+			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
+			{
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return;
+			}
+			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
+			{
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return;
+			}
+			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
+			{
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return;			
+			}
+			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
+			{
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return;
+			}
+			else if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
+			{
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return;
+			}
+			
+		}
+	}
+}
+
 /*
  * Decompose CWallet transaction to model transaction records.
  */
@@ -220,7 +224,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         // Credit
         //
 		// SYSCOIN - this should be a received service
-		CreateSyscoinTransactions(wtx, parts, nTime, RECV);		
+		CreateSyscoinTransactions(wtx, parts, nTime, nNet, RECV);		
 		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
 		{
 			isminetype mine = wallet->IsMine(txout);
@@ -287,7 +291,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             // Debit
             //
 			// SYSCOIN - this should be a new service you've created
-			CreateSyscoinTransactions(wtx, parts, nTime, SEND);	
+			CreateSyscoinTransactions(wtx, parts, nTime, nNet, SEND);	
 			CAmount nTxFee = nDebit - wtx.GetValueOut();
 
 			for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
