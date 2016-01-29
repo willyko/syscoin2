@@ -8,7 +8,7 @@
 #include "consensus/params.h"
 class CWalletTx;
 class CTransaction;
-class COutpoint;
+class COutPoint;
 class CReserveKey;
 class CValidationState;
 class CCoinsViewCache;
@@ -136,5 +136,5 @@ bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut
 int FirstIndexOfSyscoinOutput(const CTransaction& tx);
 bool IsSyscoinScript(const CScript& scriptPubKey);
 void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut);
-bool GetPreviousInput(const COutPoint & outpoint, int &op, std::vector<unsigned char> &vvchArgs);
+bool GetPreviousInput(const COutPoint * outpoint, int &op, std::vector<std::vector<unsigned char> > &vvchArgs);
 #endif // ALIAS_H

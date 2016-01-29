@@ -260,15 +260,15 @@ bool CheckMessageInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
+			prevOutput = &tx.vin[i].prevout;
 			if(!fExternal)
 			{
-				prevOutput = &tx.vin[i].prevout;
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
 			}
 			else
-				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+				GetPreviousInput(prevOutput, op, vvch);
 			
 			if(found)
 				break;
@@ -350,7 +350,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 					return error(
 							"CheckMessageInputs() : failed to read from message DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+            if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
                 
                 // set the message's txn-dependent values
 				theMessage.txHash = tx.GetHash();

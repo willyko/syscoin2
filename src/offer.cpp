@@ -585,15 +585,15 @@ bool CheckOfferInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
+			prevOutput = &tx.vin[i].prevout;
 			if(!fExternal)
 			{
-				prevOutput = &tx.vin[i].prevout;
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
 			}
 			else
-				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+				GetPreviousInput(prevOutput, op, vvch);
 
 			if(foundEscrow && foundOffer && foundCert)
 				break;
@@ -833,7 +833,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							"CheckOfferInputs() : failed to read from offer DB");
 			}
 
-			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+			if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
 				// get the latest offer from the db
 				if(!vtxPos.empty())
 					theOffer = vtxPos.back();				
@@ -2585,7 +2585,8 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
-					GetPreviousInput(offerTx.vin[i].prevout, opIn, vvchIn);
+					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
+					GetPreviousInput(prevOutput, opIn, vvchIn);
 					if(foundOffer)
 						break;
 
@@ -2701,7 +2702,8 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
-					GetPreviousInput(offerTx.vin[i].prevout, opIn, vvchIn);
+					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
+					GetPreviousInput(prevOutput, opIn, vvchIn);
 					if(foundEscrow)
 						break;
 

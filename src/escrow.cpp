@@ -279,15 +279,15 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
+			prevOutput = &tx.vin[i].prevout;
 			if(!fExternal)
 			{
-				prevOutput = &tx.vin[i].prevout;
 				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(prevOutput->hash, prevCoins);
+				inputs.GetCoins(&prevOutput->hash, prevCoins);
 				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
 			}
 			else
-				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+				GetPreviousInput(prevOutput, op, vvch);
 			
 			if(found)
 				break;
@@ -345,7 +345,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 					return error(
 							"CheckEscrowInputs() : failed to read from escrow DB");
 			}
-            if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+            if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
  
 				// make sure escrow settings don't change (besides rawTx) outside of activation
 				if(op != OP_ESCROW_ACTIVATE) 

@@ -31,22 +31,22 @@ CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
-bool GetPreviousInput(const COutPoint & outpoint, int &op, vector<unsigned char> &vvchArgs)
+bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigned char> > &vvchArgs;)
 {
 
-    map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
+    map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint->hash);
     if (it != mapWallet.end())
     {
         const CWalletTx* pcoin = &it->second;
-		if (DecodeAliasScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+		if (DecodeAliasScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
-		else if(DecodeOfferScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+		else if(DecodeOfferScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
-		else if(DecodeCertScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+		else if(DecodeCertScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
-		else if(DecodeMessageScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+		else if(DecodeMessageScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
-		else if(DecodeEscrowScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+		else if(DecodeEscrowScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
 			return true;
 
     } else
@@ -74,6 +74,7 @@ bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut
 bool IsSyscoinScript(const CScript& scriptPubKey)
 {
 	vector<vector<unsigned char> > vvch;
+	int op;
 	if (DecodeAliasScript(scriptPubKey, op, vvch))
 		return true;
 	else if(DecodeOfferScript(scriptPubKey, op, vvch))
@@ -309,7 +310,7 @@ string aliasFromOp(int op) {
 		return "<unknown alias op>";
 	}
 }
-int FirstIndexOfSyscoinOutput(const CTransaction& tx) {
+int FirstIndexOfSyscoinOutput(const CTransaction& txIn) {
 	int nTxOut = IndexOfAliasOutput(txIn);
 	if (nTxOut < 0)
 		nTxOut = IndexOfCertOutput(txIn);
@@ -384,15 +385,16 @@ bool CheckAliasInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
+			prevOutput = &tx.vin[i].prevout;
 			if(!fExternal)
 			{
-				prevOutput = &tx.vin[i].prevout;
+				
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+				GetPreviousInput(&prevCoins.vout[prevOutput->n], op, vvch);
 			}
 			else
-				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+				GetPreviousInput(prevOutput, op, vvch);
 			
 			
 			if(found)
@@ -468,7 +470,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					return error(
 							"CheckAliasInputs() : failed to read from alias DB");
 			}
-			if (!fMiner && !fJustCheck && chainActive.Tip()->nHeight != nHeight || fExternal) {
+			if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
 				if(!vtxPos.empty())
 				{
 					const CAliasIndex& dbAlias = vtxPos.back();
