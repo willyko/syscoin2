@@ -136,7 +136,8 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			// we want to display the data carrying one and not the empty utxo		
 			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				CAliasIndex alias(tx);
+				if(!alias.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
 					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
@@ -151,7 +152,8 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				COffer COffer(tx);
+				if(!COffer.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
 					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
@@ -166,7 +168,8 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				CCert cert(tx);
+				if(!cert.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
 					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
@@ -181,7 +184,8 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				CEscrow escrow(tx);
+				if(!escrow.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
 					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
@@ -196,7 +200,8 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				CMessage message(tx);
+				if(!message.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
 					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);

@@ -365,49 +365,29 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			int op, nOut;
 			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 			{
-				if(IsSyscoinDataOutput(tx.vout[nOut]))
-				{
-					// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
-					DisconnectAlias(pindex, tx, op, vvch);	
-					CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-					continue;
-				}
+				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
+				DisconnectAlias(pindex, tx, op, vvch);	
+				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);		
 			}
 			if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
-				if(IsSyscoinDataOutput(tx.vout[nOut]))
-				{
-					DisconnectOffer(pindex, tx, op, vvch);	
-					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-					continue;
-				}
+				DisconnectOffer(pindex, tx, op, vvch);	
+				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
-				if(IsSyscoinDataOutput(tx.vout[nOut]))
-				{
-					DisconnectCertificate(pindex, tx, op, vvch);
-					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-					continue;
-				}
+				DisconnectCertificate(pindex, tx, op, vvch);
+				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
-				if(IsSyscoinDataOutput(tx.vout[nOut]))
-				{
-					DisconnectEscrow(pindex, tx, op, vvch);
-					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-					continue;
-				}
+				DisconnectEscrow(pindex, tx, op, vvch);
+				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
-				if(IsSyscoinDataOutput(tx.vout[nOut]))
-				{
-					DisconnectMessage(pindex, tx, op, vvch);
-					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-					continue;
-				}
+				DisconnectMessage(pindex, tx, op, vvch);
+				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 		}
 		pindex = chainActive.Next(pindex);
