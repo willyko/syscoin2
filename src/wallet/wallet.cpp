@@ -32,7 +32,7 @@
 
 using namespace std;
 // SYSCOIN services
-extern bool IndexOfSyscoinOutput(const CTransaction& tx);
+extern int FirstIndexOfSyscoinOutput(const CTransaction& tx);
 extern bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs);
 extern int GetSyscoinTxVersion();
 extern vector<unsigned char> vchFromString(const string &str);
@@ -1882,7 +1882,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 }
 
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool sysTx)
+                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxIn, const CWalletTx* wtxIn1, const CWalletTx* wtxIn2, bool sysTx)
 {
     CAmount nValue = 0;
 	// SYSCOIN: get output amount of input transactions for syscoin service calls
