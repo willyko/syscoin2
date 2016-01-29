@@ -275,22 +275,26 @@ bool CheckEscrowInputs(const CTransaction &tx,
 
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
-		vvchPrevArgs.clear();
-		if(!fExternal)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			if(!fExternal)
+			{
 				prevOutput = &tx.vin[i].prevout;
+				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				if(DecodeEscrowScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-				{
-					vvchPrevArgs = vvch;
-					found = true;
-					break;
-				}
-				if(!found)vvchPrevArgs.clear();
-				
+				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+			}
+			else
+				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+			}
+			vector<vector<unsigned char> > vvch;
+			if(found)
+				break;
+
+			if (!found && IsEscrowOp(op)) {
+				found = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 			}
 		}
 		
@@ -314,21 +318,20 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if(!fExternal)
-		{
-			switch (op) {
-				case OP_ESCROW_ACTIVATE:
-					break;
-				case OP_ESCROW_RELEASE:
-				case OP_ESCROW_COMPLETE:
-				case OP_ESCROW_REFUND:
-					if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-						return error("escrow tx with offer GUID too long");
-					break;
-				default:
-					return error( "CheckEscrowInputs() : escrow transaction has unknown op");
-			}
+
+		switch (op) {
+			case OP_ESCROW_ACTIVATE:
+				break;
+			case OP_ESCROW_RELEASE:
+			case OP_ESCROW_COMPLETE:
+			case OP_ESCROW_REFUND:
+				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
+					return error("escrow tx with offer GUID too long");
+				break;
+			default:
+				return error( "CheckEscrowInputs() : escrow transaction has unknown op");
 		}
+	
         // these ifs are problably total bullshit except for the escrownew
         if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
 			// save serialized escrow for later use
@@ -520,7 +523,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	vector<CRecipient> vecSendEscrow;
 	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithEscrowFee, false};
 	vecSendEscrow.push_back(recipientEscrow);
-	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, false);
+	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, NULL, NULL, false);
 	
 	// send to seller/arbiter so they can track the escrow through GUI
     // build escrow

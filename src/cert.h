@@ -36,7 +36,6 @@ public:
     uint256 txHash;
     uint64_t nHeight;
 	bool bPrivate;
-	std::vector<unsigned char> vchOfferLink;
     CCert() {
         SetNull();
     }
@@ -59,7 +58,6 @@ public:
         READWRITE(VARINT(nHeight));
 		READWRITE(vchPubKey);
 		READWRITE(bPrivate);
-		READWRITE(vchOfferLink);
 		
 		
 	}
@@ -72,7 +70,6 @@ public:
         && a.nHeight == b.nHeight
 		&& a.vchPubKey == b.vchPubKey
 		&& a.bPrivate == b.bPrivate
-		&& a.vchOfferLink == b.vchOfferLink
         );
     }
 
@@ -83,7 +80,6 @@ public:
         nHeight = b.nHeight;
 		vchPubKey = b.vchPubKey;
 		bPrivate = b.bPrivate;
-		vchOfferLink = b.vchOfferLink;
         return *this;
     }
 
@@ -91,7 +87,7 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { nHeight = 0; txHash.SetNull(); vchPubKey.clear(); bPrivate = false;vchOfferLink.clear();}
+    void SetNull() { nHeight = 0; txHash.SetNull(); vchPubKey.clear(); bPrivate = false;}
     bool IsNull() const { return (txHash.IsNull() &&  nHeight == 0); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();

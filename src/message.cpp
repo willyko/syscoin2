@@ -256,22 +256,26 @@ bool CheckMessageInputs(const CTransaction &tx,
 
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
-		vvchPrevArgs.clear();
-		if(!fExternal)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			if(!fExternal)
+			{
 				prevOutput = &tx.vin[i].prevout;
+				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				if(DecodeMessageScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-				{
-					vvchPrevArgs = vvch;
-					found = true;
-					break;
-				}
-				if(!found)vvchPrevArgs.clear();
-				
+				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+			}
+			else
+				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+			}
+			vector<vector<unsigned char> > vvch;
+			if(found)
+				break;
+
+			if (!found && IsMessageOp(op)) {
+				found = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 			}
 		}
 		
@@ -323,15 +327,13 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-		if(!fExternal)
-		{
-			switch (op) {
-			case OP_MESSAGE_ACTIVATE:
-				break;
-			default:
-				return error( "CheckMessageInputs() : message transaction has unknown op");
-			}
+		switch (op) {
+		case OP_MESSAGE_ACTIVATE:
+			break;
+		default:
+			return error( "CheckMessageInputs() : message transaction has unknown op");
 		}
+	
 
 
 

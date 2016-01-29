@@ -132,4 +132,8 @@ CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
 int GetSyscoinDataOutput(const CTransaction& tx);
 bool GetSyscoinData(const CTransaction &tx, std::vector<unsigned char> &vchData);
 bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams);
+int FirstIndexOfSyscoinOutput(const CTransaction& tx);
+bool IsSyscoinScript(const CScript& scriptPubKey);
+void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut);
+void GetPreviousInput(const COutput & outpoint, int &op, vector<unsigned char> vvchArgs);
 #endif // ALIAS_H

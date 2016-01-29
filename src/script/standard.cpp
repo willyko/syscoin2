@@ -13,16 +13,7 @@
 #include <boost/foreach.hpp>
 using namespace std;
 // SYSCOIN services
-extern bool DecodeAliasScript(const CScript& script, int& op, vector<vector<unsigned char> > &vvch);
-extern bool DecodeCertScript(const CScript& script, int& op, vector<vector<unsigned char> > &vvch);
-extern bool DecodeOfferScript(const CScript& script, int& op, vector<vector<unsigned char> > &vvch);
-extern bool DecodeMessageScript(const CScript& script, int& op, vector<vector<unsigned char> > &vvch);
-extern bool DecodeEscrowScript(const CScript& script, int& op, vector<vector<unsigned char> > &vvch);
-extern CScript RemoveAliasScriptPrefix(const CScript& scriptIn);
-extern CScript RemoveCertScriptPrefix(const CScript& scriptIn);
-extern CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
-extern CScript RemoveEscrowScriptPrefix(const CScript& scriptIn);
-extern CScript RemoveMessageScriptPrefix(const CScript& scriptIn);
+extern void void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut);
 
 typedef vector<unsigned char> valtype;
 
@@ -66,18 +57,7 @@ bool Solver(const CScript& scriptPubKeyIn, txnouttype& typeRet, vector<vector<un
     }
 	// SYSCOIN check to see if this is a syscoin service transaction, if so get the scriptPubKey by extracting service specific script information
 	CScript scriptPubKey = scriptPubKeyIn;
-	vector<vector<unsigned char> > vvch;
-	int op;
-	if (DecodeAliasScript(scriptPubKeyIn, op, vvch))
-		scriptPubKey = RemoveAliasScriptPrefix(scriptPubKeyIn);
-	else if (DecodeOfferScript(scriptPubKeyIn, op, vvch))
-		scriptPubKey = RemoveOfferScriptPrefix(scriptPubKeyIn);
-	else if (DecodeCertScript(scriptPubKeyIn, op, vvch))
-		scriptPubKey = RemoveCertScriptPrefix(scriptPubKeyIn);
-	else if (DecodeEscrowScript(scriptPubKeyIn, op, vvch))
-		scriptPubKey = RemoveEscrowScriptPrefix(scriptPubKeyIn);
-	else if (DecodeMessageScript(scriptPubKeyIn, op, vvch))
-		scriptPubKey = RemoveMessageScriptPrefix(scriptPubKeyIn);
+	RemoveSyscoinScript(scriptPubKeyIn, scriptPubKey);
     vSolutionsRet.clear();
 
     // Shortcut for pay-to-script-hash, which are more constrained than the other types:

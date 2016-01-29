@@ -29,7 +29,29 @@ COfferDB *pofferdb = NULL;
 CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
+void GetPreviousInput(const COutput & outpoint, int &op, vector<unsigned char> vvchArgs)
+{
+
+    map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
+    if (it != mapWallet.end())
+    {
+        const CWalletTx* pcoin = &it->second;
+		if (DecodeAliasScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+			return true;
+		else if(DecodeOfferScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+			return true;
+		else if(DecodeCertScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+			return true;
+		else if(DecodeMessageScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+			return true;
+		else if(DecodeEscrowScript(pcoin->vout[outpoint.n].scriptPubKey, op, vvchArgs))
+			return true;
+
+    } else
+       return false;
+    
+}
 bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams)
 {
 	CBlockIndex *pindexSlow = NULL; 
@@ -48,6 +70,37 @@ bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut
     }
 	return false;
 }
+bool IsSyscoinScript(const CScript& scriptPubKey)
+{
+	vector<vector<unsigned char> > vvch;
+	if (DecodeAliasScript(scriptPubKey, op, vvch))
+		return true;
+	else if(DecodeOfferScript(scriptPubKey, op, vvch))
+		return true;
+	else if(DecodeCertScript(scriptPubKey, op, vvch))
+		return true;
+	else if(DecodeMessageScript(scriptPubKey, op, vvch))
+		return true;
+	else if(DecodeEscrowScript(scriptPubKey, op, vvch))
+		return true;
+	return false;
+}
+void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut)
+{
+	vector<vector<unsigned char> > vvch;
+	int op;
+	if (DecodeAliasScript(scriptPubKeyIn, op, vvch))
+		scriptPubKeyOut = RemoveAliasScriptPrefix(scriptPubKeyIn);
+	else if (DecodeOfferScript(scriptPubKeyIn, op, vvch))
+		scriptPubKeyOut = RemoveOfferScriptPrefix(scriptPubKeyIn);
+	else if (DecodeCertScript(scriptPubKeyIn, op, vvch))
+		scriptPubKeyOut = RemoveCertScriptPrefix(scriptPubKeyIn);
+	else if (DecodeEscrowScript(scriptPubKeyIn, op, vvch))
+		scriptPubKeyOut = RemoveEscrowScriptPrefix(scriptPubKeyIn);
+	else if (DecodeMessageScript(scriptPubKeyIn, op, vvch))
+		scriptPubKeyOut = RemoveMessageScriptPrefix(scriptPubKeyIn);
+}
+
 unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind)
 {
 	LOCK(mempool.cs);
@@ -255,6 +308,18 @@ string aliasFromOp(int op) {
 		return "<unknown alias op>";
 	}
 }
+int FirstIndexOfSyscoinOutput(const CTransaction& tx) {
+	int nTxOut = IndexOfAliasOutput(txIn);
+	if (nTxOut < 0)
+		nTxOut = IndexOfCertOutput(txIn);
+	if (nTxOut < 0)
+		nTxOut = IndexOfOfferOutput(txIn);
+	if (nTxOut < 0)
+		nTxOut = IndexOfEscrowOutput(txIn);
+	if (nTxOut < 0)
+		nTxOut = IndexOfMessageOutput(txIn);
+   return nTxOut;
+}
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
    for(unsigned int i = 0; i<tx.vout.size();i++) {
@@ -315,16 +380,25 @@ bool CheckAliasInputs(const CTransaction &tx,
 		int prevOp;
 		vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
-		if(!fExternal)
-		{
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			if(!fExternal)
+			{
 				prevOutput = &tx.vin[i].prevout;
+				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				if (DecodeAliasScript(prevCoins.vout[prevOutput->n].scriptPubKey,
-						prevOp, vvchPrevArgs)) {
-					found = true;
-					break;
-				}
+				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+			}
+			else
+				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+			}
+			vector<vector<unsigned char> > vvch;
+			if(found)
+				break;
+
+			if (!found && IsAliasOp(op)) {
+				found = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 			}
 		}
 		if(!found)vvchPrevArgs.clear();
@@ -357,31 +431,30 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		if(!fExternal)
-		{
-			switch (op) {
 
-			case OP_ALIAS_ACTIVATE:
-				break;
+		switch (op) {
 
-			case OP_ALIAS_UPDATE:
+		case OP_ALIAS_ACTIVATE:
+			break;
 
-				if (!found)
-					return error("aliasupdate previous tx not found");
-				if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
-					return error("aliasupdate tx without correct previous alias tx");
+		case OP_ALIAS_UPDATE:
 
-				// Check name
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckAliasInputs() : aliasupdate alias mismatch");
+			if (!found)
+				return error("aliasupdate previous tx not found");
+			if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
+				return error("aliasupdate tx without correct previous alias tx");
 
-				break;
+			// Check name
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckAliasInputs() : aliasupdate alias mismatch");
 
-			default:
-				return error(
-						"CheckAliasInputs() : alias transaction has unknown op");
-			}
+			break;
+
+		default:
+			return error(
+					"CheckAliasInputs() : alias transaction has unknown op");
 		}
+		
 
 		if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
 

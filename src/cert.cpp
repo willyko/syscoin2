@@ -1,6 +1,5 @@
 #include "cert.h"
 #include "alias.h"
-#include "offer.h"
 #include "init.h"
 #include "main.h"
 #include "util.h"
@@ -17,7 +16,7 @@
 using namespace std;
 
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL,  const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
 bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchMessage, string &strCipherText)
 {
 	CMessageCrypter crypter;
@@ -310,28 +309,26 @@ bool CheckCertInputs(const CTransaction &tx,
 
         int prevOp;
         vector<vector<unsigned char> > vvchPrevArgs;
-		vvchPrevArgs.clear();
-		if(!fExternal)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch, vvch2;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			if(!fExternal)
+			{
 				prevOutput = &tx.vin[i].prevout;
+				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				if(DecodeCertScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch))
-				{
-					vvchPrevArgs = vvch;
-					found = true;
-					break;
-				}
-				else if(DecodeOfferScript(prevCoins.vout[prevOutput->n].scriptPubKey, prevOp, vvch2))
-				{
-					found = true; 
-					vvchPrevArgs = vvch2;
-					break;
-				}
-				if(!found)vvchPrevArgs.clear();
-				
+				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+			}
+			else
+				GetPreviousInput(tx.vin[i].prevout, op, vvch);
+			}
+			vector<vector<unsigned char> > vvch;
+			if(found)
+				break;
+
+			if (!found && IsCertOp(op)) {
+				found = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 			}
 		}
 		
@@ -346,10 +343,10 @@ bool CheckCertInputs(const CTransaction &tx,
         int op, nOut;
         bool good = DecodeCertTx(tx, op, nOut, vvchArgs, -1);
         if (!good)
-            return error("CheckCertInputs() : could not decode a syscoin tx");
+            return error("CheckCertInputs() : could not decode cert tx");
         // unserialize cert object from txn, check for valid
         CCert theCert(tx);
-        if (theCert.IsNull())
+        if (theCert.IsNull() && op != OP_CERT_UPDATE)
             return error("CheckCertInputs() : null cert object");
 		if(theCert.vchData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
@@ -365,39 +362,37 @@ bool CheckCertInputs(const CTransaction &tx,
 		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
-		if(!fExternal)
-		{
-			switch (op) {
-			case OP_CERT_ACTIVATE:
-				if (found)
-					return error(
-							"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+		switch (op) {
+		case OP_CERT_ACTIVATE:
+			if (found)
+				return error(
+						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
 
-				break;
+			break;
 
-			case OP_CERT_UPDATE:
-				// if previous op was a cert or an offeraccept its ok
-				if ( !found || (!IsCertOp(prevOp) && !IsOfferOp(prevOp)))
-					return error("certupdate previous op is invalid");
-				if (vvchPrevArgs[0] != vvchArgs[0] && !IsOfferOp(prevOp))
-					return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
+		case OP_CERT_UPDATE:
+			// previous op must be a cert
+			if ( !found || !IsCertOp(prevOp))
+				return error("certupdate previous op is invalid");
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
 
-				break;
+			break;
 
-	        
+        
 
-			case OP_CERT_TRANSFER:
-				// validate conditions
-				if ( !found || !IsCertOp(prevOp))
-					return error("certtransfer previous op is invalid");
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckCertInputs() : certtransfer cert mismatch");
-				break;
+		case OP_CERT_TRANSFER:
+			// validate conditions
+			if ( !found || !IsCertOp(prevOp))
+				return error("certtransfer previous op is invalid");
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckCertInputs() : certtransfer cert mismatch");
+			break;
 
-			default:
-				return error( "CheckCertInputs() : cert transaction has unknown op");
-			}
+		default:
+			return error( "CheckCertInputs() : cert transaction has unknown op");
 		}
+	
 
 
 
@@ -414,12 +409,17 @@ bool CheckCertInputs(const CTransaction &tx,
 				if(!vtxPos.empty())
 				{
 					const CCert& dbCert = vtxPos.back();
-					if(theCert.vchData.empty())
-						theCert.vchData = dbCert.vchData;
-					if(theCert.vchTitle.empty())
-						theCert.vchTitle = dbCert.vchTitle;
-					if(theCert.vchPubKey.empty())
-						theCert.vchPubKey = dbCert.vchPubKey;
+					if(theCert.IsNull())
+						theCert = dbCert;
+					else
+					{
+						if(theCert.vchData.empty())
+							theCert.vchData = dbCert.vchData;
+						if(theCert.vchTitle.empty())
+							theCert.vchTitle = dbCert.vchTitle;
+						if(theCert.vchPubKey.empty())
+							theCert.vchPubKey = dbCert.vchPubKey;
+					}
 				}
         
                 // set the cert's txn-dependent values
@@ -591,8 +591,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	}
     // unserialize cert object from txn
     CCert theCert;
-    if(!theCert.UnserializeFromTx(tx))
-        throw runtime_error("cannot unserialize cert from txn");
 
     // get the cert from DB
     vector<CCert> vtxPos;
@@ -655,7 +653,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 UniValue certtransfer(const UniValue& params, bool fHelp) {
  if (fHelp || params.size() < 2 || params.size() > 3)
         throw runtime_error(
-		"certtransfer <certkey> <alias> [offerpurchase=0]\n"
+		"certtransfer <certkey> <alias>\n"
                 "<certkey> certificate guidkey.\n"
 				"<alias> Alias to transfer this certificate to.\n"
                  + HelpRequiringPassphrase());
@@ -701,11 +699,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		}
 	}
 
-	
 
-	bool offerpurchase = false;
-	if(params.size() >= 3)
-		offerpurchase = atoi(params[2].get_str().c_str()) == 1? true: false;
 	CSyscoinAddress sendAddr;
     // this is a syscoin txn
     CWalletTx wtx;
@@ -729,9 +723,6 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 		throw runtime_error("there are pending operations on that cert ");
 	}
-	// unserialize cert object from txn
-	if(!theCert.UnserializeFromTx(tx))
-		throw runtime_error("cannot unserialize offer from txn");
 
 	// get the cert from DB
 	vector<CCert> vtxPos;
@@ -766,18 +757,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
     CScript scriptPubKey;
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCert << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
-	// check the offer links in the cert, can't xfer a cert thats linked to another offer
-   if(!theCert.vchOfferLink.empty() && !offerpurchase)
-   {
-		COffer myOffer;
-		CTransaction txMyOffer;
-		// if offer is still valid then we cannot xfer this cert
-		if (GetTxOfOffer(*pofferdb, theCert.vchOfferLink, myOffer, txMyOffer))
-		{
-			string strError = strprintf("Cannot transfer this certificate, it is linked to offer: %s", stringFromVch(theCert.vchOfferLink).c_str());
-			throw runtime_error(strError);
-		}
-   }
+	
 	theCert.nHeight = chainActive.Tip()->nHeight;
 	theCert.vchPubKey = vchPubKey;
 	if(copyCert.vchData != vchData)

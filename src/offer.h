@@ -49,9 +49,7 @@ public:
 	uint256 txBTCId;
 	std::vector<unsigned char> vchRefundAddress;
 	std::vector<unsigned char> vchLinkOfferAccept;
-	std::vector<unsigned char> vchCertLink;
 	std::vector<unsigned char> vchLinkOffer;
-	std::vector<unsigned char> vchEscrowLink;
 	std::vector<unsigned char> vchBuyerKey;	
 	COfferAccept() {
         SetNull();
@@ -70,8 +68,6 @@ public:
 		READWRITE(bRefunded);
 		READWRITE(vchRefundAddress);
 		READWRITE(vchLinkOfferAccept);
-		READWRITE(vchCertLink);
-		READWRITE(vchEscrowLink);
 		READWRITE(vchBuyerKey);	
 		READWRITE(vchLinkOffer);
 		READWRITE(txBTCId);	
@@ -90,8 +86,6 @@ public:
 		&& a.bRefunded == b.bRefunded
 		&& a.vchRefundAddress == b.vchRefundAddress
 		&& a.vchLinkOfferAccept == b.vchLinkOfferAccept
-		&& a.vchCertLink == b.vchCertLink
-		&& a.vchEscrowLink == b.vchEscrowLink
 		&& a.vchBuyerKey == b.vchBuyerKey
 		&& a.vchLinkOffer == b.vchLinkOffer 
 		&& a.txBTCId == b.txBTCId
@@ -109,8 +103,6 @@ public:
 		bRefunded = b.bRefunded;
 		vchRefundAddress = b.vchRefundAddress;
 		vchLinkOfferAccept = b.vchLinkOfferAccept;
-		vchCertLink = b.vchCertLink;
-		vchEscrowLink = b.vchEscrowLink;
 		vchBuyerKey = b.vchBuyerKey;
 		vchLinkOffer = b.vchLinkOffer;
 		txBTCId = b.txBTCId;
@@ -121,7 +113,7 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();vchCertLink.clear(); vchEscrowLink.clear();}
+    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();}
     bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false  && txBTCId.IsNull()); }
 
 };
@@ -433,5 +425,5 @@ void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COff
 bool GetAcceptByHash(const std::vector<COffer> &offerList,  COfferAccept &ca);
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COfferAccept &theOfferAccept, CTransaction& tx);
-bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx);
+bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx, bool forUsingAsInputTx=false);
 #endif // OFFER_H
