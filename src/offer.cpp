@@ -679,7 +679,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		}
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
-			if (foundCert && !IsCertOp(prevCertOp) )
+			if (foundOffer || (foundCert && !IsCertOp(prevCertOp)) )
 				return error("CheckOfferInputs() :offeractivate previous op is invalid");		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");			
@@ -757,9 +757,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 		
 			break;
 		case OP_OFFER_ACCEPT:
-			if (!IsEscrowOp(prevEscrowOp) && !IsCertOp(prevCertOp))
+			if (foundOffer || (foundEscrow && !IsEscrowOp(prevEscrowOp)) || (foundCert && !IsCertOp(prevCertOp)))
 				return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
-			if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
+			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cerp guid mismatch");
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("offeraccept tx with guid too big");
