@@ -353,9 +353,9 @@ bool CheckCertInputs(const CTransaction &tx,
 		case OP_CERT_UPDATE:
 			// previous op must be a cert
 			if ( !found || !IsCertOp(prevOp))
-				return error("certupdate previous op is invalid");
+				return error("CheckCertInputs(): certupdate previous op is invalid");
 			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckCertInputs() : certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
+				return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
 
 			break;
 
