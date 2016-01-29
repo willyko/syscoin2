@@ -802,8 +802,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     int op;
     int nOut;
 	string err = "";
-
+	bool found = false;
     if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
+		found = true;
 		switch (op) {		
 			case OP_OFFER_ACCEPT: 
 				if (vvch[1].size() > MAX_NAME_LENGTH)
@@ -824,9 +825,11 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 	|| DecodeAliasTx(tx, op, nOut, vvch, -1)
 	|| DecodeMessageTx(tx, op, nOut, vvch, -1)) 
    {
+	   found = true;
    }
    if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) 
    {
+	   found = true;
 		switch (op) {		
 			case OP_ESCROW_RELEASE: 
 			case OP_ESCROW_REFUND: 
@@ -838,7 +841,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 				break;
         }
    }
-   else
+   if(!found)
    {
 	   err = error("Unknown syscoin transaction type!");
    }

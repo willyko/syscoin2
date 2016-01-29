@@ -184,7 +184,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 				parts.append(sub);
 				return;
 			}
-			else if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
+			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
 			{
 				TransactionRecord sub(hash, nTime);
 				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
