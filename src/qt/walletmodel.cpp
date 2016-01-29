@@ -38,7 +38,7 @@ extern bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut, std::vecto
 extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-extern int GetSyscoinDataOutput(const CTransaction& tx);
+extern bool IsSyscoinDataOutput(const CTransaction& tx);
 WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
 	// SYSCOIN
@@ -568,38 +568,37 @@ static void NotifySyscoinTransactionChanged(WalletModel *walletmodel, const CTra
 {
 	std::vector<std::vector<unsigned char> > vvchArgs;
 	int op, nOut;
-	int nDataOut = GetSyscoinDataOutput(tx);
 	// there should only be one service with data carrying output per tx, notify for that one
 	if (DecodeAliasTx(tx, op, nOut, vvchArgs, -1)) {
-		if(nDataOut == nOut)
+		if(IsSyscoinDataOutput(tx.vout[nOut]))
 		{
 			QMetaObject::invokeMethod(walletmodel, "updateAlias", Qt::QueuedConnection);
 			return;
 		}
 	}
 	if (DecodeOfferTx(tx, op, nOut, vvchArgs, -1)) {
-		if(nDataOut == nOut)
+		if(IsSyscoinDataOutput(tx.vout[nOut]))
 		{
 			QMetaObject::invokeMethod(walletmodel, "updateOffer", Qt::QueuedConnection);
 			return;
 		}
 	}
 	if (DecodeCertTx(tx, op, nOut, vvchArgs, -1)) {
-		if(nDataOut == nOut)
+		if(IsSyscoinDataOutput(tx.vout[nOut]))
 		{
 			QMetaObject::invokeMethod(walletmodel, "updateCert", Qt::QueuedConnection);
 			return;
 		}
 	}
 	if (DecodeEscrowTx(tx, op, nOut, vvchArgs, -1)) {
-		if(nDataOut == nOut)
+		if(IsSyscoinDataOutput(tx.vout[nOut]))
 		{
 			QMetaObject::invokeMethod(walletmodel, "updateEscrow", Qt::QueuedConnection);
 			return;
 		}
 	}
 	if (DecodeMessageTx(tx, op, nOut, vvchArgs, -1)) {
-		if(nDataOut == nOut)
+		if(IsSyscoinDataOutput(tx.vout[nOut]))
 		{
 			QMetaObject::invokeMethod(walletmodel, "updateMessage", Qt::QueuedConnection);
 			return;

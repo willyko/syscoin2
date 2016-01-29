@@ -304,7 +304,6 @@ int FirstIndexOfSyscoinOutput(const CTransaction& txIn) {
    return nTxOut;
 }
 int GetSyscoinDataOutput(const CTransaction& tx) {
-   txnouttype whichType;
    for(unsigned int i = 0; i<tx.vout.size();i++) {
 	   if(IsSyscoinDataOutput(tx.vout[i]))
 		   return i;

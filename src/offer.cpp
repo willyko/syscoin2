@@ -361,12 +361,11 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			const CTransaction &tx = block.vtx[i];
 			if (tx.nVersion != SYSCOIN_TX_VERSION)
 				continue;
-			int nDataOut = GetSyscoinDataOutput(tx);
 			vector<vector<unsigned char> > vvch;
 			int op, nOut;
 			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 			{
-				if(nDataOut == nOut)
+				if(IsSyscoinDataOutput(tx.vout[nOut]))
 				{
 					// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
 					DisconnectAlias(pindex, tx, op, vvch);	
@@ -376,7 +375,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			}
 			if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
 			{
-				if(nDataOut == nOut)
+				if(IsSyscoinDataOutput(tx.vout[nOut]))
 				{
 					DisconnectOffer(pindex, tx, op, vvch);	
 					CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
@@ -385,7 +384,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			}
 			if(DecodeCertTx(tx, op, nOut, vvch, -1))
 			{
-				if(nDataOut == nOut)
+				if(IsSyscoinDataOutput(tx.vout[nOut]))
 				{
 					DisconnectCertificate(pindex, tx, op, vvch);
 					CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
@@ -394,7 +393,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
 			{
-				if(nDataOut == nOut)
+				if(IsSyscoinDataOutput(tx.vout[nOut]))
 				{
 					DisconnectEscrow(pindex, tx, op, vvch);
 					CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
@@ -403,7 +402,7 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
 			{
-				if(nDataOut == nOut)
+				if(IsSyscoinDataOutput(tx.vout[nOut]))
 				{
 					DisconnectMessage(pindex, tx, op, vvch);
 					CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
