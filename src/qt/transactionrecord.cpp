@@ -14,14 +14,11 @@
 
 #include <boost/foreach.hpp>
 // SYSCOIN
-extern bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-extern int GetSyscoinTxVersion();
-extern bool IsSyscoinDataOutput(const CTxOut& out);
-extern bool IsAliasMine(const CTransaction& tx);
-extern std::string stringFromVch(const std::vector<unsigned char> &vch);
+#include "alias.h"
+#include "offer.h"
+#include "message.h"
+#include "escrow.h"
+#include "cert.h"
 enum {RECV=0, SEND=1};
 using namespace std;
 /* Return positive answer if transaction should be shown in list.
