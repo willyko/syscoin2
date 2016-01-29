@@ -33,9 +33,10 @@ CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
 bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigned char> > &vvchArgs)
 {
-
-    map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint->hash);
-    if (it != mapWallet.end())
+	if(!pwalletMain)
+		return false;
+    map<uint256, CWalletTx>::const_iterator it = pwalletMain->mapWallet.find(outpoint->hash);
+    if (it != pwalletMain->mapWallet.end())
     {
         const CWalletTx* pcoin = &it->second;
 		if(IsSyscoinScript(pcoin->vout[outpoint->n].scriptPubKey, op, vvchArgs))
@@ -65,15 +66,15 @@ bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut
 }
 bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs)
 {
-	if (DecodeAliasScript(scriptPubKey, op, vvch))
+	if (DecodeAliasScript(scriptPubKey, op, vvchArgs))
 		return true;
-	else if(DecodeOfferScript(scriptPubKey, op, vvch))
+	else if(DecodeOfferScript(scriptPubKey, op, vvchArgs))
 		return true;
-	else if(DecodeCertScript(scriptPubKey, op, vvch))
+	else if(DecodeCertScript(scriptPubKey, op, vvchArgs))
 		return true;
-	else if(DecodeMessageScript(scriptPubKey, op, vvch))
+	else if(DecodeMessageScript(scriptPubKey, op, vvchArgs))
 		return true;
-	else if(DecodeEscrowScript(scriptPubKey, op, vvch))
+	else if(DecodeEscrowScript(scriptPubKey, op, vvchArgs))
 		return true;
 	return false;
 }
