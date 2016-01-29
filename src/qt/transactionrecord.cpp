@@ -125,7 +125,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
         vector<vector<unsigned char> > vvchArgs;
         int op, nOut;
 		isminetype mine = wallet->IsMine(txout);
-		if(mine || type == SEND)
+		if(mine)
 		{
 			if(wtx.nVersion != GetSyscoinTxVersion())
 				continue;	
