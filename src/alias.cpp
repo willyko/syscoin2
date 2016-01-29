@@ -44,7 +44,7 @@ bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigne
 
     } else
        return false;
-    
+    return false;
 }
 bool GetSyscoinTransaction(int nHeight, const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams)
 {
@@ -1003,9 +1003,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// skip this alias if it doesn't match the given filter value
 			if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 				continue;
-			// get last active name only
-			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
-				continue;
+
 
 			vector<CAliasIndex> vtxPos;
 			if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
@@ -1016,7 +1014,9 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			if(!IsAliasMine(tx))
 				continue;
 			nHeight = alias.nHeight;
-		
+			// get last active name only
+			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
+				continue;	
 			int expired = 0;
 			int expires_in = 0;
 			int expired_block = 0;

@@ -425,5 +425,5 @@ void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COff
 bool GetAcceptByHash(const std::vector<COffer> &offerList,  COfferAccept &ca);
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COfferAccept &theOfferAccept, CTransaction& tx);
-bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx, bool forUsingAsInputTx=false);
+bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx);
 #endif // OFFER_H

@@ -435,7 +435,6 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		return false;
 	txPos = vtxPos.back();
-	vtxPos.pop_back();
 	int nHeight = txPos.nHeight;
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
@@ -620,7 +619,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 		// Make sure offer outputs are not spent by a regular transaction, or the offer would be lost
 		if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			if (found)
+			if (foundOffer)
 				return error(
 						"CheckOfferInputs() : a non-syscoin transaction with a syscoin input");
 			return true;
@@ -710,9 +709,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// ensure we can link against the offer if its in exclusive mode
 						if(myParentOffer.linkWhitelist.bExclusiveResell)
 						{
-							if (!IsCertOp(prevCertOp) || theOffer.linkWhitelist.empty())
+							if (!IsCertOp(prevCertOp) || theOffer.linkWhitelist.IsNull())
 								return error("CheckOfferInputs() : you must own a cert you wish or link to");			
-							if (IsCertOp(prevCertOp) && theOffer.linkWhitelist[0].certLinkVchRand != vvchPrevCertArgs[0])
+							if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
 								return error("CheckOfferInputs() : cert input and offer whitelist guid mismatch");
 						}
 					}
@@ -752,11 +751,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("offerrefund refund status too long");
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckOfferInputs() : offerrefund offer mismatch");		
-			// Check hash
-			const vector<unsigned char> &vchAcceptRand = vvchArgs[1];
 			// check for existence of offeraccept in txn offer obj
 			theOfferAccept = theOffer.accept;
-			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
+			if(theOfferAccept.vchAcceptRand != vvchArgs[1])
 				return error("OP_OFFER_REFUND could not read accept from offer txn");
 		
 			break;
@@ -787,7 +784,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			{	
 				vector<CEscrow> escrowVtxPos;
 				if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
-					if (pescrowdb->ReadEscrow(vchEscrow, vvchPrevEscrowArgs[0]) && !escrowVtxPos.empty())
+					if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
 					{	
 						// we want the initial funding escrow transaction height as when to calculate this offer accept price
 						CEscrow fundingEscrow = escrowVtxPos.front();
@@ -807,12 +804,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
 					// so in that case the escrow is attached to the accept and we skip this check
 					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
-					if(theCert.vchPubKey != theOffer.vchPubKey && !IsEscrow(prevOp))
+					if(theCert.vchPubKey != theOffer.vchPubKey && !IsEscrowOp(prevOp))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer");
 					theOfferAccept.nQty = 1;
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
+			}
 			break;
 
 		default:
@@ -1009,20 +1007,20 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
 					}
 
-						// only if we are the root offer owner do we even consider xfering a cert					
-						// purchased a cert so xfer it
-						if(!fExternal && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+					// only if we are the root offer owner do we even consider xfering a cert					
+					// purchased a cert so xfer it
+					if(!fExternal && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+					{
+						string strError = makeTransferCertTX(theOffer, theOfferAccept);
+						if(strError != "")
 						{
-							string strError = makeTransferCertTX(theOffer, theOfferAccept);
-							if(strError != "")
+							if(fDebug)
 							{
-								if(fDebug)
-								{
-									LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
-								}
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
 							}
 						}
 					}
+				
 					if(theOffer.vchLinkOffer.empty())
 					{
 						theOffer.nQty -= theOfferAccept.nQty;
@@ -1265,7 +1263,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
 			}
 			else
-				return runtime_error("You must own this cert to sell it");
+				throw runtime_error("You must own this cert to sell it");
 			scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 			scriptPubKeyCert += scriptPubKeyCertOrig;		
 		}
@@ -1444,7 +1442,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		{
 			throw runtime_error("cannot link to this offer because you don't own a cert from its whitelist (the offer is in exclusive mode)");
 		}
-		scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << entry.certLinkVchRand << OP_2DROP;
+		scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << foundEntry.certLinkVchRand << OP_2DROP;
 		scriptPubKeyCert += scriptPubKeyCertOrig;
 	}
 	if(linkOffer.bOnlyAcceptBTC)
@@ -1906,8 +1904,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		throw runtime_error("could not read offer from DB");
 	CCert theCert;
+	CTransaction txCert;
 	const CWalletTx *wtxCertIn = NULL;
-	vector<unsigned char> vchCert;
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
@@ -2212,7 +2210,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				CPubKey currentCertKey(vchCertKeyByte);
 				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
 				if(theCert.vchPubKey != theOffer.vchPubKey && wtxEscrowIn == NULL)
-					return runtime_error("cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer");
+					throw runtime_error("cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer");
 			}		
 		}
 	}
@@ -2411,8 +2409,26 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
 			COfferLinkWhitelistEntry entry;
+			vector<vector<unsigned char> > vvchPrevArgs;
 			if(IsOfferMine(tx)) 
-				theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevArgs[0], entry);
+			{
+				bool foundOffer = false;
+				for (unsigned int i = 0; i < tx.vin.size(); i++) {
+					vector<vector<unsigned char> > vvchIn;
+					int opIn;
+					const COutPoint *prevOutput = &tx.vin[i].prevout;
+					GetPreviousInput(prevOutput, opIn, vvchIn);
+					if(foundOffer)
+						break;
+
+					if (!foundOffer && IsOfferOp(opIn)) {
+						foundOffer = true; 
+						vvchPrevArgs = vvchIn;
+					}
+				}
+				if(foundOffer)
+					theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevArgs[0], entry);
+			}
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(txA) ? "true" : "false"));
 			if(ca.bPaid) {
@@ -2694,7 +2710,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
-			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)))
+			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<vector<unsigned char> > vvchPrevArgs;
 			if(IsOfferMine(offerTx)) 
 			{
