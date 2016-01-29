@@ -13,7 +13,7 @@
 #include <boost/foreach.hpp>
 using namespace std;
 // SYSCOIN services
-extern void void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut);
+extern void RemoveSyscoinScript(const CScript& scriptPubKeyIn, CScript& scriptPubKeyOut);
 
 typedef vector<unsigned char> valtype;
 

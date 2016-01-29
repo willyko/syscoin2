@@ -250,9 +250,6 @@ bool CheckMessageInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-        const COutPoint *prevOutput = NULL;
-        CCoins prevCoins;
-   
 		
         // Make sure message outputs are not spent by a regular transaction, or the message would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
