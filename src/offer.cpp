@@ -679,11 +679,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 		}
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
-			if (!IsCertOp(prevCertOp) )
-				return error("offeractivate previous op is invalid");		
+			if (foundCert && !IsCertOp(prevCertOp) )
+				return error("CheckOfferInputs() :offeractivate previous op is invalid");		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");			
-			if (IsCertOp(prevCertOp) &&  theOffer.vchCert != vvchPrevCertArgs[0])
+			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
