@@ -715,7 +715,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 								return error("CheckOfferInputs() : cert input and offer whitelist guid mismatch");
 						}
 					}
+					else
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid linked offer guid");	
 				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid linked offer guid");
 			}
 			break;
 		case OP_OFFER_UPDATE:
@@ -790,7 +794,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 						if(fundingEscrow.vchOffer != vvchArgs[0])
 							return error("CheckOfferInputs() OP_OFFER_ACCEPT: escrow guid does not match the guid of the offer you are accepting");		
 					}
+					else
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");		
 				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");	
 			}
 			// trying to purchase a cert
 			if(!theOffer.vchCert.empty())
