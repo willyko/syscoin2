@@ -120,7 +120,7 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
 }
-static void CreateSyscoinTransactions(const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
+static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
 {
 	uint256 hash = wtx.GetHash();
 	BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -224,7 +224,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         // Credit
         //
 		// SYSCOIN - this should be a received service
-		CreateSyscoinTransactions(wtx, parts, nTime, nNet, RECV);		
+		CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, RECV);		
 		BOOST_FOREACH(const CTxOut& txout, wtx.vout)
 		{
 			isminetype mine = wallet->IsMine(txout);
@@ -291,7 +291,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             // Debit
             //
 			// SYSCOIN - this should be a new service you've created
-			CreateSyscoinTransactions(wtx, parts, nTime, nNet, SEND);	
+			CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, SEND);	
 			CAmount nTxFee = nDebit - wtx.GetValueOut();
 
 			for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
