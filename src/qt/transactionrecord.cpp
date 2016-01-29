@@ -133,7 +133,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			// we want to display the data carrying one and not the empty utxo		
 			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				CAliasIndex alias(tx);
+				CAliasIndex alias(wtx);
 				if(!alias.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
@@ -149,7 +149,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				COffer COffer(tx);
+				COffer COffer(wtx);
 				if(!COffer.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
@@ -165,7 +165,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				CCert cert(tx);
+				CCert cert(wtx);
 				if(!cert.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
@@ -181,7 +181,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				CEscrow escrow(tx);
+				CEscrow escrow(wtx);
 				if(!escrow.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
@@ -197,7 +197,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}
 			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				CMessage message(tx);
+				CMessage message(wtx);
 				if(!message.IsNull())
 				{
 					TransactionRecord sub(hash, nTime);
