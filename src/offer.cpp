@@ -581,9 +581,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp, prevCertOp, prevEscrowOp;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
-		int op;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
 			if(!fExternal)
 			{
 				prevOutput = &tx.vin[i].prevout;
@@ -594,7 +595,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(tx.vin[i].prevout, op, vvch);
 
-			vector<vector<unsigned char> > vvch;
 			if(foundEscrow && foundOffer && foundCert)
 				break;
 

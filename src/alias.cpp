@@ -7,6 +7,7 @@
 #include "escrow.h"
 #include "message.h"
 #include "cert.h"
+#include "offer.h"
 #include "init.h"
 #include "main.h"
 #include "util.h"
@@ -381,6 +382,8 @@ bool CheckAliasInputs(const CTransaction &tx,
 		vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
 			if(!fExternal)
 			{
 				prevOutput = &tx.vin[i].prevout;
@@ -391,7 +394,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(tx.vin[i].prevout, op, vvch);
 			
-			vector<vector<unsigned char> > vvch;
+			
 			if(found)
 				break;
 

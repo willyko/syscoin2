@@ -311,6 +311,8 @@ bool CheckCertInputs(const CTransaction &tx,
         vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
 			if(!fExternal)
 			{
 				prevOutput = &tx.vin[i].prevout;
@@ -321,7 +323,6 @@ bool CheckCertInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(tx.vin[i].prevout, op, vvch);
 			
-			vector<vector<unsigned char> > vvch;
 			if(found)
 				break;
 
