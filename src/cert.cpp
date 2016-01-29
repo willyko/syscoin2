@@ -872,22 +872,21 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 			continue;
-		
-		// get last active name only
-		if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
-			continue;
-		
+			
 		vector<CCert> vtxPos;
 		if (!pcertdb->ReadCert(vchName, vtxPos) || vtxPos.empty())
 			continue;
-		
 		CCert cert = vtxPos.back();
+		nHeight = cert.nHeight;
+		// get last active name only
+		if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
+			continue;
 		if (!GetSyscoinTransaction(cert.nHeight, cert.txHash, tx, Params().GetConsensus()))
 			continue;
 		
 		if(!IsCertMine(tx))
 			continue;
-		nHeight = cert.nHeight;
+		
         // build the output object
 		UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("cert", stringFromVch(vchName)));

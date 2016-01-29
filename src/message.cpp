@@ -250,41 +250,12 @@ bool CheckMessageInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-        bool found = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
-
-        int prevOp = 0;
-        vector<vector<unsigned char> > vvchPrevArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!fExternal)
-			{
-				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(prevOutput->hash, prevCoins);
-				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
-			}
-			else
-				GetPreviousInput(prevOutput, op, vvch);
-			
-			if(found)
-				break;
-
-			if (!found && IsMessageOp(op)) {
-				found = true; 
-				prevOp = op;
-				vvchPrevArgs = vvch;
-			}
-		}
+   
 		
         // Make sure message outputs are not spent by a regular transaction, or the message would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
-            if (found)
-                return error(
-                        "CheckMessageInputs() : a non-syscoin transaction with a syscoin input");
 			LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
             return true;
         }

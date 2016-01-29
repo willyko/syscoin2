@@ -284,7 +284,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			{
 				// ensure inputs are unspent when doing consensus check to add to block
 				inputs.GetCoins(prevOutput->hash, prevCoins);
-				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
 			else
 				GetPreviousInput(prevOutput, op, vvch);
@@ -350,7 +350,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				// make sure escrow settings don't change (besides rawTx) outside of activation
 				if(op != OP_ESCROW_ACTIVATE) 
 				{
-					bool escrowChanged = false;
 					// make sure we have found this escrow in db
 					if(!vtxPos.empty())
 					{
@@ -362,8 +361,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
 							theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;
 					}
 				}
-				
-
                 // set the escrow's txn-dependent values
 				theEscrow.txHash = tx.GetHash();
 				theEscrow.nHeight = nHeight;
