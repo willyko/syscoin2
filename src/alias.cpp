@@ -306,20 +306,17 @@ int FirstIndexOfSyscoinOutput(const CTransaction& txIn) {
 int GetSyscoinDataOutput(const CTransaction& tx) {
    txnouttype whichType;
    for(unsigned int i = 0; i<tx.vout.size();i++) {
-	   if(GetSyscoinDataOutput(tx.vout[i]))
+	   if(IsSyscoinDataOutput(tx.vout[i]))
 		   return i;
 	}
    return -1;
 }
-bool GetSyscoinDataOutput(const CTxOut& out) {
+bool IsSyscoinDataOutput(const CTxOut& out) {
    txnouttype whichType;
 	if (!IsStandard(out.scriptPubKey, whichType))
-		continue;
+		return false;
 	if (whichType == TX_NULL_DATA)
-	{
 		return true;
-	}
-	
    return false;
 }
 int GetSyscoinTxVersion()

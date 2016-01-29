@@ -19,7 +19,7 @@ extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector
 extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
 extern int GetSyscoinTxVersion();
-extern bool GetSyscoinDataOutput(const CTxOut& out);
+extern bool IsSyscoinDataOutput(const CTxOut& out);
 extern bool IsAliasMine(const CTransaction& tx);
 extern std::string stringFromVch(const std::vector<unsigned char> &vch);
 enum {RECV=0, SEND=1};
@@ -134,7 +134,7 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 				continue;	
 			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
 			// we want to display the data carrying one and not the empty utxo
-			if(!GetSyscoinDataOutput(txout))
+			if(!IsSyscoinDataOutput(txout))
 				continue;			
 			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
 			{
