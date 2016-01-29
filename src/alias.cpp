@@ -33,7 +33,7 @@ CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
 bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigned char> > &vvchArgs)
 {
-	if(!pwalletMain)
+	if(!pwalletMain || !outpoint)
 		return false;
     map<uint256, CWalletTx>::const_iterator it = pwalletMain->mapWallet.find(outpoint->hash);
     if (it != pwalletMain->mapWallet.end())

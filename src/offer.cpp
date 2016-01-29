@@ -951,23 +951,15 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 					uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
 					COfferLinkWhitelistEntry entry;
-					vector<unsigned char> vchCert;
 					if(IsCertOp(prevCertOp))
-					{
-						vchCert = vvchPrevCertArgs[0];
-						theOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
-					}
-					
-					vector<unsigned char> vchEscrow;
-					if(IsEscrowOp(prevEscrowOp))	
-						vchEscrow = vvchPrevEscrowArgs[0];
-	
+						theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
+		
 					// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-					if(!vchEscrow.empty())
+					if(IsEscrowOp(prevEscrowOp))
 					{	
 						vector<CEscrow> escrowVtxPos;
-						if (pescrowdb->ExistsEscrow(vchEscrow)) {
-							if (pescrowdb->ReadEscrow(vchEscrow, escrowVtxPos) && !escrowVtxPos.empty())
+						if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
+							if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
 							{	
 								// we want the initial funding escrow transaction height as when to calculate this offer accept price
 								CEscrow fundingEscrow = escrowVtxPos.front();
