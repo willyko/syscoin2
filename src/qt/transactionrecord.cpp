@@ -133,68 +133,81 @@ static void CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			if(wtx.nVersion != GetSyscoinTxVersion())
 				continue;	
 			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
-			// we want to display the data carrying one and not the empty utxo
-			if(!IsSyscoinDataOutput(txout))
-				continue;			
+			// we want to display the data carrying one and not the empty utxo		
 			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
+				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				{
+					TransactionRecord sub(hash, nTime);
+					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+					sub.idx = parts.size(); // sequence number
+					if(type == RECV)
+						sub.credit = nNet;
+					else if(type == SEND)
+						sub.debit = nNet;
+					parts.append(sub);
+					return;
+				}
 			}
 			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
+				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				{
+					TransactionRecord sub(hash, nTime);
+					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+					sub.idx = parts.size(); // sequence number
+					if(type == RECV)
+						sub.credit = nNet;
+					else if(type == SEND)
+						sub.debit = nNet;
+					parts.append(sub);
+					return;
+				}
 			}
 			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;			
+				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				{
+					TransactionRecord sub(hash, nTime);
+					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+					sub.idx = parts.size(); // sequence number
+					if(type == RECV)
+						sub.credit = nNet;
+					else if(type == SEND)
+						sub.debit = nNet;
+					parts.append(sub);
+					return;	
+				}
 			}
 			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
+				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				{
+					TransactionRecord sub(hash, nTime);
+					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+					sub.idx = parts.size(); // sequence number
+					if(type == RECV)
+						sub.credit = nNet;
+					else if(type == SEND)
+						sub.debit = nNet;
+					parts.append(sub);
+					return;
+				}
 			}
 			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
 			{
-				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-				sub.idx = parts.size(); // sequence number
-				if(type == RECV)
-					sub.credit = nNet;
-				else if(type == SEND)
-					sub.debit = nNet;
-				parts.append(sub);
-				return;
+				if(IsSyscoinDataOutput(wtx.vout[nOut]))
+				{
+					TransactionRecord sub(hash, nTime);
+					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+					sub.idx = parts.size(); // sequence number
+					if(type == RECV)
+						sub.credit = nNet;
+					else if(type == SEND)
+						sub.debit = nNet;
+					parts.append(sub);
+					return;
+				}
 			}
 			
 		}
