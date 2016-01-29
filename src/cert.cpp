@@ -286,7 +286,7 @@ bool CheckCertInputs(const CTransaction &tx,
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
 
-        int prevOp;
+        int prevOp = 0;
         vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {

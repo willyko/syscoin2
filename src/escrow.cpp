@@ -16,7 +16,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL,  const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
 void PutToEscrowList(std::vector<CEscrow> &escrowList, CEscrow& index) {
 	int i = escrowList.size() - 1;
 	BOOST_REVERSE_FOREACH(CEscrow &o, escrowList) {
@@ -273,7 +273,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
 
-        int prevOp;
+        int prevOp = 0;
         vector<vector<unsigned char> > vvchPrevArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -283,7 +283,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			if(!fExternal)
 			{
 				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(&prevOutput->hash, prevCoins);
+				inputs.GetCoins(prevOutput->hash, prevCoins);
 				GetPreviousInput(prevCoins.vout[prevOutput->n], op, vvch);
 			}
 			else

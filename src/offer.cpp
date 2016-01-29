@@ -19,7 +19,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL,  const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
 bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
@@ -579,6 +579,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp, prevCertOp, prevEscrowOp;
+		prevOp = prevCertOp = prevEscrowOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -631,7 +632,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 		bool good = DecodeOfferTx(tx, op, nOut, vvchArgs, -1);
 		if (!good)
 			return error("CheckOfferInputs() : could not decode offer tx");
-		int nDepth;
 		// unserialize offer from txn, check for valid
 		COffer theOffer(tx);
 		COfferAccept theOfferAccept;
@@ -739,7 +739,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 			}
 			break;
 		case OP_OFFER_REFUND:
-			int nDepth;
 			if (prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND && prevOp != OP_OFFER_ACCEPT )
 				return error("offerrefund previous op %s is invalid", offerFromOp(prevOp).c_str());		
 			if(op == OP_OFFER_REFUND && vvchArgs[2] == OFFER_REFUND_COMPLETE && vvchPrevArgs[2] != OFFER_REFUND_PAYMENT_INPROGRESS)
@@ -2242,7 +2241,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 
-	if(vchLinkOfferAccept.empty() && !vchLinkOffer.empty() || vchLinkOffer.empty() && !vchLinkOfferAccept.empty())
+	if((vchLinkOfferAccept.empty() && !vchLinkOffer.empty()) || (vchLinkOffer.empty() && !vchLinkOfferAccept.empty()))
 		throw runtime_error("If you are accepting a linked offer you must provide the offer guid AND the offer accept guid");
 
 	if(!theOffer.vchCert.empty())
@@ -2818,9 +2817,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			// skip this offer if it doesn't match the given filter value
 			if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 				continue;
-			// get last active name only
-			if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
-				continue;		
+	
 			vector<COffer> vtxPos;
 			COffer theOfferA;
 			if (!pofferdb->ReadOffer(vchName, vtxPos))
@@ -2837,6 +2834,9 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			{
 				theOfferA = vtxPos.back();
 			}
+			// get last active name only
+			if (vNamesI.find(vchName) != vNamesI.end() && (theOfferA.nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
+				continue;	
 			uint256 blockHash;
 			if (!GetSyscoinTransaction(theOfferA.nHeight, theOfferA.txHash, tx, Params().GetConsensus()))
 				continue;
