@@ -104,7 +104,7 @@ int IndexOfMessageOutput(const CTransaction& tx) {
 		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-	bool good = DecodeMessageTx(tx, op, nOut, vvch, -1);
+	bool good = DecodeMessageTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
     return nOut;
@@ -130,7 +130,14 @@ bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessa
 
     return true;
 }
-
+bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	CMessage message(tx);
+	bool decode = DecodeMessageTx(tx, op, nOut, vvch);
+	bool parse = !message.IsNull();
+	return decode && parse;
+}
 bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,
         vector<vector<unsigned char> >& vvch, int nHeight) {
     bool found = false;
@@ -235,7 +242,7 @@ bool CheckMessageInputs(const CTransaction &tx,
         }
         vector<vector<unsigned char> > vvchArgs;
         int op, nOut;
-        bool good = DecodeMessageTx(tx, op, nOut, vvchArgs, -1);
+        bool good = DecodeMessageTx(tx, op, nOut, vvchArgs);
         if (!good)
             return error("CheckMessageInputs() : could not decode a syscoin tx");
         // unserialize message UniValue from txn, check for valid

@@ -122,7 +122,7 @@ int IndexOfEscrowOutput(const CTransaction& tx) {
 		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-	bool good = DecodeEscrowTx(tx, op, nOut, vvch, -1);
+	bool good = DecodeEscrowTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
     return nOut;
@@ -147,7 +147,14 @@ bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
 
     return true;
 }
-
+bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	CEscrow escrow(tx);
+	bool decode = DecodeEscrowTx(tx, op, nOut, vvch);
+	bool parse = !escrow.IsNull();
+	return decode && parse;
+}
 bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,
         vector<vector<unsigned char> >& vvch, int nHeight) {
     bool found = false;
@@ -256,7 +263,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         }
         vector<vector<unsigned char> > vvchArgs;
         int op, nOut;
-        bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs, -1);
+        bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs);
         if (!good)
             return error("CheckEscrowInputs() : could not decode a syscoin tx");
         // unserialize escrow UniValue from txn, check for valid

@@ -138,7 +138,7 @@ int IndexOfCertOutput(const CTransaction& tx) {
 		return -1;
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-	bool good = DecodeCertTx(tx, op, nOut, vvch, -1);
+	bool good = DecodeCertTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
     return nOut;
@@ -162,6 +162,14 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
         return error("GetTxOfCert() : could not read tx from disk");
 
     return true;
+}
+bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	CCert cert(tx);
+	bool decode = DecodeCertTx(tx, op, nOut, vvch);
+	bool parse = !cert.IsNull();
+	return decode && parse;
 }
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,
         vector<vector<unsigned char> >& vvch, int nHeight) {
@@ -299,7 +307,7 @@ bool CheckCertInputs(const CTransaction &tx,
         }
         vector<vector<unsigned char> > vvchArgs;
         int op, nOut;
-        bool good = DecodeCertTx(tx, op, nOut, vvchArgs, -1);
+        bool good = DecodeCertTx(tx, op, nOut, vvchArgs);
         if (!good)
             return error("CheckCertInputs() : could not decode cert tx");
         // unserialize cert object from txn, check for valid

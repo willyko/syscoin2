@@ -38,7 +38,7 @@ bool foundRefundInWallet(const vector<unsigned char> &vchAcceptRand, const vecto
         const CWalletTx& wtx = item.second;
         if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
             continue;
-		if (DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
+		if (DecodeOfferTx(wtx, op, nOut, vvchArgs))
 		{
 			if(op == OP_OFFER_REFUND)
 			{
@@ -62,7 +62,7 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
         const CWalletTx& wtx = item.second;
         if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
             continue;
-		if (DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
+		if (DecodeOfferTx(wtx, op, nOut, vvchArgs))
 		{
 			if(op == OP_OFFER_ACCEPT)
 			{
@@ -403,7 +403,7 @@ int IndexOfOfferOutput(const CTransaction& tx) {
 		return -1;
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
-	bool good = DecodeOfferTx(tx, op, nOut, vvch, -1);
+	bool good = DecodeOfferTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
 	return nOut;
@@ -453,7 +453,14 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 
 	return true;
 }
-
+bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	COffer offer(tx);
+	bool decode = DecodeOfferTx(tx, op, nOut, vvch);
+	bool parse = !offer.IsNull();
+	return decode && parse;
+}
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch, int nHeight) {
 	bool found = false;
@@ -609,7 +616,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		vector<vector<unsigned char> > vvchArgs;
 		int op;
 		int nOut;
-		bool good = DecodeOfferTx(tx, op, nOut, vvchArgs, -1);
+		bool good = DecodeOfferTx(tx, op, nOut, vvchArgs);
 		if (!good)
 			return error("CheckOfferInputs() : could not decode offer tx");
 		// unserialize offer from txn, check for valid

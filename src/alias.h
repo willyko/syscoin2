@@ -117,8 +117,9 @@ bool IsAliasOp(int op);
 bool GetTxOfAlias(const std::vector<unsigned char> &vchName, CTransaction& tx);
 int IndexOfAliasOutput(const CTransaction& tx);
 bool GetAliasOfTx(const CTransaction& tx, std::vector<unsigned char>& name);
-bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch, int nHeight);
-bool DecodeAliasScript(const CScript& script, int& op, std::vector<std::vector<unsigned char> > &vvch);
+bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
+bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
+bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAliasScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch, CScript::const_iterator& pc);
 bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);

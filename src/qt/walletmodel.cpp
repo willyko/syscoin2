@@ -33,11 +33,12 @@
 #include "certtablemodel.h"
 #include "offertablemodel.h"
 #include "offeraccepttablemodel.h"
-#include "alias.h"
-#include "offer.h"
-#include "message.h"
-#include "escrow.h"
-#include "cert.h"
+using namespace std;
+extern bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
 WalletModel::WalletModel(const PlatformStyle *platformStyle, CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
 	// SYSCOIN
@@ -568,46 +569,16 @@ static void NotifySyscoinTransactionChanged(WalletModel *walletmodel, const CTra
 	std::vector<std::vector<unsigned char> > vvchArgs;
 	int op, nOut;
 	// there should only be one service with data carrying output per tx, notify for that one
-	if (DecodeAliasTx(tx, op, nOut, vvchArgs, -1)) {
-		CAliasIndex alias(tx);
-		if(!alias.IsNull())
-		{
-			QMetaObject::invokeMethod(walletmodel, "updateAlias", Qt::QueuedConnection);
-			return;
-		}
-	}
-	if (DecodeOfferTx(tx, op, nOut, vvchArgs, -1)) {
-		COffer offer(tx);
-		if(!offer.IsNull())
-		{
-			QMetaObject::invokeMethod(walletmodel, "updateOffer", Qt::QueuedConnection);
-			return;
-		}
-	}
-	if (DecodeCertTx(tx, op, nOut, vvchArgs, -1)) {
-		CCert cert(tx);
-		if(!cert.IsNull())
-		{
-			QMetaObject::invokeMethod(walletmodel, "updateCert", Qt::QueuedConnection);
-			return;
-		}
-	}
-	if (DecodeEscrowTx(tx, op, nOut, vvchArgs, -1)) {
-		CEscrow escrow(tx);
-		if(!escrow.IsNull())
-		{
-			QMetaObject::invokeMethod(walletmodel, "updateEscrow", Qt::QueuedConnection);
-			return;
-		}
-	}
-	if (DecodeMessageTx(tx, op, nOut, vvchArgs, -1)) {
-		CMessage message(tx);
-		if(!message.IsNull())
-		{
-			QMetaObject::invokeMethod(walletmodel, "updateMessage", Qt::QueuedConnection);
-			return;
-		}
-	}
+	if (DecodeAndParseAliasTx(tx, op, nOut, vvchArgs))
+		QMetaObject::invokeMethod(walletmodel, "updateAlias", Qt::QueuedConnection);
+	else if (DecodeAndParseOfferTx(tx, op, nOut, vvchArgs))
+		QMetaObject::invokeMethod(walletmodel, "updateOffer", Qt::QueuedConnection);
+	else if (DecodeAndParseCertTx(tx, op, nOut, vvchArgs))
+		QMetaObject::invokeMethod(walletmodel, "updateCert", Qt::QueuedConnection);
+	else if (DecodeAndParseEscrowTx(tx, op, nOut, vvchArgs))
+		QMetaObject::invokeMethod(walletmodel, "updateEscrow", Qt::QueuedConnection);
+	else if (DecodeAndParseMessageTx(tx, op, nOut, vvchArgs))
+		QMetaObject::invokeMethod(walletmodel, "updateMessage", Qt::QueuedConnection);
 }
 static void NotifyTransactionChanged(WalletModel *walletmodel, CWallet *wallet, const uint256 &hash, ChangeType status)
 {

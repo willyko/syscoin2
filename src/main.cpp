@@ -1744,27 +1744,27 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 		int nOut;
 		if(tx.nVersion == SYSCOIN_TX_VERSION)
 		{
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
 			{
 				if (!CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
 			{	
 				if (!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;		 
 			}
-			if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
 				if (!CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
 			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{
 				if (!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
 			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
 			{
 				if (!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
@@ -2241,23 +2241,23 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
 		if (tx.nVersion == SYSCOIN_TX_VERSION) {
 		    vector<vector<unsigned char> > vvchArgs;
 		    int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
 			{
 				DisconnectAlias(pindex, tx, op, vvchArgs);	
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
 			{
 				DisconnectOffer(pindex, tx, op, vvchArgs); 
 			}
-			if(DecodeCertTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
 				DisconnectCertificate(pindex, tx, op, vvchArgs);				
 			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{
 				DisconnectEscrow(pindex, tx, op, vvchArgs);	
 			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
 			{
 				DisconnectMessage(pindex, tx, op, vvchArgs);	
 			}

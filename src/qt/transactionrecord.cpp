@@ -9,18 +9,13 @@
 #include "main.h"
 #include "timedata.h"
 #include "wallet/wallet.h"
-#include "offer.h"
 #include <stdint.h>
 
 #include <boost/foreach.hpp>
-// SYSCOIN
-#include "alias.h"
-#include "offer.h"
-#include "message.h"
-#include "escrow.h"
-#include "cert.h"
-enum {RECV=0, SEND=1};
 using namespace std;
+// SYSCOIN
+extern bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+enum {RECV=0, SEND=1};
 /* Return positive answer if transaction should be shown in list.
  */
 bool TransactionRecord::showTransaction(const CWalletTx &wtx)
@@ -131,87 +126,18 @@ static bool CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 		{
 			// there should only be one data carrying syscoin output per transaction, but there may be more than 1 syscoin utxo in a transaction
 			// we want to display the data carrying one and not the empty utxo		
-			if(DecodeAliasTx(wtx, op, nOut, vvchArgs, -1))
+			if(DecodeAndParseSyscoinTx(wtx, op, nOut, vvchArgs))
 			{
-				CAliasIndex alias(wtx);
-				if(!alias.IsNull())
-				{
-					TransactionRecord sub(hash, nTime);
-					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-					sub.idx = parts.size(); // sequence number
-					if(type == RECV)
-						sub.credit = nNet;
-					else if(type == SEND)
-						sub.debit = nNet;
-					parts.append(sub);
-					return true;
-				}
-			}
-			if(DecodeOfferTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				COffer COffer(wtx);
-				if(!COffer.IsNull())
-				{
-					TransactionRecord sub(hash, nTime);
-					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-					sub.idx = parts.size(); // sequence number
-					if(type == RECV)
-						sub.credit = nNet;
-					else if(type == SEND)
-						sub.debit = nNet;
-					parts.append(sub);
-					return true;
-				}
-			}
-			if(DecodeCertTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				CCert cert(wtx);
-				if(!cert.IsNull())
-				{
-					TransactionRecord sub(hash, nTime);
-					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-					sub.idx = parts.size(); // sequence number
-					if(type == RECV)
-						sub.credit = nNet;
-					else if(type == SEND)
-						sub.debit = nNet;
-					parts.append(sub);
-					return true;
-				}
-			}
-			if(DecodeEscrowTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				CEscrow escrow(wtx);
-				if(!escrow.IsNull())
-				{
-					TransactionRecord sub(hash, nTime);
-					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-					sub.idx = parts.size(); // sequence number
-					if(type == RECV)
-						sub.credit = nNet;
-					else if(type == SEND)
-						sub.debit = nNet;
-					parts.append(sub);
-					return true;
-				}
-			}
-			if(DecodeMessageTx(wtx, op, nOut, vvchArgs, -1))
-			{
-				CMessage message(wtx);
-				if(!message.IsNull())
-				{
-					TransactionRecord sub(hash, nTime);
-					CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
-					sub.idx = parts.size(); // sequence number
-					if(type == RECV)
-						sub.credit = nNet;
-					else if(type == SEND)
-						sub.debit = nNet;
-					parts.append(sub);
-					return true;
-				}
-			}
-			
+				TransactionRecord sub(hash, nTime);
+				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				sub.idx = parts.size(); // sequence number
+				if(type == RECV)
+					sub.credit = nNet;
+				else if(type == SEND)
+					sub.debit = nNet;
+				parts.append(sub);
+				return true;
+			}			
 		}
 	}
 	return true;

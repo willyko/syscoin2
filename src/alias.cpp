@@ -138,17 +138,68 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 			continue;
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if(DecodeAliasTx(tx, op, nOut, vvch, -1)
-		|| DecodeOfferTx(tx, op, nOut, vvch, -1)
-		|| DecodeCertTx(tx, op, nOut, vvch, -1)
-		|| DecodeEscrowTx(tx, op, nOut, vvch, -1)
-		|| DecodeMessageTx(tx, op, nOut, vvch, -1))
+		if(IsAliasOp(type))
 		{
-			if(op == type)
+			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
 			{
-				if(vvch.size() >= 1 && vchToFind == vvch[0])
+				if(op == type)
 				{
-					return true;
+					if(vvch.size() >= 1 && vchToFind == vvch[0])
+					{
+						return true;
+					}
+				}
+			}
+		}
+		else if(IsOfferOp(type))
+		{
+			if(DecodeOfferTx(tx, op, nOut, vvch, -1))
+			{
+				if(op == type)
+				{
+					if(vvch.size() >= 1 && vchToFind == vvch[0])
+					{
+						return true;
+					}
+				}
+			}
+		}
+		else if(IsCertOp(type))
+		{
+			if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			{
+				if(op == type)
+				{
+					if(vvch.size() >= 1 && vchToFind == vvch[0])
+					{
+						return true;
+					}
+				}
+			}
+		}
+		else if(IsEscrowOp(type))
+		{
+			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			{
+				if(op == type)
+				{
+					if(vvch.size() >= 1 && vchToFind == vvch[0])
+					{
+						return true;
+					}
+				}
+			}
+		}
+		else if(IsMessageOp(type))
+		{
+			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			{
+				if(op == type)
+				{
+					if(vvch.size() >= 1 && vchToFind == vvch[0])
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -375,7 +426,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		// decode alias info from transaction
 		vector<vector<unsigned char> > vvchArgs;
 		int op, nOut;
-		if (!DecodeAliasTx(tx, op, nOut, vvchArgs, -1))
+		if (!DecodeAliasTx(tx, op, nOut, vvchArgs))
 			return error(
 					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
 					tx.GetHash().GetHex().c_str());
@@ -640,7 +691,7 @@ int IndexOfAliasOutput(const CTransaction& tx) {
 		return -1;
 	int op;
 	int nOut;
-	bool good = DecodeAliasTx(tx, op, nOut, vvch, -1);
+	bool good = DecodeAliasTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
 	CAmount credit = pwalletMain->GetCredit(tx.vout[nOut], ISMINE_WATCH_ONLY);
@@ -656,7 +707,7 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 	int op;
 	int nOut;
 
-	bool good = DecodeAliasTx(tx, op, nOut, vvchArgs, -1);
+	bool good = DecodeAliasTx(tx, op, nOut, vvchArgs);
 	if (!good)
 		return error("GetAliasOfTx() : could not decode a syscoin tx");
 
@@ -668,10 +719,25 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 	}
 	return false;
 }
-
-
+bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	return DecodeAndParseAliasTx(tx, op, nOut, vvch)
+		|| DecodeAndParseCertTx(tx, op, nOut, vvch)
+		|| DecodeAndParseOfferTx(tx, op, nOut, vvch)
+		|| DecodeAndParseEscrowTx(tx, op, nOut, vvch)
+		|| DecodeAndParseMessageTx(tx, op, nOut, vvch);
+}
+bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut,
+		vector<vector<unsigned char> >& vvch)
+{
+	CAliasIndex alias(tx);
+	bool decode = DecodeAliasTx(tx, op, nOut, vvch);
+	bool parse = !alias.IsNull();
+	return decode && parse;
+}
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,
-		vector<vector<unsigned char> >& vvch, int nHeight) {
+		vector<vector<unsigned char> >& vvch) {
 	bool found = false;
 
 
@@ -965,7 +1031,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// decode txn, skip non-alias txns
 			vector<vector<unsigned char> > vvch;
 			int op, nOut;
-			if (!DecodeAliasTx(wtx, op, nOut, vvch, -1) || !IsAliasOp(op))
+			if (!DecodeAliasTx(wtx, op, nOut, vvch) || !IsAliasOp(op))
 				continue;
 
 			// get the txn alias name
