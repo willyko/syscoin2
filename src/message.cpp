@@ -194,6 +194,20 @@ bool DecodeMessageScript(const CScript& script, int& op,
     CScript::const_iterator pc = script.begin();
     return DecodeMessageScript(script, op, vvch, pc);
 }
+
+CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
+    int op;
+    vector<vector<unsigned char> > vvch;
+    CScript::const_iterator pc = scriptIn.begin();
+
+    if (!DecodeMessageScript(scriptIn, op, vvch, pc))
+	{
+        throw runtime_error("RemoveMessageScriptPrefix() : could not decode message script");
+	}
+	
+    return CScript(pc, scriptIn.end());
+}
+
 bool GetMessageAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
@@ -207,20 +221,6 @@ bool GetMessageAddress(const CTransaction& tx, std::string& strAddress) {
 	ExtractDestination(scriptPubKey, dest);
 	strAddress = CSyscoinAddress(dest).ToString();
     return true;
-}
-
-
-CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
-    int op;
-    vector<vector<unsigned char> > vvch;
-    CScript::const_iterator pc = scriptIn.begin();
-
-    if (!DecodeMessageScript(scriptIn, op, vvch, pc))
-	{
-        throw runtime_error("RemoveMessageScriptPrefix() : could not decode message script");
-	}
-	
-    return CScript(pc, scriptIn.end());
 }
 
 bool CheckMessageInputs(const CTransaction &tx,

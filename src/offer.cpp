@@ -518,6 +518,20 @@ bool DecodeOfferScript(const CScript& script, int& op,
 	CScript::const_iterator pc = script.begin();
 	return DecodeOfferScript(script, op, vvch, pc);
 }
+CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
+	int op;
+	vector<vector<unsigned char> > vvch;
+	CScript::const_iterator pc = scriptIn.begin();
+	
+	if (!DecodeOfferScript(scriptIn, op, vvch, pc))
+	{
+		throw runtime_error(
+			"RemoveOfferScriptPrefix() : could not decode offer script");
+	}
+
+	return CScript(pc, scriptIn.end());
+}
+
 bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
 	int op, nOut = 0;
 	vector<vector<unsigned char> > vvch;
@@ -534,19 +548,6 @@ bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
 	return true;
 }
 
-CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
-	int op;
-	vector<vector<unsigned char> > vvch;
-	CScript::const_iterator pc = scriptIn.begin();
-	
-	if (!DecodeOfferScript(scriptIn, op, vvch, pc))
-	{
-		throw runtime_error(
-			"RemoveOfferScriptPrefix() : could not decode offer script");
-	}
-
-	return CScript(pc, scriptIn.end());
-}
 
 bool CheckOfferInputs(const CTransaction &tx,
 		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,

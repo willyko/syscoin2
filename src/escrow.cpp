@@ -213,6 +213,20 @@ bool DecodeEscrowScript(const CScript& script, int& op,
     CScript::const_iterator pc = script.begin();
     return DecodeEscrowScript(script, op, vvch, pc);
 }
+
+CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
+    int op;
+    vector<vector<unsigned char> > vvch;
+    CScript::const_iterator pc = scriptIn.begin();
+
+    if (!DecodeEscrowScript(scriptIn, op, vvch, pc))
+	{
+        throw runtime_error("RemoveEscrowScriptPrefix() : could not decode escrow script");
+	}
+	
+    return CScript(pc, scriptIn.end());
+}
+
 bool GetEscrowAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
@@ -226,20 +240,6 @@ bool GetEscrowAddress(const CTransaction& tx, std::string& strAddress) {
 	ExtractDestination(scriptPubKey, dest);
 	strAddress = CSyscoinAddress(dest).ToString();
     return true;
-}
-
-
-CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
-    int op;
-    vector<vector<unsigned char> > vvch;
-    CScript::const_iterator pc = scriptIn.begin();
-
-    if (!DecodeEscrowScript(scriptIn, op, vvch, pc))
-	{
-        throw runtime_error("RemoveEscrowScriptPrefix() : could not decode escrow script");
-	}
-	
-    return CScript(pc, scriptIn.end());
 }
 
 bool CheckEscrowInputs(const CTransaction &tx,

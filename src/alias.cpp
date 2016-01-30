@@ -607,19 +607,6 @@ int GetAliasExpirationDepth() {
 	return 525600;
 }
 
-
-
-CScript RemoveAliasScriptPrefix(const CScript& scriptIn) {
-	int op;
-	vector<vector<unsigned char> > vvch;
-	CScript::const_iterator pc = scriptIn.begin();
-
-	if (!DecodeAliasScript(scriptIn, op, vvch, pc))
-		throw runtime_error(
-				"RemoveAliasScriptPrefix() : could not decode name script");
-	return CScript(pc, scriptIn.end());
-}
-
 bool GetTxOfAlias(const vector<unsigned char> &vchName,
 		CTransaction& tx) {
 	vector<CAliasIndex> vtxPos;
@@ -798,6 +785,16 @@ bool DecodeAliasScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch) {
 	CScript::const_iterator pc = script.begin();
 	return DecodeAliasScript(script, op, vvch, pc);
+}
+CScript RemoveAliasScriptPrefix(const CScript& scriptIn) {
+	int op;
+	vector<vector<unsigned char> > vvch;
+	CScript::const_iterator pc = scriptIn.begin();
+
+	if (!DecodeAliasScript(scriptIn, op, vvch, pc))
+		throw runtime_error(
+				"RemoveAliasScriptPrefix() : could not decode name script");
+	return CScript(pc, scriptIn.end());
 }
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient)
 {

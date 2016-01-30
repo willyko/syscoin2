@@ -228,6 +228,18 @@ bool DecodeCertScript(const CScript& script, int& op,
     CScript::const_iterator pc = script.begin();
     return DecodeCertScript(script, op, vvch, pc);
 }
+CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
+    int op;
+    vector<vector<unsigned char> > vvch;
+    CScript::const_iterator pc = scriptIn.begin();
+
+    if (!DecodeCertScript(scriptIn, op, vvch, pc))
+        throw runtime_error(
+                "RemoveCertScriptPrefix() : could not decode cert script");
+	
+    return CScript(pc, scriptIn.end());
+}
+
 bool GetCertAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
@@ -242,18 +254,6 @@ bool GetCertAddress(const CTransaction& tx, std::string& strAddress) {
 	ExtractDestination(scriptPubKey, dest);
 	strAddress = CSyscoinAddress(dest).ToString();
     return true;
-}
-
-CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
-    int op;
-    vector<vector<unsigned char> > vvch;
-    CScript::const_iterator pc = scriptIn.begin();
-
-    if (!DecodeCertScript(scriptIn, op, vvch, pc))
-        throw runtime_error(
-                "RemoveCertScriptPrefix() : could not decode cert script");
-	
-    return CScript(pc, scriptIn.end());
 }
 
 bool CheckCertInputs(const CTransaction &tx,
