@@ -582,7 +582,7 @@ LogPrintf("4\n");
     theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
-LogPrintf("7\n");
+LogPrintf("7 %s\n", stringFromVch(copyCert.vchPubKey).c_str());
 	std::vector<unsigned char> vchKeyByte;
 	boost::algorithm::unhex(copyCert.vchPubKey.begin(), copyCert.vchPubKey.end(), std::back_inserter(vchKeyByte));
 	CPubKey currentKey(vchKeyByte);
