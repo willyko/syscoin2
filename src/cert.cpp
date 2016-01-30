@@ -191,12 +191,6 @@ bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,
 
 
 bool DecodeCertScript(const CScript& script, int& op,
-        vector<vector<unsigned char> > &vvch) {
-    CScript::const_iterator pc = script.begin();
-    return DecodeCertScript(script, op, vvch, pc);
-}
-
-bool DecodeCertScript(const CScript& script, int& op,
         vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) {
     opcodetype opcode;
 	vvch.clear();
@@ -229,12 +223,16 @@ bool DecodeCertScript(const CScript& script, int& op,
         return true;
     return false;
 }
-
+bool DecodeCertScript(const CScript& script, int& op,
+        vector<vector<unsigned char> > &vvch) {
+    CScript::const_iterator pc = script.begin();
+    return DecodeCertScript(script, op, vvch, pc);
+}
 bool GetCertAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
 
-    if (!DecodeCertTx(tx, op, nOut, vvch, -1))
+    if (!DecodeCertTx(tx, op, nOut, vvch))
         return error("GetCertAddress() : could not decode cert tx.");
 
     const CTxOut& txout = tx.vout[nOut];
@@ -847,7 +845,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		// decode txn, skip non-cert txns
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if (!DecodeCertTx(wtx, op, nOut, vvch, -1) || !IsCertOp(op))
+		if (!DecodeCertTx(wtx, op, nOut, vvch) || !IsCertOp(op))
 			continue;
 		
 		vchName = vvch[0];

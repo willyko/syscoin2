@@ -174,12 +174,6 @@ bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,
 }
 
 bool DecodeEscrowScript(const CScript& script, int& op,
-        vector<vector<unsigned char> > &vvch) {
-    CScript::const_iterator pc = script.begin();
-    return DecodeEscrowScript(script, op, vvch, pc);
-}
-
-bool DecodeEscrowScript(const CScript& script, int& op,
         vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) {
     opcodetype opcode;
 	vvch.clear();
@@ -214,11 +208,15 @@ bool DecodeEscrowScript(const CScript& script, int& op,
 
     return false;
 }
-
+bool DecodeEscrowScript(const CScript& script, int& op,
+        vector<vector<unsigned char> > &vvch) {
+    CScript::const_iterator pc = script.begin();
+    return DecodeEscrowScript(script, op, vvch, pc);
+}
 bool GetEscrowAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch, -1))
+    if (!DecodeEscrowTx(tx, op, nOut, vvch))
         return error("GetEscrowAddress() : could not decode escrow tx.");
 
     const CTxOut& txout = tx.vout[nOut];
@@ -540,7 +538,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
         throw runtime_error("could not find a escrow with this key");
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
+    if (!DecodeEscrowTx(tx, op, nOut, vvch) 
     	|| !IsEscrowOp(op) 
     	|| (op != OP_ESCROW_ACTIVATE))
         throw runtime_error("Release can only happen on an activated escrow address");
@@ -960,7 +958,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		// skip non-syscoin txns
 		if (item.second.nVersion != SYSCOIN_TX_VERSION)
 			continue;
-		if (!DecodeEscrowTx(item.second, op, nOut, vvch, -1) 
+		if (!DecodeEscrowTx(item.second, op, nOut, vvch) 
     		|| !IsEscrowOp(op) 
 			|| vvch[0] != vchEscrow
     		|| op != OP_ESCROW_RELEASE)
@@ -1063,7 +1061,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
         throw runtime_error("could not find a escrow with this key");
     vector<vector<unsigned char> > vvch;
     int op, nOut;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch, -1) 
+    if (!DecodeEscrowTx(tx, op, nOut, vvch) 
     	|| !IsEscrowOp(op) 
     	|| (op != OP_ESCROW_ACTIVATE))
         throw runtime_error("Refund can only happen on an activated escrow address");
@@ -1501,7 +1499,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		// decode txn, skip non-alias txns
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if (!DecodeEscrowTx(wtx, op, nOut, vvch, -1) || !IsEscrowOp(op))
+		if (!DecodeEscrowTx(wtx, op, nOut, vvch) || !IsEscrowOp(op))
 			continue;
 		vchName = vvch[0];
 		vector<CEscrow> vtxPos;

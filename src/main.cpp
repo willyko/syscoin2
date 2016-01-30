@@ -803,7 +803,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     int nOut;
 	string err = "";
 	bool found = false;
-    if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
+    if(DecodeOfferTx(tx, op, nOut, vvch)) {
 		found = true;
 		switch (op) {		
 			case OP_OFFER_ACCEPT: 
@@ -821,13 +821,13 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 		
         }
     }
-   if(DecodeCertTx(tx, op, nOut, vvch, -1)
-	|| DecodeAliasTx(tx, op, nOut, vvch, -1)
-	|| DecodeMessageTx(tx, op, nOut, vvch, -1)) 
+   if(DecodeCertTx(tx, op, nOut, vvch)
+	|| DecodeAliasTx(tx, op, nOut, vvch)
+	|| DecodeMessageTx(tx, op, nOut, vvch)) 
    {
 	   found = true;
    }
-   if(DecodeEscrowTx(tx, op, nOut, vvch, -1)) 
+   if(DecodeEscrowTx(tx, op, nOut, vvch)) 
    {
 	   found = true;
 		switch (op) {		

@@ -24,9 +24,6 @@ int IndexOfOfferOutput(const CTransaction& tx);
 int GetOfferExpirationDepth();
 std::string offerFromOp(int op);
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
-bool DecodeOfferScript(const CScript& script, int& op,
-		std::vector<std::vector<unsigned char> > &vvch,
-		CScript::const_iterator& pc);
 void rescanforsyscoinservices(CBlockIndex *pindexRescan);
 const char* norefund = "norefund";
 const char* inprogress = "inprogress";

@@ -366,28 +366,28 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 				continue;
 			vector<vector<unsigned char> > vvch;
 			int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+			if(DecodeAliasTx(tx, op, nOut, vvch))
 			{
 				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
 				DisconnectAlias(pindex, tx, op, vvch);	
 				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);		
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvch, -1))		
+			if(DecodeOfferTx(tx, op, nOut, vvch))		
 			{
 				DisconnectOffer(pindex, tx, op, vvch);	
 				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
-			if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			if(DecodeCertTx(tx, op, nOut, vvch))
 			{
 				DisconnectCertificate(pindex, tx, op, vvch);
 				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
-			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvch))
 			{
 				DisconnectEscrow(pindex, tx, op, vvch);
 				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
-			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvch))
 			{
 				DisconnectMessage(pindex, tx, op, vvch);
 				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
@@ -480,12 +480,6 @@ bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
 
 
 bool DecodeOfferScript(const CScript& script, int& op,
-		vector<vector<unsigned char> > &vvch) {
-	CScript::const_iterator pc = script.begin();
-	return DecodeOfferScript(script, op, vvch, pc);
-}
-
-bool DecodeOfferScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) {
 	opcodetype opcode;
 	vvch.clear();
@@ -519,12 +513,16 @@ bool DecodeOfferScript(const CScript& script, int& op,
 		return true;
 	return false;
 }
-
+bool DecodeOfferScript(const CScript& script, int& op,
+		vector<vector<unsigned char> > &vvch) {
+	CScript::const_iterator pc = script.begin();
+	return DecodeOfferScript(script, op, vvch, pc);
+}
 bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
 	int op, nOut = 0;
 	vector<vector<unsigned char> > vvch;
 
-	if (!DecodeOfferTx(tx, op, nOut, vvch, -1))
+	if (!DecodeOfferTx(tx, op, nOut, vvch))
 		return error("GetOfferAddress() : could not decode offer tx.");
 
 	const CTxOut& txout = tx.vout[nOut];
@@ -1915,7 +1913,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
 			throw runtime_error("Cannot sell this certificate, it is not yours!");
 		int op, nOut;
-		if(DecodeCertTx(txCert, op, nOut, vvch, -1))
+		if(DecodeCertTx(txCert, op, nOut, vvch))
 			vchCert = vvch[0];
 
 		std::vector<unsigned char> vchCertKeyByte;
@@ -2012,7 +2010,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
 
-	if(!DecodeOfferTx(txOffer, op, nOut, vvch, -1)) 
+	if(!DecodeOfferTx(txOffer, op, nOut, vvch)) 
 	{
 		string err = "could not decode offeraccept tx with hash: " +  txOffer.GetHash().GetHex();
         throw runtime_error(err.c_str());
@@ -2138,7 +2136,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("release escrow transaction cannot unserialize escrow value");
 		
 		int op, nOut;
-		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch, -1))
+		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowvvch))
 			throw runtime_error("Cannot decode escrow tx hash");
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
@@ -2207,7 +2205,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			{
 				foundCert = entry;		
 				int op, nOut;
-				if(DecodeCertTx(txCert, op, nOut, vvch, -1))
+				if(DecodeCertTx(txCert, op, nOut, vvch))
 					vchCert = vvch[0];
 				std::vector<unsigned char> vchCertKeyByte;
 				boost::algorithm::unhex(theCert.vchPubKey.begin(), theCert.vchPubKey.end(), std::back_inserter(vchCertKeyByte));
@@ -2388,7 +2386,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			}
 			vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeOfferTx(txA, op, nOut, vvch, -1) 
+            if (!DecodeOfferTx(txA, op, nOut, vvch) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
@@ -2562,7 +2560,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeOfferTx(wtx, op, nOut, vvch, -1) 
+            if (!DecodeOfferTx(wtx, op, nOut, vvch) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
@@ -2667,7 +2665,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             // decode txn
             vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeEscrowTx(item.second, op, nOut, vvch, -1) 
+            if (!DecodeEscrowTx(item.second, op, nOut, vvch) 
             	|| !IsEscrowOp(op))
                 continue;
 			
@@ -2699,7 +2697,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
  
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > offerVvch;
-            if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch, -1) 
+            if (!DecodeOfferTx(acceptTx, op, nOut, offerVvch) 
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
@@ -2821,7 +2819,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeOfferTx(wtx, op, nOut, vvch, -1) 
+            if (!DecodeOfferTx(wtx, op, nOut, vvch) 
             	|| !IsOfferOp(op) 
             	|| (op == OP_OFFER_ACCEPT))
                 continue;
@@ -2933,7 +2931,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
             // decode txn, skip non-alias txns
             vector<vector<unsigned char> > vvch;
             int op, nOut;
-            if (!DecodeOfferTx(tx, op, nOut, vvch, -1) 
+            if (!DecodeOfferTx(tx, op, nOut, vvch) 
             	|| !IsOfferOp(op) )
                 continue;
 

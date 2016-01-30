@@ -23,9 +23,6 @@ int GetEscrowExpirationDepth();
 
 std::string escrowFromOp(int op);
 CScript RemoveEscrowScriptPrefix(const CScript& scriptIn);
-bool DecodeEscrowScript(const CScript& script, int& op,
-        std::vector<std::vector<unsigned char> > &vvch,
-        CScript::const_iterator& pc);
 
 class CEscrow {
 public:

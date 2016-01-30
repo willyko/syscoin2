@@ -107,7 +107,7 @@ unsigned int QtyOfPendingAcceptsInMempool(const vector<unsigned char>& vchToFind
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
 		
-		if(DecodeOfferTx(tx, op, nOut, vvch, -1)) {
+		if(DecodeOfferTx(tx, op, nOut, vvch)) {
 			if(op == OP_OFFER_ACCEPT)
 			{
 				if(vvch.size() >= 1 && vvch[0] == vchToFind)
@@ -140,7 +140,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 		int op, nOut;
 		if(IsAliasOp(type))
 		{
-			if(DecodeAliasTx(tx, op, nOut, vvch, -1))
+			if(DecodeAliasTx(tx, op, nOut, vvch))
 			{
 				if(op == type)
 				{
@@ -153,7 +153,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 		}
 		else if(IsOfferOp(type))
 		{
-			if(DecodeOfferTx(tx, op, nOut, vvch, -1))
+			if(DecodeOfferTx(tx, op, nOut, vvch))
 			{
 				if(op == type)
 				{
@@ -166,7 +166,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 		}
 		else if(IsCertOp(type))
 		{
-			if(DecodeCertTx(tx, op, nOut, vvch, -1))
+			if(DecodeCertTx(tx, op, nOut, vvch))
 			{
 				if(op == type)
 				{
@@ -179,7 +179,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 		}
 		else if(IsEscrowOp(type))
 		{
-			if(DecodeEscrowTx(tx, op, nOut, vvch, -1))
+			if(DecodeEscrowTx(tx, op, nOut, vvch))
 			{
 				if(op == type)
 				{
@@ -192,7 +192,7 @@ bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype typ
 		}
 		else if(IsMessageOp(type))
 		{
-			if(DecodeMessageTx(tx, op, nOut, vvch, -1))
+			if(DecodeMessageTx(tx, op, nOut, vvch))
 			{
 				if(op == type)
 				{
@@ -644,7 +644,7 @@ bool GetAliasAddress(const CTransaction& tx, std::string& strAddress) {
 	int op, nOut = 0;
 	vector<vector<unsigned char> > vvch;
 
-	if (!DecodeAliasTx(tx, op, nOut, vvch, -1))
+	if (!DecodeAliasTx(tx, op, nOut, vvch))
 		return error("GetAliasAddress() : could not decode name tx.");
 
 	const CTxOut& txout = tx.vout[nOut];
@@ -758,11 +758,6 @@ bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,
 	return found && IsAliasOp(op);
 }
 
-bool DecodeAliasScript(const CScript& script, int& op,
-		vector<vector<unsigned char> > &vvch) {
-	CScript::const_iterator pc = script.begin();
-	return DecodeAliasScript(script, op, vvch, pc);
-}
 
 bool DecodeAliasScript(const CScript& script, int& op,
 		vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) {
@@ -798,6 +793,11 @@ bool DecodeAliasScript(const CScript& script, int& op,
 			|| (op == OP_ALIAS_UPDATE && vvch.size() == 1))
 		return true;
 	return false;
+}
+bool DecodeAliasScript(const CScript& script, int& op,
+		vector<vector<unsigned char> > &vvch) {
+	CScript::const_iterator pc = script.begin();
+	return DecodeAliasScript(script, op, vvch, pc);
 }
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient)
 {

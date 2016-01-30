@@ -121,7 +121,7 @@ bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::
 bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAliasScript(const CScript& script, int& op,
-		std::vector<std::vector<unsigned char> > &vvch, CScript::const_iterator& pc);
+		std::vector<std::vector<unsigned char> > &vvch);
 bool GetAliasAddress(const CTransaction& tx, std::string& strAddress);
 void GetAliasValue(const std::string& strName, std::string& strAddress);
 CAmount convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision);

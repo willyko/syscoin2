@@ -23,9 +23,6 @@ std::string certFromOp(int op);
 bool GetCertAddress(const CTransaction& tx, std::string& strAddress);
 int GetCertExpirationDepth();
 CScript RemoveCertScriptPrefix(const CScript& scriptIn);
-bool DecodeCertScript(const CScript& script, int& op,
-        std::vector<std::vector<unsigned char> > &vvch,
-        CScript::const_iterator& pc);
 
 class CCert {
 public:

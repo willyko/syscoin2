@@ -157,12 +157,6 @@ bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,
 }
 
 bool DecodeMessageScript(const CScript& script, int& op,
-        vector<vector<unsigned char> > &vvch) {
-    CScript::const_iterator pc = script.begin();
-    return DecodeMessageScript(script, op, vvch, pc);
-}
-
-bool DecodeMessageScript(const CScript& script, int& op,
         vector<vector<unsigned char> > &vvch, CScript::const_iterator& pc) {
     opcodetype opcode;
 	vvch.clear();
@@ -195,10 +189,15 @@ bool DecodeMessageScript(const CScript& script, int& op,
     return false;
 }
 
+bool DecodeMessageScript(const CScript& script, int& op,
+        vector<vector<unsigned char> > &vvch) {
+    CScript::const_iterator pc = script.begin();
+    return DecodeMessageScript(script, op, vvch, pc);
+}
 bool GetMessageAddress(const CTransaction& tx, std::string& strAddress) {
     int op, nOut = 0;
     vector<vector<unsigned char> > vvch;
-    if (!DecodeMessageTx(tx, op, nOut, vvch, -1))
+    if (!DecodeMessageTx(tx, op, nOut, vvch))
         return error("GetMessageAddress() : could not decode message tx.");
 
     const CTxOut& txout = tx.vout[nOut];
@@ -558,7 +557,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		// decode txn, skip non-alias txns
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
+		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
 
@@ -621,7 +620,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		// decode txn, skip non-alias txns
 		vector<vector<unsigned char> > vvch;
 		int op, nOut;
-		if (!DecodeMessageTx(wtx, op, nOut, vvch, -1) || !IsMessageOp(op))
+		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
 

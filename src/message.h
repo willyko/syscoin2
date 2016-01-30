@@ -22,9 +22,6 @@ int IndexOfMessageOutput(const CTransaction& tx);
 int GetMessageExpirationDepth();
 bool ExtractMessageAddress(const CScript& script, std::string& address);
 CScript RemoveMessageScriptPrefix(const CScript& scriptIn);
-bool DecodeMessageScript(const CScript& script, int& op,
-        std::vector<std::vector<unsigned char> > &vvch,
-        CScript::const_iterator& pc);
 
 std::string messageFromOp(int op);
 
