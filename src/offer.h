@@ -28,12 +28,12 @@ bool DecodeOfferScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch,
 		CScript::const_iterator& pc);
 void rescanforsyscoinservices(CBlockIndex *pindexRescan);
-static const char* norefund = "norefund";
-static const char* inprogress = "inprogress";
-static const char* complete = "complete";
-static const std::vector<unsigned char> OFFER_NOREFUND = std::vector<unsigned char>(norefund, norefund + strlen(norefund));
-static const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS = std::vector<unsigned char>(inprogress, inprogress + strlen(inprogress));
-static const std::vector<unsigned char> OFFER_REFUND_COMPLETE = std::vector<unsigned char>(complete, complete + strlen(complete));
+const char* norefund = "norefund";
+const char* inprogress = "inprogress";
+const char* complete = "complete";
+const std::vector<unsigned char> OFFER_NOREFUND = std::vector<unsigned char>(norefund, norefund + strlen(norefund));
+const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS = std::vector<unsigned char>(inprogress, inprogress + strlen(inprogress));
+const std::vector<unsigned char> OFFER_REFUND_COMPLETE = std::vector<unsigned char>(complete, complete + strlen(complete));
 
 class COfferAccept {
 public:

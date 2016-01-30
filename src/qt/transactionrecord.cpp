@@ -14,6 +14,11 @@
 #include <boost/foreach.hpp>
 using namespace std;
 // SYSCOIN
+extern const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS;
+extern int GetSyscoinTxVersion();
+extern bool IsSyscoinDataOutput(const CTxOut& out);
+extern bool IsAliasMine(const CTransaction& tx);
+extern std::string stringFromVch(const std::vector<unsigned char> &vch);
 extern bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
 enum {RECV=0, SEND=1};
 /* Return positive answer if transaction should be shown in list.
