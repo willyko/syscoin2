@@ -8,8 +8,6 @@
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
-// SYSCOIN auxpow
-#include "auxpow.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -44,12 +42,13 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
-// SYSCOIN service's
-#include "alias.h"
+// SYSCOIN
+#include "auxpow.h"
 #include "offer.h"
 #include "cert.h"
-#include "escrow.h"
+#include "alias.h"
 #include "message.h"
+#include "escrow.h"
 using namespace std;
 
 #if defined(NDEBUG)
