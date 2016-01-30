@@ -45,7 +45,7 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 		break;
 	case OP_ALIAS_UPDATE:
 		if(type == SEND)
-			sub.type = (IsAliasMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
+			sub.type = (IsSyscoinTxMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
 		else if(type == RECV)
 			sub.type = TransactionRecord::AliasRecv;
 		break;

@@ -111,29 +111,6 @@ int IndexOfMessageOutput(const CTransaction& tx) {
 }
 
 
-bool IsMessageMine(const CTransaction& tx) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-
-    bool good = DecodeMessageTx(tx, op, nOut, vvch, -1);
-    if (!good) 
-        return false;
-    
-    if(!IsMessageOp(op))
-        return false;
-
-    const CTxOut& txout = tx.vout[nOut];
-    if (pwalletMain->IsMine(txout)) {     
-        return true;
-    }
-    return false;
-}
-
-
-
 bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessage,
         CMessage& txPos, CTransaction& tx) {
     vector<CMessage> vtxPos;
@@ -584,7 +561,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		CMessage message = vtxPos.back();
 		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
-		if(!IsMessageMine(tx))
+		if(!IsSyscoinTxMine(tx))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
@@ -647,7 +624,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		CMessage message = vtxPos.back();
 		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
-		if(IsMessageMine(tx))
+		if(IsSyscoinTxMine(tx))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);

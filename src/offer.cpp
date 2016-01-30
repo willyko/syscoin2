@@ -163,7 +163,7 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	COfferAccept theOfferAccept;
 	if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, myOfferAcceptTx))
 	{
-		if(!IsOfferMine(myOfferAcceptTx))
+		if(!IsSyscoinTxMine(myOfferAcceptTx))
 			return string("makeOfferRefundTX(): cannot refund an accept of an offer that isn't mine");
 
 		// check for existence of offeraccept in txn offer obj
@@ -407,27 +407,6 @@ int IndexOfOfferOutput(const CTransaction& tx) {
 	if (!good)
 		return -1;
 	return nOut;
-}
-
-bool IsOfferMine(const CTransaction& tx) {
-	if (tx.nVersion != SYSCOIN_TX_VERSION)
-		return false;
-
-	vector<vector<unsigned char> > vvch;
-	int op, nOut;
-
-	bool good = DecodeOfferTx(tx, op, nOut, vvch, -1);
-	if (!good) 
-		return false;
-	
-	if(!IsOfferOp(op))
-		return false;
-
-	const CTxOut& txout = tx.vout[nOut];
-	if (pwalletMain->IsMine(txout)) {
-		return true;
-	}
-	return false;
 }
 
 bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer, 
@@ -1009,7 +988,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 					// only if we are the root offer owner do we even consider xfering a cert					
 					// purchased a cert so xfer it
-					if(!fExternal && pwalletMain && IsOfferMine(offerTx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+					if(!fExternal && pwalletMain && IsSyscoinTxMine(offerTx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
 						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
@@ -1043,7 +1022,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							}
 						}
 					}
-					if (!fExternal && pwalletMain && !linkOffer.IsNull() && IsOfferMine(offerTx))
+					if (!fExternal && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(offerTx))
 					{	
 						// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
 						// myOffer.vchLinkOffer is the linked offer guid
@@ -1255,7 +1234,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		{
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
-			if (IsCertMine(txCert) && wtxCertIn != NULL) 
+			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
 			{
 				std::vector<unsigned char> vchCertKeyByte;
 				boost::algorithm::unhex(theCert.vchPubKey.begin(), theCert.vchPubKey.end(), std::back_inserter(vchCertKeyByte));
@@ -1427,7 +1406,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 			{
 				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 				// make sure its in your wallet (you control this cert)		
-				if (IsCertMine(txCert) && wtxCertIn != NULL) 
+				if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
 				{
 					foundEntry = entry;
 					std::vector<unsigned char> vchCertKeyByte;
@@ -1552,7 +1531,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	CScript scriptPubKey, scriptPubKeyCert;
 	// check to see if certificate in wallet
 	wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
-	if (!IsCertMine(txCert) || wtxCertIn == NULL) 
+	if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
 		throw runtime_error("this certificate is not yours");
 
 	std::vector<unsigned char> vchCertKeyByte;
@@ -1811,7 +1790,7 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			UniValue oList(UniValue::VOBJ);
 			oList.push_back(Pair("cert_guid", stringFromVch(entry.certLinkVchRand)));
 			oList.push_back(Pair("cert_title", stringFromVch(theCert.vchTitle)));
-			oList.push_back(Pair("cert_is_mine", IsCertMine(txCert) ? "true" : "false"));
+			oList.push_back(Pair("cert_is_mine", IsSyscoinTxMine(txCert) ? "true" : "false"));
 			string strAddress = "";
 			GetCertAddress(txCert, strAddress);
 			oList.push_back(Pair("cert_address", strAddress));
@@ -1926,7 +1905,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		vector<vector<unsigned char> > vvch;
 		wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 		// make sure its in your wallet (you control this cert)		
-		if (!IsCertMine(txCert) || wtxCertIn == NULL) 
+		if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
 			throw runtime_error("Cannot sell this certificate, it is not yours!");
 		int op, nOut;
 		if(DecodeCertTx(txCert, op, nOut, vvch, -1))
@@ -2217,7 +2196,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		{
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
-			if (IsCertMine(txCert) && wtxCertIn != NULL) 
+			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
 			{
 				foundCert = entry;		
 				int op, nOut;
@@ -2272,7 +2251,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 			throw runtime_error("Cannot purchase with this certificate, it may be expired!");
-		if (!IsCertMine(txCert)) 
+		if (!IsSyscoinTxMine(txCert)) 
 			throw runtime_error("Cannot purchase with this certificate, it is not yours!");
 	}
 	// create accept
@@ -2430,7 +2409,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
 			COfferLinkWhitelistEntry entry;
 			
-			if(IsOfferMine(tx)) 
+			if(IsSyscoinTxMine(tx)) 
 			{
 				vector<unsigned char> vchOfferLink;
 				bool foundOffer = false;
@@ -2451,7 +2430,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 					theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
 			}
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
-			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(txA) ? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA) ? "true" : "false"));
 			if(ca.bPaid) {
 				if(!ca.txBTCId.IsNull())
 					oOfferAccept.push_back(Pair("paid","check"));
@@ -2519,8 +2498,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
-		oOffer.push_back(Pair("is_mine", IsOfferMine(tx) ? "true" : "false"));
-		if(!theOffer.vchLinkOffer.empty() && IsOfferMine(tx)) {
+		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(tx) ? "true" : "false"));
+		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx)) {
 			oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
 			oOffer.push_back(Pair("offerlink", "true"));
 			oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
@@ -2617,7 +2596,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			COfferLinkWhitelistEntry entry;
 			vector<unsigned char> vchEscrowLink;
 			
-			if(IsOfferMine(offerTx)) 
+			if(IsSyscoinTxMine(offerTx)) 
 			{
 				vector<unsigned char> vchOfferLink;
 				bool foundOffer = false;
@@ -2650,7 +2629,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
 				if(!theOfferAccept.txBTCId.IsNull())
 					oOfferAccept.push_back(Pair("status","check payment"));
@@ -2740,7 +2719,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
-			if(IsOfferMine(offerTx)) 
+			if(IsSyscoinTxMine(offerTx)) 
 			{
 				bool foundEscrow = false;
 				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
@@ -2763,7 +2742,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("is_mine", IsOfferMine(offerTx)? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx)? "true" : "false"));
 			if(theOfferAccept.bPaid && !theOfferAccept.bRefunded) {
 				if(!theOfferAccept.txBTCId.IsNull())
 					oOfferAccept.push_back(Pair("status","check"));

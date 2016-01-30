@@ -110,7 +110,7 @@ bool CheckAliasInputs(const CTransaction &tx, CValidationState &state,
 	const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);
 void CreateFeeRecipient(const CScript& scriptPubKey, const std::vector<unsigned char>& data, CRecipient& recipient);
-bool IsAliasMine(const CTransaction& tx);
+bool IsSyscoinTxMine(const CTransaction& tx);
 bool IsAliasOp(int op);
 
 

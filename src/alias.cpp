@@ -311,29 +311,15 @@ int GetSyscoinTxVersion()
 	return SYSCOIN_TX_VERSION;
 }
 /**
- * [IsAliasMine description]
+ * [IsSyscoinTxMine description]
  * @param  tx [description]
  * @return    [description]
  */
-bool IsAliasMine(const CTransaction& tx) {
+bool IsSyscoinTxMine(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return false;
 
-	vector<vector<unsigned char> > vvch;
-	int op, nOut;
-
-	if (!DecodeAliasTx(tx, op, nOut, vvch, -1))
-		return false;
-
-	if (!IsAliasOp(op))
-		return false;
-
-	const CTxOut& txout = tx.vout[nOut];
-	if (pwalletMain->IsMine(txout)) {
-		return true;
-	}
-
-	return false;
+	return pwalletMain->IsMine(tx);
 }
 
 bool CheckAliasInputs(const CTransaction &tx,
@@ -890,7 +876,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if (!GetTxOfAlias(vchName, tx))
 		throw runtime_error("could not find an alias with this name");
 
-    if(!IsAliasMine(tx)) {
+    if(!IsSyscoinTxMine(tx)) {
 		throw runtime_error("This alias is not yours, you cannot update it.");
     }
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
@@ -997,7 +983,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			CAliasIndex alias = vtxPos.back();	
 			if (!GetSyscoinTransaction(alias.nHeight, alias.txHash, tx, Params().GetConsensus()))
 				continue;
-			if(!IsAliasMine(tx))
+			if(!IsSyscoinTxMine(tx))
 				continue;
 			nHeight = alias.nHeight;
 			// get last active name only
@@ -1076,10 +1062,8 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		string strAddress = "";
 		GetAliasAddress(tx, strAddress);
 		oName.push_back(Pair("address", strAddress));
-		bool fAliasMine = IsAliasMine(tx)? true:  false;
-		oName.push_back(Pair("isaliasmine", fAliasMine));
-		bool fMine = pwalletMain->IsMine(tx)? true:  false;
-		oName.push_back(Pair("ismine", fMine));
+		bool fAliasMine = IsSyscoinTxMine(tx)? true:  false;
+		oName.push_back(Pair("ismine", fAliasMine));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();
 		if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)

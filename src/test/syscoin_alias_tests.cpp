@@ -71,10 +71,10 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 	GenerateBlocks(1);
 	// check its not mine anymore
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
 	// it got xferred to right person
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 
 	// xfer an alias that isn't yours
 	BOOST_CHECK_THROW(CallRPC("node1", "aliasupdate jagnode1 changeddata1 jagnode2"), runtime_error);
@@ -85,25 +85,25 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 	GenerateBlocks(1, "node2");
 	// check its not mine anymore
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode2"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == false);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata4"));
 	// check xferred right person and data changed
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo jagnode2"));
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata4"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 
 	// update xferred alias
 	BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate jagnode1 changeddata5"));
 	GenerateBlocks(1, "node2");
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode1"));
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata5"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 
 	// retransfer alias
 	BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate jagnode1 changeddata5 jagnode3"));
 	GenerateBlocks(1, "node2");
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo jagnode1"));
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata5"));
-	BOOST_CHECK(find_value(r.get_obj(), "isaliasmine").get_bool() == true);
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 }
 BOOST_AUTO_TEST_SUITE_END ()

@@ -63,11 +63,11 @@ BOOST_AUTO_TEST_CASE (generate_certtransfer)
 	CertTransfer("node1", pvtguid, "jagcert3");
 	// it got xferred to right person
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "certinfo " + guid));
-	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "true");
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");
 	BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == certdata);
 
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "certinfo " + pvtguid));
-	BOOST_CHECK(find_value(r.get_obj(), "is_mine").get_str() == "true");
+	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");
 	BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == certdata);
 	// xfer an cert that isn't yours
 	BOOST_CHECK_THROW(CallRPC("node1", "certtransfer " + guid + " jagcert2"), runtime_error);

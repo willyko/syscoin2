@@ -128,28 +128,6 @@ int IndexOfEscrowOutput(const CTransaction& tx) {
     return nOut;
 }
 
-bool IsEscrowMine(const CTransaction& tx) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-
-    bool good = DecodeEscrowTx(tx, op, nOut, vvch, -1);
-    if (!good) 
-        return false;
-    
-    if(!IsEscrowOp(op))
-        return false;
-
-    const CTxOut& txout = tx.vout[nOut];
-   	if (pwalletMain->IsMine(txout)) {
-        return true;
-    }
-    return false;
-}
-
-
 bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
         CEscrow& txPos, CTransaction& tx) {
     vector<CEscrow> vtxPos;
@@ -490,7 +468,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	vector<CRecipient> vecSendEscrow;
 	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithEscrowFee, false};
 	vecSendEscrow.push_back(recipientEscrow);
-	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, NULL, NULL, false);
+	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, NULL, NULL, NULL, false);
 	
 	// send to seller/arbiter so they can track the escrow through GUI
     // build escrow

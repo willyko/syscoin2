@@ -144,28 +144,6 @@ int IndexOfCertOutput(const CTransaction& tx) {
     return nOut;
 }
 
-bool IsCertMine(const CTransaction& tx) {
-    if (tx.nVersion != SYSCOIN_TX_VERSION)
-        return false;
-
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-
-    bool good = DecodeCertTx(tx, op, nOut, vvch, -1);
-    if (!good) 
-        return false;
-    
-    if(!IsCertOp(op))
-        return false;
-
-    const CTxOut& txout = tx.vout[nOut];
-    if (pwalletMain->IsMine(txout)) {
-        return true;
-    }
-    return false;
-}
-
-
 bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
         CCert& txPos, CTransaction& tx) {
     vector<CCert> vtxPos;
@@ -560,7 +538,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
         throw runtime_error("could not find a certificate with this key");
     // make sure cert is in wallet
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL || !IsCertMine(tx))
+	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
 		throw runtime_error("this cert is not in your wallet");
       	// check for existing cert 's
 	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
@@ -692,7 +670,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
 	// check to see if certificate in wallet
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL || !IsCertMine(tx))
+	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
 		throw runtime_error("this certificate is not in your wallet");
 
 	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
@@ -798,7 +776,7 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	}
     oCert.push_back(Pair("data", strData));
 	oCert.push_back(Pair("private", ca.bPrivate? "Yes": "No"));
-    oCert.push_back(Pair("is_mine", IsCertMine(tx) ? "true" : "false"));
+    oCert.push_back(Pair("ismine", IsSyscoinTxMine(tx) ? "true" : "false"));
 
     uint64_t nHeight;
 	nHeight = ca.nHeight;
@@ -881,7 +859,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!GetSyscoinTransaction(cert.nHeight, cert.txHash, tx, Params().GetConsensus()))
 			continue;
 		
-		if(!IsCertMine(tx))
+		if(!IsSyscoinTxMine(tx))
 			continue;
 		
         // build the output object
