@@ -462,7 +462,7 @@ bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut,
 	return decode && parse;
 }
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
-		vector<vector<unsigned char> >& vvch, int nHeight) {
+		vector<vector<unsigned char> >& vvch) {
 	bool found = false;
 
 	// Strict check - bug disallowed

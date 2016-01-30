@@ -139,7 +139,7 @@ bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut,
 	return decode && parse;
 }
 bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,
-        vector<vector<unsigned char> >& vvch, int nHeight) {
+        vector<vector<unsigned char> >& vvch) {
     bool found = false;
 
 
