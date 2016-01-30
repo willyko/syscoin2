@@ -32,7 +32,10 @@
 
 using namespace std;
 // SYSCOIN services
-extern int FirstIndexOfSyscoinOutput(const CTransaction& tx);
+extern int IndexOfOfferOutput(const CTransaction& tx);
+extern int IndexOfCertOutput(const CTransaction& tx);
+extern int IndexOfAliasOutput(const CTransaction& tx);
+extern int IndexOfEscrowOutput(const CTransaction& tx);
 extern bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs);
 extern int GetSyscoinTxVersion();
 extern vector<unsigned char> vchFromString(const string &str);
@@ -1882,40 +1885,51 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 }
 
 bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet,
-                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxIn, const CWalletTx* wtxIn1, const CWalletTx* wtxIn2, bool sysTx)
+                                int& nChangePosRet, std::string& strFailReason, const CCoinControl* coinControl, bool sign, const CWalletTx* wtxInOffer, const CWalletTx* wtxInCert, const CWalletTx* wtxInAlias, const CWalletTx* wtxInEscrow, bool sysTx)
 {
     CAmount nValue = 0;
 	// SYSCOIN: get output amount of input transactions for syscoin service calls
-	int nTxOut = 0;
-	int nTxOut1 = 0;
-	int nTxOut2 = 0;
-	if(wtxIn != NULL)
+	int nTxOutOffer = 0;
+	int nTxOutCert = 0;
+	int nTxOutAlias = 0;
+	int nTxOutEscrow = 0;
+	if(wtxInOffer != NULL)
 	{
-		const CTransaction& txIn = wtxIn[0];
-		nTxOut = FirstIndexOfSyscoinOutput(txIn);
-		if (nTxOut < 0)
+		const CTransaction& txIn = wtxInOffer[0];
+		nTxOutOffer = IndexOfOfferOutput(txIn);
+		if (nTxOutOffer < 0)
 		{
-			strFailReason = _("Can't determine type of input 1 into syscoin service transaction");
+			strFailReason = _("Can't determine type of offer input into syscoin service transaction");
             return false;
 		}
 	}
-	if(wtxIn1 != NULL)
+	if(wtxInCert != NULL)
 	{
-		const CTransaction& txIn = wtxIn1[0];
-		nTxOut1 = FirstIndexOfSyscoinOutput(txIn);
-		if (nTxOut1 < 0)
+		const CTransaction& txIn = wtxInCert[0];
+		nTxOutCert = IndexOfCertOutput(txIn);
+		if (nTxOutCert < 0)
 		{
-			strFailReason = _("Can't determine type of input 2 into syscoin service transaction");
+			strFailReason = _("Can't determine type of cert input into syscoin service transaction");
             return false;
 		}
 	}
-	if(wtxIn2 != NULL)
+	if(wtxInAlias != NULL)
 	{
-		const CTransaction& txIn = wtxIn2[0];
-		nTxOut2 = FirstIndexOfSyscoinOutput(txIn);
-		if (nTxOut2 < 0)
+		const CTransaction& txIn = wtxInAlias[0];
+		nTxOutAlias = IndexOfAliasOutput(txIn);
+		if (nTxOutAlias < 0)
 		{
-			strFailReason = _("Can't determine type of input 3 into syscoin service transaction");
+			strFailReason = _("Can't determine type of alias input into syscoin service transaction");
+            return false;
+		}
+	}
+	if(wtxInEscrow != NULL)
+	{
+		const CTransaction& txIn = wtxInEscrow[0];
+		nTxOutEscrow = IndexOfEscrowOutput(txIn);
+		if (nTxOutEscrow < 0)
+		{
+			strFailReason = _("Can't determine type of escrow input into syscoin service transaction");
             return false;
 		}
 	}
@@ -2026,12 +2040,14 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 }
 				// SYSCOIN input credit from input tx
 				int64_t nWtxinCredit = 0;
-				if(wtxIn != NULL)
-					nWtxinCredit = wtxIn->vout[nTxOut].nValue;
-				if(wtxIn1 != NULL)
-					nWtxinCredit += wtxIn1->vout[nTxOut1].nValue;
-				if(wtxIn2 != NULL)
-					nWtxinCredit += wtxIn2->vout[nTxOut2].nValue;
+				if(wtxInOffer != NULL)
+					nWtxinCredit = wtxInOffer->vout[nTxOutOffer].nValue;
+				if(wtxInCert != NULL)
+					nWtxinCredit += wtxInCert->vout[nTxOutCert].nValue;
+				if(wtxInAlias != NULL)
+					nWtxinCredit += wtxInAlias->vout[nTxOutAlias].nValue;
+				if(wtxInEscrow != NULL)
+					nWtxinCredit += wtxInEscrow->vout[nTxOutEscrow].nValue;
                 // Choose coins to use
                 set<pair<const CWalletTx*,unsigned int> > setCoins;
                 CAmount nValueIn = 0;
@@ -2046,12 +2062,14 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 				nValueIn += nWtxinCredit;
 				vector<pair<const CWalletTx*, unsigned int> > vecCoins(
 					setCoins.begin(), setCoins.end());
-				if(wtxIn != NULL)
-					vecCoins.insert(vecCoins.begin(), make_pair(wtxIn, nTxOut));
-				if(wtxIn1 != NULL)
-					vecCoins.insert(vecCoins.begin(), make_pair(wtxIn1, nTxOut1));
-				if(wtxIn2 != NULL)
-					vecCoins.insert(vecCoins.begin(), make_pair(wtxIn2, nTxOut2));
+				if(wtxInOffer != NULL)
+					vecCoins.insert(vecCoins.begin(), make_pair(wtxInOffer, nTxOutOffer));
+				if(wtxInCert != NULL)
+					vecCoins.insert(vecCoins.begin(), make_pair(wtxInCert, nTxOutCert));
+				if(wtxInAlias != NULL)
+					vecCoins.insert(vecCoins.begin(), make_pair(wtxInAlias, nTxOutAlias));
+				if(wtxInEscrow != NULL)
+					vecCoins.insert(vecCoins.begin(), make_pair(wtxInEscrow, nTxOutEscrow));
                 BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, vecCoins)
                 {
                     CAmount nCredit = pcoin.first->vout[pcoin.second].nValue;

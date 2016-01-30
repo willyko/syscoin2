@@ -16,7 +16,7 @@
 using namespace std;
 
 
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL,  const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
 bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchMessage, string &strCipherText)
 {
 	CMessageCrypter crypter;
@@ -534,7 +534,6 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
                         "<data> certificate data, 1KB max.\n"
 						"<private> set to 1 if you only want to make the cert data private, only the owner of the cert can view it.\n"
                         + HelpRequiringPassphrase());
-	LogPrintf("1\n");
     // gather & validate inputs
     vector<unsigned char> vchCert = vchFromValue(params[0]);
     vector<unsigned char> vchTitle = vchFromValue(params[1]);
@@ -542,13 +541,11 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	bool bPrivate = atoi(params[3].get_str().c_str()) == 1? true: false;
     if(vchTitle.size() < 1)
         throw runtime_error("certificate title cannot be empty!");
-LogPrintf("2\n");
     if(vchTitle.size() > MAX_NAME_LENGTH)
         throw runtime_error("certificate title cannot exceed 255 bytes!");
 
     if (vchData.size() < 1)
         vchData = vchFromString(" ");
-LogPrintf("3\n");
     // this is a syscoind txn
     CWalletTx wtx;
 	const CWalletTx* wtxIn;
@@ -561,17 +558,14 @@ LogPrintf("3\n");
 	CCert cert;
     if (!GetTxOfCert(*pcertdb, vchCert, cert, tx))
         throw runtime_error("could not find a certificate with this key");
-LogPrintf("4\n");
     // make sure cert is in wallet
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL || !IsCertMine(tx))
 		throw runtime_error("this cert is not in your wallet");
-	LogPrintf("5\n");
       	// check for existing cert 's
 	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 		throw runtime_error("there are pending operations on that cert");
 	}
-	LogPrintf("6\n");
     // unserialize cert object from txn
     CCert theCert;
 
@@ -582,18 +576,15 @@ LogPrintf("4\n");
     theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
-LogPrintf("7 %s\n", stringFromVch(copyCert.vchPubKey).c_str());
 	std::vector<unsigned char> vchKeyByte;
 	boost::algorithm::unhex(copyCert.vchPubKey.begin(), copyCert.vchPubKey.end(), std::back_inserter(vchKeyByte));
 	CPubKey currentKey(vchKeyByte);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
-LogPrintf("8\n");
     // create CERTUPDATE txn keys
     CScript scriptPubKey;
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 	// if we want to make data private, encrypt it
-	LogPrintf("9\n");
 	if(bPrivate)
 	{
 		string strCipherText;
@@ -606,7 +597,6 @@ LogPrintf("8\n");
 		vchData = vchFromString(strCipherText);
 	}
 
-LogPrintf("10\n");
     if(copyCert.vchTitle != vchTitle)
 		theCert.vchTitle = vchTitle;
 	if(copyCert.vchData != vchData)
@@ -619,18 +609,18 @@ LogPrintf("10\n");
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
-LogPrintf("11\n");
 	const vector<unsigned char> &data = theCert.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-LogPrintf("12\n");
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);	
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);	
  	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
-	LogPrintf("13\n");
 	return res;
 }
 
@@ -759,8 +749,10 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

@@ -30,7 +30,7 @@ COfferDB *pofferdb = NULL;
 CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxIn=NULL, const CWalletTx* wtxIn1=NULL, const CWalletTx* wtxIn2=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
 bool GetPreviousInput(const COutPoint * outpoint, int &op, vector<vector<unsigned char> > &vvchArgs)
 {
 	if(!pwalletMain || !outpoint)
@@ -290,18 +290,6 @@ string aliasFromOp(int op) {
 	default:
 		return "<unknown alias op>";
 	}
-}
-int FirstIndexOfSyscoinOutput(const CTransaction& txIn) {
-	int nTxOut = IndexOfAliasOutput(txIn);
-	if (nTxOut < 0)
-		nTxOut = IndexOfCertOutput(txIn);
-	if (nTxOut < 0)
-		nTxOut = IndexOfOfferOutput(txIn);
-	if (nTxOut < 0)
-		nTxOut = IndexOfEscrowOutput(txIn);
-	if (nTxOut < 0)
-		nTxOut = IndexOfMessageOutput(txIn);
-   return nTxOut;
 }
 int GetSyscoinDataOutput(const CTransaction& tx) {
    for(unsigned int i = 0; i<tx.vout.size();i++) {
@@ -669,6 +657,9 @@ int IndexOfAliasOutput(const CTransaction& tx) {
 	bool good = DecodeAliasTx(tx, op, nOut, vvch, -1);
 	if (!good)
 		return -1;
+	CAmount credit = pwalletMain->GetCredit(tx.vout[nOut], ISMINE_WATCH_ONLY);
+	if(credit <= 0)
+		return -1;
 	return nOut;
 }
 
@@ -944,8 +935,11 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInCert=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxIn, wtxInEscrow
+		);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
