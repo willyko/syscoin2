@@ -2137,7 +2137,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("release escrow transaction cannot unserialize escrow value");
 		
 		int op, nOut;
-		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowvvch))
+		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch))
 			throw runtime_error("Cannot decode escrow tx hash");
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
