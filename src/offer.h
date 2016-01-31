@@ -25,6 +25,12 @@ int GetOfferExpirationDepth();
 std::string offerFromOp(int op);
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
 void rescanforsyscoinservices(CBlockIndex *pindexRescan);
+static const char* norefund = "norefund";
+static const char* inprogress = "inprogress";
+static const char* complete = "complete";
+const std::vector<unsigned char> OFFER_NOREFUND = std::vector<unsigned char>(norefund, norefund + strlen(norefund));
+static const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS = std::vector<unsigned char>(inprogress, inprogress + strlen(inprogress));
+static const std::vector<unsigned char> OFFER_REFUND_COMPLETE = std::vector<unsigned char>(complete, complete + strlen(complete));
 
 class COfferAccept {
 public:

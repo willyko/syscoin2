@@ -14,7 +14,7 @@
 #include <boost/foreach.hpp>
 using namespace std;
 // SYSCOIN
-extern const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS;
+#include "offer.h"
 extern int GetSyscoinTxVersion();
 extern bool IsSyscoinDataOutput(const CTxOut& out);
 extern bool IsSyscoinTxMine(const CTransaction& tx);
