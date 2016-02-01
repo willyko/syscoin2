@@ -2196,8 +2196,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				boost::algorithm::unhex(theCert.vchPubKey.begin(), theCert.vchPubKey.end(), std::back_inserter(vchCertKeyByte));
 				CPubKey currentCertKey(vchCertKeyByte);
 				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
-				if(theCert.vchPubKey != theOffer.vchPubKey && wtxEscrowIn == NULL)
-					throw runtime_error("cannot purchase this offer because the certificate has been transferred since offer was created or it is linked to another offer");
 			}		
 		}
 	}
@@ -2475,8 +2473,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
-		if(!selleraddy.IsValid() || !selleraddy.isAlias)
-			continue;
 		oOffer.push_back(Pair("address", selleraddy.ToString()));
 		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
 		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
@@ -3101,13 +3097,6 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		{
 			expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 		}
-		std::vector<unsigned char> vchSellerKeyByte;
-		boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
-		CPubKey SellerPubKey(vchSellerKeyByte);
-		CSyscoinAddress selleraddy(SellerPubKey.GetID());
-		selleraddy = CSyscoinAddress(selleraddy.ToString());
-		if(!selleraddy.IsValid() || !selleraddy.isAlias)
-			continue;
 		oOffer.push_back(Pair("private", txOffer.bPrivate ? "Yes" : "No"));
 		oOffer.push_back(Pair("alias", selleraddy.aliasName));
 		oOffer.push_back(Pair("expires_in", expires_in));
