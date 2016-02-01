@@ -495,10 +495,11 @@ bool CheckAliasInputs(const CTransaction &tx,
 				PutToAliasList(vtxPos, theAlias);
 				{
 				TRY_LOCK(cs_main, cs_trymain);
+				std::vector<unsigned char> vchKeyByte;
 				boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
 				CPubKey PubKey(vchKeyByte);
 				CSyscoinAddress address(PubKey.GetID());
-				if (!paliasdb->WriteAlias(vvchArgs[0], address.ToString(), vtxPos))
+				if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
 				if(fDebug)
 					LogPrintf(
@@ -677,7 +678,7 @@ void GetAliasFromAddress(const std::string& strAddress, std::string& strAlias) {
 			throw runtime_error("failed to read from alias DB");
 		if (vchAlias.empty())
 			throw runtime_error("no alias address mapping result returned");
-		strAlias = vchFromString(vchAlias);
+		strAlias = stringFromVch(vchAlias);
 	}
 	catch(...)
 	{
