@@ -1118,7 +1118,7 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		CPubKey PubKey(vchKeyByte);
 		CSyscoinAddress address(PubKey.GetID());
 		if(!address.IsValid())
-			continue;
+			throw runtime_error("Invalid alias address");
 		oName.push_back(Pair("address", address.ToString()));
 		bool fAliasMine = IsSyscoinTxMine(tx)? true:  false;
 		oName.push_back(Pair("ismine", fAliasMine));
