@@ -399,7 +399,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	std::vector<unsigned char> vchArbiterKeyByte;
     boost::algorithm::unhex(vchArbiterPubKey.begin(), vchArbiterPubKey.end(), std::back_inserter(vchArbiterKeyByte));
 	CPubKey ArbiterPubKey(vchArbiterKeyByte);
-	CSyscoinAddress arbaddy(ArbiterPubKey.GetID());
+	CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 	arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 	if(!arbiteraddy.IsValid() || !arbiteraddy.isAlias)
 		throw runtime_error("Invalid arbiter alias or address");
@@ -1435,7 +1435,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	}
 
 	std::vector<unsigned char> vchSellerKeyByte;
-	boost::algorithm::unhex(ca.vchPubKey.begin(), txOffer.ca.end(), std::back_inserter(vchSellerKeyByte));
+	boost::algorithm::unhex(ca.vchSellerPubKey.begin(), ca.vchSellerPubKey.end(), std::back_inserter(vchSellerKeyByte));
 	CPubKey SellerPubKey(vchSellerKeyByte);
 	CSyscoinAddress selleraddy(SellerPubKey.GetID());
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
@@ -1527,7 +1527,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 			sTime = strprintf("%llu", pindex->nTime);
 		}
 		std::vector<unsigned char> vchSellerKeyByte;
-		boost::algorithm::unhex(caescrowvchSellerKey.begin(), escrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		boost::algorithm::unhex(escrow.vchSellerKey.begin(), escrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
