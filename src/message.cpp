@@ -430,8 +430,8 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
     if (strCipherTextTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
         throw runtime_error("Message data cannot exceed 1023 bytes!");
 
-    // build message UniValue
-    CMessage newMessage;`
+    // build message
+    CMessage newMessage;
 	newMessage.vchMessageFrom = vchFromString(strCipherTextFrom);
 	newMessage.vchMessageTo = vchFromString(strCipherTextTo);
 	newMessage.vchSubject = vchMySubject;
