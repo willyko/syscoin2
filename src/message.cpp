@@ -137,9 +137,9 @@ bool GetTxOfMessage(CMessageDB& dbMessage, const vector<unsigned char> &vchMessa
 bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	CMessage message(tx);
+	CMessage message;
 	bool decode = DecodeMessageTx(tx, op, nOut, vvch);
-	bool parse = !message.IsNull();
+	bool parse = !message.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,

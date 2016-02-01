@@ -460,9 +460,9 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	COffer offer(tx);
+	COffer offer;
 	bool decode = DecodeOfferTx(tx, op, nOut, vvch);
-	bool parse = !offer.IsNull();
+	bool parse = !offer.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,

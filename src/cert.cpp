@@ -170,9 +170,9 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
 bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	CCert cert(tx);
+	CCert cert;
 	bool decode = DecodeCertTx(tx, op, nOut, vvch);
-	bool parse = !cert.IsNull();
+	bool parse = !cert.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,

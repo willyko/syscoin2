@@ -726,18 +726,23 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	return DecodeAndParseAliasTx(tx, op, nOut, vvch)
-		|| DecodeAndParseCertTx(tx, op, nOut, vvch)
-		|| DecodeAndParseOfferTx(tx, op, nOut, vvch)
-		|| DecodeAndParseEscrowTx(tx, op, nOut, vvch)
-		|| DecodeAndParseMessageTx(tx, op, nOut, vvch);
+	bool good =  DecodeAndParseAliasTx(tx, op, nOut, vvch);
+	if(!good)
+		good =  DecodeAndParseCertTx(tx, op, nOut, vvch);
+	if(!good)
+		good = DecodeAndParseOfferTx(tx, op, nOut, vvch);
+	if(!good)
+		good = DecodeAndParseEscrowTx(tx, op, nOut, vvch);
+	if(!good)
+		good = DecodeAndParseMessageTx(tx, op, nOut, vvch);
+	return good;
 }
 bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	CAliasIndex alias(tx);
+	CAliasIndex alias;
 	bool decode = DecodeAliasTx(tx, op, nOut, vvch);
-	bool parse = !alias.IsNull();
+	bool parse = !alias.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,
