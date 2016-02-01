@@ -61,8 +61,8 @@ public:
     CAliasDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "aliases", nCacheSize, fMemory, fWipe) {
     }
 
-	bool WriteAlias(const std::vector<unsigned char>& name, std::vector<CAliasIndex>& vtxPos) {
-		return Write(make_pair(std::string("namei"), name), vtxPos);
+	bool WriteAlias(const std::vector<unsigned char>& name, const std::vector<unsigned char>& address, std::vector<CAliasIndex>& vtxPos) {
+		return Write(make_pair(std::string("namei"), name), vtxPos) && Write(make_pair(std::string("namea"), address), name);
 	}
 
 	bool EraseAlias(const std::vector<unsigned char>& name) {
@@ -71,10 +71,15 @@ public:
 	bool ReadAlias(const std::vector<unsigned char>& name, std::vector<CAliasIndex>& vtxPos) {
 		return Read(make_pair(std::string("namei"), name), vtxPos);
 	}
+	bool ReadAddress(const std::vector<unsigned char>& address, std::vector<unsigned char>& name) {
+		return Read(make_pair(std::string("namea"), address), name);
+	}
 	bool ExistsAlias(const std::vector<unsigned char>& name) {
 	    return Exists(make_pair(std::string("namei"), name));
 	}
-
+	bool ExistsAddress(const std::vector<unsigned char>& address) {
+	    return Exists(make_pair(std::string("namea"), address));
+	}
     bool ScanNames(
             const std::vector<unsigned char>& vchName,
             unsigned int nMax,
@@ -122,7 +127,8 @@ bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut, std::vect
 bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAliasScript(const CScript& script, int& op,
 		std::vector<std::vector<unsigned char> > &vvch);
-void GetAliasValue(const std::string& strName, std::string& strAddress);
+void GetAddressFromAlias(const std::string& strAlias, std::string& strAddress);
+void GetAliasFromAddress(const std::string& strAddress, std::string& strAlias);
 CAmount convertCurrencyCodeToSyscoin(const std::vector<unsigned char> &vchCurrencyCode, const float &nPrice, const unsigned int &nHeight, int &precision);
 bool ExistsInMempool(const std::vector<unsigned char> &vchToFind, opcodetype type);
 unsigned int QtyOfPendingAcceptsInMempool(const std::vector<unsigned char>& vchToFind);

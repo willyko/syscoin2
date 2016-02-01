@@ -1160,7 +1160,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	if (!aliasAddress.IsValid())
 		throw runtime_error("Invalid syscoin address");
 	if (!aliasAddress.isAlias)
-		throw runtime_error("Arbiter must be a valid alias");
+		throw runtime_error("Offer must be a valid alias");
 
 	// check for alias existence in DB
 	vector<CAliasIndex> vtxPos;

@@ -1958,17 +1958,17 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	vector<CAliasIndex> vtxPos;
 	paliasdb->ReadAlias(vvchArgs[0], vtxPos);
 	// erase from back to front up to the reorg affected service tx position
-	bool found = false;
+	CAliasIndex foundAlias;
 	for(unsigned int i=0;i<vtxPos.size();i++)
 	{
 		if (vtxPos[i].txHash == tx.GetHash())
 		{
-			found = true;
+			foundAlias = vtxPos[i];
 			break;
 		}
 
 	}
-	if(found)
+	if(!foundAlias.IsNull())
 	{
 		while(!vtxPos.empty())
 		{
@@ -1984,8 +1984,10 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 		}
 	}
 
-	
-	if(!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
+	boost::algorithm::unhex(foundAlias.vchPubKey.begin(), foundAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+	CPubKey PubKey(vchKeyByte);
+	CSyscoinAddress address(PubKey.GetID());
+	if(!paliasdb->WriteAlias(vvchArgs[0], address.ToString(), vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
 	if(fDebug)
 		LogPrintf("DISCONNECTED ALIAS TXN: alias=%s op=%s hash=%s  height=%d\n",

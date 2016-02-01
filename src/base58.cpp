@@ -15,7 +15,8 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 // SYSCOIN use aliases as addresses
-extern void GetAliasValue(const std::string& strName, std::string& strAddress);
+extern void GetAddressFromAlias(const std::string& strAlias, std::string& strAddress);
+extern void GetAliasFromAddress(const std::string& strAddress, std::string& strAlias);
 /** All alphanumeric characters except for "0", "I", "O", and "l" */
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -232,15 +233,29 @@ CSyscoinAddress::CSyscoinAddress(const std::string& strAddress) {
 	isAlias = false;
 	aliasName = "";
     SetString(strAddress);
-	// try to resolve alias address
+	// try to resolve alias address from alias name
 	if (!IsValid())
 	{
 		try 
 		{
 			std::string strAliasAddress;
-			GetAliasValue(strAddress, strAliasAddress);
+			GetAddressFromAlias(strAddress, strAliasAddress);
 			SetString(strAliasAddress);
 			aliasName = strAddress;
+			isAlias = true;
+		}
+		catch(...)
+		{
+		}
+	}
+	// try to resolve alias name from alias address
+	else
+	{
+		try 
+		{
+			std::string strAlias;
+			GetAliasFromAddress(strAddress, strAliasAddress);
+			aliasName = strAlias;
 			isAlias = true;
 		}
 		catch(...)
@@ -258,11 +273,24 @@ CSyscoinAddress::CSyscoinAddress(const char* pszAddress) {
 		try 
 		{
 			std::string strAliasAddress;
-			GetAliasValue(std::string(pszAddress), strAliasAddress);
+			GetAddressFromAlias(std::string(pszAddress), strAliasAddress);
 			SetString(strAliasAddress);
 			aliasName = std::string(pszAddress);
 			isAlias = true;
 			
+		}
+		catch(...)
+		{
+		}
+	}
+	else
+	{
+		try 
+		{
+			std::string strAlias;
+			GetAliasFromAddress(strAddress, strAliasAddress);
+			aliasName = strAlias;
+			isAlias = true;
 		}
 		catch(...)
 		{

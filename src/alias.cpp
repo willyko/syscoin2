@@ -495,8 +495,10 @@ bool CheckAliasInputs(const CTransaction &tx,
 				PutToAliasList(vtxPos, theAlias);
 				{
 				TRY_LOCK(cs_main, cs_trymain);
-
-				if (!paliasdb->WriteAlias(vvchArgs[0], vtxPos))
+				boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+				CPubKey PubKey(vchKeyByte);
+				CSyscoinAddress address(PubKey.GetID());
+				if (!paliasdb->WriteAlias(vvchArgs[0], address.ToString(), vtxPos))
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
 				if(fDebug)
 					LogPrintf(
@@ -627,16 +629,16 @@ bool GetTxOfAlias(const vector<unsigned char> &vchName,
 	return true;
 }
 
-void GetAliasValue(const std::string& strName, std::string& strAddress) {
+void GetAddressFromAlias(const std::string& strAlias, std::string& strAddress) {
 	try
 	{
-		vector<unsigned char> vchName = vchFromValue(strName);
-		if (paliasdb && !paliasdb->ExistsAlias(vchName))
+		const vector<unsigned char> &vchAlias = vchFromValue(strAlias);
+		if (paliasdb && !paliasdb->ExistsAlias(vchAlias))
 			throw runtime_error("Alias not found");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxPos;
-		if (paliasdb && !paliasdb->ReadAlias(vchName, vtxPos))
+		if (paliasdb && !paliasdb->ReadAlias(vchAlias, vtxPos))
 			throw runtime_error("failed to read from alias DB");
 		if (vtxPos.size() < 1)
 			throw runtime_error("no alias result returned");
@@ -654,7 +656,7 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 		CSyscoinAddress address(PubKey.GetID());
 		if(!address.IsValid())
 			throw runtime_error("alias address is invalid");
-		address = CSyscoinAddress(address.ToString());
+		strAddress = address.ToString();
 	}
 	catch(...)
 	{
@@ -662,6 +664,26 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	}
 }
 
+void GetAliasFromAddress(const std::string& strAddress, std::string& strAlias) {
+	try
+	{
+		const vector<unsigned char> &vchAddress = vchFromValue(strAddress);
+		if (paliasdb && !paliasdb->ExistsAddress(vchAddress))
+			throw runtime_error("Alias address mapping not found");
+
+		// check for alias address mapping existence in DB
+		vector<unsigned char> vchAlias;
+		if (paliasdb && !paliasdb->ReadAddress(vchAddress, vchAlias))
+			throw runtime_error("failed to read from alias DB");
+		if (vchAlias.empty())
+			throw runtime_error("no alias address mapping result returned");
+		strAlias = vchFromString(vchAlias);
+	}
+	catch(...)
+	{
+		throw runtime_error("could not read alias address mapping");
+	}
+}
 int IndexOfAliasOutput(const CTransaction& tx) {
 	vector<vector<unsigned char> > vvch;
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
