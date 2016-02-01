@@ -920,7 +920,12 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 				error("could not read txpos");
 				continue;
 			}
-
+            // decode txn, skip non-alias txns
+            vector<vector<unsigned char> > vvch;
+            int op, nOut;
+            if (!DecodeCertTx(tx, op, nOut, vvch) 
+            	|| !IsCertOp(op) )
+                continue;
 			int expired = 0;
 			int expires_in = 0;
 			int expired_block = 0;

@@ -726,9 +726,9 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	bool good =  DecodeAndParseAliasTx(tx, op, nOut, vvch);
+	bool good = DecodeAndParseAliasTx(tx, op, nOut, vvch);
 	if(!good)
-		good =  DecodeAndParseCertTx(tx, op, nOut, vvch);
+		good = DecodeAndParseCertTx(tx, op, nOut, vvch);
 	if(!good)
 		good = DecodeAndParseOfferTx(tx, op, nOut, vvch);
 	if(!good)
@@ -1201,6 +1201,12 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 				error("could not read txpos");
 				continue;
 			}
+            // decode txn, skip non-alias txns
+            vector<vector<unsigned char> > vvch;
+            int op, nOut;
+            if (!DecodeAliasTx(tx, op, nOut, vvch) 
+            	|| !IsAliasOp(op) )
+                continue;
 			int expired = 0;
 			int expires_in = 0;
 			int expired_block = 0;

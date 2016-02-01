@@ -669,6 +669,12 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 				error("could not read txpos");
 				continue;
 			}
+            // decode txn, skip non-alias txns
+            vector<vector<unsigned char> > vvch;
+            int op, nOut;
+            if (!DecodeMessageTx(tx, op, nOut, vvch) 
+            	|| !IsMessageOp(op) )
+                continue;
             UniValue oMessage(UniValue::VOBJ);
             vector<unsigned char> vchValue;
             uint64_t nHeight;

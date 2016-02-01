@@ -1601,6 +1601,12 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 				error("could not read txpos");
 				continue;
 			}
+            // decode txn, skip non-alias txns
+            vector<vector<unsigned char> > vvch;
+            int op, nOut;
+            if (!DecodeEscrowTx(tx, op, nOut, vvch) 
+            	|| !IsEscrowOp(op) )
+                continue;
 			int expired = 0;
             UniValue oEscrow(UniValue::VOBJ);
             uint64_t nHeight;
