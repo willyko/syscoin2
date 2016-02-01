@@ -1606,6 +1606,8 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
             uint64_t nHeight;
 			nHeight = txPos2.nHeight;
 			oEscrow.push_back(Pair("escrow", escrow));
+			string opName = escrowFromOp(op);
+			oEscrow.push_back(Pair("escrowtype", opName));
 			string sTime;
 			CBlockIndex *pindex = chainActive[txPos2.nHeight];
 			if (pindex) {

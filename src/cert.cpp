@@ -774,17 +774,11 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 
     uint64_t nHeight;
 	nHeight = ca.nHeight;
-	LogPrintf("ca.vchPubKey %s\n", stringFromVch(ca.vchPubKey).c_str());
 	std::vector<unsigned char> vchKeyByte;
-	LogPrintf("2\n");
 	boost::algorithm::unhex(ca.vchPubKey.begin(), ca.vchPubKey.end(), std::back_inserter(vchKeyByte));
-	LogPrintf("3\n");
 	CPubKey PubKey(vchKeyByte);
-	LogPrintf("4\n");
 	CSyscoinAddress address(PubKey.GetID());
-	LogPrintf("5\n");
 	oCert.push_back(Pair("address", address.ToString()));
-	LogPrintf("6\n");
 	expired_block = nHeight + GetCertExpirationDepth();
 	if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 	{
@@ -935,6 +929,8 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             uint64_t nHeight;
 			nHeight = txPos2.nHeight;
             oCert.push_back(Pair("cert", cert));
+			string opName = certFromOp(op);
+			oCert.push_back(Pair("certtype", opName));
             string value = stringFromVch(vchValue);
             oCert.push_back(Pair("value", value));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));

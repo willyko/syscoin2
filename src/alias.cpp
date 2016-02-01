@@ -1204,6 +1204,8 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			uint64_t nHeight;
 			nHeight = txPos2.nHeight;
 			oName.push_back(Pair("name", name));
+			string opName = aliasFromOp(op);
+			oName.push_back(Pair("aliastype", opName));
 			string value = stringFromVch(vchValue);
 			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));
 			oName.push_back(Pair("txid", tx.GetHash().GetHex()));

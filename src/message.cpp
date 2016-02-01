@@ -674,6 +674,8 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
             uint64_t nHeight;
             nHeight = txPos2.nHeight;
             oMessage.push_back(Pair("GUID", message));
+			string opName = messageFromOp(op);
+			oMessage.push_back(Pair("messagetype", opName));
 			string sTime;
 			CBlockIndex *pindex = chainActive[nHeight];
 			if (pindex) {
