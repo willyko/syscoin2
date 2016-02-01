@@ -1435,7 +1435,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	}
 
 	std::vector<unsigned char> vchSellerKeyByte;
-	boost::algorithm::unhex(ca.vchSellerPubKey.begin(), ca.vchSellerPubKey.end(), std::back_inserter(vchSellerKeyByte));
+	boost::algorithm::unhex(ca.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 	CPubKey SellerPubKey(vchSellerKeyByte);
 	CSyscoinAddress selleraddy(SellerPubKey.GetID());
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
