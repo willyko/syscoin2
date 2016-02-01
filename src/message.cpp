@@ -208,21 +208,6 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
     return CScript(pc, scriptIn.end());
 }
 
-bool GetMessageAddress(const CTransaction& tx, std::string& strAddress) {
-    int op, nOut = 0;
-    vector<vector<unsigned char> > vvch;
-    if (!DecodeMessageTx(tx, op, nOut, vvch))
-        return error("GetMessageAddress() : could not decode message tx.");
-
-    const CTxOut& txout = tx.vout[nOut];
-
-    const CScript& scriptPubKey = RemoveMessageScriptPrefix(txout.scriptPubKey);
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-    return true;
-}
-
 bool CheckMessageInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
         bool fJustCheck, int nHeight, bool fRescan) {

@@ -240,22 +240,6 @@ CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
     return CScript(pc, scriptIn.end());
 }
 
-bool GetCertAddress(const CTransaction& tx, std::string& strAddress) {
-    int op, nOut = 0;
-    vector<vector<unsigned char> > vvch;
-
-    if (!DecodeCertTx(tx, op, nOut, vvch))
-        return error("GetCertAddress() : could not decode cert tx.");
-
-    const CTxOut& txout = tx.vout[nOut];
-
-    const CScript& scriptPubKey = RemoveCertScriptPrefix(txout.scriptPubKey);
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-    return true;
-}
-
 bool CheckCertInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
         bool fJustCheck, int nHeight, bool fRescan) {
@@ -786,13 +770,13 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 
     uint64_t nHeight;
 	nHeight = ca.nHeight;
-	string strAddress = "";
-    GetCertAddress(tx, strAddress);
-	CSyscoinAddress address(strAddress);
-	if(address.IsValid() && address.isAlias)
-		oCert.push_back(Pair("address", address.aliasName));
-	else
-		oCert.push_back(Pair("address", address.ToString()));
+	std::vector<unsigned char> vchKeyByte;
+	boost::algorithm::unhex(ca.vchPubKey.begin(), ca.vchPubKey.end(), std::back_inserter(vchKeyByte));
+	CPubKey PubKey(vchKeyByte);
+	CSyscoinAddress address(PubKey.GetID());
+	if(!address.IsValid())
+		continue;
+	oCert.push_back(Pair("address", address.ToString()));
 	expired_block = nHeight + GetCertExpirationDepth();
 	if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 	{
@@ -882,13 +866,13 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		}
 		oName.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 		oName.push_back(Pair("data", strData));
-        string strAddress = "";
-        GetCertAddress(tx, strAddress);
-		CSyscoinAddress address(strAddress);
-		if(address.IsValid() && address.isAlias)
-			oName.push_back(Pair("address", address.aliasName));
-		else
-			oName.push_back(Pair("address", address.ToString()));
+ 		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(cert.vchPubKey.begin(), cert.vchPubKey.end(), std::back_inserter(vchKeyByte));
+		CPubKey PubKey(vchKeyByte);
+		CSyscoinAddress address(PubKey.GetID());
+		if(!address.IsValid())
+			continue;
+		oName.push_back(Pair("address", address.ToString()));
 		expired_block = nHeight + GetCertExpirationDepth();
 		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 		{
@@ -947,13 +931,13 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             string value = stringFromVch(vchValue);
             oCert.push_back(Pair("value", value));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
-            string strAddress = "";
-            GetCertAddress(tx, strAddress);
-			CSyscoinAddress address(strAddress);
-			if(address.IsValid() && address.isAlias)
-				oCert.push_back(Pair("address", address.aliasName));
-			else
-				oCert.push_back(Pair("address", address.ToString()));
+ 			std::vector<unsigned char> vchKeyByte;
+			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
+			CPubKey PubKey(vchKeyByte);
+			CSyscoinAddress address(PubKey.GetID());
+			if(!address.IsValid())
+				continue;
+			oCert.push_back(Pair("address", address.ToString()));
 			expired_block = nHeight + GetCertExpirationDepth();
 			if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 			{
@@ -1134,11 +1118,7 @@ UniValue certscan(const UniValue& params, bool fHelp) {
 		if (!GetSyscoinTransaction(nHeight, txCert.txHash, tx, Params().GetConsensus()))
 			continue;
 
-        //string strAddress = "";
-        //GetCertAddress(tx, strAddress);
         oCert.push_back(Pair("value", value));
-        //oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
-        //oCert.push_back(Pair("address", strAddress));
 		expired_block = nHeight + GetCertExpirationDepth();
 		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 		{

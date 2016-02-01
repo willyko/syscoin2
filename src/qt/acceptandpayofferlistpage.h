@@ -42,7 +42,7 @@ public:
 
     const QString &getReturnValue() const { return returnValue; }
 	bool handlePaymentRequest(const SendCoinsRecipient *rv);
-	void setValue(const QString& strRand, COffer &offer, QString price, QString address);
+	void setValue(const QString& strAlias, const QString& strRand, COffer &offer, QString price, QString address);
 	void updateCaption();
 	void OpenPayDialog();
 	void OpenBTCPayDialog();

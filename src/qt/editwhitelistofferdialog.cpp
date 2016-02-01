@@ -291,19 +291,19 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 				if (input.type() != UniValue::VOBJ)
 					continue;
 				const UniValue& o = input.get_obj();
-				const UniValue& cert_value = find_value(o, "cert_guid");
+				const UniValue& cert_value = find_value(o, "guid");
 				if (cert_value.type() == UniValue::VSTR)
 					cert_str = cert_value.get_str();
-				const UniValue& title_value = find_value(o, "cert_title");
+				const UniValue& title_value = find_value(o, "title");
 				if (title_value.type() == UniValue::VSTR)
 					title_str = title_value.get_str();
-				const UniValue& mine_value = find_value(o, "cert_is_mine");
+				const UniValue& mine_value = find_value(o, "ismine");
 				if (mine_value.type() == UniValue::VSTR)
 					mine_str = mine_value.get_str();
-				const UniValue& cert_address_value = find_value(o, "cert_address");
+				const UniValue& cert_address_value = find_value(o, "address");
 				if (cert_address_value.type() == UniValue::VSTR)
 					cert_address_str = cert_address_value.get_str();
-				const UniValue& cert_expiresin_value = find_value(o, "cert_expiresin");
+				const UniValue& cert_expiresin_value = find_value(o, "expiresin");
 				if (cert_expiresin_value.type() == UniValue::VNUM)
 					cert_expiresin = cert_expiresin_value.get_int();
 				const UniValue& offer_discount_percentage_value = find_value(o, "offer_discount_percentage");

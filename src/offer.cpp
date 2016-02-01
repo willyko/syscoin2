@@ -532,23 +532,6 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 	return CScript(pc, scriptIn.end());
 }
 
-bool GetOfferAddress(const CTransaction& tx, std::string& strAddress) {
-	int op, nOut = 0;
-	vector<vector<unsigned char> > vvch;
-
-	if (!DecodeOfferTx(tx, op, nOut, vvch))
-		return error("GetOfferAddress() : could not decode offer tx.");
-
-	const CTxOut& txout = tx.vout[nOut];
-
-	const CScript& scriptPubKey = RemoveOfferScriptPrefix(txout.scriptPubKey);
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-	return true;
-}
-
-
 bool CheckOfferInputs(const CTransaction &tx,
 		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
 		bool fJustCheck, int nHeight, bool fRescan) {
@@ -854,8 +837,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 							theOffer.sDescription = dbOffer.sDescription;
 						if(serializedOffer.vchPubKey.empty())
 							theOffer.vchPubKey = dbOffer.vchPubKey;
-						if(serializedOffer.aliasName.empty())
-							theOffer.aliasName = dbOffer.aliasName;
 						if(serializedOffer.vchLinkOffer.empty())
 							theOffer.vchLinkOffer = dbOffer.vchLinkOffer;
 					}
@@ -879,7 +860,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 								// if creating a linked offer we set some mandatory fields to the parent
 								theOffer.nQty = myParentOffer.nQty;
 								theOffer.vchPubKey = myParentOffer.vchPubKey;
-								theOffer.aliasName = myParentOffer.aliasName;
 								theOffer.sCategory = myParentOffer.sCategory;
 								theOffer.sTitle = myParentOffer.sTitle;
 								theOffer.linkWhitelist.bExclusiveResell = true;
@@ -1300,7 +1280,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		newOffer.vchPubKey = alias.vchPubKey;
 	else
 		newOffer.vchPubKey = theCert.vchPubKey;
-	newOffer.aliasName = aliasAddress.aliasName;
 	newOffer.sCategory = vchCat;
 	newOffer.sTitle = vchTitle;
 	newOffer.sDescription = vchDesc;
@@ -1794,12 +1773,17 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
 			UniValue oList(UniValue::VOBJ);
-			oList.push_back(Pair("cert_guid", stringFromVch(entry.certLinkVchRand)));
-			oList.push_back(Pair("cert_title", stringFromVch(theCert.vchTitle)));
-			oList.push_back(Pair("cert_is_mine", IsSyscoinTxMine(txCert) ? "true" : "false"));
-			string strAddress = "";
-			GetCertAddress(txCert, strAddress);
-			oList.push_back(Pair("cert_address", strAddress));
+			oList.push_back(Pair("guid", stringFromVch(entry.certLinkVchRand)));
+			oList.push_back(Pair("title", stringFromVch(theCert.vchTitle)));
+			oList.push_back(Pair("ismine", IsSyscoinTxMine(txCert) ? "true" : "false"));
+			std::vector<unsigned char> vchKeyByte;
+			boost::algorithm::unhex(theCert.vchPubKey.begin(), theCert.vchPubKey.end(), std::back_inserter(vchKeyByte));
+			CPubKey PubKey(vchKeyByte);
+			CSyscoinAddress address(PubKey.GetID());
+			address = CSyscoinAddress(address.ToString());
+			if(!address.IsValid())
+				continue;
+			oList.push_back(Pair("address", address.ToString()));
 			int expires_in = 0;
 			uint64_t nHeight = theCert.nHeight;
 			if (!GetSyscoinTransaction(nHeight, txCert.GetHash(), txCert, Params().GetConsensus()))
@@ -1809,7 +1793,7 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			{
 				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
 			}  
-			oList.push_back(Pair("cert_expiresin",expires_in));
+			oList.push_back(Pair("expiresin",expires_in));
 			oList.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oRes.push_back(oList);
 		}  
@@ -2213,7 +2197,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				CPubKey currentCertKey(vchCertKeyByte);
 				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
 				if(theCert.vchPubKey != theOffer.vchPubKey && wtxEscrowIn == NULL)
-					throw runtime_error("cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer");
+					throw runtime_error("cannot purchase this offer because the certificate has been transferred since offer was created or it is linked to another offer");
 			}		
 		}
 	}
@@ -2283,14 +2267,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     
 
     CScript scriptPayment;
-	string strAddress = "";
-    GetOfferAddress(tx, strAddress);
-	CSyscoinAddress address(strAddress);
-	if(!address.IsValid())
-	{
-		throw runtime_error("payment to invalid address");
-	}
-    scriptPayment= GetScriptForDestination(address.Get());
+	std::vector<unsigned char> vchKeyByte;
+	boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchKeyByte));
+	CPubKey currentKey(vchKeyByte);
+	scriptPayment = GetScriptForDestination(currentKey.GetID());
 	scriptPubKey += scriptPayment;
 
 	vector<CRecipient> vecSend;
@@ -2490,9 +2470,14 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("expired_block", expired_block));
 		oOffer.push_back(Pair("expired", expired));
 		oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
-		string strAddress = "";
-        GetOfferAddress(tx, strAddress);
-		oOffer.push_back(Pair("address", strAddress));
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+		if(!selleraddy.IsValid() || !selleraddy.isAlias)
+			continue;
+		oOffer.push_back(Pair("address", selleraddy.ToString()));
 		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
 		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 		oOffer.push_back(Pair("quantity", strprintf("%u", theOffer.nQty)));
@@ -2520,7 +2505,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("private", theOffer.bPrivate ? "Yes" : "No"));
 		oOffer.push_back(Pair("btconly", theOffer.bOnlyAcceptBTC ? "Yes" : "No"));
 		oOffer.push_back(Pair("description", stringFromVch(theOffer.sDescription)));
-		oOffer.push_back(Pair("alias", theOffer.aliasName));
+		oOffer.push_back(Pair("alias", selleraddy.aliasName));
 		oOffer.push_back(Pair("accepts", aoOfferAccepts));
 		oLastOffer = oOffer;
 	}
@@ -2594,7 +2579,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
-			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
+			std::vector<unsigned char> vchSellerKeyByte;
+			boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+			CPubKey SellerPubKey(vchSellerKeyByte);
+			CSyscoinAddress selleraddy(SellerPubKey.GetID());
+			selleraddy = CSyscoinAddress(selleraddy.ToString());
+			if(!selleraddy.IsValid() || !selleraddy.isAlias)
+				continue;
+			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
@@ -2719,7 +2711,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
-			oOfferAccept.push_back(Pair("alias", theOffer.aliasName));
+			std::vector<unsigned char> vchSellerKeyByte;
+			boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+			CPubKey SellerPubKey(vchSellerKeyByte);
+			CSyscoinAddress selleraddy(SellerPubKey.GetID());
+			selleraddy = CSyscoinAddress(selleraddy.ToString());
+			if(!selleraddy.IsValid() || !selleraddy.isAlias)
+				continue;
+			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
@@ -2869,9 +2868,14 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			oName.push_back(Pair("currency", stringFromVch(theOfferA.sCurrencyCode) ) );
 			oName.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
             oName.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
-			string strAddress = "";
-            GetOfferAddress(tx, strAddress);
-			oName.push_back(Pair("address", strAddress));
+			std::vector<unsigned char> vchSellerKeyByte;
+			boost::algorithm::unhex(theOfferA.vchPubKey.begin(), theOfferA.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+			CPubKey SellerPubKey(vchSellerKeyByte);
+			CSyscoinAddress selleraddy(SellerPubKey.GetID());
+			selleraddy = CSyscoinAddress(selleraddy.ToString());
+			if(!selleraddy.IsValid() || !selleraddy.isAlias)
+				continue;
+			oName.push_back(Pair("address", selleraddy.ToString()));
 			oName.push_back(Pair("exclusive_resell", theOfferA.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 			oName.push_back(Pair("btconly", theOfferA.bOnlyAcceptBTC ? "Yes" : "No"));
 			oName.push_back(Pair("private", theOfferA.bPrivate ? "Yes" : "No"));
@@ -2884,7 +2888,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			{
 				expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 			}
-			oName.push_back(Pair("alias", theOfferA.aliasName));
+			oName.push_back(Pair("alias", selleraddy.aliasName));
 			oName.push_back(Pair("expires_in", expires_in));
 			oName.push_back(Pair("expires_on", expired_block));
 			oName.push_back(Pair("expired", expired));
@@ -2969,7 +2973,14 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			{
 				expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 			}
-			oOffer.push_back(Pair("alias", txPos2.aliasName));
+			std::vector<unsigned char> vchSellerKeyByte;
+			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+			CPubKey SellerPubKey(vchSellerKeyByte);
+			CSyscoinAddress selleraddy(SellerPubKey.GetID());
+			selleraddy = CSyscoinAddress(selleraddy.ToString());
+			if(!selleraddy.IsValid() || !selleraddy.isAlias)
+				continue;
+			oOffer.push_back(Pair("alias", selleraddy.aliasName));
 			oOffer.push_back(Pair("expires_in", expires_in));
 			oOffer.push_back(Pair("expires_on", expired_block));
 			oOffer.push_back(Pair("expired", expired));
@@ -3035,7 +3046,14 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		COffer txOffer = pairScan.second;
 		string offer = stringFromVch(pairScan.first);
 		string title = stringFromVch(txOffer.sTitle);
-		string alias = txOffer.aliasName;
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+		if(!selleraddy.IsValid() || !selleraddy.isAlias)
+			continue;
+		string alias = selleraddy.aliasName;
         if (strRegexp != "" && !regex_search(title, offerparts, cregex) && strRegexp != offer && strRegexp != alias)
             continue;
 
@@ -3083,8 +3101,15 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		{
 			expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 		}
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+		if(!selleraddy.IsValid() || !selleraddy.isAlias)
+			continue;
 		oOffer.push_back(Pair("private", txOffer.bPrivate ? "Yes" : "No"));
-		oOffer.push_back(Pair("alias", txOffer.aliasName));
+		oOffer.push_back(Pair("alias", selleraddy.aliasName));
 		oOffer.push_back(Pair("expires_in", expires_in));
 		oOffer.push_back(Pair("expires_on", expired_block));
 		oOffer.push_back(Pair("expired", expired));
@@ -3157,7 +3182,14 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 		{
 			expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
 		}
-		oOffer.push_back(Pair("alias", txOffer.aliasName));
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+		if(!selleraddy.IsValid() || !selleraddy.isAlias)
+			continue;
+		oOffer.push_back(Pair("alias", selleraddy.aliasName));
 		oOffer.push_back(Pair("expires_in", expires_in));
 		oOffer.push_back(Pair("expires_on", expired_block));
 		oOffer.push_back(Pair("expired", expired));

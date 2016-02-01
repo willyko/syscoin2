@@ -227,21 +227,6 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
     return CScript(pc, scriptIn.end());
 }
 
-bool GetEscrowAddress(const CTransaction& tx, std::string& strAddress) {
-    int op, nOut = 0;
-    vector<vector<unsigned char> > vvch;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch))
-        return error("GetEscrowAddress() : could not decode escrow tx.");
-
-    const CTxOut& txout = tx.vout[nOut];
-
-    const CScript& scriptPubKey = RemoveEscrowScriptPrefix(txout.scriptPubKey);
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-    return true;
-}
-
 bool CheckEscrowInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
         bool fJustCheck, int nHeight, bool fRescan) {
@@ -479,7 +464,14 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // build escrow
     CEscrow newEscrow;
 	newEscrow.vchBuyerKey = vchFromString(strBuyerKey);
-	newEscrow.seller = theOffer.aliasName;
+	std::vector<unsigned char> vchSellerKeyByte;
+	boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+	CPubKey SellerPubKey(vchSellerKeyByte);
+	CSyscoinAddress selleraddy(SellerPubKey.GetID());
+	selleraddy = CSyscoinAddress(selleraddy.ToString());
+	if(!selleraddy.IsValid() || !selleraddy.isAlias)
+		throw runtime_error("Invalid offer alias");
+	newEscrow.seller = selleraddy.isAlias;
 	newEscrow.arbiter = strArbiter;
 	newEscrow.vchArbiterKey = vchArbiterPubKey;
 	newEscrow.vchRedeemScript = vchFromString(redeemScript_str);

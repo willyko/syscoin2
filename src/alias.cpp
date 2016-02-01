@@ -627,23 +627,6 @@ bool GetTxOfAlias(const vector<unsigned char> &vchName,
 	return true;
 }
 
-bool GetAliasAddress(const CTransaction& tx, std::string& strAddress) {
-	int op, nOut = 0;
-	vector<vector<unsigned char> > vvch;
-
-	if (!DecodeAliasTx(tx, op, nOut, vvch))
-		return error("GetAliasAddress() : could not decode name tx.");
-
-	const CTxOut& txout = tx.vout[nOut];
-
-	const CScript& scriptPubKey = RemoveAliasScriptPrefix(txout.scriptPubKey);
-
-	CTxDestination dest;
-	ExtractDestination(scriptPubKey, dest);
-	strAddress = CSyscoinAddress(dest).ToString();
-	return true;
-}
-
 void GetAliasValue(const std::string& strName, std::string& strAddress) {
 	try
 	{
@@ -660,11 +643,18 @@ void GetAliasValue(const std::string& strName, std::string& strAddress) {
 
 		// get transaction pointed to by alias
 		CTransaction tx;
-		uint256 txHash = vtxPos.back().txHash;
-		if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
+		const CAliasIndex &alias = vtxPos.back();
+		uint256 txHash = alias.txHash;
+		if (!GetSyscoinTransaction(alias.nHeight, txHash, tx, Params().GetConsensus()))
 			throw runtime_error("failed to read transaction from disk");
 
-		GetAliasAddress(tx, strAddress);
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+		CPubKey PubKey(vchKeyByte);
+		CSyscoinAddress address(PubKey.GetID());
+		if(!address.IsValid())
+			throw runtime_error("alias address is invalid");
+		address = CSyscoinAddress(address.ToString());
 	}
 	catch(...)
 	{
@@ -1120,11 +1110,16 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		nHeight = vtxPos.back().nHeight;
 		oName.push_back(Pair("name", stringFromVch(vchName)));
 		string value = stringFromVch(vchValue);
-		oName.push_back(Pair("value", stringFromVch(vtxPos.back().vchValue)));
+		const CAliasIndex &alias= vtxPos.back();
+		oName.push_back(Pair("value", stringFromVch(alias.vchValue)));
 		oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-		string strAddress = "";
-		GetAliasAddress(tx, strAddress);
-		oName.push_back(Pair("address", strAddress));
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+		CPubKey PubKey(vchKeyByte);
+		CSyscoinAddress address(PubKey.GetID());
+		if(!address.IsValid())
+			continue;
+		oName.push_back(Pair("address", address.ToString()));
 		bool fAliasMine = IsSyscoinTxMine(tx)? true:  false;
 		oName.push_back(Pair("ismine", fAliasMine));
         oName.push_back(Pair("lastupdate_height", nHeight));
@@ -1185,9 +1180,13 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			string value = stringFromVch(vchValue);
 			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));
 			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-			string strAddress = "";
-			GetAliasAddress(tx, strAddress);
-			oName.push_back(Pair("address", strAddress));
+			std::vector<unsigned char> vchKeyByte;
+			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
+			CPubKey PubKey(vchKeyByte);
+			CSyscoinAddress address(PubKey.GetID());
+			if(!address.IsValid())
+				continue;
+			oName.push_back(Pair("address", address.ToString()));
             oName.push_back(Pair("lastupdate_height", nHeight));
 			expired_block = nHeight + GetAliasExpirationDepth();
 			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)

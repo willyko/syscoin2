@@ -216,7 +216,6 @@ public:
 class COffer {
 
 public:
-	std::string aliasName;
 	std::vector<unsigned char> vchPubKey;
     uint256 txHash;
     uint64_t nHeight;
@@ -254,7 +253,6 @@ public:
 		sTitle.clear();
 		sDescription.clear();
 		vchPubKey.clear();
-		aliasName = "";
 	}
 
  	ADD_SERIALIZE_METHODS;
@@ -273,7 +271,6 @@ public:
 		READWRITE(sCurrencyCode);
 		READWRITE(VARINT(nCommission));
 		READWRITE(offerLinks);
-		READWRITE(aliasName);
 		READWRITE(vchPubKey);
 		READWRITE(vchCert);
 		READWRITE(bPrivate);
@@ -348,7 +345,6 @@ public:
 		&& a.sCurrencyCode == b.sCurrencyCode
 		&& a.nCommission == b.nCommission
 		&& a.vchPubKey == b.vchPubKey
-		&& a.aliasName == b.aliasName
 		&& a.vchCert == b.vchCert
 		&& a.bPrivate == b.bPrivate
 		&& a.bOnlyAcceptBTC == b.bOnlyAcceptBTC
@@ -371,7 +367,6 @@ public:
 		offerLinks = b.offerLinks;
 		nCommission = b.nCommission;
 		vchPubKey = b.vchPubKey;
-		aliasName = b.aliasName;
 		vchCert = b.vchCert;
 		bPrivate = b.bPrivate;
 		bOnlyAcceptBTC = b.bOnlyAcceptBTC;
@@ -382,7 +377,7 @@ public:
         return !(a == b);
     }
     
-    void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPrivate = false; bOnlyAcceptBTC = false; aliasName = ""; accept.SetNull(); sTitle.clear(); sDescription.clear();vchLinkOffer.clear();linkWhitelist.SetNull();sCurrencyCode.clear();offerLinks.clear();nCommission=0;vchPubKey.clear();vchCert.clear();}
+    void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPrivate = false; bOnlyAcceptBTC = false; accept.SetNull(); sTitle.clear(); sDescription.clear();vchLinkOffer.clear();linkWhitelist.SetNull();sCurrencyCode.clear();offerLinks.clear();nCommission=0;vchPubKey.clear();vchCert.clear();}
     bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false && bOnlyAcceptBTC == false); }
 
     bool UnserializeFromTx(const CTransaction &tx);

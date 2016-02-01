@@ -20,7 +20,6 @@ int IndexOfCertOutput(const CTransaction& tx);
 bool EncryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchMessage, std::string &strCipherText);
 bool DecryptMessage(const std::vector<unsigned char> &vchPublicKey, const std::vector<unsigned char> &vchCipherText, std::string &strMessage);
 std::string certFromOp(int op);
-bool GetCertAddress(const CTransaction& tx, std::string& strAddress);
 int GetCertExpirationDepth();
 CScript RemoveCertScriptPrefix(const CScript& scriptIn);
 
