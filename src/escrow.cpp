@@ -400,7 +400,17 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     boost::algorithm::unhex(vchArbiterPubKey.begin(), vchArbiterPubKey.end(), std::back_inserter(vchArbiterKeyByte));
 	CPubKey ArbiterPubKey(vchArbiterKeyByte);
 	CSyscoinAddress arbaddy(ArbiterPubKey.GetID());
+	arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
+	if(!arbiteraddy.IsValid() || !arbiteraddy.isAlias)
+		throw runtime_error("Invalid arbiter alias or address");
 
+	std::vector<unsigned char> vchSellerKeyByte;
+    boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+	CPubKey SellerPubKey(vchArbiterKeyByte);
+	CSyscoinAddress selleraddy(SellerPubKey.GetID());
+	selleraddy = CSyscoinAddress(selleraddy.ToString());
+	if(!selleraddy.IsValid() || !selleraddy.isAlias)
+		throw runtime_error("Invalid seller alias or address");
 
 	std::vector<unsigned char> vchBuyerKey(newDefaultKey.begin(), newDefaultKey.end());
 	string strBuyerKey = HexStr(vchBuyerKey);
@@ -1425,7 +1435,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	}
 
 	std::vector<unsigned char> vchSellerKeyByte;
-	boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+	boost::algorithm::unhex(ca.vchPubKey.begin(), txOffer.ca.end(), std::back_inserter(vchSellerKeyByte));
 	CPubKey SellerPubKey(vchSellerKeyByte);
 	CSyscoinAddress selleraddy(SellerPubKey.GetID());
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
@@ -1434,8 +1444,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	boost::algorithm::unhex(ca.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
 	CPubKey ArbiterPubKey(vchArbiterKeyByte);
 	CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
-	arbiteraddy = CSyscoinAddress(Arbiteraddy.ToString());
-
+	arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 
 	oEscrow.push_back(Pair("time", sTime));
 	oEscrow.push_back(Pair("seller", selleraddy.aliasName));
@@ -1518,13 +1527,13 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 			sTime = strprintf("%llu", pindex->nTime);
 		}
 		std::vector<unsigned char> vchSellerKeyByte;
-		boost::algorithm::unhex(ca.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		boost::algorithm::unhex(caescrowvchSellerKey.begin(), escrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
 
 		std::vector<unsigned char> vchArbiterKeyByte;
-		boost::algorithm::unhex(ca.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		boost::algorithm::unhex(escrow.vchArbiterKey.begin(), escrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
 		CPubKey ArbiterPubKey(vchArbiterKeyByte);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
@@ -1599,13 +1608,13 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 				sTime = strprintf("%llu", pindex->nTime);
 			}
 			std::vector<unsigned char> vchSellerKeyByte;
-			boost::algorithm::unhex(txPos2.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+			boost::algorithm::unhex(txPos2.vchSellerKey.begin(), txPos2.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 			CPubKey SellerPubKey(vchSellerKeyByte);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
 
 			std::vector<unsigned char> vchArbiterKeyByte;
-			boost::algorithm::unhex(txPos2.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+			boost::algorithm::unhex(txPos2.vchArbiterKey.begin(), txPos2.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
 			CPubKey ArbiterPubKey(vchArbiterKeyByte);
 			CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 			arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
@@ -1681,13 +1690,13 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		string escrow = stringFromVch(pairScan.first);
 		string offer = stringFromVch(txEscrow.vchOffer);
 		std::vector<unsigned char> vchSellerKeyByte;
-		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), txEscrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
 
 		std::vector<unsigned char> vchArbiterKeyByte;
-		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), txEscrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
 		CPubKey ArbiterPubKey(vchArbiterKeyByte);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
@@ -1798,13 +1807,13 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 			sTime = strprintf("%llu", pindex->nTime);
 		}
 		std::vector<unsigned char> vchSellerKeyByte;
-		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), txEscrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
 
 		std::vector<unsigned char> vchArbiterKeyByte;
-		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), txEscrow.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
 		CPubKey ArbiterPubKey(vchArbiterKeyByte);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
