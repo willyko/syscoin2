@@ -31,8 +31,6 @@ public:
 	std::vector<unsigned char> vchPubKeyTo;
 	std::vector<unsigned char> vchPubKeyFrom;
 	std::vector<unsigned char> vchSubject;
-	std::vector<unsigned char> vchFrom;
-	std::vector<unsigned char> vchTo;
 	std::vector<unsigned char> vchMessageTo;
 	std::vector<unsigned char> vchMessageFrom;
     uint256 txHash;
@@ -50,8 +48,6 @@ public:
         READWRITE(vchPubKeyTo);
 		READWRITE(vchPubKeyFrom);
 		READWRITE(vchSubject);
-		READWRITE(vchFrom);
-		READWRITE(vchTo);
 		READWRITE(vchMessageTo);
 		READWRITE(vchMessageFrom);
 		READWRITE(txHash);
@@ -67,8 +63,6 @@ public:
 		&& a.vchMessageFrom == b.vchMessageFrom
 		&& a.txHash == b.txHash
 		&& a.nHeight == b.nHeight
-		&& a.vchFrom == b.vchFrom
-		&& a.vchTo == b.vchTo
         );
     }
 
@@ -80,8 +74,6 @@ public:
 		vchMessageFrom = b.vchMessageFrom;
 		txHash = b.txHash;
 		nHeight = b.nHeight;
-		vchFrom = b.vchFrom;
-		vchTo = b.vchTo;
         return *this;
     }
 
@@ -89,8 +81,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { txHash.SetNull(); nHeight = 0; vchFrom.clear(); vchTo.clear(); vchPubKeyTo.clear(); vchPubKeyFrom.clear(); vchSubject.clear(); vchMessageTo.clear();vchMessageFrom.clear();}
-    bool IsNull() const { return ((txHash.IsNull() && nHeight == 0) || vchPubKeyTo.size() !=  65 || vchPubKeyFrom.size() != 65); }
+    void SetNull() { txHash.SetNull(); nHeight = 0; vchPubKeyTo.clear(); vchPubKeyFrom.clear(); vchSubject.clear(); vchMessageTo.clear();vchMessageFrom.clear();}
+    bool IsNull() const { return (txHash.IsNull() && nHeight == 0 && vchPubKeyTo.empty() && vchPubKeyFrom.empty()); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

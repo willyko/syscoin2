@@ -240,25 +240,17 @@ bool CheckMessageInputs(const CTransaction &tx,
             return error("CheckMessageInputs() : null message");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("message tx GUID too big");
-		if(theMessage.vchPubKeyTo.size() != 65)
+		if(!theMessage.vchPubKeyTo.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
 		{
 			return error("message public key to, invalid length");
 		}
-		if(theMessage.vchPubKeyFrom.size() != 65)
+		if(!theMessage.vchPubKeyFrom.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
 		{
 			return error("message public key from, invalid length");
 		}
 		if(theMessage.vchSubject.size() > MAX_NAME_LENGTH)
 		{
 			return error("message subject too big");
-		}
-		if(theMessage.vchFrom.size() > MAX_NAME_LENGTH)
-		{
-			return error("message from too big");
-		}
-		if(theMessage.vchTo.size() > MAX_NAME_LENGTH)
-		{
-			return error("message to too big");
 		}
 		if(theMessage.vchMessageTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
@@ -438,16 +430,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
         throw runtime_error("Message data cannot exceed 1023 bytes!");
 
     // build message UniValue
-    CMessage newMessage;
-	if(fromAddress.isAlias)
-		newMessage.vchFrom = vchFromString(fromAddress.aliasName);
-	else
-		newMessage.vchFrom = vchFromString(fromAddress.ToString());
-	if(toAddress.isAlias)
-		newMessage.vchTo = vchFromString(toAddress.aliasName);
-	else
-		newMessage.vchTo = vchFromString(toAddress.ToString());
-
+    CMessage newMessage;`
 	newMessage.vchMessageFrom = vchFromString(strCipherTextFrom);
 	newMessage.vchMessageTo = vchFromString(strCipherTextTo);
 	newMessage.vchSubject = vchMySubject;
@@ -501,10 +484,27 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
 	if (pindex) {
 		sTime = strprintf("%llu", pindex->nTime);
 	}
-    string strAddress = "";
+	std::vector<unsigned char> vchKeyByte;
+	boost::algorithm::unhex(ca.vchPubKeyFrom.begin(), ca.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
+	CPubKey FromPubKey(vchKeyByte);
+	CSyscoinAddress fromaddress(FromPubKey.GetID());
+	fromaddress = CSyscoinAddress(fromaddress.ToString());
 	oMessage.push_back(Pair("time", sTime));
-	oMessage.push_back(Pair("from", stringFromVch(ca.vchFrom)));
-	oMessage.push_back(Pair("to", stringFromVch(ca.vchTo)));
+	if(fromaddress.isAlias)
+		oMessage.push_back(Pair("from", fromaddress.aliasName));
+	else
+		oMessage.push_back(Pair("from", fromaddress.ToString()));
+
+	vchKeyByte.clear();
+	boost::algorithm::unhex(ca.vchPubKeyTo.begin(), ca.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
+	CPubKey ToPubKey(vchKeyByte);
+	CSyscoinAddress toaddress(ToPubKey.GetID());
+	toaddress = CSyscoinAddress(toaddress.ToString());
+	if(toaddress.isAlias)
+		oMessage.push_back(Pair("to", toaddress.aliasName));
+	else
+		oMessage.push_back(Pair("to", toaddress.ToString()));
+
 	oMessage.push_back(Pair("subject", stringFromVch(ca.vchSubject)));
 	string strDecrypted = "";
 	if(DecryptMessage(ca.vchPubKeyTo, ca.vchMessageTo, strDecrypted))
@@ -570,8 +570,27 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
 
-		oName.push_back(Pair("from", stringFromVch(message.vchFrom)));
-		oName.push_back(Pair("to", stringFromVch(message.vchTo)));
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(message.vchPubKeyTo.begin(), message.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
+		CPubKey FromPubKey(vchKeyByte);
+		CSyscoinAddress fromaddress(FromPubKey.GetID());
+		fromaddress = CSyscoinAddress(fromaddress.ToString());
+		if(fromaddress.isAlias)
+			oName.push_back(Pair("from", fromaddress.aliasName));
+		else
+			oName.push_back(Pair("from", fromaddress.ToString()));
+
+		vchKeyByte.clear();
+		boost::algorithm::unhex(message.vchPubKeyFrom.begin(), message.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
+		CPubKey ToPubKey(vchKeyByte);
+		CSyscoinAddress toaddress(ToPubKey.GetID());
+		toaddress = CSyscoinAddress(toaddress.ToString());
+		if(toaddress.isAlias)
+			oName.push_back(Pair("to", toaddress.aliasName));
+		else
+			oName.push_back(Pair("to", toaddress.ToString()));
+
+
 		oName.push_back(Pair("subject", stringFromVch(message.vchSubject)));
 		string strDecrypted = "";
 		string strData = string("Encrypted for receiver of message");
@@ -632,8 +651,26 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		}
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
-		oName.push_back(Pair("from", stringFromVch(message.vchFrom)));
-		oName.push_back(Pair("to", stringFromVch(message.vchTo)));
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(message.vchPubKeyTo.begin(), message.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
+		CPubKey FromPubKey(vchKeyByte);
+		CSyscoinAddress fromaddress(FromPubKey.GetID());
+		fromaddress = CSyscoinAddress(fromaddress.ToString());
+		if(fromaddress.isAlias)
+			oName.push_back(Pair("from", fromaddress.aliasName));
+		else
+			oName.push_back(Pair("from", fromaddress.ToString()));
+
+		vchKeyByte.clear();
+		boost::algorithm::unhex(message.vchPubKeyFrom.begin(), message.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
+		CPubKey ToPubKey(vchKeyByte);
+		CSyscoinAddress toaddress(ToPubKey.GetID());
+		toaddress = CSyscoinAddress(toaddress.ToString());
+		if(toaddress.isAlias)
+			oName.push_back(Pair("to", toaddress.aliasName));
+		else
+			oName.push_back(Pair("to", toaddress.ToString()));
+
 		oName.push_back(Pair("subject", stringFromVch(message.vchSubject)));
 		string strDecrypted = "";
 		string strData = string("Encrypted for sender of message");
@@ -689,8 +726,26 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			}
 			oMessage.push_back(Pair("time", sTime));
 
-			oMessage.push_back(Pair("from", stringFromVch(txPos2.vchFrom)));
-			oMessage.push_back(Pair("to", stringFromVch(txPos2.vchTo)));
+			std::vector<unsigned char> vchKeyByte;
+			boost::algorithm::unhex(txPos2.vchPubKeyTo.begin(), txPos2.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
+			CPubKey FromPubKey(vchKeyByte);
+			CSyscoinAddress fromaddress(FromPubKey.GetID());
+			fromaddress = CSyscoinAddress(fromaddress.ToString());
+			if(fromaddress.isAlias)
+				oMessage.push_back(Pair("from", fromaddress.aliasName));
+			else
+				oMessage.push_back(Pair("from", fromaddress.ToString()));
+
+			vchKeyByte.clear();
+			boost::algorithm::unhex(txPos2.vchPubKeyFrom.begin(), txPos2.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
+			CPubKey ToPubKey(vchKeyByte);
+			CSyscoinAddress toaddress(ToPubKey.GetID());
+			toaddress = CSyscoinAddress(toaddress.ToString());
+			if(toaddress.isAlias)
+				oMessage.push_back(Pair("to", toaddress.aliasName));
+			else
+				oMessage.push_back(Pair("to", toaddress.ToString()));
+
 			oMessage.push_back(Pair("subject", stringFromVch(txPos2.vchSubject)));
 			string strDecrypted = "";
 			string strData = string("Encrypted for owner of message");

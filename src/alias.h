@@ -56,7 +56,7 @@ public:
     }
     
     void SetNull() { txHash.IsNull(); nHeight = 0; vchValue.clear(); vchPubKey.clear(); }
-    bool IsNull() const { return ((nHeight == 0 && txHash.IsNull() && vchValue.empty()) || vchPubKey.size() != 65); }
+    bool IsNull() const { return ((nHeight == 0 && txHash.IsNull() && vchValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };
