@@ -50,6 +50,7 @@
 #include "message.h"
 #include "escrow.h"
 #include "base58.h"
+#include <boost/algorithm/hex.hpp>
 using namespace std;
 
 #if defined(NDEBUG)
