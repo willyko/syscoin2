@@ -253,7 +253,7 @@ CSyscoinAddress::CSyscoinAddress(const std::string& strAddress) {
 	{
 		try 
 		{
-			std::string strAlias;
+			std::string strAddress;
 			GetAliasFromAddress(strAddress, strAliasAddress);
 			aliasName = strAlias;
 			isAlias = true;
@@ -272,8 +272,8 @@ CSyscoinAddress::CSyscoinAddress(const char* pszAddress) {
 	{
 		try 
 		{
-			std::string strAliasAddress;
-			GetAddressFromAlias(std::string(pszAddress), strAliasAddress);
+			std::string strAlias;
+			GetAddressFromAlias(std::string(pszAddress), strAlias);
 			SetString(strAliasAddress);
 			aliasName = std::string(pszAddress);
 			isAlias = true;
@@ -288,7 +288,7 @@ CSyscoinAddress::CSyscoinAddress(const char* pszAddress) {
 		try 
 		{
 			std::string strAlias;
-			GetAliasFromAddress(strAddress, strAliasAddress);
+			GetAliasFromAddress(std::string(pszAddress), strAlias);
 			aliasName = strAlias;
 			isAlias = true;
 		}
