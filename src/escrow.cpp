@@ -8,6 +8,8 @@
 #include "base58.h"
 #include "rpcserver.h"
 #include "wallet/wallet.h"
+#include "policy/policy.h"
+#include "script/script.h"
 #include "chainparams.h"
 #include <boost/algorithm/hex.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
@@ -15,6 +17,8 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 using namespace std;
+typedef vector<unsigned char> valtype;
+bool static IsCompressedOrUncompressedPubKey(const valtype &vchPubKey);
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
 void PutToEscrowList(std::vector<CEscrow> &escrowList, CEscrow& index) {
@@ -260,6 +264,35 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
+		if(!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+		{
+			return error("escrow buyer pub key invalid length");
+		}
+		if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
+		{
+			return error("escrow seller pub key invalid length");
+		}
+		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
+		{
+			return error("escrow arbiter pub key invalid length");
+		}
+		if(theEscrow.vchRedeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
+		{
+			return error("escrow redeem script too long");
+		}
+		if(theEscrow.vchOffer.size() > MAX_ID_LENGTH)
+		{
+			return error("escrow offer guid too long");
+		}
+		if(theEscrow.rawTx.size() > MAX_STANDARD_TX_SIZE)
+		{
+			return error("escrow message tx too long");
+		}
+		if(theEscrow.vchOfferAcceptLink.size() > MAX_STANDARD_TX_SIZE)
+		{
+			return error("escrow offeraccept guid too long");
+		}		
+
 
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:

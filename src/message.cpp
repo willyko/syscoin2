@@ -14,6 +14,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 using namespace std;
+typedef vector<unsigned char> valtype;
 bool static IsCompressedOrUncompressedPubKey(const valtype &vchPubKey);
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
 void PutToMessageList(std::vector<CMessage> &messageList, CMessage& index) {
