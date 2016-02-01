@@ -156,7 +156,7 @@ bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
 {
 	CEscrow escrow;
 	bool decode = DecodeEscrowTx(tx, op, nOut, vvch);
-	bool parse = !escrow.UnserializeFromTx(tx);
+	bool parse = escrow.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,

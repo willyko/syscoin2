@@ -139,7 +139,7 @@ bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut,
 {
 	CMessage message;
 	bool decode = DecodeMessageTx(tx, op, nOut, vvch);
-	bool parse = !message.UnserializeFromTx(tx);
+	bool parse = message.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,

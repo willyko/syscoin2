@@ -172,7 +172,7 @@ bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut,
 {
 	CCert cert;
 	bool decode = DecodeCertTx(tx, op, nOut, vvch);
-	bool parse = !cert.UnserializeFromTx(tx);
+	bool parse = cert.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,

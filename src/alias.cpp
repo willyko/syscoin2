@@ -742,7 +742,7 @@ bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut,
 {
 	CAliasIndex alias;
 	bool decode = DecodeAliasTx(tx, op, nOut, vvch);
-	bool parse = !alias.UnserializeFromTx(tx);
+	bool parse = alias.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,

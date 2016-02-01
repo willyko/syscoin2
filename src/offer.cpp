@@ -462,7 +462,7 @@ bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut,
 {
 	COffer offer;
 	bool decode = DecodeOfferTx(tx, op, nOut, vvch);
-	bool parse = !offer.UnserializeFromTx(tx);
+	bool parse = offer.UnserializeFromTx(tx);
 	return decode && parse;
 }
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
