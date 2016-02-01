@@ -2580,8 +2580,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CPubKey SellerPubKey(vchSellerKeyByte);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
-			if(!selleraddy.IsValid() || !selleraddy.isAlias)
-				continue;
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
@@ -2712,8 +2710,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CPubKey SellerPubKey(vchSellerKeyByte);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
-			if(!selleraddy.IsValid() || !selleraddy.isAlias)
-				continue;
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
@@ -2869,8 +2865,6 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			CPubKey SellerPubKey(vchSellerKeyByte);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
-			if(!selleraddy.IsValid() || !selleraddy.isAlias)
-				continue;
 			oName.push_back(Pair("address", selleraddy.ToString()));
 			oName.push_back(Pair("exclusive_resell", theOfferA.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 			oName.push_back(Pair("btconly", theOfferA.bOnlyAcceptBTC ? "Yes" : "No"));
@@ -2974,8 +2968,6 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			CPubKey SellerPubKey(vchSellerKeyByte);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
-			if(!selleraddy.IsValid() || !selleraddy.isAlias)
-				continue;
 			oOffer.push_back(Pair("alias", selleraddy.aliasName));
 			oOffer.push_back(Pair("expires_in", expires_in));
 			oOffer.push_back(Pair("expires_on", expired_block));
@@ -3176,8 +3168,6 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 		CPubKey SellerPubKey(vchSellerKeyByte);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
-		if(!selleraddy.IsValid() || !selleraddy.isAlias)
-			continue;
 		oOffer.push_back(Pair("alias", selleraddy.aliasName));
 		oOffer.push_back(Pair("expires_in", expires_in));
 		oOffer.push_back(Pair("expires_on", expired_block));

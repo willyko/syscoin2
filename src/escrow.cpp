@@ -388,10 +388,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     pwalletMain->GetKeyFromPool(newDefaultKey);
     CScript scriptPubKey,scriptPubKeySeller,scriptSeller, scriptPubKeyArbiter, scriptArbiter;
 
-	std::vector<unsigned char> vchSellerKeyByte;
-    boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
-	CPubKey SellerPubKey(vchSellerKeyByte);
-	CSyscoinAddress selleraddy(SellerPubKey.GetID());
 	string strCipherText = "";
 	// encrypt to offer owner
 	if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
@@ -464,15 +460,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // build escrow
     CEscrow newEscrow;
 	newEscrow.vchBuyerKey = vchFromString(strBuyerKey);
-	std::vector<unsigned char> vchSellerKeyByte;
-	boost::algorithm::unhex(theOffer.vchPubKey.begin(), theOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
-	CPubKey SellerPubKey(vchSellerKeyByte);
-	CSyscoinAddress selleraddy(SellerPubKey.GetID());
-	selleraddy = CSyscoinAddress(selleraddy.ToString());
-	if(!selleraddy.IsValid() || !selleraddy.isAlias)
-		throw runtime_error("Invalid offer alias");
-	newEscrow.seller = selleraddy.isAlias;
-	newEscrow.arbiter = strArbiter;
 	newEscrow.vchArbiterKey = vchArbiterPubKey;
 	newEscrow.vchRedeemScript = vchFromString(redeemScript_str);
 	newEscrow.vchOffer = vchOffer;
@@ -1436,9 +1423,23 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	if (pindex) {
 		sTime = strprintf("%llu", pindex->nTime);
 	}
+
+	std::vector<unsigned char> vchSellerKeyByte;
+	boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
+	CPubKey SellerPubKey(vchSellerKeyByte);
+	CSyscoinAddress selleraddy(SellerPubKey.GetID());
+	selleraddy = CSyscoinAddress(selleraddy.ToString());
+
+	std::vector<unsigned char> vchArbiterKeyByte;
+	boost::algorithm::unhex(ca.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+	CPubKey ArbiterPubKey(vchArbiterKeyByte);
+	CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
+	arbiteraddy = CSyscoinAddress(Arbiteraddy.ToString());
+
+
 	oEscrow.push_back(Pair("time", sTime));
-	oEscrow.push_back(Pair("seller", ca.seller));
-	oEscrow.push_back(Pair("arbiter", ca.arbiter));
+	oEscrow.push_back(Pair("seller", selleraddy.aliasName));
+	oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
 	oEscrow.push_back(Pair("buyerkey", stringFromVch(ca.vchBuyerKey)));
 	oEscrow.push_back(Pair("offer", stringFromVch(ca.vchOffer)));
 	oEscrow.push_back(Pair("offeracceptlink", stringFromVch(ca.vchOfferAcceptLink)));
@@ -1516,9 +1517,20 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		if (pindex) {
 			sTime = strprintf("%llu", pindex->nTime);
 		}
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(ca.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+
+		std::vector<unsigned char> vchArbiterKeyByte;
+		boost::algorithm::unhex(ca.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		CPubKey ArbiterPubKey(vchArbiterKeyByte);
+		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
+		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 		oName.push_back(Pair("time", sTime));
-		oName.push_back(Pair("seller", escrow.seller));
-		oName.push_back(Pair("arbiter", escrow.arbiter));
+		oName.push_back(Pair("seller", selleraddy.aliasName));
+		oName.push_back(Pair("arbiter", arbiteraddy.aliasName));
 		oName.push_back(Pair("buyerkey", stringFromVch(escrow.vchBuyerKey)));
 		oName.push_back(Pair("offer", stringFromVch(escrow.vchOffer)));
 		oName.push_back(Pair("offeracceptlink", stringFromVch(escrow.vchOfferAcceptLink)));
@@ -1586,10 +1598,21 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			if (pindex) {
 				sTime = strprintf("%llu", pindex->nTime);
 			}
+			std::vector<unsigned char> vchSellerKeyByte;
+			boost::algorithm::unhex(txPos2.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+			CPubKey SellerPubKey(vchSellerKeyByte);
+			CSyscoinAddress selleraddy(SellerPubKey.GetID());
+			selleraddy = CSyscoinAddress(selleraddy.ToString());
+
+			std::vector<unsigned char> vchArbiterKeyByte;
+			boost::algorithm::unhex(txPos2.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+			CPubKey ArbiterPubKey(vchArbiterKeyByte);
+			CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
+			arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 			oEscrow.push_back(Pair("time", sTime));
 			oEscrow.push_back(Pair("txid", tx.GetHash().GetHex()));
-			oEscrow.push_back(Pair("seller", txPos2.seller));
-			oEscrow.push_back(Pair("arbiter", txPos2.arbiter));
+			oEscrow.push_back(Pair("seller", selleraddy.aliasName));
+			oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
 			oEscrow.push_back(Pair("buyerkey", stringFromVch(txPos2.vchBuyerKey)));
 			oEscrow.push_back(Pair("offer", stringFromVch(txPos2.vchOffer)));
 			oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txPos2.vchOfferAcceptLink)));
@@ -1657,7 +1680,18 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		CEscrow txEscrow = pairScan.second;
 		string escrow = stringFromVch(pairScan.first);
 		string offer = stringFromVch(txEscrow.vchOffer);
-        if (strSearch != "" && strSearch != escrow && strSearch != txEscrow.arbiter && strSearch != txEscrow.seller)
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+
+		std::vector<unsigned char> vchArbiterKeyByte;
+		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		CPubKey ArbiterPubKey(vchArbiterKeyByte);
+		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
+		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
+        if (strSearch != "" && strSearch != escrow && strSearch != arbiteraddy.aliasName && strSearch != selleraddy.aliasName)
             continue;
 
         
@@ -1689,8 +1723,8 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		}
 		oEscrow.push_back(Pair("time", sTime));
 		oEscrow.push_back(Pair("expired", expired));
-		oEscrow.push_back(Pair("seller", txEscrow.seller));
-		oEscrow.push_back(Pair("arbiter", txEscrow.arbiter));
+		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
+		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
 		oEscrow.push_back(Pair("buyerkey", stringFromVch(txEscrow.vchBuyerKey)));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
@@ -1763,9 +1797,20 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 		if (pindex) {
 			sTime = strprintf("%llu", pindex->nTime);
 		}
+		std::vector<unsigned char> vchSellerKeyByte;
+		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), ca.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
+		CPubKey SellerPubKey(vchSellerKeyByte);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+
+		std::vector<unsigned char> vchArbiterKeyByte;
+		boost::algorithm::unhex(txEscrow.vchArbiterKey.begin(), ca.vchArbiterKey.end(), std::back_inserter(vchArbiterKeyByte));
+		CPubKey ArbiterPubKey(vchArbiterKeyByte);
+		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
+		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 		oEscrow.push_back(Pair("time", sTime));
-		oEscrow.push_back(Pair("seller", txEscrow.seller));
-		oEscrow.push_back(Pair("arbiter", txEscrow.arbiter));
+		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
+		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
 		oEscrow.push_back(Pair("buyerkey", stringFromVch(txEscrow.vchBuyerKey)));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
