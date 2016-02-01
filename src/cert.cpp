@@ -868,8 +868,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		boost::algorithm::unhex(cert.vchPubKey.begin(), cert.vchPubKey.end(), std::back_inserter(vchKeyByte));
 		CPubKey PubKey(vchKeyByte);
 		CSyscoinAddress address(PubKey.GetID());
-		if(!address.IsValid())
-			continue;
+
 		oName.push_back(Pair("address", address.ToString()));
 		expired_block = nHeight + GetCertExpirationDepth();
 		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
@@ -933,8 +932,7 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
 			CPubKey PubKey(vchKeyByte);
 			CSyscoinAddress address(PubKey.GetID());
-			if(!address.IsValid())
-				continue;
+
 			oCert.push_back(Pair("address", address.ToString()));
 			expired_block = nHeight + GetCertExpirationDepth();
 			if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
@@ -1004,9 +1002,9 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     sregex cregex = sregex::compile(strRegexp);
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
-		CCert txCert = pairScan.second;
-		string cert = stringFromVch(pairScan.first);
-		string title = stringFromVch(txCert.vchTitle);
+		const CCert &txCert = pairScan.second;
+		const string &cert = stringFromVch(pairScan.first);
+		const string &title = stringFromVch(txCert.vchTitle);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;
 

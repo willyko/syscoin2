@@ -1781,8 +1781,6 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			CPubKey PubKey(vchKeyByte);
 			CSyscoinAddress address(PubKey.GetID());
 			address = CSyscoinAddress(address.ToString());
-			if(!address.IsValid())
-				continue;
 			oList.push_back(Pair("address", address.ToString()));
 			int expires_in = 0;
 			uint64_t nHeight = theCert.nHeight;
@@ -3031,9 +3029,9 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 
 	pair<vector<unsigned char>, COffer> pairScan;
 	BOOST_FOREACH(pairScan, offerScan) {
-		COffer txOffer = pairScan.second;
-		string offer = stringFromVch(pairScan.first);
-		string title = stringFromVch(txOffer.sTitle);
+		const COffer &txOffer = pairScan.second;
+		const string &offer = stringFromVch(pairScan.first);
+		const string &title = stringFromVch(txOffer.sTitle);
 		std::vector<unsigned char> vchSellerKeyByte;
 		boost::algorithm::unhex(txOffer.vchPubKey.begin(), txOffer.vchPubKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);
@@ -3041,7 +3039,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
 		if(!selleraddy.IsValid() || !selleraddy.isAlias)
 			continue;
-		string alias = selleraddy.aliasName;
+		const string &alias = selleraddy.aliasName;
         if (strRegexp != "" && !regex_search(title, offerparts, cregex) && strRegexp != offer && strRegexp != alias)
             continue;
 

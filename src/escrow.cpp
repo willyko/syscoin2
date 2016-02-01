@@ -1686,9 +1686,9 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 
     pair<vector<unsigned char>, CEscrow> pairScan;
     BOOST_FOREACH(pairScan, escrowScan) {
-		CEscrow txEscrow = pairScan.second;
-		string escrow = stringFromVch(pairScan.first);
-		string offer = stringFromVch(txEscrow.vchOffer);
+		const CEscrow &txEscrow = pairScan.second;
+		const string &escrow = stringFromVch(pairScan.first);
+		const string &offer = stringFromVch(txEscrow.vchOffer);
 		std::vector<unsigned char> vchSellerKeyByte;
 		boost::algorithm::unhex(txEscrow.vchSellerKey.begin(), txEscrow.vchSellerKey.end(), std::back_inserter(vchSellerKeyByte));
 		CPubKey SellerPubKey(vchSellerKeyByte);

@@ -1207,8 +1207,6 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
 			CPubKey PubKey(vchKeyByte);
 			CSyscoinAddress address(PubKey.GetID());
-			if(!address.IsValid())
-				continue;
 			oName.push_back(Pair("address", address.ToString()));
             oName.push_back(Pair("lastupdate_height", nHeight));
 			expired_block = nHeight + GetAliasExpirationDepth();
@@ -1284,8 +1282,13 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 	sregex cregex = sregex::compile(strRegexp);
 	pair<vector<unsigned char>, CAliasIndex> pairScan;
 	BOOST_FOREACH(pairScan, nameScan) {
-		string name = stringFromVch(pairScan.first);
-		if (strRegexp != "" && !regex_search(name, nameparts, cregex))
+		const CAliasIndex &alias = pairScan.second;
+		std::vector<unsigned char> vchKeyByte;
+		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
+		CPubKey PubKey(vchKeyByte);
+		CSyscoinAddress address(PubKey.GetID());
+		const string &name = stringFromVch(pairScan.first);
+		if (strRegexp != "" && !regex_search(name, nameparts, cregex) && strRegexp != address.ToString())
 			continue;
 
 		CAliasIndex txName = pairScan.second;

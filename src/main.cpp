@@ -49,6 +49,7 @@
 #include "alias.h"
 #include "message.h"
 #include "escrow.h"
+#include "base58.h"
 using namespace std;
 
 #if defined(NDEBUG)
@@ -1983,7 +1984,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 			}
 		}
 	}
-
+	std::vector<unsigned char> vchKeyByte;
 	boost::algorithm::unhex(foundAlias.vchPubKey.begin(), foundAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
 	CPubKey PubKey(vchKeyByte);
 	CSyscoinAddress address(PubKey.GetID());
