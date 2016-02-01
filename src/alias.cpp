@@ -460,6 +460,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias value too big");
 		}
+		LogPrintf("theAlias.vchPubKey %s length %d\n", stringFromVch(theAlias.vchPubKey).c_str(), theAlias.vchPubKey.size());
 		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
 		{
 			return error("alias pub key invalid length");
