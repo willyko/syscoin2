@@ -774,8 +774,6 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	boost::algorithm::unhex(ca.vchPubKey.begin(), ca.vchPubKey.end(), std::back_inserter(vchKeyByte));
 	CPubKey PubKey(vchKeyByte);
 	CSyscoinAddress address(PubKey.GetID());
-	if(!address.IsValid())
-		continue;
 	oCert.push_back(Pair("address", address.ToString()));
 	expired_block = nHeight + GetCertExpirationDepth();
 	if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
