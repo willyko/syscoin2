@@ -90,7 +90,7 @@ public:
     }
 
     void SetNull() { txHash.SetNull(); nHeight = 0; vchFrom.clear(); vchTo.clear(); vchPubKeyTo.clear(); vchPubKeyFrom.clear(); vchSubject.clear(); vchMessageTo.clear();vchMessageFrom.clear();}
-    bool IsNull() const { return ((txHash.IsNull() && nHeight == 0) || vchPubKeyTo.size() !=  PUBKEY_LENGTH || vchPubKeyFrom.size() != PUBKEY_LENGTH); }
+    bool IsNull() const { return ((txHash.IsNull() && nHeight == 0) || vchPubKeyTo.size() !=  65 || vchPubKeyFrom.size() != 65); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

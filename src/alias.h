@@ -17,7 +17,6 @@ class CCoins;
 struct CRecipient;
 static const unsigned int MAX_NAME_LENGTH = 255;
 static const unsigned int MAX_VALUE_LENGTH = 1023;
-static const unsigned int PUBKEY_LENGTH = 65;
 static const unsigned int MAX_ID_LENGTH = 20;
 static const unsigned int MAX_ENCRYPTED_VALUE_LENGTH = 1108;
 
@@ -57,7 +56,7 @@ public:
     }
     
     void SetNull() { txHash.IsNull(); nHeight = 0; vchValue.clear(); vchPubKey.clear(); }
-    bool IsNull() const { return ((nHeight == 0 && txHash.IsNull() && vchValue.empty()) || vchPubKey.size() != PUBKEY_LENGTH); }
+    bool IsNull() const { return ((nHeight == 0 && txHash.IsNull() && vchValue.empty()) || vchPubKey.size() != 65); }
 	bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

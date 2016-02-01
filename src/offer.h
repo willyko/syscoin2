@@ -110,7 +110,7 @@ public:
     }
 
     void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchRefundAddress.clear();vchLinkOfferAccept.clear();}
-    bool IsNull() const { return ((vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false  && txBTCId.IsNull()) || vchBuyerKey.size() != PUBKEY_LENGTH); }
+    bool IsNull() const { return ((vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false  && txBTCId.IsNull()) || vchBuyerKey.size() != 65); }
 
 };
 class COfferLinkWhitelistEntry {
@@ -378,7 +378,7 @@ public:
     }
     
     void SetNull() { nHeight = nPrice = nQty = 0; txHash.SetNull(); bPrivate = false; bOnlyAcceptBTC = false; accept.SetNull(); sTitle.clear(); sDescription.clear();vchLinkOffer.clear();linkWhitelist.SetNull();sCurrencyCode.clear();offerLinks.clear();nCommission=0;vchPubKey.clear();vchCert.clear();}
-    bool IsNull() const { return ((txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false && bOnlyAcceptBTC == false) || vchPubKey.size() != PUBKEY_LENGTH); }
+    bool IsNull() const { return ((txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 &&  linkWhitelist.IsNull() && offerLinks.empty() && nCommission == 0 && bPrivate == false && bOnlyAcceptBTC == false) || vchPubKey.size() != 65); }
 
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();

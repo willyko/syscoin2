@@ -438,7 +438,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias value too big");
 		}
-		if(theAlias.vchPubKey.size() != PUBKEY_LENGTH)
+		if(theAlias.vchPubKey.size() != 65)
 		{
 			return error("alias pub key invalid length");
 		}

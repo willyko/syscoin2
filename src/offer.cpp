@@ -626,7 +626,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer link guid too big");
 		}
-		if(theOffer.vchPubKey.size() != PUBKEY_LENGTH)
+		if(theOffer.vchPubKey.size() != 65)
 		{
 			return error("offer pub key too invalid length");
 		}

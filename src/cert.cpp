@@ -308,7 +308,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		{
 			return error("cert title too big");
 		}
-		if(theCert.vchPubKey.size() != PUBKEY_LENGTH)
+		if(theCert.vchPubKey.size() != 65)
 		{
 			return error("cert pub key invalid length");
 		}
