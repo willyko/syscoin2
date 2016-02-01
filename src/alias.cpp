@@ -1274,7 +1274,7 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName;
 	vector<pair<vector<unsigned char>, CAliasIndex> > nameScan;
-	if (!paliasdb->ScanNames(vchName, 100000000, nameScan))
+	if (!paliasdb->ScanNames(vchName, GetAliasExpirationDepth(), nameScan))
 		throw runtime_error("scan failed");
 	// regexp
 	using namespace boost::xpressive;

@@ -994,7 +994,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 
     vector<unsigned char> vchCert;
     vector<pair<vector<unsigned char>, CCert> > certScan;
-    if (!pcertdb->ScanCerts(vchCert, 100000000, certScan))
+    if (!pcertdb->ScanCerts(vchCert, GetCertExpirationDepth(), certScan))
         throw runtime_error("scan failed");
     // regexp
     using namespace boost::xpressive;

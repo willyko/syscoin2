@@ -1681,7 +1681,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 
     vector<unsigned char> vchEscrow;
     vector<pair<vector<unsigned char>, CEscrow> > escrowScan;
-    if (!pescrowdb->ScanEscrows(vchEscrow, 100000000, escrowScan))
+    if (!pescrowdb->ScanEscrows(vchEscrow, GetEscrowExpirationDepth(), escrowScan))
         throw runtime_error("scan failed");
 
     pair<vector<unsigned char>, CEscrow> pairScan;

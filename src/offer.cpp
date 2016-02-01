@@ -3019,7 +3019,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchOffer;
 	vector<pair<vector<unsigned char>, COffer> > offerScan;
-	if (!pofferdb->ScanOffers(vchOffer, 100000000, offerScan))
+	if (!pofferdb->ScanOffers(vchOffer, GetOfferExpirationDepth(), offerScan))
 		throw runtime_error("scan failed");
 
     // regexp
@@ -3072,7 +3072,8 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
         oOffer.push_back(Pair("category", stringFromVch(txOffer.sCategory)));
 		int precision = 2;
 		convertCurrencyCodeToSyscoin(txOffer.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
-		oOffer.push_back(Pair("price", strprintf("%.*f", precision, txOffer.GetPrice() ))); 	
+		COffer foundOffer = txOffer;	
+		oOffer.push_back(Pair("price", strprintf("%.*f", precision, foundOffer.GetPrice() ))); 	
 		oOffer.push_back(Pair("currency", stringFromVch(txOffer.sCurrencyCode)));
 		oOffer.push_back(Pair("commission", strprintf("%d%%", txOffer.nCommission)));
         oOffer.push_back(Pair("quantity", strprintf("%u", txOffer.nQty)));
