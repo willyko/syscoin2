@@ -181,7 +181,7 @@ bool AcceptandPayOfferListPage::lookup(const QString &lookupid)
 			const string &strRand = find_value(offerObj, "offer").get_str();
 			const string &strAddress = find_value(offerObj, "address").get_str();
 			offerOut.vchCert = vchFromString(find_value(offerObj, "cert").get_str());
-			string alias = vchFromString(find_value(offerObj, "alias").get_str());
+			string alias = find_value(offerObj, "alias").get_str();
 			offerOut.sTitle = vchFromString(find_value(offerObj, "title").get_str());
 			offerOut.sCategory = vchFromString(find_value(offerObj, "category").get_str());
 			offerOut.sCurrencyCode = vchFromString(find_value(offerObj, "currency").get_str());
