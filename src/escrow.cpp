@@ -70,11 +70,15 @@ string escrowFromOp(int op) {
 bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
 	vector<unsigned char> vchData;
 	if(!GetSyscoinData(tx, vchData))
+	{
+		SetNull();
 		return false;
+	}
     try {
         CDataStream dsEscrow(vchData, SER_NETWORK, PROTOCOL_VERSION);
         dsEscrow >> *this;
     } catch (std::exception &e) {
+		SetNull();
         return false;
     }
     return true;
