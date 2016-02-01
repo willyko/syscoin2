@@ -626,9 +626,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer link guid too big");
 		}
-		if(theOffer.vchPubKey.size() > MAX_NAME_LENGTH)
+		if(theOffer.vchPubKey.size() != PUBKEY_LENGTH)
 		{
-			return error("offer pub key too big");
+			return error("offer pub key too invalid length");
 		}
 		if(theOffer.sCurrencyCode.size() > MAX_NAME_LENGTH)
 		{

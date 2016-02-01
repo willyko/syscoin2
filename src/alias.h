@@ -15,6 +15,12 @@ class CValidationState;
 class CCoinsViewCache;
 class CCoins;
 struct CRecipient;
+static const unsigned int MAX_NAME_LENGTH = 255;
+static const unsigned int MAX_VALUE_LENGTH = 1023;
+static const unsigned int PUBKEY_LENGTH = 65;
+static const unsigned int MAX_ID_LENGTH = 20;
+static const unsigned int MAX_ENCRYPTED_VALUE_LENGTH = 1108;
+
 class CAliasIndex {
 public:
     uint256 txHash;
@@ -51,7 +57,7 @@ public:
     }
     
     void SetNull() { txHash.IsNull(); nHeight = 0; vchValue.clear(); vchPubKey.clear(); }
-    bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vchValue.empty() && vchPubKey.empty()); }
+    bool IsNull() const { return ((nHeight == 0 && txHash.IsNull() && vchValue.empty()) || vchPubKey.size() != PUBKEY_LENGTH); }
 	bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };
@@ -106,11 +112,6 @@ std::vector<unsigned char> vchFromString(const std::string &str);
 std::string stringFromValue(const UniValue& value);
 int GetSyscoinTxVersion();
 const int SYSCOIN_TX_VERSION = 0x7400;
-static const unsigned int MAX_NAME_LENGTH = 255;
-static const unsigned int MAX_VALUE_LENGTH = 1023;
-static const unsigned int MAX_ID_LENGTH = 20;
-static const unsigned int MAX_ENCRYPTED_VALUE_LENGTH = 1108;
-
 bool CheckAliasInputs(const CTransaction &tx, CValidationState &state,
 	const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);

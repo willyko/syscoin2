@@ -240,13 +240,13 @@ bool CheckMessageInputs(const CTransaction &tx,
             return error("CheckMessageInputs() : null message");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("message tx GUID too big");
-		if(theMessage.vchPubKeyTo.size() > MAX_NAME_LENGTH)
+		if(theMessage.vchPubKeyTo.size() != PUBKEY_LENGTH)
 		{
-			return error("message public key to, too big");
+			return error("message public key to, invalid length");
 		}
-		if(theMessage.vchPubKeyFrom.size() > MAX_NAME_LENGTH)
+		if(theMessage.vchPubKeyFrom.size() != PUBKEY_LENGTH)
 		{
-			return error("message public key from, too big");
+			return error("message public key from, invalid length");
 		}
 		if(theMessage.vchSubject.size() > MAX_NAME_LENGTH)
 		{
