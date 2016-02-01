@@ -113,7 +113,7 @@ void AcceptandPayOfferListPage::OpenPayDialog()
 		if(this->offerPaid)
 		{
 			COffer offer;
-			setValue(ui->offeridEdit->text(), offer, "", "");
+			setValue("", ui->offeridEdit->text(), offer, "", "");
 		}
 	}
 	updateCaption();
@@ -127,7 +127,7 @@ void AcceptandPayOfferListPage::OpenBTCPayDialog()
 		if(this->offerPaid)
 		{
 			COffer offer;
-			setValue(ui->offeridEdit->text(), offer, "", "");
+			setValue("", ui->offeridEdit->text(), offer, "", "");
 		}
 	}
 	updateCaption();
