@@ -239,11 +239,11 @@ bool CheckMessageInputs(const CTransaction &tx,
             return error("CheckMessageInputs() : null message");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("message tx GUID too big");
-		if(!theMessage.vchPubKeyTo.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
+		if(!theMessage.vchPubKeyTo.empty() && !IsCompressedPubKey(theMessage.vchPubKeyTo))
 		{
 			return error("message public key to, invalid length");
 		}
-		if(!theMessage.vchPubKeyFrom.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
+		if(!theMessage.vchPubKeyFrom.empty() && !IsCompressedPubKey(theMessage.vchPubKeyFrom))
 		{
 			return error("message public key from, invalid length");
 		}

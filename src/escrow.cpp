@@ -262,15 +262,15 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if(!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+		if(!theEscrow.vchBuyerKey.empty() && !IsCompressedPubKey(theEscrow.vchBuyerKey))
 		{
 			return error("escrow buyer pub key invalid length");
 		}
-		if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
+		if(!theEscrow.vchSellerKey.empty() && !IsCompressedPubKey(theEscrow.vchSellerKey))
 		{
 			return error("escrow seller pub key invalid length");
 		}
-		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
+		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedPubKey(theEscrow.vchArbiterKey))
 		{
 			return error("escrow arbiter pub key invalid length");
 		}
