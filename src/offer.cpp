@@ -1954,11 +1954,14 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		theOffer.vchCert.clear();
 	}
 	// ensure pubkey points to an alias
-	CPubKey SellerPubKey(theOffer.vchPubKey);
-	CSyscoinAddress selleraddy(SellerPubKey.GetID());
-	selleraddy = CSyscoinAddress(selleraddy.ToString());
-	if(!selleraddy.IsValid() || !selleraddy.isAlias)
-		throw runtime_error("Could not detect alias from provided pub key. Try to do update your offer with a new alias that you own and try again.");
+	if(!theOffer.vchPubKey.empty())
+	{
+		CPubKey SellerPubKey(theOffer.vchPubKey);
+		CSyscoinAddress selleraddy(SellerPubKey.GetID());
+		selleraddy = CSyscoinAddress(selleraddy.ToString());
+		if(!selleraddy.IsValid() || !selleraddy.isAlias)
+			throw runtime_error("Could not detect alias from provided pub key. Try to do update your offer with a new alias that you own and try again.");
+	}
 	theOffer.nQty = nQty;
 	if (params.size() >= 8)
 		theOffer.bPrivate = bPrivate;
