@@ -408,15 +408,30 @@ bool CheckCertInputs(const CTransaction &tx,
 
 
 UniValue certnew(const UniValue& params, bool fHelp) {
-    if (fHelp || params.size() < 2 || params.size() > 3)
+    if (fHelp || params.size() < 3 || params.size() > 4)
         throw runtime_error(
-		"certnew <title> <data> [private=0]\n"
+		"certnew <alias> <title> <data> [private=0]\n"
+						"<alias> An alias you own\n"
                         "<title> title, 255 bytes max.\n"
                         "<data> data, 1KB max.\n"
 						"<private> set to 1 if you only want to make the cert data private, only the owner of the cert can view it. Off by default.\n"
                         + HelpRequiringPassphrase());
-	vector<unsigned char> vchTitle = vchFromString(params[0].get_str());
-    vector<unsigned char> vchData = vchFromString(params[1].get_str());
+	vector<unsigned char> vchAlias = vchFromValue(params[0]);
+	CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
+	if (!aliasAddress.IsValid())
+		throw runtime_error("Invalid syscoin address");
+	if (!aliasAddress.isAlias)
+		throw runtime_error("Offer must be a valid alias");
+
+	// check for alias existence in DB
+	vector<CAliasIndex> vtxPos;
+	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
+		throw runtime_error("failed to read alias from alias DB");
+	if (vtxPos.size() < 1)
+		throw runtime_error("no result returned");
+	CAliasIndex alias = vtxPos.back();
+	vector<unsigned char> vchTitle = vchFromString(params[1].get_str());
+    vector<unsigned char> vchData = vchFromString(params[2].get_str());
 	bool bPrivate = false;
     if(vchTitle.size() < 1)
         throw runtime_error("certificate cannot be empty!");
@@ -424,9 +439,9 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     if(vchTitle.size() > MAX_NAME_LENGTH)
         throw runtime_error("certificate title cannot exceed 255 bytes!");
 
-	if(params.size() >= 3)
+	if(params.size() >= 4)
 	{
-		bPrivate = atoi(params[2].get_str().c_str()) == 1? true: false;
+		bPrivate = atoi(params[3].get_str().c_str()) == 1? true: false;
 	}
     if (vchData.size() < 1)
 	{
@@ -442,19 +457,17 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     CWalletTx wtx;
 
 	EnsureWalletIsUnlocked();
-    //create certactivate txn keys
-    CPubKey newDefaultKey;
-    pwalletMain->GetKeyFromPool(newDefaultKey);
     CScript scriptPubKeyOrig;
-    scriptPubKeyOrig= GetScriptForDestination(newDefaultKey.GetID());
+	CPubKey aliasKey(alias.vchPubKey);
+	scriptPubKeyCertOrig = GetScriptForDestination(aliasKey.GetID());
     CScript scriptPubKey;
 
     
-	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
+
 	if(bPrivate)
 	{
 		string strCipherText;
-		if(!EncryptMessage(vchPubKey, vchData, strCipherText))
+		if(!EncryptMessage(alias.vchPubKey, vchData, strCipherText))
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
@@ -469,7 +482,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     newCert.vchTitle = vchTitle;
 	newCert.vchData = vchData;
 	newCert.nHeight = chainActive.Tip()->nHeight;
-	newCert.vchPubKey = vchPubKey;
+	newCert.vchPubKey = alias.vchPubKey;
 	newCert.bPrivate = bPrivate;
 
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_ACTIVATE) << vchCert << OP_2DROP;

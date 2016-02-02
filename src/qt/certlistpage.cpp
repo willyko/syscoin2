@@ -228,6 +228,7 @@ void CertListPage::on_searchCert_clicked()
 		string data_str;
 		string expires_in_str;
 		string expires_on_str;
+		string alias_str;
 		string expired_str;
 		string private_str;
 		int expired = 0;
@@ -273,6 +274,7 @@ void CertListPage::on_searchCert_clicked()
 				data_str = "";
 				expires_in_str = "";
 				expires_on_str = "";
+				alias_str = "";
 				private_str = "";
 				expired = 0;
 				expires_in = 0;
@@ -290,6 +292,9 @@ void CertListPage::on_searchCert_clicked()
 					const UniValue& private_value = find_value(o, "private");
 					if (private_value.type() == UniValue::VSTR)
 						private_str = private_value.get_str();
+					const UniValue& alias_value = find_value(o, "alias");
+					if (alias_value.type() == UniValue::VSTR)
+						alias_str = alias_value.get_str();
 					const UniValue& expires_on_value = find_value(o, "expires_on");
 					if (expires_on_value.type() == UniValue::VNUM)
 						expires_on = expires_on_value.get_int();
@@ -319,14 +324,16 @@ void CertListPage::on_searchCert_clicked()
 						QString::fromStdString(expires_on_str),
 						QString::fromStdString(expires_in_str),
 						QString::fromStdString(expired_str),
-						QString::fromStdString(private_str));
+						QString::fromStdString(private_str),
+						QString::fromStdString(alias_str));
 					this->model->updateEntry(QString::fromStdString(name_str),
 						QString::fromStdString(value_str),
 						QString::fromStdString(data_str),
 						QString::fromStdString(expires_on_str),
 						QString::fromStdString(expires_in_str),
 						QString::fromStdString(expired_str), 
-						QString::fromStdString(private_str), AllCert, CT_NEW);	
+						QString::fromStdString(private_str), 
+						QString::fromStdString(alias_str), AllCert, CT_NEW);	
 			  }
 
             

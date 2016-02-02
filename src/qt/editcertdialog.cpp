@@ -30,9 +30,10 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
 	ui->transferEdit->setVisible(false);
 	ui->privateBox->addItem(tr("No"));
 	ui->privateBox->addItem(tr("Yes"));
-	
+	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this certificate</font>"));	
 	ui->transferDisclaimer->setText(tr("<font color='red'>Enter the alias of the recipient of this certificate</font>"));
     ui->transferDisclaimer->setVisible(false);
+	loadAliases();
 	switch(mode)
     {
     case NewCert:
@@ -41,6 +42,8 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
         setWindowTitle(tr("New Cert"));
         break;
     case EditCert:
+		ui->aliasDisclaimer->setVisible(false);
+		ui->aliasEdit->setEnabled(false);
         setWindowTitle(tr("Edit Cert"));
         break;
     case TransferCert:
@@ -54,13 +57,76 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
 		ui->transferLabel->setVisible(true);
 		ui->transferEdit->setVisible(true);
 		ui->transferDisclaimer->setVisible(true);
+		ui->aliasDisclaimer->setVisible(false);
+		ui->aliasEdit->setEnabled(false);
         break;
     }
     mapper = new QDataWidgetMapper(this);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
 	
 }
+void EditCertDialog::loadAliases()
+{
+	ui->aliasEdit->clear();
+	string strMethod = string("aliaslist");
+    UniValue params(UniValue::VARR); 
+	UniValue result ;
+	string name_str;
+	int expired = 0;
+	
+	try {
+		result = tableRPC.execute(strMethod, params);
 
+		if (result.type() == UniValue::VARR)
+		{
+			name_str = "";
+			expired = 0;
+
+
+	
+			const UniValue &arr = result.get_array();
+		    for (unsigned int idx = 0; idx < arr.size(); idx++) {
+			    const UniValue& input = arr[idx];
+				if (input.type() != UniValue::VOBJ)
+					continue;
+				const UniValue& o = input.get_obj();
+				name_str = "";
+
+				expired = 0;
+
+
+		
+				const UniValue& name_value = find_value(o, "name");
+				if (name_value.type() == UniValue::VSTR)
+					name_str = name_value.get_str();		
+				const UniValue& expired_value = find_value(o, "expired");
+				if (expired_value.type() == UniValue::VNUM)
+					expired = expired_value.get_int();
+				
+				if(expired == 0)
+				{
+					QString name = QString::fromStdString(name_str);
+					ui->aliasEdit->addItem(name);					
+				}
+				
+			}
+		}
+	}
+	catch (UniValue& objError)
+	{
+		string strError = find_value(objError, "message").get_str();
+		QMessageBox::critical(this, windowTitle(),
+			tr("Could not refresh cert list: %1").arg(QString::fromStdString(strError)),
+				QMessageBox::Ok, QMessageBox::Ok);
+	}
+	catch(std::exception& e)
+	{
+		QMessageBox::critical(this, windowTitle(),
+			tr("There was an exception trying to refresh the cert list: ") + QString::fromStdString(e.what()),
+				QMessageBox::Ok, QMessageBox::Ok);
+	}         
+ 
+}
 EditCertDialog::~EditCertDialog()
 {
     delete ui;
@@ -82,10 +148,21 @@ void EditCertDialog::setModel(WalletModel* walletModel, CertTableModel *model)
 void EditCertDialog::loadRow(int row, const QString &privatecert)
 {
     mapper->setCurrentIndex(row);
+	const QModelIndex tmpIndex;
+	if(model)
+	{
+		QModelIndex indexAlias = model->index(row, CertTableModel::Alias, tmpIndex);
+		if(indexAlias.isValid())
+		{
+			QString aliasStr = indexAlias.data(CertTableModel::AliasRole).toString();
+			ui->aliasEdit->setCurrentIndex(ui->aliasEdit->findText(aliasStr));
+		}
+	}
 	if(privatecert == tr("Yes"))
 		ui->privateBox->setCurrentIndex(1);
 	else
 		ui->privateBox->setCurrentIndex(0);
+
 }
 
 bool EditCertDialog::saveCurrentRow()
@@ -111,7 +188,7 @@ bool EditCertDialog::saveCurrentRow()
             return false;
         }
 		strMethod = string("certnew");
-		
+		params.push_back(ui->aliasEdit->currentText().toStdString());
 		params.push_back(ui->nameEdit->text().toStdString());
 		params.push_back(ui->certDataEdit->toPlainText().toStdString());
 		params.push_back(ui->privateBox->currentText() == QString("Yes")? "1": "0");

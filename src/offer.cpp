@@ -2567,7 +2567,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
-			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
+			oOfferAccept.push_back(Pair("buyerkey", HexStr(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
@@ -2693,7 +2693,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
-			oOfferAccept.push_back(Pair("buyerkey", stringFromVch(theOfferAccept.vchBuyerKey)));
+			oOfferAccept.push_back(Pair("buyerkey", HexStr(theOfferAccept.vchBuyerKey)));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));

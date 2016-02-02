@@ -255,7 +255,7 @@ void AliasUpdate(const string& node, const string& aliasname, const string& alia
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
 }
-const string CertNew(const string& node, const string& title, const string& data, bool privateData)
+const string CertNew(const string& node, const string& alias, const string& title, const string& data, bool privateData)
 {
 	string otherNode1 = "node2";
 	string otherNode2 = "node3";
@@ -271,12 +271,13 @@ const string CertNew(const string& node, const string& title, const string& data
 	}
 	string privateFlag = privateData? "1":"0";
 	UniValue r;
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certnew " + title + " " + data + " " + privateFlag));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certnew " + alias + " " + title + " " + data + " " + privateFlag));
 	const UniValue &arr = r.get_array();
 	string guid = arr[1].get_str();
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "certinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "cert").get_str() == guid);
+	BOOST_CHECK(find_value(r.get_obj(), "alias").get_str() == alias);
 	BOOST_CHECK(find_value(r.get_obj(), "data").get_str() == data);
 	BOOST_CHECK(find_value(r.get_obj(), "title").get_str() == title);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");

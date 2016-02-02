@@ -1459,7 +1459,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	oEscrow.push_back(Pair("time", sTime));
 	oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 	oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-	oEscrow.push_back(Pair("buyerkey", stringFromVch(ca.vchBuyerKey)));
+	oEscrow.push_back(Pair("buyerkey", HexStr(ca.vchBuyerKey)));
 	oEscrow.push_back(Pair("offer", stringFromVch(ca.vchOffer)));
 	oEscrow.push_back(Pair("offeracceptlink", stringFromVch(ca.vchOfferAcceptLink)));
 	oEscrow.push_back(Pair("systotal", ValueFromAmount(ca.nPricePerUnit * ca.nQty)));
@@ -1546,7 +1546,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("time", sTime));
 		oName.push_back(Pair("seller", selleraddy.aliasName));
 		oName.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oName.push_back(Pair("buyerkey", stringFromVch(escrow.vchBuyerKey)));
+		oName.push_back(Pair("buyerkey", HexStr(escrow.vchBuyerKey)));
 		oName.push_back(Pair("offer", stringFromVch(escrow.vchOffer)));
 		oName.push_back(Pair("offeracceptlink", stringFromVch(escrow.vchOfferAcceptLink)));
 
@@ -1632,7 +1632,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			oEscrow.push_back(Pair("txid", tx.GetHash().GetHex()));
 			oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 			oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-			oEscrow.push_back(Pair("buyerkey", stringFromVch(txPos2.vchBuyerKey)));
+			oEscrow.push_back(Pair("buyerkey", HexStr(txPos2.vchBuyerKey)));
 			oEscrow.push_back(Pair("offer", stringFromVch(txPos2.vchOffer)));
 			oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txPos2.vchOfferAcceptLink)));
 
@@ -1740,7 +1740,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		oEscrow.push_back(Pair("expired", expired));
 		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oEscrow.push_back(Pair("buyerkey", stringFromVch(txEscrow.vchBuyerKey)));
+		oEscrow.push_back(Pair("buyerkey", HexStr(txEscrow.vchBuyerKey)));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
 
@@ -1822,7 +1822,7 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 		oEscrow.push_back(Pair("time", sTime));
 		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oEscrow.push_back(Pair("buyerkey", stringFromVch(txEscrow.vchBuyerKey)));
+		oEscrow.push_back(Pair("buyerkey", HexStr(txEscrow.vchBuyerKey)));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
 		string sTotal = strprintf("%ll SYS", (txEscrow.nPricePerUnit/COIN)*txEscrow.nQty);
