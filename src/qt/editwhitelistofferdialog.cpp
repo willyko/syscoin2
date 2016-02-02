@@ -139,7 +139,7 @@ void EditWhitelistOfferDialog::on_exclusiveButton_clicked()
 	UniValue params(UniValue::VARR);
 	UniValue result;
 	try {
-
+		params.push_back("");
 		params.push_back(offerGUID.toStdString());
 		params.push_back(offerCategory.toStdString());
 		params.push_back(offerTitle.toStdString());

@@ -64,8 +64,6 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
     case EditOffer:
 		ui->currencyEdit->setEnabled(false);
 		ui->currencyDisclaimer->setVisible(false);
-		ui->aliasDisclaimer->setVisible(false);
-		ui->aliasEdit->setEnabled(false);
         setWindowTitle(tr("Edit Offer"));
         break;
     case NewCertOffer:
@@ -353,6 +351,7 @@ bool EditOfferDialog::saveCurrentRow()
         if(mapper->submit())
         {
 			strMethod = string("offerupdate");
+			params.push_back(ui->aliasEdit->currentText().toStdString());
 			params.push_back(ui->offerEdit->text().toStdString());
 			params.push_back(ui->categoryEdit->text().toStdString());
 			params.push_back(ui->nameEdit->text().toStdString());

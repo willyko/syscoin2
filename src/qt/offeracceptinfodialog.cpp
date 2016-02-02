@@ -114,7 +114,6 @@ bool OfferAcceptInfoDialog::lookup()
 			}
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
-			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "cert").get_str()));
 			QString certStr = QString::fromStdString(find_value(result.get_obj(), "cert").get_str());
 			if(certStr != "")
 			{

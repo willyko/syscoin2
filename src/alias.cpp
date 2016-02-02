@@ -469,6 +469,8 @@ bool CheckAliasInputs(const CTransaction &tx,
 		switch (op) {
 
 		case OP_ALIAS_ACTIVATE:
+			if(theAlias.vchPubKey.empty())
+				return error("CheckAliasInputs(): alias must be provided a pubkey");
 			break;
 
 		case OP_ALIAS_UPDATE:

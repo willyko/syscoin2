@@ -321,7 +321,8 @@ bool CheckCertInputs(const CTransaction &tx,
 			if (found)
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-
+			if(theCert.vchPubKey.empty())
+				return error("CheckCertInputs(): cert must be provided a pubkey");
 			break;
 
 		case OP_CERT_UPDATE:

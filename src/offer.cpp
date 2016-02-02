@@ -661,6 +661,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");			
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+			if(theOffer.vchPubKey.empty())
+				return error("CheckOfferInputs(): offer must be provided a pubkey");
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
 			{
@@ -1799,36 +1801,37 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
     return oRes;
 }
 UniValue offerupdate(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() < 5 || params.size() > 9)
+	if (fHelp || params.size() < 5 || params.size() > 10)
 		throw runtime_error(
-		"offerupdate <guid> <category> <title> <quantity> <price> [description] [private=0] [cert. guid] [exclusive resell=1]\n"
+		"offerupdate <alias> <guid> <category> <title> <quantity> <price> [description] [private=0] [cert. guid] [exclusive resell=1]\n"
 						"Perform an update on an offer you control.\n"
 						+ HelpRequiringPassphrase());
 	// gather & validate inputs
-	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	vector<unsigned char> vchCat = vchFromValue(params[1]);
-	vector<unsigned char> vchTitle = vchFromValue(params[2]);
+	vector<unsigned char> vchAlias = vchFromValue(params[0]);
+	vector<unsigned char> vchOffer = vchFromValue(params[1]);
+	vector<unsigned char> vchCat = vchFromValue(params[2]);
+	vector<unsigned char> vchTitle = vchFromValue(params[3]);
 	vector<unsigned char> vchDesc;
 	vector<unsigned char> vchCert;
 	bool bExclusiveResell = true;
 	int bPrivate = false;
 	unsigned int nQty;
 	double price;
-	if (params.size() >= 6) vchDesc = vchFromValue(params[5]);
-	if (params.size() >= 7) bPrivate = atoi(params[6].get_str().c_str()) == 1? true: false;
-	if (params.size() >= 8) vchCert = vchFromValue(params[7]);
-	if(params.size() >= 9) bExclusiveResell = atoi(params[8].get_str().c_str()) == 1? true: false;
-	if(atof(params[3].get_str().c_str()) < 0)
+	if (params.size() >= 7) vchDesc = vchFromValue(params[6]);
+	if (params.size() >= 8) bPrivate = atoi(params[7].get_str().c_str()) == 1? true: false;
+	if (params.size() >= 9) vchCert = vchFromValue(params[8]);
+	if(params.size() >= 10) bExclusiveResell = atoi(params[9].get_str().c_str()) == 1? true: false;
+	if(atof(params[4].get_str().c_str()) < 0)
 		throw runtime_error("invalid quantity value, must be greator than 0");
 	
 	try {
-		nQty = boost::lexical_cast<unsigned int>(params[3].get_str());
-		price = atof(params[4].get_str().c_str());
+		nQty = boost::lexical_cast<unsigned int>(params[4].get_str());
+		price = atof(params[5].get_str().c_str());
 
 	} catch (std::exception &e) {
 		throw runtime_error("invalid price and/or quantity values. Quantity must be less than 4294967296.");
 	}
-	if (params.size() >= 6) vchDesc = vchFromValue(params[5]);
+	if (params.size() >= 7) vchDesc = vchFromValue(params[6]);
 	if(price <= 0)
 	{
 		throw runtime_error("offer price must be greater than 0!");
@@ -1845,6 +1848,23 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
     // 1kbyte offer desc. maxlen
 	if (vchDesc.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("offer description cannot exceed 1023 bytes!");
+	CAliasIndex alias;
+	if(!vchAlias.empty())
+	{
+		CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
+		if (!aliasAddress.IsValid())
+			throw runtime_error("Invalid syscoin address");
+		if (!aliasAddress.isAlias)
+			throw runtime_error("Offer must be owned by a valid alias");
+
+		// check for alias existence in DB
+		vector<CAliasIndex> vtxPos;
+		if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
+			throw runtime_error("failed to read alias from alias DB");
+		if (vtxPos.size() < 1)
+			throw runtime_error("no result returned");
+		alias = vtxPos.back();
+	}
 
 	// this is a syscoind txn
 	CWalletTx wtx;
@@ -1928,16 +1948,26 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	}
 	// else if we remove the cert from this offer (don't sell a cert) then clear the cert
 	else
+	{
+		if(!alias.IsNull())
+			theOffer.vchPubKey = alias.vchPubKey;
 		theOffer.vchCert.clear();
+	}
+	// ensure pubkey points to an alias
+	CPubKey SellerPubKey(theOffer.vchPubKey);
+	CSyscoinAddress selleraddy(SellerPubKey.GetID());
+	selleraddy = CSyscoinAddress(selleraddy.ToString());
+	if(!selleraddy.IsValid() || !selleraddy.isAlias)
+		throw runtime_error("Could not detect alias from provided pub key. Try to do update your offer with a new alias that you own and try again.");
 	theOffer.nQty = nQty;
-	if (params.size() >= 7)
+	if (params.size() >= 8)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 	if((nQty-memPoolQty) < 0)
-		throw runtime_error("not enough remaining quantity to fulfill this offerupdate"); // SS i think needs better msg
+		throw runtime_error("not enough remaining quantity to fulfill this offerupdate");
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
-	if(params.size() >= 9)
+	if(params.size() >= 10)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 
 
