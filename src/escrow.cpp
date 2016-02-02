@@ -442,7 +442,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
 		throw runtime_error("Invalid seller alias or address");
 
-	std::vector<unsigned char> vchBuyerKey(newDefaultKey.begin(), newDefaultKey.end());
+	std::vector<unsigned char> vchBuyerPubKey(newDefaultKey.begin(), newDefaultKey.end());
 
 
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
