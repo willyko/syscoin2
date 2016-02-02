@@ -39,7 +39,7 @@ public Q_SLOTS:
 
 private:
     bool saveCurrentRow();
-
+	void loadAliases();
     Ui::EditCertDialog *ui;
     QDataWidgetMapper *mapper;
     Mode mode;

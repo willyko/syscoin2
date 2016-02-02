@@ -787,7 +787,9 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	nHeight = ca.nHeight;
 	CPubKey PubKey(ca.vchPubKey);
 	CSyscoinAddress address(PubKey.GetID());
+	address = CSyscoinAddress(address.ToString());
 	oCert.push_back(Pair("address", address.ToString()));
+	oCert.push_back(Pair("alias", address.aliasName));
 	expired_block = nHeight + GetCertExpirationDepth();
 	if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 	{
@@ -879,8 +881,9 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("data", strData));
 		CPubKey PubKey(cert.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
-
+		address = CSyscoinAddress(address.ToString());
 		oName.push_back(Pair("address", address.ToString()));
+		oName.push_back(Pair("alias", address.aliasName));
 		expired_block = nHeight + GetCertExpirationDepth();
 		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 		{
@@ -948,8 +951,9 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
-
+			address = CSyscoinAddress(address.ToString();
 			oCert.push_back(Pair("address", address.ToString()));
+			oCert.push_back(Pair("alias", address.aliasName));
 			expired_block = nHeight + GetCertExpirationDepth();
 			if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 			{
@@ -1071,7 +1075,11 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 		oCert.push_back(Pair("expires_in", expires_in));
 		oCert.push_back(Pair("expires_on", expired_block));
 		oCert.push_back(Pair("expired", expired));
-
+		CPubKey PubKey(txCert.vchPubKey);
+		CSyscoinAddress address(PubKey.GetID());
+		address = CSyscoinAddress(address.ToString();
+		oCert.push_back(Pair("address", address.ToString()));
+		oCert.push_back(Pair("alias", address.aliasName));
         oRes.push_back(oCert);
 
         nCountNb++;
