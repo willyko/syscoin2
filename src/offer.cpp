@@ -303,6 +303,12 @@ bool COffer::UnserializeFromTx(const CTransaction &tx) {
 		SetNull();
         return false;
     }
+	// extra check to ensure data was parsed correctly
+	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	{
+		SetNull();
+		return false;
+	}
     return true;
 }
 const vector<unsigned char> COffer::Serialize() {

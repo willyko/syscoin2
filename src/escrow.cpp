@@ -82,6 +82,14 @@ bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
 		SetNull();
         return false;
     }
+	// extra check to ensure data was parsed correctly
+	if((!vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(vchBuyerKey))
+		|| (!vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(vchSellerKey))
+		|| (!vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(vchArbiterKey)))
+	{
+		SetNull();
+		return false;
+	}
     return true;
 }
 const vector<unsigned char> CEscrow::Serialize() {

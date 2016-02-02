@@ -590,6 +590,12 @@ bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
 		SetNull();
         return false;
     }
+	// extra check to ensure data was parsed correctly
+	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	{
+		SetNull();
+		return false;
+	}
     return true;
 }
 const vector<unsigned char> CAliasIndex::Serialize() {
@@ -743,16 +749,11 @@ bool GetAliasOfTx(const CTransaction& tx, vector<unsigned char>& name) {
 bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	bool good = DecodeAndParseAliasTx(tx, op, nOut, vvch);
-	if(!good)
-		good = DecodeAndParseCertTx(tx, op, nOut, vvch);
-	if(!good)
-		good = DecodeAndParseOfferTx(tx, op, nOut, vvch);
-	if(!good)
-		good = DecodeAndParseEscrowTx(tx, op, nOut, vvch);
-	if(!good)
-		good = DecodeAndParseMessageTx(tx, op, nOut, vvch);
-	return good;
+	return DecodeAndParseAliasTx(tx, op, nOut, vvch) 
+		|| DecodeAndParseCertTx(tx, op, nOut, vvch)
+		|| DecodeAndParseOfferTx(tx, op, nOut, vvch)
+		|| DecodeAndParseEscrowTx(tx, op, nOut, vvch)
+		|| DecodeAndParseMessageTx(tx, op, nOut, vvch);
 }
 bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
