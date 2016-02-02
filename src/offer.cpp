@@ -830,7 +830,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					{
 						const COffer& dbOffer = vtxPos.back();
 						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
-						theOffer.linkWhitelist = dbOffer.linkWhitelist;
+						theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
 						// btc setting cannot change on update
 						theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
 						// currency cannot change after creation
@@ -1930,7 +1930,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("not enough remaining quantity to fulfill this offerupdate"); // SS i think needs better msg
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
-	
 	if(params.size() >= 9)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 
