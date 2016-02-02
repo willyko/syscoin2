@@ -2278,8 +2278,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("This offer must be paid with Bitcoins as per requirements of the seller");
 	}
 	theOffer.ClearOffer();
-	// this isn't cleared in ClearOffer.  We don't need it for accepts, only for updates. Save the bandwidth.
-	theOffer.vchCert.clear();
 	theOffer.accept = txAccept;
 
 	const vector<unsigned char> &data = theOffer.Serialize();
