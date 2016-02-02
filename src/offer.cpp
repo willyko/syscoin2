@@ -86,7 +86,7 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept)
 {
 
-	string strPubKey = stringFromVch(theOfferAccept.vchBuyerKey);
+	string strPubKey = HexStr(theOfferAccept.vchBuyerKey);
 	string strError;
 	string strMethod = string("certtransfer");
 	UniValue params(UniValue::VARR);
@@ -1929,7 +1929,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// else if we remove the cert from this offer (don't sell a cert) then clear the cert
 	else
 		theOffer.vchCert.clear();
-
+	theOffer.nQty = nQty;
 	if (params.size() >= 7)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);

@@ -263,6 +263,7 @@ void AcceptandPayOfferListPage::setValue(const QString& strAlias, const QString&
 	else
 	{
 		ui->infoCert->setVisible(false);
+		ui->infoCert->setText("");
 		ui->certLabel->setVisible(false);
 	}
 	ui->sellerEdit->setText(strAlias);
