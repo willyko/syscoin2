@@ -916,7 +916,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 				else if (op == OP_OFFER_ACCEPT) {	
 					if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 					{
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
 						theOfferAccept.txBTCId.SetNull();
 					}
 					COffer myOffer,linkOffer;
@@ -949,9 +950,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 						int precision = 2;
 						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
 						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
-						if(tx.vout[nOut].nValue != nPrice)
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
-						theOfferAccept.bPaid = true;
+						if(tx.vout[nOut].nValue == nPrice)
+							theOfferAccept.bPaid = true;
+						else
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
+						}
 
 					}
 								
@@ -976,7 +981,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 							if (strError != "" && fDebug)
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
 						}
-						return error("txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+						if(fDebug)
+							LogPrintf("txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+						return true;
 					}
 
 					// only if we are the root offer owner do we even consider xfering a cert					
@@ -993,7 +1000,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						}
 					}
 				
-					if(theOffer.vchLinkOffer.empty())
+					if(theOffer.vchLinkOffer.empty() && theOfferAccept.bPaid)
 					{
 						theOffer.nQty -= theOfferAccept.nQty;
 						// go through the linked offers, if any, and update the linked offer qty based on the this qty
@@ -2277,7 +2284,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("This offer must be paid with Bitcoins as per requirements of the seller");
 	}
-	const vector<unsigned char> &copyVchPubKey =  theOffer.vchPubKey;
+	const vector<unsigned char> copyVchPubKey = theOffer.vchPubKey;
 	theOffer.ClearOffer();
 	theOffer.accept = txAccept;
 	theOffer.vchPubKey = copyVchPubKey;
