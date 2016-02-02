@@ -323,76 +323,77 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
         throw runtime_error("Subject cannot exceed 255 bytes!");
 
 	vector<unsigned char> vchMyMessage = vchFromValue(params[1]);
-	vector<unsigned char> vchFromAliasOrPubKey = vchFromValue(params[2]);
-	vector<unsigned char> vchToAliasOrPubKey = vchFromValue(params[3]);
-
 	string strFromAddress = params[2].get_str();
 	string strToAddress = params[3].get_str();
-	CSyscoinAddress fromAddress;
-	CSyscoinAddress toAddress;
 	std::vector<unsigned char> vchFromPubKey;
 	std::vector<unsigned char> vchToPubKey;
 	EnsureWalletIsUnlocked();
-	// strFromAddress is a pubkey otherwise it's an alias
-	if(strFromAddress.size() == 66)
+
+	// strToAddress is a pubkey otherwise it's an alias same with strFromAddress
+	try
 	{
-		std::vector<unsigned char> vchPubKeyByte;
-		boost::algorithm::unhex(vchFromAliasOrPubKey.begin(), vchFromAliasOrPubKey.end(), std::back_inserter(vchPubKeyByte));
-		CPubKey PubKey(vchPubKeyByte);
-		CSyscoinAddress PublicAddress(PubKey.GetID());
-		if(!PublicAddress.IsValid())
-			throw runtime_error("Invalid alias, no public key found! (fromalias)");	
-		fromAddress = PublicAddress;
-		vchFromPubKey = vchFromAliasOrPubKey;
+		vchPubKey = vchFromString(strFromAddress);		
+		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchFromPubKey));
+		CPubKey PubKey  = CPubKey(vchFromPubKey);
+		if(!PubKey.IsValid())
+		{
+			throw runtime_error("Invalid sending public key");
+		}
 	}
-	else
+	catch(...)
 	{
-		fromAddress = CSyscoinAddress(strFromAddress);
-		if (!fromAddress.IsValid())
-			throw runtime_error("Invalid syscoin address of fromalias");
-		if (!fromAddress.isAlias)
-			throw runtime_error("Must be a valid alias (fromalias)");
+		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
+		if (!myAddress.IsValid())
+			throw runtime_error("Invalid syscoin address");
+		if (!myAddress.isAlias)
+			throw runtime_error("Invalid alias");
+
 		// check for alias existence in DB
-		vector<CAliasIndex> vtxPosFrom;
-		if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxPosFrom))
-			throw runtime_error("failed to read alias from alias DB (fromalias)");
-		if (vtxPosFrom.size() < 1)
-			throw runtime_error("no result returned (fromalias)");
-		CAliasIndex msgFromAlias = vtxPosFrom.back();
-		vchFromPubKey = msgFromAlias.vchPubKey;
+		vector<CAliasIndex> vtxAliasPos;
+		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
+			throw runtime_error("failed to read alias from alias DB");
+		if (vtxAliasPos.size() < 1)
+			throw runtime_error("no result returned");
+		CAliasIndex alias = vtxAliasPos.back();
+		vchFromPubKey = alias.vchPubKey;
+		CPubKey PubKey = CPubKey(vchPubKeyByte);
+		if(!PubKey.IsValid())
+		{
+			throw runtime_error("Invalid sending public key");
+		}
+	}	
+	try
+	{
+		vchPubKey = vchFromString(strToAddress);		
+		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchToPubKey));
+		CPubKey PubKey  = CPubKey(vchToPubKey);
+		if(!PubKey.IsValid())
+		{
+			throw runtime_error("Invalid recv public key");
+		}
+	}
+	catch(...)
+	{
+		CSyscoinAddress myAddress = CSyscoinAddress(strToAddress);
+		if (!myAddress.IsValid())
+			throw runtime_error("Invalid syscoin address");
+		if (!myAddress.isAlias)
+			throw runtime_error("Invalid alias");
 
-	}
-	// strToAddress is a pubkey otherwise it's an alias
-	if(strToAddress.size() == 66)
-	{
-		std::vector<unsigned char> vchPubKeyByte;
-		boost::algorithm::unhex(vchToAliasOrPubKey.begin(), vchToAliasOrPubKey.end(), std::back_inserter(vchPubKeyByte));
-		CPubKey PubKey(vchPubKeyByte);
-		CSyscoinAddress PublicAddress(PubKey.GetID());
-		if(!PublicAddress.IsValid())
-			throw runtime_error("Invalid alias, no public key found! (toalias)");	
-		toAddress = PublicAddress;
-		vchToPubKey = vchToAliasOrPubKey;
-	}
-	else
-	{
-		toAddress = CSyscoinAddress(strToAddress);
-		if (!toAddress.IsValid())
-			throw runtime_error("Invalid syscoin address of toalias");
-		if (!toAddress.isAlias)
-			throw runtime_error("Must be a valid alias (toalias)");
 		// check for alias existence in DB
-		vector<CAliasIndex> vtxPosTo;
-		if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxPosTo))
-			throw runtime_error("failed to read alias from alias DB (toalias)");
-		if (vtxPosTo.size() < 1)
-			throw runtime_error("no result returned (toalias)");
-		CAliasIndex msgToAlias = vtxPosTo.back();
-		vchToPubKey = msgToAlias.vchPubKey;
-
-	}
-
-	
+		vector<CAliasIndex> vtxAliasPos;
+		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
+			throw runtime_error("failed to read alias from alias DB");
+		if (vtxAliasPos.size() < 1)
+			throw runtime_error("no result returned");
+		CAliasIndex alias = vtxAliasPos.back();
+		vchToPubKey = alias.vchPubKey;
+		CPubKey PubKey = CPubKey(vchPubKeyByte);
+		if(!PubKey.IsValid())
+		{
+			throw runtime_error("Invalid recv public key");
+		}
+	}	
 
 	if (!IsMine(*pwalletMain, fromAddress.Get()))
 		throw runtime_error("fromalias must be yours");
@@ -483,9 +484,7 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
 	if (pindex) {
 		sTime = strprintf("%llu", pindex->nTime);
 	}
-	std::vector<unsigned char> vchKeyByte;
-	boost::algorithm::unhex(ca.vchPubKeyFrom.begin(), ca.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
-	CPubKey FromPubKey(vchKeyByte);
+	CPubKey FromPubKey(ca.vchPubKeyFrom);
 	CSyscoinAddress fromaddress(FromPubKey.GetID());
 	fromaddress = CSyscoinAddress(fromaddress.ToString());
 	oMessage.push_back(Pair("time", sTime));
@@ -494,9 +493,7 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
 	else
 		oMessage.push_back(Pair("from", fromaddress.ToString()));
 
-	vchKeyByte.clear();
-	boost::algorithm::unhex(ca.vchPubKeyTo.begin(), ca.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
-	CPubKey ToPubKey(vchKeyByte);
+	CPubKey ToPubKey(ca.vchPubKeyTo);
 	CSyscoinAddress toaddress(ToPubKey.GetID());
 	toaddress = CSyscoinAddress(toaddress.ToString());
 	if(toaddress.isAlias)
@@ -569,9 +566,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
 
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(message.vchPubKeyTo.begin(), message.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
-		CPubKey FromPubKey(vchKeyByte);
+		CPubKey FromPubKey(message.vchPubKeyTo);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
@@ -579,9 +574,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		else
 			oName.push_back(Pair("from", fromaddress.ToString()));
 
-		vchKeyByte.clear();
-		boost::algorithm::unhex(message.vchPubKeyFrom.begin(), message.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
-		CPubKey ToPubKey(vchKeyByte);
+		CPubKey ToPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress toaddress(ToPubKey.GetID());
 		toaddress = CSyscoinAddress(toaddress.ToString());
 		if(toaddress.isAlias)
@@ -650,9 +643,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		}
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(message.vchPubKeyTo.begin(), message.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
-		CPubKey FromPubKey(vchKeyByte);
+		CPubKey FromPubKey(message.vchPubKeyTo);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
@@ -660,9 +651,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		else
 			oName.push_back(Pair("from", fromaddress.ToString()));
 
-		vchKeyByte.clear();
-		boost::algorithm::unhex(message.vchPubKeyFrom.begin(), message.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
-		CPubKey ToPubKey(vchKeyByte);
+		CPubKey ToPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress toaddress(ToPubKey.GetID());
 		toaddress = CSyscoinAddress(toaddress.ToString());
 		if(toaddress.isAlias)
@@ -725,9 +714,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			}
 			oMessage.push_back(Pair("time", sTime));
 
-			std::vector<unsigned char> vchKeyByte;
-			boost::algorithm::unhex(txPos2.vchPubKeyTo.begin(), txPos2.vchPubKeyTo.end(), std::back_inserter(vchKeyByte));
-			CPubKey FromPubKey(vchKeyByte);
+			CPubKey FromPubKey(txPos2.vchPubKeyTo);
 			CSyscoinAddress fromaddress(FromPubKey.GetID());
 			fromaddress = CSyscoinAddress(fromaddress.ToString());
 			if(fromaddress.isAlias)
@@ -735,9 +722,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			else
 				oMessage.push_back(Pair("from", fromaddress.ToString()));
 
-			vchKeyByte.clear();
-			boost::algorithm::unhex(txPos2.vchPubKeyFrom.begin(), txPos2.vchPubKeyFrom.end(), std::back_inserter(vchKeyByte));
-			CPubKey ToPubKey(vchKeyByte);
+			CPubKey ToPubKey(txPos2.vchPubKeyFrom);
 			CSyscoinAddress toaddress(ToPubKey.GetID());
 			toaddress = CSyscoinAddress(toaddress.ToString());
 			if(toaddress.isAlias)

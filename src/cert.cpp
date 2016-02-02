@@ -25,10 +25,8 @@ bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigne
 }
 bool DecryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchCipherText, string &strMessage)
 {
-	std::vector<unsigned char> vchPubKeyByte;
 	CKey PrivateKey;
-    boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
-	CPubKey PubKey(vchPubKeyByte);
+	CPubKey PubKey(vchPubKey);
 	CKeyID pubKeyID = PubKey.GetID();
 	if (!pwalletMain->GetKey(pubKeyID, PrivateKey))
         return false;
@@ -36,7 +34,7 @@ bool DecryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigne
 	PrivateKey = Secret.GetKey();
 	std::vector<unsigned char> vchPrivateKey(PrivateKey.begin(), PrivateKey.end());
 	CMessageCrypter crypter;
-	if(!crypter.Decrypt(HexStr(vchPrivateKey), stringFromVch(vchCipherText), strMessage))
+	if(!crypter.Decrypt(stringFromVch(vchPrivateKey), stringFromVch(vchCipherText), strMessage))
 		return false;
 	
 	return true;
@@ -447,11 +445,10 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 
     
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-	string strPubKey = HexStr(vchPubKey);
 	if(bPrivate)
 	{
 		string strCipherText;
-		if(!EncryptMessage(vchFromString(strPubKey), vchData, strCipherText))
+		if(!EncryptMessage(vchPubKey, vchData, strCipherText))
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
@@ -466,7 +463,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     newCert.vchTitle = vchTitle;
 	newCert.vchData = vchData;
 	newCert.nHeight = chainActive.Tip()->nHeight;
-	newCert.vchPubKey = vchFromString(strPubKey);
+	newCert.vchPubKey = vchPubKey;
 	newCert.bPrivate = bPrivate;
 
     scriptPubKey << CScript::EncodeOP_N(OP_CERT_ACTIVATE) << vchCert << OP_2DROP;
@@ -546,9 +543,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
-	std::vector<unsigned char> vchKeyByte;
-	boost::algorithm::unhex(copyCert.vchPubKey.begin(), copyCert.vchPubKey.end(), std::back_inserter(vchKeyByte));
-	CPubKey currentKey(vchKeyByte);
+	CPubKey currentKey(copyCert.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
     // create CERTUPDATE txn keys
     CScript scriptPubKey;
@@ -635,8 +630,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		if (vtxAliasPos.size() < 1)
 			throw runtime_error("no result returned");
 		CAliasIndex xferAlias = vtxAliasPos.back();
-		vchPubKey = xferAlias.vchPubKey;
-		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
+		vchPubKeyByte = xferAlias.vchPubKey;
 		xferKey = CPubKey(vchPubKeyByte);
 		if(!xferKey.IsValid())
 		{
@@ -704,7 +698,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
     scriptPubKey += scriptPubKeyOrig;
 	
 	theCert.nHeight = chainActive.Tip()->nHeight;
-	theCert.vchPubKey = vchPubKey;
+	theCert.vchPubKey = vchPubKeyByte;
 	if(copyCert.vchData != vchData)
 		theCert.vchData = vchData;
     // send the cert pay txn
@@ -772,9 +766,7 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 
     uint64_t nHeight;
 	nHeight = ca.nHeight;
-	std::vector<unsigned char> vchKeyByte;
-	boost::algorithm::unhex(ca.vchPubKey.begin(), ca.vchPubKey.end(), std::back_inserter(vchKeyByte));
-	CPubKey PubKey(vchKeyByte);
+	CPubKey PubKey(ca.vchPubKey);
 	CSyscoinAddress address(PubKey.GetID());
 	oCert.push_back(Pair("address", address.ToString()));
 	expired_block = nHeight + GetCertExpirationDepth();
@@ -866,9 +858,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		}
 		oName.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 		oName.push_back(Pair("data", strData));
- 		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(cert.vchPubKey.begin(), cert.vchPubKey.end(), std::back_inserter(vchKeyByte));
-		CPubKey PubKey(vchKeyByte);
+		CPubKey PubKey(cert.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
 
 		oName.push_back(Pair("address", address.ToString()));
@@ -937,9 +927,7 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             string value = stringFromVch(vchValue);
             oCert.push_back(Pair("value", value));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
- 			std::vector<unsigned char> vchKeyByte;
-			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
-			CPubKey PubKey(vchKeyByte);
+			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
 
 			oCert.push_back(Pair("address", address.ToString()));

@@ -32,10 +32,24 @@ CCertDB *pcertdb = NULL;
 CEscrowDB *pescrowdb = NULL;
 CMessageDB *pmessagedb = NULL;
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
-bool IsCompressedPubKey(const vector<unsigned char> &vchPubKey) {
-    if (vchPubKey.size() != 66) {
+bool IsCompressedOrUncompressedPubKey(const vector<unsigned char> &vchPubKey) {
+    if (vchPubKey.size() < 33) {
         //  Non-canonical public key: too short
         return false;
+    }
+    if (vchPubKey[0] == 0x04) {
+        if (vchPubKey.size() != 65) {
+            //  Non-canonical public key: invalid length for uncompressed key
+            return false;
+        }
+    } else if (vchPubKey[0] == 0x02 || vchPubKey[0] == 0x03) {
+        if (vchPubKey.size() != 33) {
+            //  Non-canonical public key: invalid length for compressed key
+            return false;
+        }
+    } else {
+          //  Non-canonical public key: neither compressed nor uncompressed
+          return false;
     }
     return true;
 }
@@ -446,8 +460,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias value too big");
 		}
-		LogPrintf("theAlias.vchPubKey %s length %d\n", stringFromVch(theAlias.vchPubKey).c_str(), theAlias.vchPubKey.size());
-		if(!theAlias.vchPubKey.empty() && !IsCompressedPubKey(theAlias.vchPubKey))
+		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
 		{
 			return error("alias pub key invalid length");
 		}
@@ -504,9 +517,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 				PutToAliasList(vtxPos, theAlias);
 				{
 				TRY_LOCK(cs_main, cs_trymain);
-				std::vector<unsigned char> vchKeyByte;
-				boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-				CPubKey PubKey(vchKeyByte);
+				CPubKey PubKey(theAlias.vchPubKey);
 				CSyscoinAddress address(PubKey.GetID());
 				if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
@@ -664,9 +675,7 @@ void GetAddressFromAlias(const std::string& strAlias, std::string& strAddress) {
 		if (!GetSyscoinTransaction(alias.nHeight, txHash, tx, Params().GetConsensus()))
 			throw runtime_error("failed to read transaction from disk");
 
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-		CPubKey PubKey(vchKeyByte);
+		CPubKey PubKey(alias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
 		if(!address.IsValid())
 			throw runtime_error("alias address is invalid");
@@ -896,12 +905,11 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_ACTIVATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
-	string strPubKey = HexStr(vchPubKey);
 
     // build alias
     CAliasIndex newAlias;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
-	newAlias.vchPubKey = vchFromString(strPubKey);
+	newAlias.vchPubKey = vchPubKey;
 	newAlias.vchValue = vchValue;
 
     vector<CRecipient> vecSend;
@@ -996,9 +1004,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		theAlias.vchPubKey = vchPubKey;
 	else
 	{
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(copyAlias.vchPubKey.begin(), copyAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-		CPubKey currentKey(vchKeyByte);
+		CPubKey currentKey(copyAlias.vchPubKey);
 		scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	}
 	CScript scriptPubKey;
@@ -1154,9 +1160,7 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		const CAliasIndex &alias= vtxPos.back();
 		oName.push_back(Pair("value", stringFromVch(alias.vchValue)));
 		oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-		CPubKey PubKey(vchKeyByte);
+		CPubKey PubKey(alias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
 		if(!address.IsValid())
 			throw runtime_error("Invalid alias address");
@@ -1229,9 +1233,7 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			string value = stringFromVch(vchValue);
 			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));
 			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
-			std::vector<unsigned char> vchKeyByte;
-			boost::algorithm::unhex(txPos2.vchPubKey.begin(), txPos2.vchPubKey.end(), std::back_inserter(vchKeyByte));
-			CPubKey PubKey(vchKeyByte);
+			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
 			oName.push_back(Pair("address", address.ToString()));
             oName.push_back(Pair("lastupdate_height", nHeight));
@@ -1309,9 +1311,7 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 	pair<vector<unsigned char>, CAliasIndex> pairScan;
 	BOOST_FOREACH(pairScan, nameScan) {
 		const CAliasIndex &alias = pairScan.second;
-		std::vector<unsigned char> vchKeyByte;
-		boost::algorithm::unhex(alias.vchPubKey.begin(), alias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-		CPubKey PubKey(vchKeyByte);
+		CPubKey PubKey(alias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
 		const string &name = stringFromVch(pairScan.first);
 		if (strRegexp != "" && !regex_search(name, nameparts, cregex) && strRegexp != address.ToString())

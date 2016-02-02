@@ -1985,9 +1985,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 			}
 		}
 	}
-	std::vector<unsigned char> vchKeyByte;
-	boost::algorithm::unhex(foundAlias.vchPubKey.begin(), foundAlias.vchPubKey.end(), std::back_inserter(vchKeyByte));
-	CPubKey PubKey(vchKeyByte);
+	CPubKey PubKey(foundAlias.vchPubKey);
 	CSyscoinAddress address(PubKey.GetID());
 	if(!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
 		return error("DisconnectBlock() : failed to write to alias DB");
