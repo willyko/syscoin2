@@ -2277,9 +2277,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("This offer must be paid with Bitcoins as per requirements of the seller");
 	}
+	const vector<unsigned char> &copyVchPubKey =  theOffer.vchPubKey
 	theOffer.ClearOffer();
 	theOffer.accept = txAccept;
-
+	theOffer.vchPubKey = copyVchPubKey;
 
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
