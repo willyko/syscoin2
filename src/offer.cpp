@@ -623,7 +623,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("offer link guid too big");
 		}
-		if(!theOffer.vchPubKey.empty() && !IsCompressedPubKey(theOffer.vchPubKey))
+		if(!theOffer.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theOffer.vchPubKey))
 		{
 			return error("offer pub key too invalid length");
 		}
