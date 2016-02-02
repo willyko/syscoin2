@@ -459,7 +459,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	arrayParams.push_back(2);
 	arrayOfKeys.push_back(HexStr(vchArbiterPubKey));
 	arrayOfKeys.push_back(HexStr(theOffer.vchPubKey));
-	arrayOfKeys.push_back(HexStr(vchBuyerKey));
+	arrayOfKeys.push_back(HexStr(vchBuyerPubKey));
 	arrayParams.push_back(arrayOfKeys);
 	UniValue resCreate;
 	try
