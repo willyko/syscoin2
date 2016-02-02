@@ -459,7 +459,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	EnsureWalletIsUnlocked();
     CScript scriptPubKeyOrig;
 	CPubKey aliasKey(alias.vchPubKey);
-	scriptPubKeyCertOrig = GetScriptForDestination(aliasKey.GetID());
+	scriptPubKeyOrig = GetScriptForDestination(aliasKey.GetID());
     CScript scriptPubKey;
 
     
@@ -951,7 +951,7 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
-			address = CSyscoinAddress(address.ToString();
+			address = CSyscoinAddress(address.ToString());
 			oCert.push_back(Pair("address", address.ToString()));
 			oCert.push_back(Pair("alias", address.aliasName));
 			expired_block = nHeight + GetCertExpirationDepth();
@@ -1077,7 +1077,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 		oCert.push_back(Pair("expired", expired));
 		CPubKey PubKey(txCert.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
-		address = CSyscoinAddress(address.ToString();
+		address = CSyscoinAddress(address.ToString());
 		oCert.push_back(Pair("address", address.ToString()));
 		oCert.push_back(Pair("alias", address.aliasName));
         oRes.push_back(oCert);

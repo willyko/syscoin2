@@ -97,6 +97,7 @@ void CertListPage::setModel(WalletModel* walletModel, CertTableModel *model)
     ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::ExpiresOn, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::ExpiresIn, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Expired, QHeaderView::ResizeToContents);
+	ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Alias, QHeaderView::ResizeToContents);
 #else
     ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Name, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Title, QHeaderView::Stretch);
@@ -105,6 +106,7 @@ void CertListPage::setModel(WalletModel* walletModel, CertTableModel *model)
     ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::ExpiresOn, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::ExpiresIn, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Expired, QHeaderView::ResizeToContents);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Alias, QHeaderView::ResizeToContents);
 #endif
 
 
@@ -183,6 +185,7 @@ void CertListPage::on_exportButton_clicked()
 	writer.addColumn("Expires On", CertTableModel::ExpiresOn, Qt::EditRole);
 	writer.addColumn("Expires In", CertTableModel::ExpiresIn, Qt::EditRole);
 	writer.addColumn("Expired", CertTableModel::Expired, Qt::EditRole);
+	writer.addColumn("Alias", CertTableModel::Alias, Qt::EditRole);
     if(!writer.write())
     {
         QMessageBox::critical(this, tr("Error exporting"), tr("Could not write to file %1.").arg(filename),
