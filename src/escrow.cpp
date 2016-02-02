@@ -11,7 +11,6 @@
 #include "policy/policy.h"
 #include "script/script.h"
 #include "chainparams.h"
-#include <boost/algorithm/hex.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>

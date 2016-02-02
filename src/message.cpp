@@ -327,36 +327,40 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	string strToAddress = params[3].get_str();
 	std::vector<unsigned char> vchFromPubKey;
 	std::vector<unsigned char> vchToPubKey;
+	CSyscoinAddress fromAddress, toAddress;
 	EnsureWalletIsUnlocked();
 
 	// strToAddress is a pubkey otherwise it's an alias same with strFromAddress
 	try
 	{
-		vchPubKey = vchFromString(strFromAddress);		
+		const vector<unsigned char> &vchPubKey = vchFromString(strFromAddress);		
 		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchFromPubKey));
 		CPubKey PubKey  = CPubKey(vchFromPubKey);
 		if(!PubKey.IsValid())
 		{
 			throw runtime_error("Invalid sending public key");
 		}
+		fromAddress = CSyscoinAddress(PubKey.GetID());
+		if (!fromAddress.IsValid())
+			throw runtime_error("Invalid syscoin address from pubkey");
 	}
 	catch(...)
 	{
-		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
-		if (!myAddress.IsValid())
+		fromAddress = CSyscoinAddress(strFromAddress);
+		if (!fromAddress.IsValid())
 			throw runtime_error("Invalid syscoin address");
-		if (!myAddress.isAlias)
+		if (!fromAddress.isAlias)
 			throw runtime_error("Invalid alias");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxAliasPos;
-		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
+		if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxAliasPos))
 			throw runtime_error("failed to read alias from alias DB");
 		if (vtxAliasPos.size() < 1)
 			throw runtime_error("no result returned");
 		CAliasIndex alias = vtxAliasPos.back();
 		vchFromPubKey = alias.vchPubKey;
-		CPubKey PubKey = CPubKey(vchPubKeyByte);
+		CPubKey PubKey = CPubKey(vchFromPubKey);
 		if(!PubKey.IsValid())
 		{
 			throw runtime_error("Invalid sending public key");
@@ -364,31 +368,34 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	}	
 	try
 	{
-		vchPubKey = vchFromString(strToAddress);		
+		const vector<unsigned char> &vchPubKey = vchFromString(strToAddress);		
 		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchToPubKey));
 		CPubKey PubKey  = CPubKey(vchToPubKey);
 		if(!PubKey.IsValid())
 		{
 			throw runtime_error("Invalid recv public key");
 		}
+		toAddress = CSyscoinAddress(PubKey.GetID());
+		if (!toAddress.IsValid())
+			throw runtime_error("Invalid syscoin address from pubkey");
 	}
 	catch(...)
 	{
-		CSyscoinAddress myAddress = CSyscoinAddress(strToAddress);
-		if (!myAddress.IsValid())
+		toAddress = CSyscoinAddress(strToAddress);
+		if (!toAddress.IsValid())
 			throw runtime_error("Invalid syscoin address");
-		if (!myAddress.isAlias)
+		if (!toAddress.isAlias)
 			throw runtime_error("Invalid alias");
 
 		// check for alias existence in DB
 		vector<CAliasIndex> vtxAliasPos;
-		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
+		if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxAliasPos))
 			throw runtime_error("failed to read alias from alias DB");
 		if (vtxAliasPos.size() < 1)
 			throw runtime_error("no result returned");
 		CAliasIndex alias = vtxAliasPos.back();
 		vchToPubKey = alias.vchPubKey;
-		CPubKey PubKey = CPubKey(vchPubKeyByte);
+		CPubKey PubKey = CPubKey(vchToPubKey);
 		if(!PubKey.IsValid())
 		{
 			throw runtime_error("Invalid recv public key");

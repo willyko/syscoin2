@@ -19,7 +19,6 @@
 #include "txdb.h"
 #include "chainparams.h"
 #include "policy/policy.h"
-#include <boost/algorithm/hex.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
