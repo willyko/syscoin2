@@ -29,7 +29,9 @@ OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *pa
 	ui->commissionEdit->setVisible(false);
 	ui->commissionLabel->setVisible(false);
 	ui->btctxidEdit->setVisible(false);
-
+	ui->btctxidLabel->setVisible(false);
+	ui->certEdit->setVisible(false);
+	ui->certLabel->setVisible(false);
 	lookup();
 }
 
@@ -94,6 +96,7 @@ bool OfferAcceptInfoDialog::lookup()
 					if(btctxidStr != "")
 					{
 						ui->btctxidEdit->setVisible(true);
+						ui->btctxidLabel->setVisible(true);
 						ui->btctxidEdit->setText(btctxidStr);
 					}
 				}
@@ -111,7 +114,14 @@ bool OfferAcceptInfoDialog::lookup()
 			}
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
-			
+			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "cert").get_str()));
+			QString certStr = QString::fromStdString(find_value(result.get_obj(), "cert").get_str());
+			if(certStr != "")
+			{
+				ui->certEdit->setVisible(true);
+				ui->certLabel->setVisible(true);
+				ui->certEdit->setText(certStr);
+			}		
 			return true;
 		}
 		 

@@ -701,7 +701,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 			throw runtime_error("Could not decrypt certificate data!");
 		}
 		// encrypt using new key
-		if(!EncryptMessage(vchPubKey, vchFromString(strData), strCipherText))
+		if(!EncryptMessage(vchPubKeyByte, vchFromString(strData), strCipherText))
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
