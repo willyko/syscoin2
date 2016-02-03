@@ -692,17 +692,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
-			}	
-			else {
-				if(!IsAliasOp(prevAliasOp))
-					return error("CheckOfferInputs(): alias not provided as input");
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return error("CheckOfferInputs(): failed to read alias from alias DB");
-				if (vtxAliasPos.size() < 1)
-					return error("CheckOfferInputs(): no alias result returned");
-				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
-					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias and offer pubkey's must match");
-			
 			}
 			if(!theOffer.vchLinkOffer.empty())
 			{
@@ -2233,8 +2222,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
-	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
-	if (wtxAliasIn == NULL)
+	if (!pwalletMain->GetWalletTx(aliastx.GetHash())
 		throw runtime_error("this alias is not in your wallet");
 	vchPubKey = alias.vchPubKey;
 
@@ -2243,7 +2231,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	// this is a syscoin txn
 	CWalletTx wtx;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyAliasOrig;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
 
 	// generate offer accept identifier and hash
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
@@ -2252,7 +2240,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	// create OFFERACCEPT txn keys
 	CScript scriptPubKey;
-	CScript scriptPubKeyCert, scriptPubKeyAlias;
+	CScript scriptPubKeyCert;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
 
 	EnsureWalletIsUnlocked();
@@ -2350,10 +2338,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
-	CPubKey currentAliasKey(alias.vchPubKey);
-	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
-	scriptPubKeyAlias += scriptPubKeyAliasOrig;
 	// if this is an accept for a linked offer, the offer is set to exclusive mode and you dont have a cert in the whitelist, you cannot accept this offer
 	if(!vchLinkOfferAccept.empty() && foundCert.IsNull() && theOffer.linkWhitelist.bExclusiveResell)
 	{
@@ -2425,17 +2409,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CRecipient paymentRecipient = {scriptPubKey, nTotalValue, false};
 	CRecipient certRecipient;
 	CreateRecipient(scriptPubKeyCert, certRecipient);
-	CRecipient aliasRecipient;
-	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
 	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	if(wtxCertIn != NULL)
 	{
 		vecSend.push_back(certRecipient);
-		wtxAliasIn = NULL;
 	} 
-	// we attach alias input here so noone can create an offer under anyone elses alias/pubkey
-	else if(wtxAliasIn != NULL)
-		vecSend.push_back(aliasRecipient);
 
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
@@ -2465,9 +2443,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInAlias=NULL;
 	// if making a purchase and we are using a certificate from the whitelist of the offer, we may need to prove that we own that certificate so in that case we attach an input from the certificate
 	// if purchasing an escrow, we adjust the height to figure out pricing of the accept so we may also attach escrow inputs to the tx
-	SendMoneySyscoin(vecSend, paymentRecipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxAliasIn, wtxEscrowIn);
+	SendMoneySyscoin(vecSend, paymentRecipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxInAlias, wtxEscrowIn);
 	
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
