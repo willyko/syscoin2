@@ -171,7 +171,7 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->aliasEdit->text(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialog dlg(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -185,7 +185,7 @@ void AcceptandPayOfferListPage::OpenPayDialog()
 }
 void AcceptandPayOfferListPage::OpenBTCPayDialog()
 {
-	OfferAcceptDialogBTC dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialogBTC dlg(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -214,7 +214,7 @@ void AcceptandPayOfferListPage::acceptOffer()
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}
-	if(ui->aliasEdit->text().size() <= 0)
+	if(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString().size() <= 0)
 	{
 		QMessageBox::critical(this, windowTitle(),
 			tr("Please choose an alias that you own before purchasing this offer."),
@@ -340,7 +340,6 @@ void AcceptandPayOfferListPage::setValue(const QString& strAlias, const QString&
 		ui->infoCert->setText("");
 		ui->certLabel->setVisible(false);
 		ui->aliasEdit->setVisible(false);
-		ui->aliasEdit->setText("");
 		ui->aliasLabel->setVisible(false);
 	}
 	ui->sellerEdit->setText(strAlias);
