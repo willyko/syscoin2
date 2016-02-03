@@ -873,7 +873,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 		boost::replace_all(strPublicValue, "Qu", "\"");
 	vchPublicValue = vchFromString(strPublicValue);
 
-	string strPrivateValue = params.size()>=3params[2].get_str():"";
+	string strPrivateValue = params.size()>=3?params[2].get_str():"";
 	vchPrivateValue = vchFromString(strPrivateValue);
 	if (vchPublicValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias public value cannot exceed 1023 bytes!");
