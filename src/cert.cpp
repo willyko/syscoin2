@@ -256,8 +256,6 @@ bool CheckCertInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-        bool foundCert = false;
-		bool foundAlias = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
 
@@ -279,20 +277,13 @@ bool CheckCertInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(prevOutput, op, vvch);
 			
-			if(foundCert && foundAlias)
-				break;
 
-			if (!foundCert && IsCertOp(op)) {
-				foundCert = true; 
+			if (IsCertOp(op)) { 
 				prevOp = op;
 				vvchPrevArgs = vvch;
+				break;
 			}
-			else if (!foundAlias && IsAliasOp(op))
-			{
-				foundAlias = true; 
-				prevAliasOp = op;
-				vvchPrevAliasArgs = vvch;
-			}
+
 		}
 		
         // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
@@ -328,24 +319,16 @@ bool CheckCertInputs(const CTransaction &tx,
 		vector<CAliasIndex> vtxAliasPos;
 		switch (op) {
 		case OP_CERT_ACTIVATE:
-			if (foundCert)
+			if (IsCertOp(prevOp))
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
 			if(theCert.vchPubKey.empty())
 				return error("CheckCertInputs(): cert must be provided a pubkey");
-			if(!IsAliasOp(prevAliasOp))
-				return error("CheckCertInputs(): alias not provided as input");
-			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-				return error("CheckCertInputs(): failed to read alias from alias DB");
-			if (vtxAliasPos.size() < 1)
-				return error("CheckCertInputs(): no alias result returned");
-			if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
-				return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
 			break;
 
 		case OP_CERT_UPDATE:
 			// previous op must be a cert
-			if ( !foundCert || !IsCertOp(prevOp))
+			if ( !IsCertOp(prevOp))
 				return error("CheckCertInputs(): certupdate previous op is invalid");
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
@@ -354,7 +337,7 @@ bool CheckCertInputs(const CTransaction &tx,
 
 		case OP_CERT_TRANSFER:
 			// validate conditions
-			if ( !foundCert || !IsCertOp(prevOp))
+			if ( !IsCertOp(prevOp))
 				return error("certtransfer previous op is invalid");
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckCertInputs() : certtransfer cert mismatch");
@@ -487,9 +470,8 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     CScript scriptPubKeyOrig;
 	CPubKey aliasKey(alias.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(aliasKey.GetID());
-    CScript scriptPubKey, scriptPubKeyAlias;
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
-	scriptPubKeyAlias += scriptPubKeyOrig;
+    CScript scriptPubKey;
+
     
 
 	if(bPrivate)
@@ -530,16 +512,11 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	CRecipient aliasRecipient;
-	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
-	// we attach alias input here so noone can create a cert under anyone elses alias/pubkey
-	if(wtxAliasIn != NULL)
-		vecSend.push_back(aliasRecipient);
-
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
+	const CWalletTx * wtxInAlias=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
