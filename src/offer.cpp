@@ -264,8 +264,8 @@ string makeOfferRefundTX(const CTransaction& prevTx, const vector<unsigned char>
 	if(refundCode == OFFER_REFUND_COMPLETE)
 	{
 		CPubKey PubKey(theOfferAccept.vchBuyerKey);
-		CSyscoinAddress refundaddress(SellerPubKey.GetID());
-		SendMoney(refundAddress.Get(), nTotalValue, false, wtx2);
+		CSyscoinAddress refundaddress(PubKey.GetID());
+		SendMoney(refundaddress.Get(), nTotalValue, false, wtx2);
 	}	
 	return "";
 
@@ -560,6 +560,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		bool foundOffer = false;
 		bool foundCert = false;
 		bool foundEscrow = false;
+		bool foundAlias = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp, prevCertOp, prevEscrowOp, prevAliasOp;
