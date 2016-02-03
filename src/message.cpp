@@ -301,7 +301,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 				throw runtime_error("CheckMessageInputs(): failed to read alias from alias DB");
 			if (vtxPos.size() < 1)
 				throw runtime_error("CheckMessageInputs(): no alias result returned");
-			if(vtxPos.back().vchPubKey != theMessage.vchPubFromKey)
+			if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
 				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
 			break;
 		default:
@@ -400,7 +400,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CPubKey currentAliasKey(alias.vchPubKey);
 	CScript scriptPubKeyOrig, scriptPubKeyAliasOrig, scriptPubKey, scriptPubKeyAlias;
 	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchFromString(strFromAddress) << OP_2DROP;
 	scriptPubKeyAlias += scriptPubKeyAliasOrig;	
 	CPubKey PubKey = CPubKey(vchFromPubKey);
 	if(!PubKey.IsValid())
@@ -417,7 +417,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Invalid alias");
 
 	// check for alias existence in DB
-	vector<CAliasIndex> vtxAliasPos;
+	vtxAliasPos.clear();
 	if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxAliasPos))
 		throw runtime_error("failed to read alias from alias DB");
 	if (vtxAliasPos.size() < 1)
