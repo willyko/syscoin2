@@ -288,7 +288,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		
         // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
-            if (foundCert)
+            if (IsCertOp(prevOp))
                 return error(
                         "CheckCertInputs() : a non-syscoin transaction with a syscoin input");
             return true;
