@@ -697,9 +697,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+					return error("CheckOfferInputs(): failed to read alias from alias DB");
 				if (vtxAliasPos.size() < 1)
-					return runtime_error("CheckOfferInputs(): no alias result returned");
+					return error("CheckOfferInputs(): no alias result returned");
 				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias and offer pubkey's must match");
 			
@@ -750,9 +750,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+					return error("CheckOfferInputs(): failed to read alias from alias DB");
 				if (vtxAliasPos.size() < 1)
-					return runtime_error("CheckOfferInputs(): no alias result returned");
+					return error("CheckOfferInputs(): no alias result returned");
 				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_UPDATE: alias and offer pubkey's must match");
 			
@@ -836,9 +836,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+					return error("CheckOfferInputs(): failed to read alias from alias DB");
 				if (vtxAliasPos.size() < 1)
-					return runtime_error("CheckOfferInputs(): no alias result returned");
+					return error("CheckOfferInputs(): no alias result returned");
 				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: alias and offer pubkey's must match");
 			

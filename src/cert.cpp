@@ -336,9 +336,9 @@ bool CheckCertInputs(const CTransaction &tx,
 			if(!IsAliasOp(prevAliasOp))
 				return error("CheckCertInputs(): alias not provided as input");
 			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-				return runtime_error("CheckCertInputs(): failed to read alias from alias DB");
+				return error("CheckCertInputs(): failed to read alias from alias DB");
 			if (vtxAliasPos.size() < 1)
-				return runtime_error("CheckCertInputs(): no alias result returned");
+				return error("CheckCertInputs(): no alias result returned");
 			if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
 				return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
 			break;

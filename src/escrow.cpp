@@ -328,9 +328,9 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckEscrowInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return runtime_error("CheckEscrowInputs(): failed to read alias from alias DB");
+					return error("CheckEscrowInputs(): failed to read alias from alias DB");
 				if (vtxAliasPos.size() < 1)
-					return runtime_error("CheckEscrowInputs(): no alias result returned");
+					return error("CheckEscrowInputs(): no alias result returned");
 				if(vtxAliasPos.back().vchPubKey != theEscrow.vchBuyerKey)
 					return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: alias and escrow pubkey's must match");
 				break;

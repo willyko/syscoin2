@@ -298,9 +298,9 @@ bool CheckMessageInputs(const CTransaction &tx,
 			if(!IsAliasOp(prevAliasOp))
 				return error("CheckMessageInputs(): alias not provided as input");
 			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-				return runtime_error("CheckMessageInputs(): failed to read alias from alias DB");
+				return error("CheckMessageInputs(): failed to read alias from alias DB");
 			if (vtxPos.size() < 1)
-				return runtime_error("CheckMessageInputs(): no alias result returned");
+				return error("CheckMessageInputs(): no alias result returned");
 			if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
 				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
 		}
