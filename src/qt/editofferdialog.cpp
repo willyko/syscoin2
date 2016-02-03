@@ -34,6 +34,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->offerLabel->setVisible(true);
 	ui->offerEdit->setVisible(true);
 	ui->offerEdit->setEnabled(false);
+	ui->aliasEdit->setEnabled(true);
 	ui->currencyDisclaimer->setVisible(true);
 	ui->privateEdit->clear();
 	ui->privateEdit->addItem(QString("No"));
@@ -50,8 +51,9 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->certEdit->clear();
 	ui->certEdit->addItem(tr("Select Certificate (optional)"));
 	connect(ui->certEdit, SIGNAL(activated(int)), this, SLOT(certChanged(int)));
-	loadCerts();
 	loadAliases();
+	loadCerts();
+	
 	ui->descriptionEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
     switch(mode)
     {
@@ -67,6 +69,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
         setWindowTitle(tr("Edit Offer"));
         break;
     case NewCertOffer:
+		ui->aliasEdit->setEnabled(false);
 		ui->offerLabel->setVisible(false);
 		ui->offerEdit->setVisible(false);
         setWindowTitle(tr("New Offer(Certificate)"));
@@ -98,6 +101,7 @@ void EditOfferDialog::loadCerts()
 	UniValue result;
 	string name_str;
 	string title_str;
+	string alias_str;
 	int expired = 0;
 	
 	try {
@@ -107,6 +111,7 @@ void EditOfferDialog::loadCerts()
 		{
 			name_str = "";
 			title_str = "";
+			alias_str = "";
 			expired = 0;
 
 
@@ -128,7 +133,10 @@ void EditOfferDialog::loadCerts()
 					name_str = name_value.get_str();
 				const UniValue& title_value = find_value(o, "title");
 				if (title_value.type() == UniValue::VSTR)
-					title_str = title_value.get_str();			
+					title_str = title_value.get_str();	
+				const UniValue& alias_value = find_value(o, "alias");
+				if (alias_value.type() == UniValue::VSTR)
+					alias_str = alias_value.get_str();	
 				const UniValue& expired_value = find_value(o, "expired");
 				if (expired_value.type() == UniValue::VNUM)
 					expired = expired_value.get_int();
@@ -137,6 +145,7 @@ void EditOfferDialog::loadCerts()
 				{
 					QString name = QString::fromStdString(name_str);
 					QString title = QString::fromStdString(title_str);
+					QString alias = QString::fromStdString(alias_str);
 					QString certText = name + " - " + title;
 					ui->certEdit->addItem(certText,name);
 					if(name == cert)
@@ -145,6 +154,11 @@ void EditOfferDialog::loadCerts()
 						if ( index != -1 ) 
 						{
 						    ui->certEdit->setCurrentIndex(index);
+						}
+						index = ui->aliasEdit->findData(alias);
+						if ( index != -1 ) 
+						{
+						    ui->aliasEdit->setCurrentIndex(index);
 						}
 					}
 				}

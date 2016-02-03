@@ -274,7 +274,7 @@ string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, CAmou
 
 
 	bool found = false;
-	string value = stringFromVch(foundAlias.vchValue);
+	string value = stringFromVch(foundAlias.vchPublicValue);
 	
 	UniValue outerValue(UniValue::VSTR);
 	bool read = outerValue.read(value);
@@ -451,13 +451,17 @@ bool CheckAliasInputs(const CTransaction &tx,
 			return error(
 					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
 					tx.GetHash().GetHex().c_str());
-		// unserialize alias UniValue from txn, check for valid
+		// unserialize alias from txn, check for valid
 		CAliasIndex theAlias(tx);
-		if (theAlias.IsNull())
+		if (theAlias.IsNull()  && op != OP_ALIAS_UPDATE)
 			return error("CheckAliasInputs() : null alias");
-		if(theAlias.vchValue.size() > MAX_VALUE_LENGTH)
+		if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
 		{
-			return error("alias value too big");
+			return error("alias pub value too big");
+		}
+		if(theAlias.vchPrivateValue.size() > MAX_VALUE_LENGTH)
+		{
+			return error("alias priv value too big");
 		}
 		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
 		{
@@ -505,10 +509,17 @@ bool CheckAliasInputs(const CTransaction &tx,
 				if(!vtxPos.empty())
 				{
 					const CAliasIndex& dbAlias = vtxPos.back();
-					if(theAlias.vchValue.empty())
-						theAlias.vchValue = dbAlias.vchValue;	
-					if(theAlias.vchPubKey.empty())
-						theAlias.vchPubKey = dbAlias.vchPubKey;
+					if(theAlias.IsNull())
+						theAlias = dbAlias;
+					else
+					{
+						if(theAlias.vchPublicValue.empty())
+							theAlias.vchPublicValue = dbAlias.vchPublicValue;	
+						if(theAlias.vchPrivateValue.empty())
+							theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
+						if(theAlias.vchPubKey.empty())
+							theAlias.vchPubKey = dbAlias.vchPubKey;
+					}
 				}
 			
 	
@@ -857,23 +868,27 @@ void CreateFeeRecipient(const CScript& scriptPubKey, const vector<unsigned char>
 	recipient = recipienttmp;
 }
 UniValue aliasnew(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() != 2 )
+	if (fHelp || 2 > params.size() || 3 < params.size())
 		throw runtime_error(
-				"aliasnew <aliasname> <value>\n"
+		"aliasnew <aliasname> <public value> [private value]\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 1023 chars max.\n"
-						"Perform a first update after an aliasnew reservation."
+						"<public value> alias public profile data, 1023 chars max.\n"
+						"<private value> alias private profile data, 1023 chars max. Will be private and readable by owner only.\n"
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
-	vector<unsigned char> vchValue;
-	string strValue = params[1].get_str();
+	vector<unsigned char> vchPublicValue;
+	string strPublicValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
-		boost::replace_all(strValue, "Qu", "\"");
-	vchValue = vchFromString(strValue);
+		boost::replace_all(strPublicValue, "Qu", "\"");
+	vchPublicValue = vchFromString(strPublicValue);
 
-	if (vchValue.size() > MAX_VALUE_LENGTH)
-		throw runtime_error("alias value cannot exceed 1023 bytes!");
+	string strPrivateValue = params[2].get_str();
+	vchPrivateValue = vchFromString(strPrivateValue);
+	if (vchPublicValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias public value cannot exceed 1023 bytes!");
+	if (vchPrivateValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias private value cannot exceed 1023 bytes!");
 	if (vchName.size() > MAX_NAME_LENGTH)
 		throw runtime_error("alias name cannot exceed 255 bytes!");
 
@@ -908,11 +923,24 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	scriptPubKey += scriptPubKeyOrig;
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
 
+	if(vchPrivateValue.size() > 0)
+	{
+		string strCipherText;
+		if(!EncryptMessage(vchPubKey, vchPrivateValue, strCipherText))
+		{
+			throw runtime_error("Could not encrypt private alias value!");
+		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			throw runtime_error("private data length cannot exceed 1023 bytes!");
+		vchPrivateValue = vchFromString(strCipherText);
+	}
+
     // build alias
     CAliasIndex newAlias;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchPubKey;
-	newAlias.vchValue = vchValue;
+	newAlias.vchPublicValue = vchPublicValue;
+	newAlias.vchPrivateValue = vchPrivateValue;
 
     vector<CRecipient> vecSend;
 	CRecipient recipient;
@@ -931,31 +959,37 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	return res;
 }
 UniValue aliasupdate(const UniValue& params, bool fHelp) {
-	if (fHelp || 2 > params.size() || 3 < params.size())
+	if (fHelp || 2 > params.size() || 4 < params.size())
 		throw runtime_error(
-				"aliasupdate <aliasname> <value> [<toalias>]\n"
+		"aliasupdate <aliasname> <public value> [private value] [<toalias>]\n"
 						"Update and possibly transfer an alias.\n"
 						"<aliasname> alias name.\n"
-						"<value> alias value, 1023 chars max.\n"
-                        "<toalias> receiver syscoin alias, if transferring alias.\n"
+						"<public value> alias public profile data, 1023 chars max.\n"
+						"<private value> alias private profile data, 1023 chars max. Will be private and readable by owner only.\n"
+						"<toalias> receiver syscoin alias, if transferring alias.\n"
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
-	vector<unsigned char> vchValue;
-	string strValue = params[1].get_str();
+	vector<unsigned char> vchPublicValue;
+	string strPublicValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
-		boost::replace_all(strValue, "Qu", "\"");
-	vchValue = vchFromString(strValue);
+		boost::replace_all(strPublicValue, "Qu", "\"");
+	vchPublicValue = vchFromString(strPublicValue);
+	string strPrivateValue = params[2].get_str();
+	vchPrivateValue = vchFromString(strPrivateValue);
+	if (vchPublicValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias public value cannot exceed 1023 bytes!");
+	if (vchPrivateValue.size() > MAX_VALUE_LENGTH)
+		throw runtime_error("alias public value cannot exceed 1023 bytes!");
 	vector<unsigned char> vchPubKey;
-	if (vchValue.size() > MAX_VALUE_LENGTH)
-		throw runtime_error("alias value cannot exceed 1023 bytes!");
+
 	CWalletTx wtx;
 	CAliasIndex updateAlias;
 	const CWalletTx* wtxIn;
 	CScript scriptPubKeyOrig;
 	string strPubKey;
-    if (params.size() == 3) {
-		string strAddress = params[2].get_str();
+    if (params.size() >= 4) {
+		string strAddress = params[3].get_str();
 		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
 		if (!myAddress.IsValid())
 			throw runtime_error("Invalid syscoin address");
@@ -975,7 +1009,6 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	}
 
 	EnsureWalletIsUnlocked();
-
 	CTransaction tx;
 	if (!GetTxOfAlias(vchName, tx))
 		throw runtime_error("could not find an alias with this name");
@@ -996,13 +1029,29 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
     if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
         throw runtime_error("could not read alias from DB");
     theAlias = vtxPos.back();
+	if(vchPubKey.empty())
+		vchPubKey = theAlias.vchPubKey;
+	if(vchPrivateValue.size() > 0)
+	{
+		string strCipherText;
+		if(!EncryptMessage(vchPubKey, vchPrivateValue, strCipherText))
+		{
+			throw runtime_error("Could not encrypt private alias value!");
+		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			throw runtime_error("private data length cannot exceed 1023 bytes!");
+		vchPrivateValue = vchFromString(strCipherText);
+	}
+
 	CAliasIndex copyAlias = theAlias;
 	theAlias.ClearAlias();
 
 	theAlias.nHeight = chainActive.Tip()->nHeight;
-	if(copyAlias.vchValue != vchValue)
-		theAlias.vchValue = vchValue;
-	if(!vchPubKey.empty() && copyAlias.vchPubKey != vchPubKey)
+	if(copyAlias.vchPublicValue != vchPublicValue)
+		theAlias.vchPublicValue = vchPublicValue;
+	if(copyAlias.vchPrivateValue != vchPrivateValue)
+		theAlias.vchPrivateValue = vchPrivateValue;
+	if(copyAlias.vchPubKey != vchPubKey)
 		theAlias.vchPubKey = vchPubKey;
 	else
 	{
@@ -1097,7 +1146,14 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// build the output UniValue
 			UniValue oName(UniValue::VOBJ);
 			oName.push_back(Pair("name", stringFromVch(vchName)));
-			oName.push_back(Pair("value", stringFromVch(alias.vchValue)));
+			oName.push_back(Pair("value", stringFromVch(alias.vchPublicValue)));
+			string strPrivateValue = "";
+			if(alias.vchPrivateValue.size() > 0)
+				strPrivateValue = "Encrypted for alias owner";
+			string strDecrypted = "";
+			if(DecryptMessage(alias.vchPubKey, alias.vchPrivateValue, strDecrypted))
+				strPrivateValue = strDecrypted;		
+			oName.push_back(Pair("privatevalue", strPrivateValue));
 			expired_block = nHeight + GetAliasExpirationDepth();
 			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 			{
@@ -1151,16 +1207,21 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 			throw runtime_error("failed to read transaction from disk");
 
 		UniValue oName(UniValue::VOBJ);
-		vector<unsigned char> vchValue;
 		uint64_t nHeight;
 		int expired = 0;
 		int expires_in = 0;
 		int expired_block = 0;
 		nHeight = vtxPos.back().nHeight;
 		oName.push_back(Pair("name", stringFromVch(vchName)));
-		string value = stringFromVch(vchValue);
 		const CAliasIndex &alias= vtxPos.back();
-		oName.push_back(Pair("value", stringFromVch(alias.vchValue)));
+		oName.push_back(Pair("value", stringFromVch(alias.vchPublicValue)));
+		string strPrivateValue = "";
+		if(alias.vchPrivateValue.size() > 0)
+			strPrivateValue = "Encrypted for alias owner";
+		string strDecrypted = "";
+		if(DecryptMessage(alias.vchPubKey, alias.vchPrivateValue, strDecrypted))
+			strPrivateValue = strDecrypted;		
+		oName.push_back(Pair("privatevalue", strPrivateValue));
 		oName.push_back(Pair("txid", tx.GetHash().GetHex()));
 		CPubKey PubKey(alias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
@@ -1226,14 +1287,19 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			int expires_in = 0;
 			int expired_block = 0;
 			UniValue oName(UniValue::VOBJ);
-			vector<unsigned char> vchValue;
 			uint64_t nHeight;
 			nHeight = txPos2.nHeight;
 			oName.push_back(Pair("name", name));
 			string opName = aliasFromOp(op);
 			oName.push_back(Pair("aliastype", opName));
-			string value = stringFromVch(vchValue);
-			oName.push_back(Pair("value", stringFromVch(txPos2.vchValue)));
+			oName.push_back(Pair("value", stringFromVch(txPos2.vchPublicValue)));
+			string strPrivateValue = "";
+			if(alias.vchPrivateValue.size() > 0)
+				strPrivateValue = "Encrypted for alias owner";
+			string strDecrypted = "";
+			if(DecryptMessage(txPos2.vchPubKey, alias.vchPrivateValue, strDecrypted))
+				strPrivateValue = strDecrypted;		
+			oName.push_back(Pair("privatevalue", strPrivateValue));
 			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
@@ -1342,7 +1408,14 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 		if (!GetSyscoinTransaction(txName.nHeight, txHash, tx, Params().GetConsensus()))
 			continue;
 
-		oName.push_back(Pair("value", stringFromVch(txName.vchValue)));
+		oName.push_back(Pair("value", stringFromVch(txName.vchPublicValue)));
+		string strPrivateValue = "";
+		if(alias.vchPrivateValue.size() > 0)
+			strPrivateValue = "Encrypted for alias owner";
+		string strDecrypted = "";
+		if(DecryptMessage(txName.vchPubKey, alias.vchPrivateValue, strDecrypted))
+			strPrivateValue = strDecrypted;		
+		oName.push_back(Pair("privatevalue", strPrivateValue));
 		oName.push_back(Pair("txid", txHash.GetHex()));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();
@@ -1419,7 +1492,14 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 			continue;
 
 		oName.push_back(Pair("txid", txName.txHash.GetHex()));
-		oName.push_back(Pair("value", stringFromVch(txName.vchValue)));
+		oName.push_back(Pair("value", stringFromVch(txName.vchPublicValue)));
+		string strPrivateValue = "";
+		if(alias.vchPrivateValue.size() > 0)
+			strPrivateValue = "Encrypted for alias owner";
+		string strDecrypted = "";
+		if(DecryptMessage(txName.vchPubKey, alias.vchPrivateValue, strDecrypted))
+			strPrivateValue = strDecrypted;		
+		oName.push_back(Pair("privatevalue", strPrivateValue));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();
 		if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)

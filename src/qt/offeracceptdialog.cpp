@@ -16,9 +16,9 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-OfferAcceptDialog::OfferAcceptDialog(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
+OfferAcceptDialog::OfferAcceptDialog(QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OfferAcceptDialog), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
+    ui(new Ui::OfferAcceptDialog), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
 {
     ui->setupUi(this);
 	int precision;
@@ -106,7 +106,7 @@ void OfferAcceptDialog::acceptOffer()
 		UniValue valError;
 		UniValue valResult;
 		UniValue valId;
-		UniValue result ;
+		UniValue result;
 		string strReply;
 		string strError;
 
@@ -119,6 +119,7 @@ void OfferAcceptDialog::acceptOffer()
 			return;
 		}
 		this->offerPaid = false;
+		params.push_back(this->alias.toStdString());
 		params.push_back(this->offer.toStdString());
 		params.push_back(this->quantity.toStdString());
 		params.push_back(this->notes.toStdString());

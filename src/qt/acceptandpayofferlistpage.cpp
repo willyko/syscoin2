@@ -51,9 +51,74 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
 	ui->infoCert->setVisible(false);
 	ui->certLabel->setVisible(false);
+	ui->aliasEdit->setVisible(false);
+	ui->aliasLabel->setVisible(false);
 	RefreshImage();
 
 }
+void AcceptandPayOfferListPage::loadAliases()
+{
+	ui->aliasEdit->clear();
+	string strMethod = string("aliaslist");
+    UniValue params(UniValue::VARR); 
+	UniValue result ;
+	string name_str;
+	int expired = 0;
+	
+	try {
+		result = tableRPC.execute(strMethod, params);
+
+		if (result.type() == UniValue::VARR)
+		{
+			name_str = "";
+			expired = 0;
+
+
+	
+			const UniValue &arr = result.get_array();
+		    for (unsigned int idx = 0; idx < arr.size(); idx++) {
+			    const UniValue& input = arr[idx];
+				if (input.type() != UniValue::VOBJ)
+					continue;
+				const UniValue& o = input.get_obj();
+				name_str = "";
+
+				expired = 0;
+
+
+		
+				const UniValue& name_value = find_value(o, "name");
+				if (name_value.type() == UniValue::VSTR)
+					name_str = name_value.get_str();		
+				const UniValue& expired_value = find_value(o, "expired");
+				if (expired_value.type() == UniValue::VNUM)
+					expired = expired_value.get_int();
+				
+				if(expired == 0)
+				{
+					QString name = QString::fromStdString(name_str);
+					ui->aliasEdit->addItem(name);					
+				}
+				
+			}
+		}
+	}
+	catch (UniValue& objError)
+	{
+		string strError = find_value(objError, "message").get_str();
+		QMessageBox::critical(this, windowTitle(),
+			tr("Could not refresh cert list: %1").arg(QString::fromStdString(strError)),
+				QMessageBox::Ok, QMessageBox::Ok);
+	}
+	catch(std::exception& e)
+	{
+		QMessageBox::critical(this, windowTitle(),
+			tr("There was an exception trying to refresh the cert list: ") + QString::fromStdString(e.what()),
+				QMessageBox::Ok, QMessageBox::Ok);
+	}         
+ 
+}
+
 void AcceptandPayOfferListPage::on_imageButton_clicked()
 {
 	if(m_url.isValid())
@@ -106,7 +171,7 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialog dlg(ui->aliasEdit->text(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -146,6 +211,13 @@ void AcceptandPayOfferListPage::acceptOffer()
 	{
 		QMessageBox::critical(this, windowTitle(),
 			tr("Please enter pertinent information required to the offer in the <b>Notes</b> field (address, e-mail address, shipping notes, etc)."),
+			QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+	if(ui->aliasEdit->text().size() <= 0)
+	{
+		QMessageBox::critical(this, windowTitle(),
+			tr("Please choose an alias that you own before purchasing this offer."),
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}
@@ -255,16 +327,21 @@ void AcceptandPayOfferListPage::setValue(const QString& strAlias, const QString&
     ui->offeridEdit->setText(strRand);
 	if(!offer.vchCert.empty())
 	{
+		loadAliases();
 		ui->infoCert->setVisible(true);
 		ui->certLabel->setVisible(true);
 		ui->infoCert->setText(QString::fromStdString(stringFromVch(offer.vchCert)));
-
+		ui->aliasEdit->setVisible(true);
+		ui->aliasLabel->setVisible(true);
 	}
 	else
 	{
 		ui->infoCert->setVisible(false);
 		ui->infoCert->setText("");
 		ui->certLabel->setVisible(false);
+		ui->aliasEdit->setVisible(false);
+		ui->aliasEdit->setText("");
+		ui->aliasLabel->setVisible(false);
 	}
 	ui->sellerEdit->setText(strAlias);
 	ui->infoTitle->setText(QString::fromStdString(stringFromVch(offer.sTitle)));

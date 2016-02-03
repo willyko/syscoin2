@@ -229,7 +229,32 @@ bool CheckMessageInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
+        const COutPoint *prevOutput = NULL;
+        CCoins prevCoins;
+
+		int prevAliasOp = 0;
 		
+        vector<vector<unsigned char> > vvchPrevAliasArgs;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!fExternal)
+			{
+				// ensure inputs are unspent when doing consensus check to add to block
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
+			}
+			else
+				GetPreviousInput(prevOutput, op, vvch);
+			if (IsAliasOp(op))
+			{
+				prevAliasOp = op;
+				vvchPrevAliasArgs = vvch;
+				break;
+			}
+		}	
         // Make sure message outputs are not spent by a regular transaction, or the message would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
@@ -247,11 +272,11 @@ bool CheckMessageInputs(const CTransaction &tx,
             return error("CheckMessageInputs() : null message");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("message tx GUID too big");
-		if(!theMessage.vchPubKeyTo.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
+		if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
 		{
 			return error("message public key to, invalid length");
 		}
-		if(!theMessage.vchPubKeyFrom.empty() && !IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
+		if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
 		{
 			return error("message public key from, invalid length");
 		}
@@ -269,6 +294,15 @@ bool CheckMessageInputs(const CTransaction &tx,
 		}
 		switch (op) {
 		case OP_MESSAGE_ACTIVATE:
+			if(!IsAliasOp(prevAliasOp))
+				return error("CheckMessageInputs(): alias not provided as input");
+			vector<CAliasIndex> vtxPos;
+			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+				throw runtime_error("CheckMessageInputs(): failed to read alias from alias DB");
+			if (vtxPos.size() < 1)
+				throw runtime_error("CheckMessageInputs(): no alias result returned");
+			if(vtxPos.back().vchPubKey != theMessage.vchPubFromKey)
+				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
 			break;
 		default:
 			return error( "CheckMessageInputs() : message transaction has unknown op");
@@ -338,77 +372,64 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CSyscoinAddress fromAddress, toAddress;
 	EnsureWalletIsUnlocked();
 
-	// strToAddress is a pubkey otherwise it's an alias same with strFromAddress
-	try
-	{
-		const vector<unsigned char> &vchPubKey = vchFromString(strFromAddress);		
-		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchFromPubKey));
-		CPubKey PubKey  = CPubKey(vchFromPubKey);
-		if(!PubKey.IsValid())
-		{
-			throw runtime_error("Invalid sending public key");
-		}
-		fromAddress = CSyscoinAddress(PubKey.GetID());
-		if (!fromAddress.IsValid())
-			throw runtime_error("Invalid syscoin address from pubkey");
-	}
-	catch(...)
-	{
-		fromAddress = CSyscoinAddress(strFromAddress);
-		if (!fromAddress.IsValid())
-			throw runtime_error("Invalid syscoin address");
-		if (!fromAddress.isAlias)
-			throw runtime_error("Invalid alias");
 
-		// check for alias existence in DB
-		vector<CAliasIndex> vtxAliasPos;
-		if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxAliasPos))
-			throw runtime_error("failed to read alias from alias DB");
-		if (vtxAliasPos.size() < 1)
-			throw runtime_error("no result returned");
-		CAliasIndex alias = vtxAliasPos.back();
-		vchFromPubKey = alias.vchPubKey;
-		CPubKey PubKey = CPubKey(vchFromPubKey);
-		if(!PubKey.IsValid())
-		{
-			throw runtime_error("Invalid sending public key");
-		}
-	}	
-	try
-	{
-		const vector<unsigned char> &vchPubKey = vchFromString(strToAddress);		
-		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchToPubKey));
-		CPubKey PubKey  = CPubKey(vchToPubKey);
-		if(!PubKey.IsValid())
-		{
-			throw runtime_error("Invalid recv public key");
-		}
-		toAddress = CSyscoinAddress(PubKey.GetID());
-		if (!toAddress.IsValid())
-			throw runtime_error("Invalid syscoin address from pubkey");
-	}
-	catch(...)
-	{
-		toAddress = CSyscoinAddress(strToAddress);
-		if (!toAddress.IsValid())
-			throw runtime_error("Invalid syscoin address");
-		if (!toAddress.isAlias)
-			throw runtime_error("Invalid alias");
+	fromAddress = CSyscoinAddress(strFromAddress);
+	if (!fromAddress.IsValid())
+		throw runtime_error("Invalid syscoin address");
+	if (!fromAddress.isAlias)
+		throw runtime_error("Invalid alias");
 
-		// check for alias existence in DB
-		vector<CAliasIndex> vtxAliasPos;
-		if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxAliasPos))
-			throw runtime_error("failed to read alias from alias DB");
-		if (vtxAliasPos.size() < 1)
-			throw runtime_error("no result returned");
-		CAliasIndex alias = vtxAliasPos.back();
-		vchToPubKey = alias.vchPubKey;
-		CPubKey PubKey = CPubKey(vchToPubKey);
-		if(!PubKey.IsValid())
-		{
-			throw runtime_error("Invalid recv public key");
-		}
-	}	
+	// check for alias existence in DB
+	vector<CAliasIndex> vtxAliasPos;
+	if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxAliasPos))
+		throw runtime_error("failed to read alias from alias DB");
+	if (vtxAliasPos.size() < 1)
+		throw runtime_error("no result returned");
+	CAliasIndex alias = vtxAliasPos.back();
+	CTransaction aliastx;
+	if (!GetTxOfAlias(vchFromString(strFromAddress), aliastx))
+		throw runtime_error("could not find an alias with this name");
+
+    if(!IsSyscoinTxMine(aliastx)) {
+		throw runtime_error("This alias is not yours.");
+    }
+	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
+	if (wtxAliasIn == NULL)
+		throw runtime_error("this alias is not in your wallet");
+	vchFromPubKey = alias.vchPubKey;
+	CPubKey currentAliasKey(alias.vchPubKey);
+	CScript scriptPubKeyOrig, scriptPubKeyAliasOrig, scriptPubKey, scriptPubKeyAlias;
+	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyAliasOrig;	
+	CPubKey PubKey = CPubKey(vchFromPubKey);
+	if(!PubKey.IsValid())
+	{
+		throw runtime_error("Invalid sending public key");
+	}
+	
+
+
+	toAddress = CSyscoinAddress(strToAddress);
+	if (!toAddress.IsValid())
+		throw runtime_error("Invalid syscoin address");
+	if (!toAddress.isAlias)
+		throw runtime_error("Invalid alias");
+
+	// check for alias existence in DB
+	vector<CAliasIndex> vtxAliasPos;
+	if (!paliasdb->ReadAlias(vchFromString(toAddress.aliasName), vtxAliasPos))
+		throw runtime_error("failed to read alias from alias DB");
+	if (vtxAliasPos.size() < 1)
+		throw runtime_error("no result returned");
+	alias = vtxAliasPos.back();
+	vchToPubKey = alias.vchPubKey;
+	PubKey = CPubKey(vchToPubKey);
+	if(!PubKey.IsValid())
+	{
+		throw runtime_error("Invalid recv public key");
+	}
+	
 
 	if (!IsMine(*pwalletMain, fromAddress.Get()))
 		throw runtime_error("fromalias must be yours");
@@ -422,7 +443,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
     // this is a syscoin transaction
     CWalletTx wtx;
 
-	CScript scriptPubKeyOrig, scriptPubKey;
+	
 	scriptPubKeyOrig= GetScriptForDestination(toAddress.Get());
 	scriptPubKey << CScript::EncodeOP_N(OP_MESSAGE_ACTIVATE) << vchMessage << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
@@ -458,6 +479,11 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	CRecipient aliasRecipient;
+	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
+	// we attach alias input here so noone can create an offer under anyone elses alias/pubkey
+	if(wtxAliasIn != NULL)
+		vecSend.push_back(aliasRecipient);
 
 	const vector<unsigned char> &data = newMessage.Serialize();
 	CScript scriptData;
@@ -465,7 +491,10 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	const CWalletTx * wtxCertIn=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxAliasIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

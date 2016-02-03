@@ -24,7 +24,8 @@ class CAliasIndex {
 public:
     uint256 txHash;
     int64_t nHeight;
-    std::vector<unsigned char> vchValue;
+    std::vector<unsigned char> vchPublicValue;
+	std::vector<unsigned char> vchPrivateValue;
 	std::vector<unsigned char> vchPubKey;
     CAliasIndex() { 
         SetNull();
@@ -35,7 +36,8 @@ public:
     }
 	void ClearAlias()
 	{
-		vchValue.clear();
+		vchPublicValue.clear();
+		vchPrivateValue.clear();
 		vchPubKey.clear();
 	}
 	ADD_SERIALIZE_METHODS;
@@ -43,20 +45,21 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {        
 		READWRITE(txHash);
         READWRITE(VARINT(nHeight));
-    	READWRITE(vchValue);
+    	READWRITE(vchPublicValue);
+		READWRITE(vchPrivateValue);
 		READWRITE(vchPubKey);
 	}
 
     friend bool operator==(const CAliasIndex &a, const CAliasIndex &b) {
-        return (a.nHeight == b.nHeight && a.txHash == b.txHash && a.vchValue == b.vchValue && a.vchPubKey == b.vchPubKey);
+		return (a.nHeight == b.nHeight && a.txHash == b.txHash && a.vchPublicValue == b.vchPrivateValue && a.vchPubKey == b.vchPubKey);
     }
 
     friend bool operator!=(const CAliasIndex &a, const CAliasIndex &b) {
         return !(a == b);
     }
     
-    void SetNull() { txHash.IsNull(); nHeight = 0; vchValue.clear(); vchPubKey.clear(); }
-    bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vchValue.empty() && vchPubKey.empty()); }
+    void SetNull() { txHash.IsNull(); nHeight = 0; vchPublicValue.clear(); vchPrivateValue.clear(); vchPubKey.clear(); }
+    bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vchPublicValue.empty() && vchPrivateValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();
 };

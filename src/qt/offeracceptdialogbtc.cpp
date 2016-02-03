@@ -73,6 +73,7 @@ void OfferAcceptDialogBTC::acceptOffer()
 			return;
 		}
 		this->offerPaid = false;
+		params.push_back(this->alias.toStdString());
 		params.push_back(this->offer.toStdString());
 		params.push_back(this->quantity.toStdString());
 		params.push_back(this->notes.toStdString());

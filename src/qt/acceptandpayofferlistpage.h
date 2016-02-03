@@ -47,6 +47,7 @@ public:
 	void OpenPayDialog();
 	void OpenBTCPayDialog();
 	void RefreshImage();
+	void loadAliases();
 public Q_SLOTS:
     void acceptOffer();
 	bool lookup(const QString &id = QString(""));
