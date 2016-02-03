@@ -283,7 +283,7 @@ bool CheckCertInputs(const CTransaction &tx,
 				break;
 
 			if (!foundCert && IsCertOp(op)) {
-				found = true; 
+				foundCert = true; 
 				prevOp = op;
 				vvchPrevArgs = vvch;
 			}
@@ -325,6 +325,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
+		vector<CAliasIndex> vtxAliasPos;
 		switch (op) {
 		case OP_CERT_ACTIVATE:
 			if (foundCert)
@@ -334,12 +335,11 @@ bool CheckCertInputs(const CTransaction &tx,
 				return error("CheckCertInputs(): cert must be provided a pubkey");
 			if(!IsAliasOp(prevAliasOp))
 				return error("CheckCertInputs(): alias not provided as input");
-			vector<CAliasIndex> vtxPos;
-			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-				throw runtime_error("CheckCertInputs(): failed to read alias from alias DB");
-			if (vtxPos.size() < 1)
-				throw runtime_error("CheckCertInputs(): no alias result returned");
-			if(vtxPos.back().vchPubKey != theCert.vchPubKey)
+			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+				return runtime_error("CheckCertInputs(): failed to read alias from alias DB");
+			if (vtxAliasPos.size() < 1)
+				return runtime_error("CheckCertInputs(): no alias result returned");
+			if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
 				return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
 			break;
 

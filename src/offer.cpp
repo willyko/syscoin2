@@ -668,6 +668,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		{
 			return error("An offer that only accepts BTC must have BTC specified as its currency");
 		}
+		vector<CAliasIndex> vtxAliasPos;
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
 			if (foundOffer || (foundCert && !IsCertOp(prevCertOp)) )
@@ -695,12 +696,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 			else {
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
-				vector<CAliasIndex> vtxPos;
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-					throw runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
-				if (vtxPos.size() < 1)
-					throw runtime_error("CheckOfferInputs(): no alias result returned");
-				if(vtxPos.back().vchPubKey != theOffer.vchPubKey)
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return runtime_error("CheckOfferInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias and offer pubkey's must match");
 			
 			}
@@ -749,12 +749,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 			else {
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
-				vector<CAliasIndex> vtxPos;
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-					throw runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
-				if (vtxPos.size() < 1)
-					throw runtime_error("CheckOfferInputs(): no alias result returned");
-				if(vtxPos.back().vchPubKey != theOffer.vchPubKey)
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return runtime_error("CheckOfferInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_UPDATE: alias and offer pubkey's must match");
 			
 			}
@@ -836,12 +835,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 			else {
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckOfferInputs(): alias not provided as input");
-				vector<CAliasIndex> vtxPos;
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-					throw runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
-				if (vtxPos.size() < 1)
-					throw runtime_error("CheckOfferInputs(): no alias result returned");
-				if(vtxPos.back().vchPubKey != theOffer.vchPubKey)
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return runtime_error("CheckOfferInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return runtime_error("CheckOfferInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: alias and offer pubkey's must match");
 			
 			}
