@@ -163,9 +163,12 @@ bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
 bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
+	LogPrintf("DecodeAndParseEscrowTx\n");
 	CEscrow escrow;
 	bool decode = DecodeEscrowTx(tx, op, nOut, vvch);
+	LogPrintf("DecodeAndParseEscrowTx1\n");
 	bool parse = escrow.UnserializeFromTx(tx);
+	LogPrintf("DecodeAndParseEscrowTx2\n");
 	return decode && parse;
 }
 bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,

@@ -145,8 +145,11 @@ bool DecodeAndParseMessageTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
 	CMessage message;
+	LogPrintf("DecodeAndParseMessageTx\n");
 	bool decode = DecodeMessageTx(tx, op, nOut, vvch);
+	LogPrintf("DecodeAndParseMessageTx1\n");
 	bool parse = message.UnserializeFromTx(tx);
+	LogPrintf("DecodeAndParseMessageTx2\n");
 	return decode && parse;
 }
 bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut,
