@@ -25,6 +25,7 @@ private:
 	QString offer;
 	QString sellerAlias;
 	QString address;
+	QString alias;
 	bool offerPaid; 
 	
 

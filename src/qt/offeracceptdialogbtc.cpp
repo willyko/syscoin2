@@ -14,9 +14,9 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
+OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OfferAcceptDialogBTC), offer(offer), notes(notes), quantity(quantity), title(title), sellerAlias(sellerAlias), address(address)
+    ui(new Ui::OfferAcceptDialogBTC), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), sellerAlias(sellerAlias), address(address)
 {
     ui->setupUi(this);
 	double dblPrice = qstrPrice.toDouble()*quantity.toUInt();
