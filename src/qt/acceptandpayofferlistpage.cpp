@@ -171,7 +171,7 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialog dlg(ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -185,7 +185,7 @@ void AcceptandPayOfferListPage::OpenPayDialog()
 }
 void AcceptandPayOfferListPage::OpenBTCPayDialog()
 {
-	OfferAcceptDialogBTC dlg(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialogBTC dlg(ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -214,7 +214,7 @@ void AcceptandPayOfferListPage::acceptOffer()
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}
-	if(ui->aliasEdit->itemData(ui->aliasEdit->currentIndex()).toString().size() <= 0)
+	if(ui->aliasEdit->currentText().size() <= 0)
 	{
 		QMessageBox::critical(this, windowTitle(),
 			tr("Please choose an alias that you own before purchasing this offer."),
