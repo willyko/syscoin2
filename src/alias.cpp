@@ -878,6 +878,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
 	vector<unsigned char> vchPublicValue;
+	vector<unsigned char> vchPrivateValue;
 	string strPublicValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
 		boost::replace_all(strPublicValue, "Qu", "\"");
@@ -971,6 +972,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
 	vector<unsigned char> vchPublicValue;
+	vector<unsigned char> vchPrivateValue;
 	string strPublicValue = params[1].get_str();
 	if(params[0].get_str() == "SYS_RATES")
 		boost::replace_all(strPublicValue, "Qu", "\"");
@@ -1294,10 +1296,10 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 			oName.push_back(Pair("aliastype", opName));
 			oName.push_back(Pair("value", stringFromVch(txPos2.vchPublicValue)));
 			string strPrivateValue = "";
-			if(alias.vchPrivateValue.size() > 0)
+			if(txPos2.vchPrivateValue.size() > 0)
 				strPrivateValue = "Encrypted for alias owner";
 			string strDecrypted = "";
-			if(DecryptMessage(txPos2.vchPubKey, alias.vchPrivateValue, strDecrypted))
+			if(DecryptMessage(txPos2.vchPubKey, txPos2.vchPrivateValue, strDecrypted))
 				strPrivateValue = strDecrypted;		
 			oName.push_back(Pair("privatevalue", strPrivateValue));
 			oName.push_back(Pair("txid", tx.GetHash().GetHex()));
@@ -1494,10 +1496,10 @@ UniValue aliasscan(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("txid", txName.txHash.GetHex()));
 		oName.push_back(Pair("value", stringFromVch(txName.vchPublicValue)));
 		string strPrivateValue = "";
-		if(alias.vchPrivateValue.size() > 0)
+		if(txName.vchPrivateValue.size() > 0)
 			strPrivateValue = "Encrypted for alias owner";
 		string strDecrypted = "";
-		if(DecryptMessage(txName.vchPubKey, alias.vchPrivateValue, strDecrypted))
+		if(DecryptMessage(txName.vchPubKey, txName.vchPrivateValue, strDecrypted))
 			strPrivateValue = strDecrypted;		
 		oName.push_back(Pair("privatevalue", strPrivateValue));
         oName.push_back(Pair("lastupdate_height", nHeight));
