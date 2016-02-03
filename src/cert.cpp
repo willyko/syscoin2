@@ -352,8 +352,6 @@ bool CheckCertInputs(const CTransaction &tx,
 
 			break;
 
-        
-
 		case OP_CERT_TRANSFER:
 			// validate conditions
 			if ( !foundCert || !IsCertOp(prevOp))
