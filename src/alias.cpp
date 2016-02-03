@@ -405,7 +405,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-		bool found = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp = 0;
@@ -425,22 +424,15 @@ bool CheckAliasInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(prevOutput, op, vvch);
 			
-			
-			if(found)
-				break;
 
-			if (!found && IsAliasOp(op)) {
-				found = true; 
+			if (IsAliasOp(op)) {
 				prevOp = op;
 				vvchPrevArgs = vvch;
+				break;
 			}
 		}
-		if(!found)vvchPrevArgs.clear();
 		// Make sure alias outputs are not spent by a regular transaction, or the alias would be lost
 		if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			if (found)
-				return error(
-						"CheckAliasInputs() : a non-syscoin transaction with a syscoin input");
 			LogPrintf("CheckAliasInputs() : non-syscoin transaction\n");
 			return true;
 		}
@@ -479,11 +471,8 @@ bool CheckAliasInputs(const CTransaction &tx,
 
 		case OP_ALIAS_UPDATE:
 
-			if (!found)
+			if (!IsAliasOp(prevOp))
 				return error("aliasupdate previous tx not found");
-			if (prevOp != OP_ALIAS_ACTIVATE && prevOp != OP_ALIAS_UPDATE)
-				return error("aliasupdate tx without correct previous alias tx");
-
 			// Check name
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckAliasInputs() : aliasupdate alias mismatch");

@@ -250,8 +250,32 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-        bool found = false;
-   
+		const COutPoint *prevOutput = NULL;
+		CCoins prevCoins;
+		int prevAliasOp = 0;
+		vector<vector<unsigned char> > vvchPrevAliasArgs;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!fExternal)
+			{
+				
+				// ensure inputs are unspent when doing consensus check to add to block
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
+			}
+			else
+				GetPreviousInput(prevOutput, op, vvch);
+			
+			
+			if (IsAliasOp(op)) {
+				prevAliasOp = op;
+				vvchPrevAliasArgs = vvch;
+				break;
+			}
+		}
         // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
@@ -301,6 +325,15 @@ bool CheckEscrowInputs(const CTransaction &tx,
 
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckEscrowInputs(): alias not provided as input");
+				vector<CAliasIndex> vtxPos;
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+					throw runtime_error("CheckEscrowInputs(): failed to read alias from alias DB");
+				if (vtxPos.size() < 1)
+					throw runtime_error("CheckEscrowInputs(): no alias result returned");
+				if(vtxPos.back().vchPubKey != theEscrow.vchBuyerKey)
+					return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: alias and escrow pubkey's must match");
 				break;
 			case OP_ESCROW_RELEASE:
 			case OP_ESCROW_COMPLETE:
@@ -368,16 +401,18 @@ bool CheckEscrowInputs(const CTransaction &tx,
 
 
 UniValue escrownew(const UniValue& params, bool fHelp) {
-    if (fHelp || params.size() != 4 )
+    if (fHelp || params.size() != 5 )
         throw runtime_error(
-		"escrownew <offer> <quantity> <message> <arbiter alias>\n"
+		"escrownew <alias> <offer> <quantity> <message> <arbiter alias>\n"
+						"<alias> An alias you own.\n"
                         "<offer> GUID of offer that this escrow is managing.\n"
                         "<quantity> Quantity of items to buy of offer.\n"
 						"<message> Delivery details to seller.\n"
 						"<arbiter alias> Alias of Arbiter.\n"
                         + HelpRequiringPassphrase());
-	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	string strArbiter = params[3].get_str();
+	vector<unsigned char> vchAlias = vchFromValue(params[0]);
+	vector<unsigned char> vchOffer = vchFromValue(params[1]);
+	string strArbiter = params[4].get_str();
 	CSyscoinAddress arbiterAddress = CSyscoinAddress(strArbiter);
 	if (!arbiterAddress.IsValid())
 		throw runtime_error("Invalid arbiter syscoin address");
@@ -394,19 +429,43 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CAliasIndex alias = vtxPos.back();
 	const std::vector<unsigned char> &vchArbiterPubKey = alias.vchPubKey;
 
-	vector<unsigned char> vchMessage = vchFromValue(params[2]);
+	vector<unsigned char> vchMessage = vchFromValue(params[3]);
 	unsigned int nQty = 1;
-	if(atof(params[1].get_str().c_str()) < 0)
+	if(atof(params[2].get_str().c_str()) < 0)
 		throw runtime_error("invalid quantity value, must be greator than 0");
 
 	try {
-		nQty = boost::lexical_cast<unsigned int>(params[1].get_str());
+		nQty = boost::lexical_cast<unsigned int>(params[2].get_str());
 	} catch (std::exception &e) {
 		throw runtime_error("invalid quantity value. Quantity must be less than 4294967296.");
 	}
 
     if (vchMessage.size() <= 0)
         vchMessage = vchFromString("ESCROW");
+
+	CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
+	if (!aliasAddress.IsValid())
+		throw runtime_error("Invalid syscoin address");
+	if (!aliasAddress.isAlias)
+		throw runtime_error("Offer must be a valid alias");
+
+	// check for alias existence in DB
+	vector<CAliasIndex> vtxPos;
+	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
+		throw runtime_error("failed to read alias from alias DB");
+	if (vtxPos.size() < 1)
+		throw runtime_error("no result returned");
+	CAliasIndex alias = vtxPos.back();
+	CTransaction aliastx;
+	if (!GetTxOfAlias(vchAlias, aliastx))
+		throw runtime_error("could not find an alias with this name");
+
+    if(!IsSyscoinTxMine(aliastx)) {
+		throw runtime_error("This alias is not yours.");
+    }
+	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
+	if (wtxAliasIn == NULL)
+		throw runtime_error("this alias is not in your wallet");
 
 	COffer theOffer;
 	CTransaction txOffer;
@@ -428,7 +487,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     //create escrowactivate txn keys
     CPubKey newDefaultKey;
     pwalletMain->GetKeyFromPool(newDefaultKey);
-    CScript scriptPubKey,scriptPubKeySeller,scriptSeller, scriptPubKeyArbiter, scriptArbiter;
+    CScript scriptPubKey,scriptSeller,scriptArbiter;
 
 	string strCipherText = "";
 	// encrypt to offer owner
@@ -449,16 +508,18 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
 		throw runtime_error("Invalid seller alias or address");
-
-	std::vector<unsigned char> vchBuyerPubKey(newDefaultKey.begin(), newDefaultKey.end());
+    CScript scriptPubKeyAlias, scriptPubKeyOrigAlias;
+	CPubKey aliasKey(alias.vchPubKey);
+	scriptPubKeyOrigAlias = GetScriptForDestination(aliasKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyOrigAlias;
 
 
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
-	scriptPubKeySeller << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
-	scriptPubKeySeller += scriptSeller;
-	scriptPubKeyArbiter << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
-	scriptPubKeyArbiter += scriptArbiter;
+	scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
+	scriptPubKey += scriptSeller;
+	scriptPubKey += scriptArbiter;
 
 	UniValue arrayParams(UniValue::VARR);
 	UniValue arrayOfKeys(UniValue::VARR);
@@ -467,7 +528,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	arrayParams.push_back(2);
 	arrayOfKeys.push_back(HexStr(vchArbiterPubKey));
 	arrayOfKeys.push_back(HexStr(theOffer.vchPubKey));
-	arrayOfKeys.push_back(HexStr(vchBuyerPubKey));
+	arrayOfKeys.push_back(HexStr(alias.vchPubKey));
 	arrayParams.push_back(arrayOfKeys);
 	UniValue resCreate;
 	try
@@ -507,7 +568,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	// send to seller/arbiter so they can track the escrow through GUI
     // build escrow
     CEscrow newEscrow;
-	newEscrow.vchBuyerKey = vchBuyerPubKey;
+	newEscrow.vchBuyerKey = alias.vchPubKey;
 	newEscrow.vchArbiterKey = vchArbiterPubKey;
 	newEscrow.vchRedeemScript = vchFromString(redeemScript_str);
 	newEscrow.vchOffer = vchOffer;
@@ -519,9 +580,15 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nHeight = chainActive.Tip()->nHeight;
 	// send the tranasction
 	vector<CRecipient> vecSend;
-	CRecipient recipientSeller;
-	CreateRecipient(scriptPubKeySeller, recipientSeller);
-	vecSend.push_back(recipientSeller);
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
+	vecSend.push_back(recipient);
+
+	CRecipient aliasRecipient;
+	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
+	// we attach alias input here so noone can create an escrow under anyone elses alias/pubkey
+	if(wtxAliasIn != NULL)
+		vecSend.push_back(aliasRecipient);
 
 	const vector<unsigned char> &data = newEscrow.Serialize();
 	CScript scriptData;
@@ -530,14 +597,12 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, recipientSeller.nAmount+fee.nAmount, false, wtx);
 
-	vecSend.clear();
-	CRecipient recipientArbiter;
-	CreateRecipient(scriptPubKeyArbiter, recipientArbiter);
-	vecSend.push_back(recipientArbiter);
-	vecSend.push_back(fee);
-	SendMoneySyscoin(vecSend, recipientArbiter.nAmount+fee.nAmount, false, wtx);
+
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	const CWalletTx * wtxInCert=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
