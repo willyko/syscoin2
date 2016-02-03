@@ -593,7 +593,7 @@ bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;
@@ -757,9 +757,12 @@ bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut,
 bool DecodeAndParseAliasTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
+	LogPrintf("DecodeAndParseAliasTx1\n");
 	CAliasIndex alias;
 	bool decode = DecodeAliasTx(tx, op, nOut, vvch);
+	LogPrintf("DecodeAndParseAliasTx1a\n");
 	bool parse = alias.UnserializeFromTx(tx);
+	LogPrintf("DecodeAndParseAliasTx2\n");
 	return decode && parse;
 }
 bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut,

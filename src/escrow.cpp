@@ -83,9 +83,9 @@ bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if((!vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(vchBuyerKey))
-		|| (!vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(vchSellerKey))
-		|| (!vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(vchArbiterKey)))
+	if(!IsCompressedOrUncompressedPubKey(vchBuyerKey)
+		|| !IsCompressedOrUncompressedPubKey(vchSellerKey)
+		|| !IsCompressedOrUncompressedPubKey(vchArbiterKey))
 	{
 		SetNull();
 		return false;

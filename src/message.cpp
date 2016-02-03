@@ -64,8 +64,8 @@ bool CMessage::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if((!vchPubKeyTo.empty() && !IsCompressedOrUncompressedPubKey(vchPubKeyTo))
-		|| (!vchPubKeyFrom.empty() && !IsCompressedOrUncompressedPubKey(vchPubKeyFrom)))
+	if(!IsCompressedOrUncompressedPubKey(vchPubKeyTo)
+		|| !IsCompressedOrUncompressedPubKey(vchPubKeyFrom))
 	{
 		SetNull();
 		return false;
