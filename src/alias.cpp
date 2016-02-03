@@ -723,9 +723,6 @@ int IndexOfAliasOutput(const CTransaction& tx) {
 	bool good = DecodeAliasTx(tx, op, nOut, vvch);
 	if (!good)
 		return -1;
-	CAmount credit = pwalletMain->GetCredit(tx.vout[nOut], ISMINE_WATCH_ONLY);
-	if(credit <= 0)
-		return -1;
 	return nOut;
 }
 
