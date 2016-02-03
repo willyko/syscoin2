@@ -1390,6 +1390,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
+	const CWalletTx *wtxCertIn = NULL;
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
 	if (wtxAliasIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
@@ -1441,7 +1442,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
 		for(unsigned int i=0;i<linkOffer.linkWhitelist.entries.size();i++) {
 			CTransaction txCert;
-			const CWalletTx *wtxCertIn;
 			CCert theCert;
 			COfferLinkWhitelistEntry& entry = linkOffer.linkWhitelist.entries[i];
 			// make sure this cert is still valid
@@ -2032,11 +2032,11 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
+	CRecipient certRecipient;
+	CreateRecipient(scriptPubKeyCert, certRecipient);
 	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	if(wtxCertIn != NULL)
-	{
 		vecSend.push_back(certRecipient);
-	}
 
 
 
@@ -2163,7 +2163,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
-	if (!pwalletMain->GetWalletTx(aliastx.GetHash())
+	const CWalletTx* wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash();
+	if (wtxAliasIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
 	vchPubKey = alias.vchPubKey;
 
