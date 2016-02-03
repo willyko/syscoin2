@@ -449,12 +449,12 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Offer must be a valid alias");
 
 	// check for alias existence in DB
-	vector<CAliasIndex> vtxPos;
+	vtxPos.clear();
 	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
 		throw runtime_error("failed to read alias from alias DB");
 	if (vtxPos.size() < 1)
 		throw runtime_error("no result returned");
-	CAliasIndex alias = vtxPos.back();
+	alias = vtxPos.back();
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
