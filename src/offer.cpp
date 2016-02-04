@@ -625,7 +625,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		// unserialize offer from txn, check for valid
 		COffer theOffer(tx);
 		COfferAccept theOfferAccept;
-		if (theOffer.IsNull())
+		if (!IsCompressedOrUncompressedPubKey(theOffer.vchPubKey))
 			return error("CheckOfferInputs() : null offer");
 		if(theOffer.sDescription.size() > MAX_VALUE_LENGTH)
 		{
@@ -642,10 +642,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 		if(theOffer.vchLinkOffer.size() > MAX_NAME_LENGTH)
 		{
 			return error("offer link guid too big");
-		}
-		if(!IsCompressedOrUncompressedPubKey(theOffer.vchPubKey))
-		{
-			return error("offer pub key too invalid length");
 		}
 		if(theOffer.sCurrencyCode.size() > MAX_NAME_LENGTH)
 		{

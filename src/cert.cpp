@@ -309,7 +309,7 @@ bool CheckCertInputs(const CTransaction &tx,
             return error("CheckCertInputs() : could not decode cert tx");
         // unserialize cert object from txn, check for valid
         CCert theCert(tx);
-        if (theCert.IsNull() && op != OP_CERT_UPDATE)
+        if (!IsCompressedOrUncompressedPubKey(theCert.vchPubKey) && op != OP_CERT_UPDATE)
             return error("CheckCertInputs() : null cert object");
 		if(theCert.vchData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		{
@@ -318,10 +318,6 @@ bool CheckCertInputs(const CTransaction &tx,
 		if(theCert.vchTitle.size() > MAX_NAME_LENGTH)
 		{
 			return error("cert title too big");
-		}
-		if(!IsCompressedOrUncompressedPubKey(theCert.vchPubKey))
-		{
-			return error("cert pub key invalid length");
 		}
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
