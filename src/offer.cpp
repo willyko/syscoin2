@@ -788,7 +788,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error(
 								"CheckOfferInputs() : failed to read from offer DB");
 				}
-				if(!GetAcceptByHash(vtxPos, vvchArgs[1]))
+				if(!GetAcceptByHash(vtxPos, theOfferAccept))
 				{
 					return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from db offer txn");
 				}	
