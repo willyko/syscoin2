@@ -1384,8 +1384,9 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	newOffer.sCurrencyCode = vchCurrency;
 	newOffer.bPrivate = bPrivate;
 	newOffer.bOnlyAcceptBTC = bOnlyAcceptBTC;
-	
-	scriptPubKeyOrig= GetScriptForDestination(aliasAddress.Get());
+
+	CPubKey currentOfferKey(newOffer.vchPubKey);
+	scriptPubKeyOrig= GetScriptForDestination(currentOfferKey.GetID());
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACTIVATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
