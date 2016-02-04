@@ -56,7 +56,14 @@ public:
     friend bool operator!=(const CAliasIndex &a, const CAliasIndex &b) {
         return !(a == b);
     }
-    
+    CAliasIndex operator=(const CAliasIndex &b) {
+        txHash = b.txHash;
+        nHeight = b.nHeight;
+        vchPublicValue = b.vchPublicValue;
+        vchPrivateValue = b.vchPrivateValue;
+        vchPubKey = b.vchPubKey;
+        return *this;
+    }   
     void SetNull() { txHash.IsNull(); nHeight = 0; vchPublicValue.clear(); vchPrivateValue.clear(); vchPubKey.clear(); }
     bool IsNull() const { return (nHeight == 0 && txHash.IsNull() && vchPublicValue.empty() && vchPrivateValue.empty() && vchPubKey.empty()); }
 	bool UnserializeFromTx(const CTransaction &tx);
