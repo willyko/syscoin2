@@ -94,7 +94,7 @@ bool CCert::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;
@@ -172,12 +172,9 @@ bool GetTxOfCert(CCertDB& dbCert, const vector<unsigned char> &vchCert,
 bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	LogPrintf("DecodeAndParseCertTx\n");
 	CCert cert;
 	bool decode = DecodeCertTx(tx, op, nOut, vvch);
-	LogPrintf("DecodeAndParseCertTx1\n");
 	bool parse = cert.UnserializeFromTx(tx);
-	LogPrintf("DecodeAndParseCertTx2\n");
 	return decode && parse;
 }
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut,

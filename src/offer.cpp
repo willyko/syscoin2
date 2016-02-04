@@ -312,7 +312,7 @@ bool COffer::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;
@@ -471,12 +471,9 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 bool DecodeAndParseOfferTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
-	LogPrintf("DecodeAndParseOfferTx\n");
 	COffer offer;
 	bool decode = DecodeOfferTx(tx, op, nOut, vvch);
-	LogPrintf("DecodeAndParseOfferTx1\n");
 	bool parse = offer.UnserializeFromTx(tx);
-	LogPrintf("DecodeAndParseOfferTx2\n");
 	return decode && parse;
 }
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut,
