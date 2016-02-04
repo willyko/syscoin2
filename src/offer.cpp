@@ -669,6 +669,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		}
 		vector<CAliasIndex> vtxAliasPos;
 		COffer linkOffer;
+		CTransaction linkedTx;
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
 			if (foundOffer || (foundCert && !IsCertOp(prevCertOp)) )
@@ -779,7 +780,14 @@ bool CheckOfferInputs(const CTransaction &tx,
 			if(theOfferAccept.vchAcceptRand != vvchArgs[1])
 				return error("OP_OFFER_REFUND could not read accept from offer txn");
 			theOfferAccept.vchAcceptRand = vvchArgs[1];
-			if (fJustCheck) {
+			if (fJustCheck && !fBlock) {
+				// load the offer data from the DB
+				vector<COffer> vtxPos;
+				if (pofferdb->ExistsOffer(vvchArgs[0])) {
+					if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+						return error(
+								"CheckOfferInputs() : failed to read from offer DB");
+				}
 				if(!GetAcceptByHash(vtxPos, vvchArgs[1]))
 				{
 					return error("CheckOfferInputs()- OP_OFFER_REFUND: could not read accept from db offer txn");
@@ -807,7 +815,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("OP_OFFER_ACCEPT offer accept link field too big");
 			if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT offer link field too big");
-			if (fJustCheck) {
+			if (fJustCheck && !fBlock) {
 				if(IsEscrowOp(prevEscrowOp))
 				{	
 					vector<CEscrow> escrowVtxPos;
@@ -859,7 +867,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
 		
 				COffer myOffer;
-				CTransaction offerTx, linkedTx;			
+				CTransaction offerTx;			
 				// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 				uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
 				COfferLinkWhitelistEntry entry;
@@ -882,6 +890,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 				// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 				if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 				{
+					// load the offer data from the DB
+					vector<COffer> vtxPos;
+					if (pofferdb->ExistsOffer(vvchArgs[0])) {
+						if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+							return error(
+									"CheckOfferInputs() : failed to read from offer DB");
+					}
 					COffer myPriceOffer;
 					myPriceOffer.nHeight = heightToCheckAgainst;
 					myPriceOffer.GetOfferFromList(vtxPos);
@@ -1069,12 +1084,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if (!fExternal && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx))
 					{	
 						// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
-						// myOffer.vchLinkOffer is the linked offer guid
+						// theOffer.vchLinkOffer is the linked offer guid
 						// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
 						// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
 						// we are now accepting the linked	 offer, up the link offer stack.
 
-						string strError = makeOfferLinkAcceptTX(theOfferAccept, myOffer.vchLinkOffer, vvchArgs[1], theOffer);
+						string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[1], theOffer);
 						if(strError != "")
 						{
 							if(fDebug)
@@ -2187,7 +2202,7 @@ UniValue offerrefund(const UniValue& params, bool fHelp) {
 	if (!theOffer.vchLinkOffer.empty())
 		throw runtime_error("You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 	
-	string strError = makeOfferRefundTX(txOffer, vchOffer, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
+	string strError = makeOfferRefundTX(vchOffer, vchAcceptRand, OFFER_REFUND_PAYMENT_INPROGRESS);
 	if (strError != "")
 	{
 		throw runtime_error(strError);
