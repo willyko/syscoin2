@@ -294,15 +294,18 @@ bool CheckMessageInputs(const CTransaction &tx,
 		}
 		if(op == OP_MESSAGE_ACTIVATE)
 		{
-			vector<CAliasIndex> vtxPos;
-			if(!IsAliasOp(prevAliasOp))
-				return error("CheckMessageInputs(): alias not provided as input");
-			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-				return error("CheckMessageInputs(): failed to read alias from alias DB");
-			if (vtxPos.size() < 1)
-				return error("CheckMessageInputs(): no alias result returned");
-			if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
-				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+			if(fJustCheck && !fBlock)
+			{
+				vector<CAliasIndex> vtxPos;
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckMessageInputs(): alias not provided as input");
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+					return error("CheckMessageInputs(): failed to read alias from alias DB");
+				if (vtxPos.size() < 1)
+					return error("CheckMessageInputs(): no alias result returned");
+				if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
+					return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+			}
 		}
 		else
 			return error( "CheckMessageInputs() : message transaction has unknown op");

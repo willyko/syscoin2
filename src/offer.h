@@ -40,7 +40,6 @@ public:
 	uint64_t nHeight;
 	unsigned int nQty;
 	float nPrice;
-	bool bPaid;
 	bool bRefunded;
 	uint256 txBTCId;
 	std::vector<unsigned char> vchLinkOfferAccept;
@@ -59,7 +58,6 @@ public:
 		READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nQty));
     	READWRITE(nPrice);
-    	READWRITE(bPaid);
 		READWRITE(bRefunded);
 		READWRITE(vchLinkOfferAccept);
 		READWRITE(vchBuyerKey);	
@@ -76,7 +74,6 @@ public:
         && a.nHeight == b.nHeight
         && a.nQty == b.nQty
         && a.nPrice == b.nPrice
-        && a.bPaid == b.bPaid
 		&& a.bRefunded == b.bRefunded
 		&& a.vchLinkOfferAccept == b.vchLinkOfferAccept
 		&& a.vchBuyerKey == b.vchBuyerKey
@@ -92,7 +89,6 @@ public:
         nHeight = b.nHeight;
         nQty = b.nQty;
         nPrice = b.nPrice;
-        bPaid = b.bPaid;
 		bRefunded = b.bRefunded;
 		vchLinkOfferAccept = b.vchLinkOfferAccept;
 		vchBuyerKey = b.vchBuyerKey;
@@ -105,8 +101,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); bPaid = false; txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchLinkOfferAccept.clear();}
-    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bPaid == false && bRefunded == false  && txBTCId.IsNull() && vchBuyerKey.empty()); }
+    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchLinkOfferAccept.clear();}
+    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bRefunded == false  && txBTCId.IsNull() && vchBuyerKey.empty()); }
 
 };
 class COfferLinkWhitelistEntry {
@@ -243,8 +239,6 @@ public:
 		accept.SetNull();
 		linkWhitelist.SetNull();
 		offerLinks.clear();
-		vchLinkOffer.clear();
-		sCurrencyCode.clear();
 		sCategory.clear();
 		sTitle.clear();
 		sDescription.clear();

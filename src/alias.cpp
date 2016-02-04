@@ -455,18 +455,15 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias priv value too big");
 		}
-		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
+		if(!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
 		{
 			return error("alias pub key invalid length");
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-
 		switch (op) {
 
 		case OP_ALIAS_ACTIVATE:
-			if(theAlias.vchPubKey.empty())
-				return error("CheckAliasInputs(): alias must be provided a pubkey");
 			break;
 
 		case OP_ALIAS_UPDATE:

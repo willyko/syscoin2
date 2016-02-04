@@ -319,7 +319,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		{
 			return error("cert title too big");
 		}
-		if(!theCert.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theCert.vchPubKey))
+		if(!IsCompressedOrUncompressedPubKey(theCert.vchPubKey))
 		{
 			return error("cert pub key invalid length");
 		}
@@ -331,16 +331,17 @@ bool CheckCertInputs(const CTransaction &tx,
 			if (foundCert)
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-			if(theCert.vchPubKey.empty())
-				return error("CheckCertInputs(): cert must be provided a pubkey");
-			if(!IsAliasOp(prevAliasOp))
-				return error("CheckCertInputs(): alias not provided as input");
-			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-				return error("CheckCertInputs(): failed to read alias from alias DB");
-			if (vtxAliasPos.size() < 1)
-				return error("CheckCertInputs(): no alias result returned");
-			if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
-				return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
+			if(fJustCheck && !fBlock)
+			{
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckCertInputs(): alias not provided as input");
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return error("CheckCertInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return error("CheckCertInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
+					return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
+			}
 			break;
 
 		case OP_CERT_UPDATE:
@@ -349,7 +350,6 @@ bool CheckCertInputs(const CTransaction &tx,
 				return error("CheckCertInputs(): certupdate previous op is invalid");
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
-
 			break;
 
 		case OP_CERT_TRANSFER:
