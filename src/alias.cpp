@@ -445,6 +445,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					tx.GetHash().GetHex().c_str());
 		// unserialize alias from txn, check for valid
 		CAliasIndex theAlias(tx);
+		// we need to check for cert update specially because an alias update without data is sent along with offers linked with the alias
 		if (theAlias.IsNull()  && op != OP_ALIAS_UPDATE)
 			return error("CheckAliasInputs() : null alias");
 		if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
@@ -455,7 +456,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias priv value too big");
 		}
-		if(!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
+		if(!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey) && op != OP_ALIAS_UPDATE)
 		{
 			return error("alias pub key invalid length");
 		}
