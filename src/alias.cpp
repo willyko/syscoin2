@@ -445,7 +445,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 					tx.GetHash().GetHex().c_str());
 		// unserialize alias from txn, check for valid
 		CAliasIndex theAlias(tx);
-		if (!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey) && op != OP_ALIAS_UPDATE)
+		if (theAlias.IsNull()  && op != OP_ALIAS_UPDATE)
 			return error("CheckAliasInputs() : null alias");
 		if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
 		{
@@ -454,6 +454,10 @@ bool CheckAliasInputs(const CTransaction &tx,
 		if(theAlias.vchPrivateValue.size() > MAX_VALUE_LENGTH)
 		{
 			return error("alias priv value too big");
+		}
+		if(!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
+		{
+			return error("alias pub key invalid length");
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
