@@ -495,11 +495,11 @@ bool CheckAliasInputs(const CTransaction &tx,
 			if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
 				if(!vtxPos.empty())
 				{
-					const CAliasIndex& dbAlias = vtxPos.back();
 					if(theAlias.IsNull())
-						theAlias = dbAlias;
+						theAlias = vtxPos.back();
 					else
 					{
+						const CAliasIndex& dbAlias = vtxPos.back();
 						if(theAlias.vchPublicValue.empty())
 							theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 						if(theAlias.vchPrivateValue.empty())

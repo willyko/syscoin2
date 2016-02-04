@@ -380,11 +380,11 @@ bool CheckCertInputs(const CTransaction &tx,
             if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
 				if(!vtxPos.empty())
 				{
-					const CCert& dbCert = vtxPos.back();
 					if(theCert.IsNull())
-						theCert = dbCert;
+						theCert = vtxPos.back();
 					else
 					{
+						const CCert& dbCert = vtxPos.back();
 						if(theCert.vchData.empty())
 							theCert.vchData = dbCert.vchData;
 						if(theCert.vchTitle.empty())
