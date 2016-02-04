@@ -1040,7 +1040,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if(copyAlias.vchPubKey != vchPubKey)
 		theAlias.vchPubKey = vchPubKey;
 	CPubKey currentKey(vchPubKey);
-	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID())
+	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	CScript scriptPubKey;
 	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
