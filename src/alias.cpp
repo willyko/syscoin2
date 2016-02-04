@@ -456,7 +456,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		{
 			return error("alias priv value too big");
 		}
-		if(!IsCompressedOrUncompressedPubKey(theAlias.vchPubKey) && op != OP_ALIAS_UPDATE)
+		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
 		{
 			return error("alias pub key invalid length");
 		}
