@@ -29,8 +29,8 @@ public:
 		Qty = 6,
 		Total = 7,
 		Alias = 8,
-		Status = 9,
-		BuyerKey = 10
+		Buyer = 9,
+		Status = 10
     };
 
     enum RoleIndex {
@@ -40,7 +40,7 @@ public:
         /** Offer accept guid */
         GUIDRole,
 		AliasRole,
-		BuyerKeyRole
+		BuyerRole
     };
 
     /** Return status of edit/insert operation */
@@ -68,7 +68,7 @@ public:
     /* Add an offer to the model.
        Returns the added offer on success, and an empty string otherwise.
      */
-    QString addRow(const QString &type, const QString &offer, const QString &value, const QString &title, const QString &height,const QString &price, const QString &currency, const QString &qty, const QString &total, const QString &alias, const QString &status, const QString &buyerkey);
+    QString addRow(const QString &type, const QString &offer, const QString &value, const QString &title, const QString &height,const QString &price, const QString &currency, const QString &qty, const QString &total, const QString &alias, const QString &status, const QString &buyer);
 
     /* Look up row index of an offer in the model.
        Return -1 if not found.
@@ -90,7 +90,7 @@ private:
 public Q_SLOTS:
     /* Update offer list from core.
      */
-    void updateEntry(const QString &offer, const QString &value, const QString &title, const QString &height,const QString &price, const QString &currency, const QString &qty, const QString &total,  const QString &alias, const QString &status, const QString &buyerkey, OfferAcceptModelType type, int statusi);
+    void updateEntry(const QString &offer, const QString &value, const QString &title, const QString &height,const QString &price, const QString &currency, const QString &qty, const QString &total,  const QString &alias, const QString &status, const QString &buyer, OfferAcceptModelType type, int statusi);
 
     friend class OfferAcceptTablePriv;
 };

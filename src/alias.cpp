@@ -992,8 +992,6 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 			throw runtime_error("no result returned");
 		CAliasIndex xferAlias = vtxPos.back();
 		vchPubKey = xferAlias.vchPubKey;
-		scriptPubKeyOrig = GetScriptForDestination(myAddress.Get());
-
 	}
 
 	EnsureWalletIsUnlocked();
@@ -1041,11 +1039,8 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		theAlias.vchPrivateValue = vchPrivateValue;
 	if(copyAlias.vchPubKey != vchPubKey)
 		theAlias.vchPubKey = vchPubKey;
-	else
-	{
-		CPubKey currentKey(copyAlias.vchPubKey);
-		scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
-	}
+	CPubKey currentKey(vchPubKey);
+	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID())
 	CScript scriptPubKey;
 	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;

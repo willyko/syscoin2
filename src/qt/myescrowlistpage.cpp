@@ -261,9 +261,9 @@ void MyEscrowListPage::on_buyerMessageButton_clicked()
     {
         return;
     }
-	QString buyerKey = selection.at(0).data(EscrowTableModel::BuyerKeyRole).toString();
+	QString buyer = selection.at(0).data(EscrowTableModel::BuyerRole).toString();
 	// send message to seller
-	NewMessageDialog dlg(NewMessageDialog::NewMessage, buyerKey);   
+	NewMessageDialog dlg(NewMessageDialog::NewMessage, buyer);   
 	dlg.exec();
 }
 void MyEscrowListPage::on_sellerMessageButton_clicked()

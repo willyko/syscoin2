@@ -1522,10 +1522,14 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 	CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 	arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 
+	CPubKey BuyerPubKey(ca.vchBuyerKey);
+	CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
+	buyeraddy = CSyscoinAddress(buyeraddy.ToString());
+
 	oEscrow.push_back(Pair("time", sTime));
 	oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 	oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-	oEscrow.push_back(Pair("buyerkey", HexStr(ca.vchBuyerKey)));
+	oEscrow.push_back(Pair("buyer", buyeraddy.aliasName));
 	oEscrow.push_back(Pair("offer", stringFromVch(ca.vchOffer)));
 	oEscrow.push_back(Pair("offeracceptlink", stringFromVch(ca.vchOfferAcceptLink)));
 	oEscrow.push_back(Pair("systotal", ValueFromAmount(ca.nPricePerUnit * ca.nQty)));
@@ -1609,10 +1613,15 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		CPubKey ArbiterPubKey(escrow.vchArbiterKey);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
+
+		CPubKey BuyerPubKey(escrow.vchBuyerKey);
+		CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
+		buyeraddy = CSyscoinAddress(buyeraddy.ToString());
+
 		oName.push_back(Pair("time", sTime));
 		oName.push_back(Pair("seller", selleraddy.aliasName));
 		oName.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oName.push_back(Pair("buyerkey", HexStr(escrow.vchBuyerKey)));
+		oName.push_back(Pair("buyer", buyeraddy.aliasName));
 		oName.push_back(Pair("offer", stringFromVch(escrow.vchOffer)));
 		oName.push_back(Pair("offeracceptlink", stringFromVch(escrow.vchOfferAcceptLink)));
 
@@ -1694,11 +1703,16 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			CPubKey ArbiterPubKey(txPos2.vchArbiterKey);
 			CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 			arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
+
+			CPubKey BuyerPubKey(txPos2.vchBuyerKey);
+			CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
+			buyeraddy = CSyscoinAddress(buyeraddy.ToString());
+
 			oEscrow.push_back(Pair("time", sTime));
 			oEscrow.push_back(Pair("txid", tx.GetHash().GetHex()));
 			oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 			oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-			oEscrow.push_back(Pair("buyerkey", HexStr(txPos2.vchBuyerKey)));
+			oEscrow.push_back(Pair("buyer", buyeraddy.aliasName));
 			oEscrow.push_back(Pair("offer", stringFromVch(txPos2.vchOffer)));
 			oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txPos2.vchOfferAcceptLink)));
 
@@ -1772,7 +1786,11 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		CPubKey ArbiterPubKey(txEscrow.vchArbiterKey);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
-        if (strSearch != "" && strSearch != escrow && strSearch != arbiteraddy.aliasName && strSearch != selleraddy.aliasName)
+
+		CPubKey BuyerPubKey(txEscrow.vchBuyerKey);
+		CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
+		buyeraddy = CSyscoinAddress(buyeraddy.ToString());
+        if (strSearch != "" && strSearch != escrow && strSearch != buyeraddy.aliasName && strSearch != arbiteraddy.aliasName && strSearch != selleraddy.aliasName)
             continue;
 
         
@@ -1806,7 +1824,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		oEscrow.push_back(Pair("expired", expired));
 		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oEscrow.push_back(Pair("buyerkey", HexStr(txEscrow.vchBuyerKey)));
+		oEscrow.push_back(Pair("buyer", buyeraddy.aliasName));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
 
@@ -1885,10 +1903,15 @@ UniValue escrowscan(const UniValue& params, bool fHelp) {
 		CPubKey ArbiterPubKey(txEscrow.vchArbiterKey);
 		CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 		arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
+
+		CPubKey BuyerPubKey(txEscrow.vchBuyerKey);
+		CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
+		buyeraddy = CSyscoinAddress(buyeraddy.ToString());
+
 		oEscrow.push_back(Pair("time", sTime));
 		oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 		oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
-		oEscrow.push_back(Pair("buyerkey", HexStr(txEscrow.vchBuyerKey)));
+		oEscrow.push_back(Pair("buyer", buyeraddy.aliasName));
 		oEscrow.push_back(Pair("offer", stringFromVch(txEscrow.vchOffer)));
 		oEscrow.push_back(Pair("offeracceptlink", stringFromVch(txEscrow.vchOfferAcceptLink)));
 		string sTotal = strprintf("%ll SYS", (txEscrow.nPricePerUnit/COIN)*txEscrow.nQty);

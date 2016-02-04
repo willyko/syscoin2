@@ -23,20 +23,21 @@ public:
 
     enum ColumnIndex {
         Escrow = 0,  
-		Time = 1,  
-        Arbiter = 3,  
+		Time = 1, 
 		Seller = 2,
-		Offer = 4,
-		OfferAccept = 5,
-		Total = 6,
-		Status = 7,
-		BuyerKey = 8
+        Arbiter = 3,  
+		Buyer = 4,
+		Offer = 5,
+		OfferAccept = 6,
+		Total = 7,
+		Status = 8
+
     };
 
     enum RoleIndex {
         TypeRole = Qt::UserRole,
 		EscrowRole,
-		BuyerKeyRole,
+		BuyerRole,
 		SellerRole,
 		ArbiterRole,
 		StatusRole
@@ -67,7 +68,7 @@ public:
     /* Add an escrow to the model.
        Returns the added escrow on success, and an empty string otherwise.
      */
-    QString addRow(const QString &escrow, const QString &time, const QString &seller, const QString &arbiter, const QString &offer, const QString &offeraccept, const QString &total, const QString &status, const QString &buyerkey);
+    QString addRow(const QString &escrow, const QString &time, const QString &seller, const QString &arbiter, const QString &offer, const QString &offeraccept, const QString &total, const QString &status, const QString &buyer);
 
     /* Look up row index of an escrow in the model.
        Return -1 if not found.
@@ -90,7 +91,7 @@ private:
 public Q_SLOTS:
     /* Update escrow list from core.
      */
-    void updateEntry(const QString &escrow, const QString &time, const QString &seller, const QString &arbiter, const QString &offer, const QString &offeraccept, const QString &total, const QString &status, const QString &buyerkey, EscrowModelType type, int statusi);
+    void updateEntry(const QString &escrow, const QString &time, const QString &seller, const QString &arbiter, const QString &offer, const QString &offeraccept, const QString &total, const QString &status, const QString &buyer, EscrowModelType type, int statusi);
 
     friend class EscrowTablePriv;
 };

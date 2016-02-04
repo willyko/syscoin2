@@ -80,9 +80,9 @@ void MyAcceptedOfferListPage::on_messageButton_clicked()
     {
         return;
     }
-	QString buyerKey = selection.at(0).data(OfferAcceptTableModel::BuyerKeyRole).toString();
+	QString buyer = selection.at(0).data(OfferAcceptTableModel::BuyerRole).toString();
 	// send message to buyer
-	NewMessageDialog dlg(NewMessageDialog::NewMessage, buyerKey);   
+	NewMessageDialog dlg(NewMessageDialog::NewMessage, buyer);   
 	dlg.exec();
 
 

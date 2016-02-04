@@ -229,7 +229,7 @@ void EscrowListPage::on_searchEscrow_clicked()
 		string offeraccept_str;
 		string offer_str;
 		string total_str;	
-		string buyerkey_str;
+		string buyer_str;
 		int unixTime;
 		QDateTime dateTime;
         params.push_back(ui->lineEditEscrowSearch->text().toStdString());
@@ -275,7 +275,7 @@ void EscrowListPage::on_searchEscrow_clicked()
 				offeraccept_str = "";
 				offer_str = "";
 				total_str = "";
-				buyerkey_str = "";
+				buyer_str = "";
 				
 				const UniValue& name_value = find_value(o, "escrow");
 				if (name_value.type() == UniValue::VSTR)
@@ -289,9 +289,9 @@ void EscrowListPage::on_searchEscrow_clicked()
 				const UniValue& arbiter_value = find_value(o, "arbiter");
 				if (arbiter_value.type() == UniValue::VSTR)
 					arbiter_str = arbiter_value.get_str();
-				const UniValue& buyerkey_value = find_value(o, "buyerkey");
-				if (buyerkey_value.type() == UniValue::VSTR)
-					buyerkey_str = buyerkey_value.get_str();
+				const UniValue& buyer_value = find_value(o, "buyer");
+				if (buyer_value.type() == UniValue::VSTR)
+					buyer_str = buyer_value.get_str();
 				const UniValue& offer_value = find_value(o, "offer");
 				if (offer_value.type() == UniValue::VSTR)
 					offer_str = offer_value.get_str();
@@ -316,7 +316,7 @@ void EscrowListPage::on_searchEscrow_clicked()
 						QString::fromStdString(offeraccept_str),
 						QString::fromStdString(total_str),
 						QString::fromStdString(status_str),
-						QString::fromStdString(buyerkey_str));
+						QString::fromStdString(buyer_str));
 					this->model->updateEntry(QString::fromStdString(name_str), QString::fromStdString(time_str),
 						QString::fromStdString(seller_str),
 						QString::fromStdString(arbiter_str),
@@ -324,7 +324,7 @@ void EscrowListPage::on_searchEscrow_clicked()
 						QString::fromStdString(offeraccept_str),
 						QString::fromStdString(total_str),
 						QString::fromStdString(status_str), 
-						QString::fromStdString(buyerkey_str), AllEscrow, CT_NEW);	
+						QString::fromStdString(buyer_str), AllEscrow, CT_NEW);	
 			  }
 
             
