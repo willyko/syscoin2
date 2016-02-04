@@ -584,10 +584,12 @@ static void NotifyTransactionChanged(WalletModel *walletmodel, CWallet *wallet, 
 {
     QMetaObject::invokeMethod(walletmodel, "updateTransaction", Qt::QueuedConnection);
     // SYSCOIN
+	qDebug() << "NotifyKeyStoreStatusChanged start";
     std::map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(hash);
     bool inWallet = mi != wallet->mapWallet.end();
 	if(inWallet)
 		NotifySyscoinTransactionChanged(walletmodel, mi->second, status);
+	qDebug() << "NotifyKeyStoreStatusChanged end";
 }
 
 static void ShowProgress(WalletModel *walletmodel, const std::string &title, int nProgress)
