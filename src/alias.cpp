@@ -506,8 +506,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 							theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 						if(theAlias.vchPrivateValue.empty())
 							theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
-						if(theAlias.vchPubKey.empty())
-							theAlias.vchPubKey = dbAlias.vchPubKey;
 					}
 				}
 			
@@ -1037,8 +1035,8 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		theAlias.vchPublicValue = vchPublicValue;
 	if(copyAlias.vchPrivateValue != vchPrivateValue)
 		theAlias.vchPrivateValue = vchPrivateValue;
-	if(copyAlias.vchPubKey != vchPubKey)
-		theAlias.vchPubKey = vchPubKey;
+
+	theAlias.vchPubKey = vchPubKey;
 	CPubKey currentKey(vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	CScript scriptPubKey;

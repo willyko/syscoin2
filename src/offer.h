@@ -248,7 +248,6 @@ public:
 		sCategory.clear();
 		sTitle.clear();
 		sDescription.clear();
-		vchPubKey.clear();
 	}
 
  	ADD_SERIALIZE_METHODS;

@@ -164,14 +164,14 @@
        <item row="5" column="1">
         <widget class="QComboBox" name="aliasEdit"/>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
           <string>Notes:</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QPlainTextEdit" name="notesEdit">
          <property name="maximumSize">
           <size>
@@ -187,6 +187,19 @@
           <string/>
          </property>
         </widget>
+       </item>
+       <item row="7" column="1">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>

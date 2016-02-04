@@ -388,8 +388,6 @@ bool CheckCertInputs(const CTransaction &tx,
 							theCert.vchData = dbCert.vchData;
 						if(theCert.vchTitle.empty())
 							theCert.vchTitle = dbCert.vchTitle;
-						if(theCert.vchPubKey.empty())
-							theCert.vchPubKey = dbCert.vchPubKey;
 					}
 				}
         
@@ -601,7 +599,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
     theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
-	CPubKey currentKey(copyCert.vchPubKey);
+	CPubKey currentKey(theCert.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
     // create CERTUPDATE txn keys
     CScript scriptPubKey;

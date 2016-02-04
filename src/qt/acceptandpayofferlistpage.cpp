@@ -44,7 +44,7 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	connect(ui->lookupButton, SIGNAL(clicked()), this, SLOT(lookup()));
 	connect(ui->offeridEdit, SIGNAL(textChanged(const QString &)), this, SLOT(resetState()));
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
-	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this certificate</font>"));
+	ui->aliasDisclaimer->setText(tr("<font color='red'>Please select an alias you own</font>"));
 	m_netwManager = new QNetworkAccessManager(this);
 	m_placeholderImage.load(":/icons/imageplaceholder");
 
