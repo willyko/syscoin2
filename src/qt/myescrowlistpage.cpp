@@ -304,7 +304,18 @@ void MyEscrowListPage::on_refreshButton_clicked()
         return;
     model->refreshEscrowTable();
 }
+void MyEscrowListPage::on_newEscrow_clicked()
+{
+    if(!model)
+        return;
 
+   /* NewEscrowDialog dlg;
+    dlg.setModel(walletModel,model);
+    if(dlg.exec())
+    {
+        newEscrowToSelect = dlg.getEscrow();
+    }*/
+}
 void MyEscrowListPage::selectionChanged()
 {
     // Set button states based on selected tab and selection

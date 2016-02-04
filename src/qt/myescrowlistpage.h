@@ -51,6 +51,7 @@ private:
 	QAction *sellerMessageAction;
 	QAction *arbiterMessageAction;
 private Q_SLOTS:
+    void on_newEscrow_clicked();
     void on_copyEscrow_clicked();
     /** Export button clicked */
     void on_exportButton_clicked();

@@ -204,30 +204,25 @@ void WalletModel::updateAddressBook(const QString &address, const QString &label
 }
 // SYSCOIN
 void WalletModel::updateAlias() {
-	qDebug() << "updateAlias";
 	if (aliasTableModelMine)
 		aliasTableModelMine->refreshAliasTable();
 }
 
 void WalletModel::updateCert() {
-	qDebug() << "updateCert";
 	if (certTableModelMine)
 		certTableModelMine->refreshCertTable();
 }
 void WalletModel::updateMessage() {
-	qDebug() << "updateMessage";
 	if (inMessageTableModel)
 		inMessageTableModel->refreshMessageTable();
 	if (outMessageTableModel)
 		outMessageTableModel->refreshMessageTable();
 }
 void WalletModel::updateEscrow() {
-	qDebug() << "updateEscrow";
 	if (escrowTableModelMine)
 		escrowTableModelMine->refreshEscrowTable();
 }
 void WalletModel::updateOffer() {
-	qDebug() << "updateOffer";
 	if (offerTableModelMine)
 		offerTableModelMine->refreshOfferTable();
 	if (offerTableModelAccept)
@@ -573,7 +568,6 @@ static void NotifySyscoinTransactionChanged(WalletModel *walletmodel, const CTra
 {
 	std::vector<std::vector<unsigned char> > vvchArgs;
 	int op, nOut;
-	qDebug() << "NotifySyscoinTransactionChanged: status=" + QString::number(status);
 	// there should only be one service with data carrying output per tx, notify for that one
 	if (DecodeAndParseAliasTx(tx, op, nOut, vvchArgs))
 		QMetaObject::invokeMethod(walletmodel, "updateAlias", Qt::QueuedConnection);
