@@ -1365,7 +1365,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	EnsureWalletIsUnlocked();
 
 
-  	CPubKey newDefaultKey;
 	// unserialize offer from txn, serialize back
 	// build offer
 	COffer newOffer;
