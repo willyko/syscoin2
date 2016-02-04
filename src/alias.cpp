@@ -593,7 +593,7 @@ bool CAliasIndex::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;

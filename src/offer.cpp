@@ -312,7 +312,7 @@ bool COffer::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;
@@ -1236,7 +1236,10 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-
+	// check for existing pending alias updates
+	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
@@ -1296,6 +1299,10 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		{
+      		// check for existing cert 's
+			if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+				throw runtime_error("there are pending operations on that cert");
+			}
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -1436,7 +1443,10 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-
+	// check for existing pending alias updates
+	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
@@ -1502,6 +1512,10 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 			// make sure this cert is still valid
 			if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 			{
+      			// check for existing cert 's
+				if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
+					throw runtime_error("there are pending operations on that cert");
+				}
 				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 				// make sure its in your wallet (you control this cert)		
 				if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -1623,7 +1637,10 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxCertIn = NULL;
 	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		throw runtime_error("could not find a certificate with this key");
-
+    // check for existing cert 's
+	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		throw runtime_error("there are pending operations on that cert");
+	}
 	// this is a syscoin txn
 	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
 	// create OFFERUPDATE/CERTUPDATE txn keys
@@ -1954,6 +1971,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxAliasIn = NULL;
 	if(!vchAlias.empty())
 	{
+		// check for existing pending alias updates
+		if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+			throw runtime_error("there are pending operations on that alias");
+		}
 		CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
 		if (!aliasAddress.IsValid())
 			throw runtime_error("Invalid syscoin address");
@@ -2021,6 +2042,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
+		// check for existing cert 's
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+			throw runtime_error("there are pending operations on that cert");
+		}
 		vector<vector<unsigned char> > vvch;
 		wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 		// make sure its in your wallet (you control this cert)		
@@ -2229,7 +2254,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-
+	// check for existing pending alias updates
+	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
@@ -2274,6 +2302,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch))
 			throw runtime_error("Cannot decode escrow tx hash");
+		
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
@@ -2335,6 +2364,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
+			// check for existing cert 's
+			if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+				throw runtime_error("there are pending operations on that cert");
+			}
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 

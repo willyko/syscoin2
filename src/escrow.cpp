@@ -83,9 +83,9 @@ bool CEscrow::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if((!vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(vchBuyerKey))
-		|| (!vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(vchSellerKey))
-		|| (!vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(vchArbiterKey)))
+	if(!IsCompressedOrUncompressedPubKey(vchBuyerKey)
+		|| !IsCompressedOrUncompressedPubKey(vchSellerKey)
+		|| !IsCompressedOrUncompressedPubKey(vchArbiterKey))
 	{
 		SetNull();
 		return false;
@@ -458,7 +458,10 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-
+	// check for existing pending alias updates
+	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }

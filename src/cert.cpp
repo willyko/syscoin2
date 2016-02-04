@@ -94,7 +94,7 @@ bool CCert::UnserializeFromTx(const CTransaction &tx) {
         return false;
     }
 	// extra check to ensure data was parsed correctly
-	if(!vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(vchPubKey))
+	if(!IsCompressedOrUncompressedPubKey(vchPubKey))
 	{
 		SetNull();
 		return false;
@@ -450,7 +450,10 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-
+	// check for existing pending alias updates
+	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
+		throw runtime_error("there are pending operations on that alias");
+	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
