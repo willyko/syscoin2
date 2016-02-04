@@ -248,11 +248,9 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 				nSysBlockTx++;
 				if(nSysBlockTx >= 5)
 				{
-					LogPrintf("SYSCOIN regenerate\n");
 					int nOut = GetSyscoinDataOutput(tx);
 					if (nOut != -1)
 						nSysRegenFees += tx.vout[nOut].nValue*2;
-					LogPrintf("SYSCOIN regenerate Done\n");
 				}
 			}
             pblocktemplate->vTxFees.push_back(nTxFees);

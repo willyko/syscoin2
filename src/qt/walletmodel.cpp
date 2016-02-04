@@ -585,7 +585,6 @@ static void NotifySyscoinTransactionChanged(WalletModel *walletmodel, const CTra
 		QMetaObject::invokeMethod(walletmodel, "updateEscrow", Qt::QueuedConnection);
 	else if (DecodeAndParseMessageTx(tx, op, nOut, vvchArgs))
 		QMetaObject::invokeMethod(walletmodel, "updateMessage", Qt::QueuedConnection);
-	qDebug() << "NotifySyscoinTransactionChanged: Done";
 }
 static void NotifyTransactionChanged(WalletModel *walletmodel, CWallet *wallet, const uint256 &hash, ChangeType status)
 {
