@@ -374,10 +374,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Invalid syscoin address");
 	if (!fromAddress.isAlias)
 		throw runtime_error("Invalid alias");
-	// check for existing pending aliase updates
-	if (ExistsInMempool(vchFromString(fromAddress.aliasName), OP_ALIAS_UPDATE)) {
-		throw runtime_error("there are pending operations on that alias");
-	}
+
 	// check for alias existence in DB
 	vector<CAliasIndex> vtxAliasPos;
 	if (!paliasdb->ReadAlias(vchFromString(fromAddress.aliasName), vtxAliasPos))

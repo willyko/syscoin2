@@ -560,11 +560,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 		bool foundOffer = false;
 		bool foundCert = false;
 		bool foundEscrow = false;
+		bool foundAlias = false;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp, prevCertOp, prevEscrowOp, prevAliasOp;
-		prevOp = prevCertOp = prevEscrowOp = 0;
-		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
+		prevOp = prevCertOp = prevEscrowOp = prevAliasOp = 0;
+		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs, vvchPrevAliasArgs;
 		// Strict check - bug disallowed
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
@@ -579,7 +580,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(prevOutput, op, vvch);
 
-			if(foundEscrow && foundOffer && foundCert)
+			if(foundEscrow && foundOffer && foundCert && foundAlias)
 				break;
 
 			if (!foundOffer && IsOfferOp(op)) {
@@ -598,6 +599,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 				foundEscrow = true; 
 				prevEscrowOp = op;
 				vvchPrevEscrowArgs = vvch;
+			}
+			else if (!foundAlias && IsAliasOp(op))
+			{
+				foundAlias = true; 
+				prevAliasOp = op;
+				vvchPrevAliasArgs = vvch;
 			}
 		}
 		
@@ -728,6 +735,17 @@ bool CheckOfferInputs(const CTransaction &tx,
 				else
 					return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
 			}
+			else {
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckOfferInputs(): alias not provided as input");
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return error("CheckOfferInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return error("CheckOfferInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
+					return error("CheckOfferInputs() OP_OFFER_UPDATE: alias and offer pubkey's must match");
+			
+			}
 			break;
 		case OP_OFFER_REFUND:
 			if (prevOp != OP_OFFER_ACTIVATE && prevOp != OP_OFFER_UPDATE && prevOp != OP_OFFER_REFUND && prevOp != OP_OFFER_ACCEPT )
@@ -802,6 +820,17 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
+			}
+			else {
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckOfferInputs(): alias not provided as input");
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
+					return error("CheckOfferInputs(): failed to read alias from alias DB");
+				if (vtxAliasPos.size() < 1)
+					return error("CheckOfferInputs(): no alias result returned");
+				if(vtxAliasPos.back().vchPubKey != theOffer.vchPubKey)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: alias and offer pubkey's must match");
+			
 			}
 			break;
 
@@ -1234,14 +1263,18 @@ UniValue offernew(const UniValue& params, bool fHelp) {
     // 1Kbyte offer desc. maxlen
 	if (vchDesc.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("offer description cannot exceed 1023 bytes!");
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
-	CScript scriptPubKey, scriptPubKeyCert;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyAliasOrig;
+	CScript scriptPubKey, scriptPubKeyCert, scriptPubKeyAlias;
 	const CWalletTx *wtxCertIn = NULL;
 	CCert theCert;
 	if(params.size() >= 8)
 	{
 		bPrivate = atoi(params[7].get_str().c_str()) == 1? true: false;
 	}
+	CPubKey currentAliasKey(alias.vchPubKey);
+	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyAliasOrig;	
 	if(params.size() >= 9)
 	{
 		
@@ -1335,11 +1368,18 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CRecipient certRecipient;
 	CreateRecipient(scriptPubKeyCert, certRecipient);
+	CRecipient aliasRecipient;
+	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
 	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	if(wtxCertIn != NULL)
 	{
 		vecSend.push_back(certRecipient);
+		wtxAliasIn = NULL;
 	}
+	// we attach alias input here so noone can create an offer under anyone elses alias/pubkey
+	// only need to do this if we aren't selling a cert
+	else if(wtxAliasIn != NULL)
+		vecSend.push_back(aliasRecipient);
 
 	const vector<unsigned char> &data = newOffer.Serialize();
 	CScript scriptData;
@@ -1349,8 +1389,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxAliasIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -1434,8 +1473,13 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 
 
 	COfferLinkWhitelistEntry foundEntry;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
-	CScript scriptPubKey, scriptPubKeyCert;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyAliasOrig;
+	CScript scriptPubKey, scriptPubKeyCert, scriptPubKeyAlias;
+	const CWalletTx *wtxCertIn = NULL;
+	CPubKey currentAliasKey(alias.vchPubKey);
+	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyAliasOrig;
 	if(linkOffer.linkWhitelist.bExclusiveResell)
 	{
 		// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
@@ -1520,6 +1564,12 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	if(wtxCertIn != NULL)
 		vecSend.push_back(certRecipient);
 
+	CRecipient aliasRecipient;
+	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
+	// we attach alias input here so noone can create an offer under anyone elses alias/pubkey
+	if(wtxAliasIn != NULL)
+		vecSend.push_back(aliasRecipient);
+
 	const vector<unsigned char> &data = newOffer.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
@@ -1528,8 +1578,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxAliasIn, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
@@ -1922,7 +1971,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// this is a syscoind txn
 	CWalletTx wtx;
 	const CWalletTx* wtxIn;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyAliasOrig;
 
 	EnsureWalletIsUnlocked();
 
@@ -1935,8 +1984,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
-	// create OFFERUPDATE, CERTUPDATE txn keys
-	CScript scriptPubKey, scriptPubKeyCert;
+	// create OFFERUPDATE, CERTUPDATE, ALIASUPDATE txn keys
+	CScript scriptPubKey, scriptPubKeyCert, scriptPubKeyAlias;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
@@ -1977,6 +2026,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
+	CPubKey currentAliasKey(alias.vchPubKey);
+	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyAliasOrig;
 	theOffer = vtxPos.back();
 	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();	
@@ -2031,12 +2084,19 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
-
+	CRecipient certRecipient;
+	CreateRecipient(scriptPubKeyCert, certRecipient);
+	CRecipient aliasRecipient;
+	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
 	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	if(wtxCertIn != NULL)
 	{
 		vecSend.push_back(certRecipient);
+		wtxAliasIn = NULL;
 	}
+	// we attach alias input here so noone can create an offer under anyone elses alias/pubkey
+	else if(wtxAliasIn != NULL)	
+		vecSend.push_back(aliasRecipient);
 
 
 
@@ -2047,8 +2107,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInEscrow=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxCertIn, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxCertIn, wtxAliasIn, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
