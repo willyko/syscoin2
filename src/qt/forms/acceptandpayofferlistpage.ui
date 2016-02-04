@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>531</width>
+    <width>529</width>
     <height>638</height>
    </rect>
   </property>
@@ -154,18 +154,15 @@
        <item row="4" column="1">
         <widget class="QLineEdit" name="qtyEdit"/>
        </item>
-       <item row="6" column="1">
-        <spacer name="verticalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+       <item row="5" column="0">
+        <widget class="QLabel" name="aliasLabel">
+         <property name="text">
+          <string>Alias:</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QComboBox" name="aliasEdit"/>
        </item>
        <item row="7" column="0">
         <widget class="QLabel" name="label_11">
@@ -184,15 +181,12 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="aliasLabel">
+       <item row="6" column="1">
+        <widget class="QLabel" name="aliasDisclaimer">
          <property name="text">
-          <string>Alias:</string>
+          <string/>
          </property>
         </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QComboBox" name="aliasEdit"/>
        </item>
       </layout>
      </item>

@@ -44,15 +44,13 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	connect(ui->lookupButton, SIGNAL(clicked()), this, SLOT(lookup()));
 	connect(ui->offeridEdit, SIGNAL(textChanged(const QString &)), this, SLOT(resetState()));
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
-
+	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this certificate</font>"));
 	m_netwManager = new QNetworkAccessManager(this);
 	m_placeholderImage.load(":/icons/imageplaceholder");
 
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
 	ui->infoCert->setVisible(false);
 	ui->certLabel->setVisible(false);
-	ui->aliasEdit->setVisible(false);
-	ui->aliasLabel->setVisible(false);
 	RefreshImage();
 
 }
@@ -331,16 +329,12 @@ void AcceptandPayOfferListPage::setValue(const QString& strAlias, const QString&
 		ui->infoCert->setVisible(true);
 		ui->certLabel->setVisible(true);
 		ui->infoCert->setText(QString::fromStdString(stringFromVch(offer.vchCert)));
-		ui->aliasEdit->setVisible(true);
-		ui->aliasLabel->setVisible(true);
 	}
 	else
 	{
 		ui->infoCert->setVisible(false);
 		ui->infoCert->setText("");
 		ui->certLabel->setVisible(false);
-		ui->aliasEdit->setVisible(false);
-		ui->aliasLabel->setVisible(false);
 	}
 	ui->sellerEdit->setText(strAlias);
 	ui->infoTitle->setText(QString::fromStdString(stringFromVch(offer.sTitle)));
