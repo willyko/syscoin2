@@ -250,32 +250,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
-		const COutPoint *prevOutput = NULL;
-		CCoins prevCoins;
-		int prevAliasOp = 0;
-		vector<vector<unsigned char> > vvchPrevAliasArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!fExternal)
-			{
-				
-				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(prevOutput->hash, prevCoins);
-				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
-			}
-			else
-				GetPreviousInput(prevOutput, op, vvch);
-			
-			
-			if (IsAliasOp(op)) {
-				prevAliasOp = op;
-				vvchPrevAliasArgs = vvch;
-				break;
-			}
-		}
         // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
@@ -322,20 +296,8 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			return error("escrow offeraccept guid too long");
 		}		
 
-		vector<CAliasIndex> vtxAliasPos;
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:
-				if(!IsAliasOp(prevAliasOp))
-					return error("CheckEscrowInputs(): alias not provided as input");
-				if(fJustCheck && !fBlock)
-				{
-					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-						return error("CheckEscrowInputs(): failed to read alias from alias DB");
-					if (vtxAliasPos.size() < 1)
-						return error("CheckEscrowInputs(): no alias result returned");
-					if(vtxAliasPos.back().vchPubKey != theEscrow.vchBuyerKey)
-						return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: alias and escrow pubkey's must match");
-				}
 				break;
 			case OP_ESCROW_RELEASE:
 			case OP_ESCROW_COMPLETE:
@@ -461,10 +423,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-	// check for existing pending alias updates
-	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
-		throw runtime_error("there are pending operations on that alias");
-	}
+
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
@@ -513,12 +472,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
 		throw runtime_error("Invalid seller alias or address");
-    CScript scriptPubKeyAlias, scriptPubKeyOrigAlias;
-	CPubKey aliasKey(alias.vchPubKey);
-	scriptPubKeyOrigAlias = GetScriptForDestination(aliasKey.GetID());
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
-	scriptPubKeyAlias += scriptPubKeyOrigAlias;
-
 
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
@@ -589,12 +542,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
 
-	CRecipient aliasRecipient;
-	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
-	// we attach alias input here so noone can create an escrow under anyone elses alias/pubkey
-	if(wtxAliasIn != NULL)
-		vecSend.push_back(aliasRecipient);
-
 	const vector<unsigned char> &data = newEscrow.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
@@ -602,10 +549,11 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
+	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

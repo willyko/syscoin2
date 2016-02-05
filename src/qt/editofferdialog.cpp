@@ -36,9 +36,11 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->offerEdit->setEnabled(false);
 	ui->aliasEdit->setEnabled(true);
 	ui->currencyDisclaimer->setVisible(true);
+	ui->privateEdit->setEnabled(true);
 	ui->privateEdit->clear();
-	ui->privateEdit->addItem(QString("No"));
 	ui->privateEdit->addItem(QString("Yes"));
+	ui->privateEdit->addItem(QString("No"));
+	
 	ui->acceptBTCOnlyEdit->clear();
 	ui->acceptBTCOnlyEdit->addItem(QString("No"));
 	ui->acceptBTCOnlyEdit->addItem(QString("Yes"));
@@ -60,6 +62,8 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
     case NewOffer:
 		ui->offerLabel->setVisible(false);
 		ui->offerEdit->setVisible(false);
+		ui->privateEdit->setCurrentIndex(ui->privateEdit->findText("Yes"));
+		ui->privateEdit->setEnabled(false);
         setWindowTitle(tr("New Offer"));
 		ui->currencyDisclaimer->setText(tr("<font color='red'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
         break;
@@ -71,6 +75,8 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
     case NewCertOffer:
 		ui->aliasEdit->setEnabled(false);
 		ui->offerLabel->setVisible(false);
+		ui->privateEdit->setCurrentIndex(ui->privateEdit->findText("Yes"));
+		ui->privateEdit->setEnabled(false);
 		ui->offerEdit->setVisible(false);
         setWindowTitle(tr("New Offer(Certificate)"));
 		ui->qtyEdit->setText("1");
@@ -330,7 +336,6 @@ bool EditOfferDialog::saveCurrentRow()
 		params.push_back(ui->priceEdit->text().toStdString());
 		params.push_back(ui->descriptionEdit->toPlainText().toStdString());
 		params.push_back(ui->currencyEdit->currentText().toStdString());
-		params.push_back(ui->privateEdit->currentText() == QString("Yes")? "1": "0");
 		if(ui->certEdit->currentIndex() > 0)
 			params.push_back(ui->certEdit->itemData(ui->certEdit->currentIndex()).toString().toStdString());
 		else

@@ -257,7 +257,6 @@ bool CheckCertInputs(const CTransaction &tx,
 				fJustCheck ? "JUSTCHECK" : "");
 		bool fExternal = fInit || fRescan;
         bool foundCert = false;
-		bool foundAlias = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
 
@@ -279,19 +278,12 @@ bool CheckCertInputs(const CTransaction &tx,
 			else
 				GetPreviousInput(prevOutput, op, vvch);
 			
-			if(foundCert && foundAlias)
-				break;
 
 			if (!foundCert && IsCertOp(op)) {
 				foundCert = true; 
 				prevOp = op;
 				vvchPrevArgs = vvch;
-			}
-			else if (!foundAlias && IsAliasOp(op))
-			{
-				foundAlias = true; 
-				prevAliasOp = op;
-				vvchPrevAliasArgs = vvch;
+				break;
 			}
 		}
 		
@@ -332,17 +324,6 @@ bool CheckCertInputs(const CTransaction &tx,
 			if (foundCert)
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-			if(!IsAliasOp(prevAliasOp))
-				return error("CheckCertInputs(): alias not provided as input");
-			if(fJustCheck && !fBlock)
-			{
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
-					return error("CheckCertInputs(): failed to read alias from alias DB");
-				if (vtxAliasPos.size() < 1)
-					return error("CheckCertInputs(): no alias result returned");
-				if(vtxAliasPos.back().vchPubKey != theCert.vchPubKey)
-					return error("CheckCertInputs() OP_CERT_ACTIVATE: alias and cert pubkey's must match");
-			}
 			break;
 
 		case OP_CERT_UPDATE:
@@ -449,10 +430,6 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-	// check for existing pending alias updates
-	if (ExistsInMempool(vchAlias, OP_ALIAS_UPDATE)) {
-		throw runtime_error("there are pending operations on that alias");
-	}
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }
@@ -489,9 +466,8 @@ UniValue certnew(const UniValue& params, bool fHelp) {
     CScript scriptPubKeyOrig;
 	CPubKey aliasKey(alias.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(aliasKey.GetID());
-    CScript scriptPubKey, scriptPubKeyAlias;
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchAlias << OP_2DROP;
-	scriptPubKeyAlias += scriptPubKeyOrig;
+    CScript scriptPubKey;
+
     
 
 	if(bPrivate)
@@ -532,16 +508,11 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	CRecipient aliasRecipient;
-	CreateRecipient(scriptPubKeyAlias, aliasRecipient);
-	// we attach alias input here so noone can create a cert under anyone elses alias/pubkey
-	if(wtxAliasIn != NULL)
-		vecSend.push_back(aliasRecipient);
-
+	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

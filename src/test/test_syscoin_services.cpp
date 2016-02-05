@@ -495,11 +495,10 @@ const string OfferNew(const string& node, const string& aliasname, const string&
 	}
 	CreateSysRatesIfNotExist();
 	UniValue r;
-	string privateMode = "0";
 	string certguidtmp = "0";
 	if(!certguid.empty())
 		certguidtmp = certguid;
-	string offercreatestr = "offernew " + aliasname + " " + category + " " + title + " " + qty + " " + price + " " + description + " " + currency + " " + privateMode + " " + certguidtmp;
+	string offercreatestr = "offernew " + aliasname + " " + category + " " + title + " " + qty + " " + price + " " + description + " " + currency  + " " + certguidtmp;
 	if(exclusiveResell == false)
 	{
 		offercreatestr += " 0";
