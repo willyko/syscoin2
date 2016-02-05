@@ -699,6 +699,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
 				}	
 				else {
+					if(!IsAliasOp(prevAliasOp))
+						return error("CheckOfferInputs(): failed to read alias input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -744,6 +746,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer whitelist entry guid mismatch");
+	 
 			if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
 				return error("offerupdate previous op is invalid");			
 			if (vvchPrevArgs[0] != vvchArgs[0])
@@ -764,7 +767,9 @@ bool CheckOfferInputs(const CTransaction &tx,
 					else
 						return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
 				}
-				else {
+				else if(theOffer.linkWhitelist.entries.empty()){
+					if(!IsAliasOp(prevAliasOp))
+						return error("CheckOfferInputs(): failed to read alias input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -863,6 +868,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
 				}
 				else {
+					if(!IsAliasOp(prevAliasOp))
+						return error("CheckOfferInputs(): failed to read alias input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -961,25 +968,25 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!vtxPos.empty())
 					{
 						const COffer& dbOffer = vtxPos.back();
-						// if updating whitelist  you cant update the cert you are selling, they are mutually exclusive changes since they both pass in a cert input
-						// i have no way of knowing the intention of that input without looking at whitelist size
-						// which if non empty is adding or removing from list and attaching cert input
-						if(theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty())
-							theOffer.vchCert = dbOffer.vchCert;
-						
-						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
-						theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
-						// btc setting cannot change on update
-						theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
-						// currency cannot change after creation
-						theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
-						// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
-						if(serializedOffer.sCategory.empty())
-							theOffer.sCategory = dbOffer.sCategory;
-						if(serializedOffer.sTitle.empty())
-							theOffer.sTitle = dbOffer.sTitle;
-						if(serializedOffer.sDescription.empty())
-							theOffer.sDescription = dbOffer.sDescription;
+						// if updating whitelist, we dont allow updating any offer details
+						if(theOffer.linkWhitelist.entries.size() > 0)
+							theOffer = dbOffer;
+						else
+						{
+							// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
+							theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
+							// btc setting cannot change on update
+							theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
+							// currency cannot change after creation
+							theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
+							// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
+							if(serializedOffer.sCategory.empty())
+								theOffer.sCategory = dbOffer.sCategory;
+							if(serializedOffer.sTitle.empty())
+								theOffer.sTitle = dbOffer.sTitle;
+							if(serializedOffer.sDescription.empty())
+								theOffer.sDescription = dbOffer.sDescription;
+						}
 					}
 					if(!theOffer.vchCert.empty())						
 						theOffer.nQty = 1;
