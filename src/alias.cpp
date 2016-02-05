@@ -446,7 +446,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		// unserialize alias from txn, check for valid
 		CAliasIndex theAlias(tx);
 		// we need to check for cert update specially because an alias update without data is sent along with offers linked with the alias
-		if (theAlias.IsNull()  && op != OP_ALIAS_UPDATE)
+		if (theAlias.IsNull() && op != OP_ALIAS_UPDATE)
 			return error("CheckAliasInputs() : null alias");
 		if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
 		{

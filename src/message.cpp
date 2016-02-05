@@ -399,17 +399,16 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	if (wtxAliasIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
 	vchFromPubKey = alias.vchPubKey;
-	CPubKey currentAliasKey(alias.vchPubKey);
 	CScript scriptPubKeyOrig, scriptPubKeyAliasOrig, scriptPubKey, scriptPubKeyAlias;
-	scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchFromString(strFromAddress) << OP_2DROP;
-	scriptPubKeyAlias += scriptPubKeyAliasOrig;	
-	CPubKey PubKey = CPubKey(vchFromPubKey);
-	if(!PubKey.IsValid())
+
+	CPubKey FromPubKey = CPubKey(vchFromPubKey);
+	if(!FromPubKey.IsValid())
 	{
 		throw runtime_error("Invalid sending public key");
 	}
-	
+	scriptPubKeyAliasOrig = GetScriptForDestination(FromPubKey.GetID());
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchFromString(strFromAddress) << OP_2DROP;
+	scriptPubKeyAlias += scriptPubKeyAliasOrig;		
 
 
 	toAddress = CSyscoinAddress(strToAddress);
@@ -426,8 +425,8 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("no result returned");
 	alias = vtxAliasPos.back();
 	vchToPubKey = alias.vchPubKey;
-	PubKey = CPubKey(vchToPubKey);
-	if(!PubKey.IsValid())
+	CPubKey ToPubKey = CPubKey(vchToPubKey);
+	if(!ToPubKey.IsValid())
 	{
 		throw runtime_error("Invalid recv public key");
 	}
@@ -444,9 +443,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 
     // this is a syscoin transaction
     CWalletTx wtx;
-
-	
-	scriptPubKeyOrig= GetScriptForDestination(toAddress.Get());
+	scriptPubKeyOrig= GetScriptForDestination(ToPubKey.GetID());
 	scriptPubKey << CScript::EncodeOP_N(OP_MESSAGE_ACTIVATE) << vchMessage << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
