@@ -463,16 +463,15 @@ bool CheckAliasInputs(const CTransaction &tx,
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
 		switch (op) {
-		case OP_ALIAS_UPDATE:
-
-			if (!IsAliasOp(prevOp))
-				return error("aliasupdate previous tx not found");
-			// Check name
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckAliasInputs() : aliasupdate alias mismatch");
-
-			break;
-
+			case OP_ALIAS_ACTIVATE:
+				break;
+			case OP_ALIAS_UPDATE:
+				if (!IsAliasOp(prevOp))
+					return error("aliasupdate previous tx not found");
+				// Check name
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckAliasInputs() : aliasupdate alias mismatch");
+				break;
 		default:
 			return error(
 					"CheckAliasInputs() : alias transaction has unknown op");
