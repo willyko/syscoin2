@@ -1763,7 +1763,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CTransaction txCert;
 	CCert theCert;
 	CWalletTx wtx;
-	const CWalletTx* wtxIn;
+	const CWalletTx* wtxIn = NULL;
 	const CWalletTx *wtxCertIn = NULL;
 	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		throw runtime_error("could not find a certificate with this key");
@@ -1785,8 +1785,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
 	// this is a syscoind txn
-	CWalletTx wtx;
-	const CWalletTx* wtxIn;
+
 
 	EnsureWalletIsUnlocked();
 
@@ -1819,7 +1818,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	// create OFFERUPDATE txn keys
-	CScript scriptPubKey;
+
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
