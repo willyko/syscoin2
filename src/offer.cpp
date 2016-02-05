@@ -672,10 +672,13 @@ bool CheckOfferInputs(const CTransaction &tx,
 		CTransaction linkedTx;
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
-			if (foundOffer || (foundCert && !IsCertOp(prevCertOp)) )
-				return error("CheckOfferInputs() :offeractivate previous op is invalid");		
+		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
-				return error("CheckOfferInputs() : you must own a cert you wish to sell");			
+				return error("CheckOfferInputs() : you must own a cert you wish to sell");
+			if (!IsAliasOp(prevAliasOp) && !IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : inputs invalid, need either alias or cert input");
+			if (IsAliasOp(prevAliasOp) && !theOffer.vchCert.empty())
+				return error("CheckOfferInputs() : cant use alias input if selling a cert");
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block
@@ -696,8 +699,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
 				}	
 				else {
-					if(!IsAliasOp(prevAliasOp))
-						return error("CheckOfferInputs(): alias not provided as input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -731,6 +732,18 @@ bool CheckOfferInputs(const CTransaction &tx,
 			}
 			break;
 		case OP_OFFER_UPDATE:
+			if (!IsOfferOp(prevOfferOp) )
+				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
+			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
+			if (!IsAliasOp(prevAliasOp) && !IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : inputs invalid, need either alias or cert input");
+			if (IsAliasOp(prevAliasOp) && !theOffer.vchCert.empty())
+				return error("CheckOfferInputs() : cant use alias input if updating a cert offer");
+			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer whitelist entry guid mismatch");
 			if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
 				return error("offerupdate previous op is invalid");			
 			if (vvchPrevArgs[0] != vvchArgs[0])
@@ -752,8 +765,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
 				}
 				else {
-					if(!IsAliasOp(prevAliasOp))
-						return error("CheckOfferInputs(): alias not provided as input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -795,10 +806,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 			}
 			break;
 		case OP_OFFER_ACCEPT:
+			if (!IsAliasOp(prevAliasOp) && !IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : inputs invalid, need either alias or cert input");
 			if (foundOffer || (foundEscrow && !IsEscrowOp(prevEscrowOp)) || (foundCert && !IsCertOp(prevCertOp)))
 				return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
-			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
-				return error("CheckOfferInputs() : cert input and offer cerp guid mismatch");
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("offeraccept tx with guid too big");
 			// check for existence of offeraccept in txn offer obj
@@ -852,8 +863,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
 				}
 				else {
-					if(!IsAliasOp(prevAliasOp))
-						return error("CheckOfferInputs(): alias not provided as input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckOfferInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)
@@ -952,6 +961,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!vtxPos.empty())
 					{
 						const COffer& dbOffer = vtxPos.back();
+						// if updating whitelist  you cant update the cert you are selling, they are mutually exclusive changes since they both pass in a cert input
+						// i have no way of knowing the intention of that input without looking at whitelist size
+						// which if non empty is adding or removing from list and attaching cert input
+						if(theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty())
+							theOffer.vchCert = dbOffer.vchCert;
+						
 						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
 						theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
 						// btc setting cannot change on update
@@ -1719,9 +1734,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(recipient);
 	CRecipient certRecipient;
 	CreateRecipient(scriptPubKeyCert, certRecipient);
-	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
-	if(wtxCertIn != NULL)
-		vecSend.push_back(certRecipient);
+	vecSend.push_back(certRecipient);
 	
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
@@ -1747,13 +1760,33 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	vector<unsigned char> vchCert = vchFromValue(params[1]);
 
-
+	CTransaction txCert;
 	CCert theCert;
+	CWalletTx wtx;
+	const CWalletTx* wtxIn;
+	const CWalletTx *wtxCertIn = NULL;
+	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
+		throw runtime_error("could not find a certificate with this key");
+    // check for existing cert 's
+	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		throw runtime_error("there are pending operations on that cert");
+	}
+	// this is a syscoin txn
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
+	// create OFFERUPDATE/CERTUPDATE txn keys
+	CScript scriptPubKey, scriptPubKeyCert;
+	// check to see if certificate in wallet
+	wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
+	if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
+		throw runtime_error("this certificate is not yours");
 
+	CPubKey currentCertKey(theCert.vchPubKey);
+	scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
+	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
+	scriptPubKeyCert += scriptPubKeyCertOrig;
 	// this is a syscoind txn
 	CWalletTx wtx;
 	const CWalletTx* wtxIn;
-	CScript scriptPubKeyOrig;
 
 	EnsureWalletIsUnlocked();
 
@@ -1798,16 +1831,18 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
+	CRecipient certRecipient;
+	CreateRecipient(scriptPubKeyCert, certRecipient);
+	vecSend.push_back(certRecipient);
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
 	CRecipient fee;
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
-	const CWalletTx * wtxInCert=NULL;
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxInCert, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxCertIn, wtxInAlias, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

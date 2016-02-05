@@ -294,11 +294,11 @@ bool CheckMessageInputs(const CTransaction &tx,
 		}
 		if(op == OP_MESSAGE_ACTIVATE)
 		{
+			if(!IsAliasOp(prevAliasOp))
+				return error("CheckMessageInputs(): alias not provided as input");
 			if(fJustCheck && !fBlock)
 			{
 				vector<CAliasIndex> vtxPos;
-				if(!IsAliasOp(prevAliasOp))
-					return error("CheckMessageInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
 					return error("CheckMessageInputs(): failed to read alias from alias DB");
 				if (vtxPos.size() < 1)

@@ -325,10 +325,10 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		vector<CAliasIndex> vtxAliasPos;
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckEscrowInputs(): alias not provided as input");
 				if(fJustCheck && !fBlock)
 				{
-					if(!IsAliasOp(prevAliasOp))
-						return error("CheckEscrowInputs(): alias not provided as input");
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 						return error("CheckEscrowInputs(): failed to read alias from alias DB");
 					if (vtxAliasPos.size() < 1)

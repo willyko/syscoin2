@@ -332,10 +332,10 @@ bool CheckCertInputs(const CTransaction &tx,
 			if (foundCert)
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+			if(!IsAliasOp(prevAliasOp))
+				return error("CheckCertInputs(): alias not provided as input");
 			if(fJustCheck && !fBlock)
 			{
-				if(!IsAliasOp(prevAliasOp))
-					return error("CheckCertInputs(): alias not provided as input");
 				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxAliasPos))
 					return error("CheckCertInputs(): failed to read alias from alias DB");
 				if (vtxAliasPos.size() < 1)
