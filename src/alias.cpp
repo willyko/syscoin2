@@ -463,10 +463,6 @@ bool CheckAliasInputs(const CTransaction &tx,
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
 		switch (op) {
-
-		case OP_ALIAS_ACTIVATE:
-			break;
-
 		case OP_ALIAS_UPDATE:
 
 			if (!IsAliasOp(prevOp))
