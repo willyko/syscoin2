@@ -511,6 +511,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 				TRY_LOCK(cs_main, cs_trymain);
 				CPubKey PubKey(theAlias.vchPubKey);
 				CSyscoinAddress address(PubKey.GetID());
+				LogPrintf("theAlias.vchPubKey %s vtxPos.back() %s address %s\n", HexStr(theAlias.vchPubKey).c_str(), HexStr(vtxPos.back().vchPubKey).c_str(), address.ToString().c_str());
 				if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
 					return error( "CheckAliasInputs() :  failed to write to alias DB");
 				if(fDebug)
