@@ -69,7 +69,7 @@ public:
 
     void refreshOfferTable(OfferAcceptModelType type)
     {
-		LogPrintf("refreshOfferTable2a\n");
+		qDebug() <<"refreshOfferTable2a";
         cachedOfferTable.clear();
         {
 			string strMethod = string("offeracceptlist");
@@ -146,19 +146,19 @@ public:
 			}
 			catch (UniValue& objError)
 			{
-				LogPrintf("refreshOfferTable2b\n");
+				qDebug() <<"refreshOfferTable2b";
 				return;
 			}
 			catch(std::exception& e)
 			{
-				LogPrintf("refreshOfferTable2c\n");
+				qDebug() <<"refreshOfferTable2c";
 				return;
 			}         
          }
         
         // qLowerBound() and qUpperBound() require our cachedOfferTable list to be sorted in asc order
         qSort(cachedOfferTable.begin(), cachedOfferTable.end(), OfferAcceptTableEntryLessThan());
-    LogPrintf("refreshOfferTable2d\n");
+    qDebug() <<"refreshOfferTable2d";
 	}
 
     void updateEntry(const QString &offer, const QString &guid, const QString &title, const QString &height,const QString &price, const QString &currency,const QString &qty,const QString &total, const QString &alias, const QString &status,  const QString &buyer, OfferAcceptModelType type, int statusi)
