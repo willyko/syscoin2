@@ -2639,7 +2639,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
     vector<unsigned char> vchOffer;
 	vector<unsigned char> vchOfferToFind;
-
+	LogPrintf("offeracceptlist\n");
     if (params.size() == 1)
         vchOfferToFind = vchFromValue(params[0]);
     map< vector<unsigned char>, int > vNamesI;
@@ -2670,6 +2670,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
             	|| !IsOfferOp(op) 
             	|| (op != OP_OFFER_ACCEPT && op != OP_OFFER_REFUND))
                 continue;
+			LogPrintf("1\n");
 			if(vvch[0] != vchOfferToFind && !vchOfferToFind.empty())
 				continue;
             vchOffer = vvch[0];
@@ -2683,13 +2684,16 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
 			if(!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))	
 				continue;
+			LogPrintf("2\n");
 			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, acceptTx))
 				continue;
+			LogPrintf("3\n");
 			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
 				continue;
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
 				continue;
+			LogPrintf("4\n");
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
@@ -2702,11 +2706,11 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CPubKey SellerPubKey(theOffer.vchPubKey);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
-
+LogPrintf("5\n");
 			CPubKey BuyerPubKey(theOfferAccept.vchBuyerKey);
 			CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
 			buyeraddy = CSyscoinAddress(buyeraddy.ToString());
-
+LogPrintf("6\n");
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyer", buyeraddy.aliasName));
 			oOfferAccept.push_back(Pair("height", sHeight));
@@ -2714,17 +2718,20 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
 			vector<unsigned char> vchEscrowLink;
-			
+			LogPrintf("7\n");
 			if(IsSyscoinTxMine(offerTx)) 
 			{
 				vector<unsigned char> vchOfferLink;
 				bool foundOffer = false;
 				bool foundEscrow = false;
+				LogPrintf("8\n");
 				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
 					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
+					LogPrintf("9\n");
 					GetPreviousInput(prevOutput, opIn, vvchIn);
+					LogPrintf("10\n");
 					if(foundOffer && foundEscrow)
 						break;
 
@@ -2740,6 +2747,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				if(foundOffer)
 					theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
 			}
+			LogPrintf("11\n");
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
@@ -2758,15 +2766,17 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			else { 
 				oOfferAccept.push_back(Pair("status", "refunded"));
 			}
-			
+			LogPrintf("12\n");
 			
 			string strMessage = string("");
 			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
-			oRes.push_back(oOfferAccept);	
+			oRes.push_back(oOfferAccept);
+			LogPrintf("13\n");
         }
 		vNamesI.clear();
+		LogPrintf("14\n");
        BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
         {
 			UniValue oOfferAccept(UniValue::VOBJ);
@@ -2881,6 +2891,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oRes.push_back(oOfferAccept);	
         }
     }
+	LogPrintf("15\n");
 
     return oRes;
 }
