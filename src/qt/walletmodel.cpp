@@ -204,41 +204,41 @@ void WalletModel::updateAddressBook(const QString &address, const QString &label
 }
 // SYSCOIN
 void WalletModel::updateAlias() {
-	LogPrintf("updateAlias\n");
+	qDebug << "updateAlias";
 	if (aliasTableModelMine)
 		aliasTableModelMine->refreshAliasTable();
-	LogPrintf("updateAlias1\n");
+	qDebug << "updateAlias1";
 }
 
 void WalletModel::updateCert() {
-	LogPrintf("updateCert\n");
+	qDebug << "updateCert";
 	if (certTableModelMine)
 		certTableModelMine->refreshCertTable();
-	LogPrintf("updateCert1\n");
+	qDebug << "updateCert1";
 }
 void WalletModel::updateMessage() {
-	LogPrintf("updatemsg\n");
+	qDebug << "updateMessage";
 	if (inMessageTableModel)
 		inMessageTableModel->refreshMessageTable();
 	if (outMessageTableModel)
 		outMessageTableModel->refreshMessageTable();
-	LogPrintf("updatemsg1\n");
+	qDebug << "updateMessage1";
 }
 void WalletModel::updateEscrow() {
-	LogPrintf("updateescrow\n");
+	qDebug << "updateEscrow";
 	if (escrowTableModelMine)
 		escrowTableModelMine->refreshEscrowTable();
-	LogPrintf("updateescrow1\n");
+	qDebug << "updateEscrow1";
 }
 void WalletModel::updateOffer() {
-	LogPrintf("updateOffer\n");
+	qDebug << "updateOffer";
 	if (offerTableModelMine)
 		offerTableModelMine->refreshOfferTable();
 	if (offerTableModelAccept)
 		offerTableModelAccept->refreshOfferTable();
 	if (offerTableModelMyAccept)
 		offerTableModelMyAccept->refreshOfferTable();
-	LogPrintf("updateOffer1\n");
+	qDebug << "updateOffer1";
 }
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)
 {
