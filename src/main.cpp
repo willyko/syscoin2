@@ -1742,9 +1742,10 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 		// SYSCOIN check inputs
 		vector<vector<unsigned char> > vvchArgs;
 		int op;
-		int nOut;
+		int nOut;	
 		if(tx.nVersion == SYSCOIN_TX_VERSION)
 		{
+			LogPrintf("checkinputs\n");
 			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
 			{
 				if (!CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
@@ -1770,6 +1771,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 				if (!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
 					return false;			
 			}
+			LogPrintf("checkinputs1\n");
 		}
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
@@ -2505,9 +2507,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 			nSysBlockTx++;
 			if(nSysBlockTx >= 5)
 			{
+				LogPrintf("gen\n");
 				int nOut = GetSyscoinDataOutput(tx);
 				if (nOut != -1)
 					nSysRegenFees += tx.vout[nOut].nValue*2;
+				LogPrintf("gen1\n");
 			}
 		}
         nInputs += tx.vin.size();

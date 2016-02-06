@@ -204,31 +204,41 @@ void WalletModel::updateAddressBook(const QString &address, const QString &label
 }
 // SYSCOIN
 void WalletModel::updateAlias() {
+	LogPrintf("updateAlias\n");
 	if (aliasTableModelMine)
 		aliasTableModelMine->refreshAliasTable();
+	LogPrintf("updateAlias1\n");
 }
 
 void WalletModel::updateCert() {
+	LogPrintf("updateCert\n");
 	if (certTableModelMine)
 		certTableModelMine->refreshCertTable();
+	LogPrintf("updateCert1\n");
 }
 void WalletModel::updateMessage() {
+	LogPrintf("updatemsg\n");
 	if (inMessageTableModel)
 		inMessageTableModel->refreshMessageTable();
 	if (outMessageTableModel)
 		outMessageTableModel->refreshMessageTable();
+	LogPrintf("updatemsg1\n");
 }
 void WalletModel::updateEscrow() {
+	LogPrintf("updateescrow\n");
 	if (escrowTableModelMine)
 		escrowTableModelMine->refreshEscrowTable();
+	LogPrintf("updateescrow1\n");
 }
 void WalletModel::updateOffer() {
+	LogPrintf("updateOffer\n");
 	if (offerTableModelMine)
 		offerTableModelMine->refreshOfferTable();
 	if (offerTableModelAccept)
 		offerTableModelAccept->refreshOfferTable();
 	if (offerTableModelMyAccept)
 		offerTableModelMyAccept->refreshOfferTable();
+	LogPrintf("updateOffer1\n");
 }
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)
 {
@@ -584,12 +594,10 @@ static void NotifyTransactionChanged(WalletModel *walletmodel, CWallet *wallet, 
 {
     QMetaObject::invokeMethod(walletmodel, "updateTransaction", Qt::QueuedConnection);
     // SYSCOIN
-	qDebug() << "NotifyKeyStoreStatusChanged start";
     std::map<uint256, CWalletTx>::iterator mi = wallet->mapWallet.find(hash);
     bool inWallet = mi != wallet->mapWallet.end();
 	if(inWallet)
 		NotifySyscoinTransactionChanged(walletmodel, mi->second, status);
-	qDebug() << "NotifyKeyStoreStatusChanged end";
 }
 
 static void ShowProgress(WalletModel *walletmodel, const std::string &title, int nProgress)
