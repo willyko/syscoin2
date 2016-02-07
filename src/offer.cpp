@@ -576,8 +576,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 				inputs.GetCoins(prevOutput->hash, prevCoins);
 				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
-			else
-				GetPreviousInput(prevOutput, op, vvch);
+			else if(!GetPreviousInput(prevOutput, op, vvch))
+				continue;
 
 			if(foundEscrow && foundOffer && foundCert)
 				break;
@@ -2533,7 +2533,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
 					const COutPoint *prevOutput = &tx.vin[i].prevout;
-					GetPreviousInput(prevOutput, opIn, vvchIn);
+					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+						continue;
 					if(foundOffer)
 						break;
 
@@ -2730,7 +2731,8 @@ LogPrintf("6\n");
 					int opIn;
 					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
 					LogPrintf("9\n");
-					GetPreviousInput(prevOutput, opIn, vvchIn);
+					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+						continue;
 					LogPrintf("10\n");
 					if(foundOffer && foundEscrow)
 						break;
@@ -2857,7 +2859,8 @@ LogPrintf("6\n");
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
 					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
-					GetPreviousInput(prevOutput, opIn, vvchIn);
+					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+						continue;
 					if(foundEscrow)
 						break;
 

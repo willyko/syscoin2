@@ -421,8 +421,8 @@ bool CheckAliasInputs(const CTransaction &tx,
 				inputs.GetCoins(prevOutput->hash, prevCoins);
 				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
 			}
-			else
-				GetPreviousInput(prevOutput, op, vvch);
+			else if(!GetPreviousInput(prevOutput, op, vvch))
+				continue;
 			
 
 			if (IsAliasOp(op)) {
