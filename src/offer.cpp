@@ -2368,8 +2368,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!theOffer.vchCert.empty())
 	{
-		if (vchMessage.size() <= 0)
-			throw runtime_error("offeraccept message data cannot be empty!");
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
@@ -2379,6 +2377,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("Cannot purchase with this certificate, it may be expired!");
 		if (!IsSyscoinTxMine(txCert)) 
 			throw runtime_error("Cannot purchase with this certificate, it is not yours!");
+	}
+	else{
+		if (vchMessage.size() <= 0)
+			throw runtime_error("offeraccept message data cannot be empty!");
 	}
 	// create accept
 	COfferAccept txAccept;

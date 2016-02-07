@@ -448,9 +448,6 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // this is a syscoin transaction
     CWalletTx wtx;
 	EnsureWalletIsUnlocked();
-    //create escrowactivate txn keys
-    CPubKey newDefaultKey;
-    pwalletMain->GetKeyFromPool(newDefaultKey);
     CScript scriptPubKey,scriptSeller,scriptArbiter;
 
 	string strCipherText = "";
