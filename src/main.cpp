@@ -831,9 +831,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
    if(DecodeEscrowTx(tx, op, nOut, vvch)) 
    {
 	   found = true;
-	   if(op == OP_ESCROW_ACTIVATE)
-		   break;
 		switch (op) {	
+			case OP_ESCROW_ACTIVATE: 
+				break;
 			case OP_ESCROW_RELEASE: 
 			case OP_ESCROW_REFUND: 
 			case OP_ESCROW_COMPLETE: 
