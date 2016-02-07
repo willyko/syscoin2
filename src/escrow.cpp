@@ -448,7 +448,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // this is a syscoin transaction
     CWalletTx wtx;
 	EnsureWalletIsUnlocked();
-    CScript scriptPubKey,scriptSeller,scriptArbiter;
+    CScript scriptPubKeySeller, scriptPubKeyArbiter,scriptSeller,scriptArbiter;
 
 	string strCipherText = "";
 	// encrypt to offer owner
@@ -472,9 +472,10 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
-	scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
-	scriptPubKey += scriptSeller;
-	scriptPubKey += scriptArbiter;
+	scriptPubKeySeller << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
+	scriptPubKeyArbiter << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
+	scriptPubKeySeller += scriptSeller;
+	scriptPubKeyArbiter += scriptArbiter;
 
 	UniValue arrayParams(UniValue::VARR);
 	UniValue arrayOfKeys(UniValue::VARR);
@@ -535,9 +536,13 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.nHeight = chainActive.Tip()->nHeight;
 	// send the tranasction
 	vector<CRecipient> vecSend;
-	CRecipient recipient;
-	CreateRecipient(scriptPubKey, recipient);
-	vecSend.push_back(recipient);
+	CRecipient recipientArbiter;
+	CreateRecipient(scriptPubKeyArbiter, recipientArbiter);
+	vecSend.push_back(recipientArbiter);
+
+	CRecipient recipientSeller;
+	CreateRecipient(scriptPubKeySeller, recipientSeller);
+	vecSend.push_back(recipientSeller);
 
 	const vector<unsigned char> &data = newEscrow.Serialize();
 	CScript scriptData;
