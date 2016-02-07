@@ -5,7 +5,7 @@
 
 #include "wallet/wallet.h"
 #include "base58.h"
-#include <QDebug>
+
 #include <QFont>
 #include "rpcserver.h"
 using namespace std;
@@ -69,7 +69,6 @@ public:
 
     void refreshOfferTable(OfferModelType type)
     {
-		qDebug() <<"refreshOfferTable1a";
         cachedOfferTable.clear();
         {
 			string strMethod = string("offerlist");
@@ -184,19 +183,16 @@ public:
    			}
 			catch (UniValue& objError)
 			{
-				qDebug() <<"refreshOfferTable1b";
 				return;
 			}
 			catch(std::exception& e)
 			{
-				qDebug() <<"refreshOfferTable1c";
 				return;
 			}         
          }
         
         // qLowerBound() and qUpperBound() require our cachedOfferTable list to be sorted in asc order
         qSort(cachedOfferTable.begin(), cachedOfferTable.end(), OfferTableEntryLessThan());
-		qDebug() <<"refreshOfferTable1d";
     }
 
     void updateEntry(const QString &offer, const QString &cert, const QString &title,  const QString &description, const QString &category,const QString &price, const QString &currency,const QString &qty,const QString &expired, const QString &exclusive_resell, const QString &private_str, const QString &alias, const QString &acceptBTCOnly, OfferModelType type, int status)

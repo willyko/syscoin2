@@ -204,41 +204,31 @@ void WalletModel::updateAddressBook(const QString &address, const QString &label
 }
 // SYSCOIN
 void WalletModel::updateAlias() {
-	qDebug() << "updateAlias";
 	if (aliasTableModelMine)
 		aliasTableModelMine->refreshAliasTable();
-	qDebug() << "updateAlias1";
 }
 
 void WalletModel::updateCert() {
-	qDebug() << "updateCert";
 	if (certTableModelMine)
 		certTableModelMine->refreshCertTable();
-	qDebug() << "updateCert1";
 }
 void WalletModel::updateMessage() {
-	qDebug() << "updateMessage";
 	if (inMessageTableModel)
 		inMessageTableModel->refreshMessageTable();
 	if (outMessageTableModel)
 		outMessageTableModel->refreshMessageTable();
-	qDebug() << "updateMessage1";
 }
 void WalletModel::updateEscrow() {
-	qDebug() << "updateEscrow";
 	if (escrowTableModelMine)
 		escrowTableModelMine->refreshEscrowTable();
-	qDebug() << "updateEscrow1";
 }
 void WalletModel::updateOffer() {
-	qDebug() << "updateOffer";
 	if (offerTableModelMine)
 		offerTableModelMine->refreshOfferTable();
 	if (offerTableModelAccept)
 		offerTableModelAccept->refreshOfferTable();
 	if (offerTableModelMyAccept)
 		offerTableModelMyAccept->refreshOfferTable();
-	qDebug() << "updateOffer1";
 }
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)
 {
