@@ -716,7 +716,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		case OP_OFFER_UPDATE:
 			if (!IsOfferOp(prevOp) )
 				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
-			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
+			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
 			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
