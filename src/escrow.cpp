@@ -448,7 +448,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // this is a syscoin transaction
     CWalletTx wtx;
 	EnsureWalletIsUnlocked();
-    CScript scriptPubKeySeller, scriptPubKeyArbiter,scriptSeller,scriptArbiter;
+    CScript scriptPubKey, scriptPubKeySeller, scriptPubKeyArbiter,scriptSeller,scriptArbiter;
 
 	string strCipherText = "";
 	// encrypt to offer owner
@@ -506,6 +506,8 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 		vector<unsigned char> rsData(ParseHex(redeemScript_str));
 		scriptPubKey = CScript(rsData.begin(), rsData.end());
 	}
+	else
+		throw runtime_error("Could not create escrow transaction: could not find redeem script in response!");
 	// send to escrow address
 
 	int precision = 2;
