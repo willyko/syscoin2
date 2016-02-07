@@ -545,7 +545,7 @@ const string OfferNew(const string& node, const string& aliasname, const string&
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "false");
 	return guid;
 }
-const string EscrowNew(const string& node, const string& offerguid, const string& qty, const string& message, const string& arbiteralias)
+const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias)
 {
 	string otherNode1 = "node2";
 	string otherNode2 = "node3";
@@ -560,7 +560,7 @@ const string EscrowNew(const string& node, const string& offerguid, const string
 		otherNode2 = "node2";
 	}
 	UniValue r;
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrownew " + offerguid + " " + qty + " " + message + " " + arbiteralias));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrownew " + buyeralias + " " + offerguid + " " + qty + " " + message + " " + arbiteralias));
 	const UniValue &arr = r.get_array();
 	string guid = arr[1].get_str();
 	GenerateBlocks(10, node);
