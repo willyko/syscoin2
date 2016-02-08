@@ -824,25 +824,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     }
    if(DecodeCertTx(tx, op, nOut, vvch)
 	|| DecodeAliasTx(tx, op, nOut, vvch)
-	|| DecodeMessageTx(tx, op, nOut, vvch)) 
+	|| DecodeMessageTx(tx, op, nOut, vvch)
+	|| DecodeEscrowTx(tx, op, nOut, vvch)) 
    {
 	   found = true;
-   }
-   if(DecodeEscrowTx(tx, op, nOut, vvch)) 
-   {
-	   found = true;
-		switch (op) {	
-			case OP_ESCROW_ACTIVATE: 
-				break;
-			case OP_ESCROW_RELEASE: 
-			case OP_ESCROW_REFUND: 
-			case OP_ESCROW_COMPLETE: 
-				if (vvch[1].size() > MAX_NAME_LENGTH)
-					err = error("escrow tx with offer GUID too big");
-				break;
-			default:
-				break;
-        }
    }
    if(!found)
    {

@@ -214,9 +214,9 @@ bool DecodeEscrowScript(const CScript& script, int& op,
     pc--;
 
     if ((op == OP_ESCROW_ACTIVATE && vvch.size() == 1)
-        || (op == OP_ESCROW_RELEASE && vvch.size() == 2)
-        || (op == OP_ESCROW_REFUND && vvch.size() == 2)
-		|| (op == OP_ESCROW_COMPLETE && vvch.size() == 2))
+        || (op == OP_ESCROW_RELEASE && vvch.size() == 1)
+        || (op == OP_ESCROW_REFUND && vvch.size() == 1)
+		|| (op == OP_ESCROW_COMPLETE && vvch.size() == 1))
         return true;
 
     return false;
@@ -243,7 +243,31 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
 bool CheckEscrowInputs(const CTransaction &tx,
         CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
         bool fJustCheck, int nHeight, bool fRescan) {
+		bool fExternal = fInit || fRescan;
+		const COutPoint *prevOutput = NULL;
+		CCoins prevCoins;
+		int prevOp = 0;
+		vector<vector<unsigned char> > vvchPrevArgs;
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!fExternal)
+			{				
+				// ensure inputs are unspent when doing consensus check to add to block
+				inputs.GetCoins(prevOutput->hash, prevCoins);
+				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
+			}
+			else if(!GetPreviousInput(prevOutput, op, vvch))
+				continue;		
 
+			if (IsEscrowOp(op)) {
+				prevOp = op;
+				vvchPrevArgs = vvch;
+				break;
+			}
+		}
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
@@ -267,15 +291,15 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if(!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
 		{
 			return error("escrow buyer pub key invalid length");
 		}
-		if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
+		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
 		{
 			return error("escrow seller pub key invalid length");
 		}
-		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
+		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
 		{
 			return error("escrow arbiter pub key invalid length");
 		}
@@ -300,10 +324,25 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			case OP_ESCROW_ACTIVATE:
 				break;
 			case OP_ESCROW_RELEASE:
+				if(prevOp != OP_ESCROW_ACTIVATE)
+					return error("CheckEscrowInputs() : can only release an activated escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");				
+				break;
 			case OP_ESCROW_COMPLETE:
+				if(prevOp != OP_ESCROW_RELEASE)
+					return error("CheckEscrowInputs() : can only complete a released escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");
+				break;
 			case OP_ESCROW_REFUND:
-				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-					return error("escrow tx with offer GUID too long");
+				if(prevOp != OP_ESCROW_ACTIVATE)
+					return error("CheckEscrowInputs() : can only refund an activated escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");				
 				break;
 			default:
 				return error( "CheckEscrowInputs() : escrow transaction has unknown op");
@@ -448,7 +487,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     // this is a syscoin transaction
     CWalletTx wtx;
 	EnsureWalletIsUnlocked();
-    CScript scriptPubKey, scriptPubKeySeller, scriptPubKeyArbiter,scriptSeller,scriptArbiter;
+    CScript scriptPubKey, scriptPubKeyBuyer, scriptPubKeySeller, scriptPubKeyArbiter,scriptBuyer, scriptSeller,scriptArbiter;
 
 	string strCipherText = "";
 	// encrypt to offer owner
@@ -470,12 +509,16 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
 		throw runtime_error("Invalid seller alias or address");
 
+	CPubKey BuyerPubKey(alias.vchPubKey);
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
+	scripBuyer= GetScriptForDestination(BuyerPubKey.GetID());
+	scriptPubKeyBuyer << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
 	scriptPubKeySeller << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
 	scriptPubKeyArbiter << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
 	scriptPubKeySeller += scriptSeller;
 	scriptPubKeyArbiter += scriptArbiter;
+	scriptPubKeyBuyer += scriptBuyer;
 
 	UniValue arrayParams(UniValue::VARR);
 	UniValue arrayOfKeys(UniValue::VARR);
@@ -546,6 +589,11 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CreateRecipient(scriptPubKeySeller, recipientSeller);
 	vecSend.push_back(recipientSeller);
 
+
+	CRecipient recipientBuyer;
+	CreateRecipient(scriptPubKeyBuyer, recipientBuyer);
+	vecSend.push_back(recipientBuyer);
+
 	const vector<unsigned char> &data = newEscrow.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
@@ -557,7 +605,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	SendMoneySyscoin(vecSend, recipientArbiter.nAmount+recipientSeller.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend,recipientBuyer.nAmount, recipientArbiter.nAmount+recipientSeller.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -589,6 +637,9 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     	|| !IsEscrowOp(op) 
     	|| (op != OP_ESCROW_ACTIVATE))
         throw runtime_error("Release can only happen on an activated escrow address");
+	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+	if (wtxIn == NULL)
+		throw runtime_error("this escrow is not in your wallet");
 
     // unserialize escrow UniValue from txn
     CEscrow theEscrow;
@@ -734,15 +785,13 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	if (complete_value.isBool())
 		bComplete = complete_value.get_bool();
 
-	if(bComplete)
-		throw runtime_error("This is not a multisignature escrow!");
 	escrow.ClearEscrow();
 	escrow.rawTx = vchFromString(hex_str);
 	escrow.nHeight = chainActive.Tip()->nHeight;
 
     CScript scriptPubKey, scriptPubKeySeller;
 	scriptPubKeySeller= GetScriptForDestination(sellerKey.GetID());
-    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_RELEASE) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_RELEASE) << vchEscrow << OP_2DROP;
     scriptPubKey += scriptPubKeySeller;
 
 	vector<CRecipient> vecSend;
@@ -757,7 +806,10 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInCert=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxIn);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
@@ -984,26 +1036,16 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
 	uint256 hash;
-	bool foundEscrowRelease = false;
+    vector<vector<unsigned char> > vvch;
+    int op, nOut;
+    if (!DecodeEscrowTx(tx, op, nOut, vvch) 
+    	|| !IsEscrowOp(op) 
+    	|| (op != OP_ESCROW_RELEASE))
+        throw runtime_error("Can only complete an escrow that has been released to you");
+	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+	if (wtxIn == NULL)
+		throw runtime_error("this escrow is not in your wallet");
 	
-	BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
-		// get txn hash, read txn index
-		vector<vector<unsigned char> > vvch;
-		int op, nOut;
-		// skip non-syscoin txns
-		if (item.second.nVersion != SYSCOIN_TX_VERSION)
-			continue;
-		if (!DecodeEscrowTx(item.second, op, nOut, vvch) 
-    		|| !IsEscrowOp(op) 
-			|| vvch[0] != vchEscrow
-    		|| op != OP_ESCROW_RELEASE)
-			continue;
-		foundEscrowRelease = true;
-		break;
-	}
-    if (!foundEscrowRelease)
-        throw runtime_error("Can only complete an escrow that has been released to you and is not complete already");
-
       	// check for existing escrow 's
 	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
@@ -1046,7 +1088,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
     CScript scriptPubKey,scriptPubKeyOrig;
 	CPubKey currentKey(escrow.vchSellerKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
-    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << vchEscrow << OP_2DROP;
     scriptPubKey += scriptPubKeyOrig;
 
 	escrow.ClearEscrow();
@@ -1066,7 +1108,10 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
+	const CWalletTx * wtxInCert=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	const CWalletTx * wtxInOffer=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxIn);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
@@ -1097,8 +1142,10 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     	|| !IsEscrowOp(op) 
     	|| (op != OP_ESCROW_ACTIVATE))
         throw runtime_error("Refund can only happen on an activated escrow address");
-
-    // unserialize escrow UniValue from txn
+	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+	if (wtxIn == NULL)
+		throw runtime_error("this escrow is not in your wallet");
+    // unserialize escrow from txn
     CEscrow theEscrow;
     if(!theEscrow.UnserializeFromTx(tx))
         throw runtime_error("cannot unserialize escrow from txn");
@@ -1250,7 +1297,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
     CScript scriptPubKey, scriptPubKeyBuyer;
 	scriptPubKeyBuyer= GetScriptForDestination(buyerKey.GetID());
-    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_REFUND) << vchEscrow << escrow.vchOffer << OP_2DROP << OP_DROP;
+    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_REFUND) << vchEscrow << OP_2DROP;
     scriptPubKey += scriptPubKeyBuyer;
 	vector<CRecipient> vecSend;
 	CRecipient recipient;
@@ -1264,7 +1311,10 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInCert=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxIn);
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtx.GetHash().GetHex());
 	return ret;
