@@ -541,13 +541,12 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (!resCreate.isObject())
 		throw runtime_error("Could not create escrow transaction: Invalid response from createescrow!");
 	const UniValue &o = resCreate.get_obj();
-	string redeemScript_str = "";
+	vector<unsigned char> redeemScript;
 	const UniValue& redeemScript_value = find_value(o, "redeemScript");
 	if (redeemScript_value.isStr())
 	{
-		redeemScript_str = ParseHex(redeemScript_value.get_str());
-		vector<unsigned char> rsData(redeemScript_str);
-		scriptPubKey = CScript(rsData.begin(), rsData.end());
+		redeemScript = ParseHex(redeemScript_value.get_str());
+		scriptPubKey = CScript(redeemScript.begin(), redeemScript.end());
 	}
 	else
 		throw runtime_error("Could not create escrow transaction: could not find redeem script in response!");
@@ -571,7 +570,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     CEscrow newEscrow;
 	newEscrow.vchBuyerKey = alias.vchPubKey;
 	newEscrow.vchArbiterKey = vchArbiterPubKey;
-	newEscrow.vchRedeemScript = vchFromString(redeemScript_str);
+	newEscrow.vchRedeemScript = redeemScript;
 	newEscrow.vchOffer = vchOffer;
 	newEscrow.vchSellerKey = theOffer.vchPubKey;
 	newEscrow.vchPaymentMessage = vchFromString(strCipherText);
@@ -782,14 +781,14 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
-		hex_str = ParseHex(hex_value.get_str());
+		hex_str = hex_value.get_str();
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())
 		bComplete = complete_value.get_bool();
 
 	escrow.ClearEscrow();
-	escrow.rawTx = vchFromString(hex_str);
+	escrow.rawTx = ParseHex(hex_str);
 	escrow.nHeight = chainActive.Tip()->nHeight;
 
     CScript scriptPubKey, scriptPubKeySeller;
@@ -1289,7 +1288,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
-		hex_str = ParseHex(hex_value.get_str());
+		hex_str = hex_value.get_str();
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())
@@ -1300,7 +1299,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
 
 	escrow.ClearEscrow();
-	escrow.rawTx = vchFromString(hex_str);
+	escrow.rawTx = ParseHex(hex_str);
 	escrow.nHeight = chainActive.Tip()->nHeight;
 
 
