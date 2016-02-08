@@ -545,8 +545,8 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	const UniValue& redeemScript_value = find_value(o, "redeemScript");
 	if (redeemScript_value.isStr())
 	{
-		redeemScript_str = redeemScript_value.get_str();
-		vector<unsigned char> rsData(ParseHex(redeemScript_str));
+		redeemScript_str = ParseHex(redeemScript_value.get_str());
+		vector<unsigned char> rsData(redeemScript_str);
 		scriptPubKey = CScript(rsData.begin(), rsData.end());
 	}
 	else
@@ -759,7 +759,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	signUniValue.push_back(Pair("txid", escrow.escrowInputTxHash.ToString()));
 	signUniValue.push_back(Pair("vout", nOutMultiSig));
 	signUniValue.push_back(Pair("scriptPubKey", strEscrowScriptPubKey));
-	signUniValue.push_back(Pair("redeemScript", stringFromVch(escrow.vchRedeemScript)));
+	signUniValue.push_back(Pair("redeemScript", HexStr(escrow.vchRedeemScript)));
 	arraySignParams.push_back(createEscrowSpendingTx);
 	arraySignInputs.push_back(signUniValue);
 	arraySignParams.push_back(arraySignInputs);
@@ -772,7 +772,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	}
 	catch (UniValue& objError)
 	{
-		throw runtime_error(find_value(objError, "message").get_str());
+		throw runtime_error("Could not sign escrow transaction: " + find_value(objError, "message").get_str());
 	}	
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
@@ -782,7 +782,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
-		hex_str = hex_value.get_str();
+		hex_str = ParseHex(hex_value.get_str());
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())
@@ -862,7 +862,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	bool foundSellerPayment = false;
 	bool foundFeePayment = false;
 	UniValue arrayDecodeParams(UniValue::VARR);
-	arrayDecodeParams.push_back(stringFromVch(escrow.rawTx));
+	arrayDecodeParams.push_back(HexStr(escrow.rawTx));
 	UniValue decodeRes;
 	try
 	{
@@ -958,8 +958,8 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	signUniValue.push_back(Pair("txid", escrow.escrowInputTxHash.ToString()));
 	signUniValue.push_back(Pair("vout", nOutMultiSig));
 	signUniValue.push_back(Pair("scriptPubKey", strEscrowScriptPubKey));
-	signUniValue.push_back(Pair("redeemScript", stringFromVch(escrow.vchRedeemScript)));
-	arraySignParams.push_back(stringFromVch(escrow.rawTx));
+	signUniValue.push_back(Pair("redeemScript", HexStr(escrow.vchRedeemScript)));
+	arraySignParams.push_back(HexStr(escrow.rawTx));
 	arraySignInputs.push_back(signUniValue);
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
@@ -971,7 +971,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	}
 	catch (UniValue& objError)
 	{
-		throw runtime_error(find_value(objError, "message").get_str());
+		throw runtime_error("Could not sign escrow transaction: " + find_value(objError, "message").get_str());
 	}	
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
@@ -1265,7 +1265,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	signUniValue.push_back(Pair("txid", escrow.escrowInputTxHash.ToString()));
 	signUniValue.push_back(Pair("vout", nOutMultiSig));
 	signUniValue.push_back(Pair("scriptPubKey", strEscrowScriptPubKey));
-	signUniValue.push_back(Pair("redeemScript", stringFromVch(escrow.vchRedeemScript)));
+	signUniValue.push_back(Pair("redeemScript", HexStr(escrow.vchRedeemScript)));
 	arraySignParams.push_back(createEscrowSpendingTx);
 	arraySignInputs.push_back(signUniValue);
 	arraySignParams.push_back(arraySignInputs);
@@ -1278,7 +1278,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	}
 	catch (UniValue& objError)
 	{
-		throw runtime_error(find_value(objError, "message").get_str());
+		throw runtime_error("Could not sign escrow transaction: " + find_value(objError, "message").get_str());
 	}
 	
 	if (!res.isObject())
@@ -1289,7 +1289,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
-		hex_str = hex_value.get_str();
+		hex_str = ParseHex(hex_value.get_str());
 	const UniValue& complete_value = find_value(o, "complete");
 	bool bComplete = false;
 	if (complete_value.isBool())
@@ -1375,7 +1375,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	bool foundBuyerPayment = false;
 	UniValue arrayDecodeParams(UniValue::VARR);
 
-	arrayDecodeParams.push_back(stringFromVch(escrow.rawTx));
+	arrayDecodeParams.push_back(HexStr(escrow.rawTx));
 	UniValue decodeRes;
 	try
 	{
@@ -1455,8 +1455,8 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	signUniValue.push_back(Pair("txid", escrow.escrowInputTxHash.ToString()));
 	signUniValue.push_back(Pair("vout", nOutMultiSig));
 	signUniValue.push_back(Pair("scriptPubKey", strEscrowScriptPubKey));
-	signUniValue.push_back(Pair("redeemScript", stringFromVch(escrow.vchRedeemScript)));
-	arraySignParams.push_back(stringFromVch(escrow.rawTx));
+	signUniValue.push_back(Pair("redeemScript", HexStr(escrow.vchRedeemScript)));
+	arraySignParams.push_back(HexStr(escrow.rawTx));
 	arraySignInputs.push_back(signUniValue);
 	arraySignParams.push_back(arraySignInputs);
 	arrayPrivateKeys.push_back(strPrivateKey);
@@ -1468,7 +1468,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	}
 	catch (UniValue& objError)
 	{
-		throw runtime_error(find_value(objError, "message").get_str());
+		throw runtime_error("Could not sign escrow transaction: " + find_value(objError, "message").get_str());
 	}
 	if (!res.isObject())
 		throw runtime_error("Could not sign escrow transaction: Invalid response from signrawtransaction!");
@@ -1493,7 +1493,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	UniValue returnRes;
 	try
 	{
-		returnRes = tableRPC.execute("signrawtransaction", arraySignParams);
+		returnRes = tableRPC.execute("sendrawtransaction", arraySendParams);
 	}
 	catch (UniValue& objError)
 	{
