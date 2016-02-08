@@ -512,7 +512,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CPubKey BuyerPubKey(alias.vchPubKey);
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
-	scripBuyer= GetScriptForDestination(BuyerPubKey.GetID());
+	scriptBuyer= GetScriptForDestination(BuyerPubKey.GetID());
 	scriptPubKeyBuyer << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
 	scriptPubKeySeller << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
 	scriptPubKeyArbiter << CScript::EncodeOP_N(OP_ESCROW_ACTIVATE) << vchEscrow << OP_2DROP;
