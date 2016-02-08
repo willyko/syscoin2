@@ -656,22 +656,17 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
 	if(!arbiterAddress.IsValid())
 		throw runtime_error("Arbiter address is invalid!");
-	if(!arbiterAddress.isAlias)
-		throw runtime_error("Arbiter address is not an alias!");
 
 	CPubKey buyerKey(escrow.vchBuyerKey);
 	CSyscoinAddress buyerAddress(buyerKey.GetID());
 	if(!buyerAddress.IsValid())
 		throw runtime_error("Buyer address is invalid!");
-	if(!buyerAddress.isAlias)
-		throw runtime_error("Buyer address is not an alias!");
 	
 	CPubKey sellerKey(escrow.vchSellerKey);
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
-	if(!sellerAddress.IsValid())
-		throw runtime_error("Seller address is not an alias!");
+
 	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
