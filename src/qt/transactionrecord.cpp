@@ -95,11 +95,11 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 			sub.type = TransactionRecord::EscrowActivate;
 		break;
 	case OP_ESCROW_RELEASE:
-		if(type == SEND)
+		if(type == SEND  || type == RECV)
 			sub.type = TransactionRecord::EscrowRelease;
 		break;
 	case OP_ESCROW_COMPLETE:
-		if(type == SEND)
+		if(type == SEND || type == RECV)
 			sub.type = TransactionRecord::EscrowComplete;
 		break;
 	case OP_ESCROW_REFUND:

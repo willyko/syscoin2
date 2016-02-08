@@ -645,25 +645,33 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     CEscrow theEscrow;
     if(!theEscrow.UnserializeFromTx(tx))
         throw runtime_error("cannot unserialize escrow from txn");
+	vector<CEscrow> vtxPos;
+	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
+		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
-	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
+	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to escrow transaction");
 
 	CPubKey arbiterKey(escrow.vchArbiterKey);
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
 	if(!arbiterAddress.IsValid())
 		throw runtime_error("Arbiter address is invalid!");
+	if(!arbiterAddress.isAlias)
+		throw runtime_error("Arbiter address is not an alias!");
 
 	CPubKey buyerKey(escrow.vchBuyerKey);
 	CSyscoinAddress buyerAddress(buyerKey.GetID());
 	if(!buyerAddress.IsValid())
 		throw runtime_error("Buyer address is invalid!");
-
+	if(!buyerAddress.isAlias)
+		throw runtime_error("Buyer address is not an alias!");
 	
 	CPubKey sellerKey(escrow.vchSellerKey);
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
+	if(!sellerAddress.IsValid())
+		throw runtime_error("Seller address is not an alias!");
 	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
@@ -831,9 +839,12 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	CTransaction fundingTx;
-	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to read escrow transaction");
+	vector<CEscrow> vtxPos;
+	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
+		  throw runtime_error("failed to read from escrow DB");
+    CTransaction fundingTx;
+	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
+		throw runtime_error("failed to escrow transaction");
 
  	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
@@ -1149,8 +1160,11 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     CEscrow theEscrow;
     if(!theEscrow.UnserializeFromTx(tx))
         throw runtime_error("cannot unserialize escrow from txn");
+	vector<CEscrow> vtxPos;
+	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
+		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
-	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
+	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to escrow transaction");
 
 	CPubKey arbiterKey(escrow.vchArbiterKey);
@@ -1337,9 +1351,12 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
-	CTransaction fundingTx;
-	if (!GetSyscoinTransaction(escrow.nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to read escrow transaction");
+	vector<CEscrow> vtxPos;
+	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
+		  throw runtime_error("failed to read from escrow DB");
+    CTransaction fundingTx;
+	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
+		throw runtime_error("failed to escrow transaction");
 
  	int nOutMultiSig = 0;
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
