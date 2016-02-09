@@ -567,8 +567,8 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	// send to seller/arbiter so they can track the escrow through GUI
     // build escrow
     CEscrow newEscrow;
-	newEscrow.vchBuyerKey = alias.vchPubKey;
-	newEscrow.vchArbiterKey = vchArbiterPubKey;
+	newEscrow.vchBuyerKey = buyeralias.vchPubKey;
+	newEscrow.vchArbiterKey = arbiteralias.vchPubKey;
 	newEscrow.vchRedeemScript = redeemScript;
 	newEscrow.vchOffer = vchOffer;
 	newEscrow.vchSellerKey = theOffer.vchPubKey;
