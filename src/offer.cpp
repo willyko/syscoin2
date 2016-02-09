@@ -2227,7 +2227,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	// this is a syscoin txn
 	CWalletTx wtx;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig;
 
 	// generate offer accept identifier and hash
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
@@ -2236,7 +2236,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	// create OFFERACCEPT txn keys
 	CScript scriptPubKey;
-	CScript scriptPubKeyCert, scriptPubKeyAlias;
+	CScript scriptPubKeyEscrow, scriptPubKeyCert, scriptPubKeyAlias;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
 
 	EnsureWalletIsUnlocked();
@@ -2268,6 +2268,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
 				CEscrow fundingEscrow = escrowVtxPos.front();
 				nHeight = fundingEscrow.nHeight;
+				CPubKey currentEscrowKey(fundingEscrow.vchSellerKey);
+				scriptPubKeyEscrowOrig = GetScriptForDestination(currentEscrowKey.GetID());
+				scriptPubKeyEscrow << CScript::EncodeOP_N(OP_ESCROW_RELEASE) << escrowVvch[0] << OP_2DROP;
+				scriptPubKeyEscrow += scriptPubKeyEscrowOrig;
 			}
 		}	
 	}
@@ -2411,10 +2415,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CRecipient paymentRecipient = {scriptPubKey, nTotalValue, false};
 	CRecipient certRecipient;
 	CreateRecipient(scriptPubKeyCert, certRecipient);
-
+	CRecipient escrowRecipient;
+	CreateRecipient(scriptPubKeyEscrow, escrowRecipient);
 	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	if(wtxCertIn != NULL)
 		vecSend.push_back(certRecipient);
+
+	// if we are accepting an escrow transaction then create another escrow utxo for escrowcomplete to be able to do its thing
+	if (wtxEscrowIn != NULL) 
+		vecSend.push_back(escrowRecipient);
 
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
