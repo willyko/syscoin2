@@ -312,7 +312,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
         // unserialize escrow UniValue from txn, check for valid
         CEscrow theEscrow;
         theEscrow.UnserializeFromTx(tx);
-        if (theEscrow.IsNull())
+        if (theEscrow.IsNull() && op != OP_ESCROW_RELEASE)
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
@@ -394,11 +394,14 @@ bool CheckEscrowInputs(const CTransaction &tx,
 					if(!vtxPos.empty())
 					{
 						theEscrow = vtxPos.back();
-						// these are the only settings allowed to change outside of activate
-						if(!serializedEscrow.rawTx.empty())
-							theEscrow.rawTx = serializedEscrow.rawTx;
-						if(!serializedEscrow.vchOfferAcceptLink.empty())
-							theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;
+						if(!theEscrow.IsNull())
+						{
+							// these are the only settings allowed to change outside of activate
+							if(!serializedEscrow.rawTx.empty())
+								theEscrow.rawTx = serializedEscrow.rawTx;
+							if(!serializedEscrow.vchOfferAcceptLink.empty())
+								theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;
+						}
 					}
 				}
                 // set the escrow's txn-dependent values
