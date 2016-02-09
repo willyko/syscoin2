@@ -2212,12 +2212,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-    if(!IsSyscoinTxMine(aliastx)) {
-		throw runtime_error("This alias is not yours.");
-    }
-	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
-	if (wtxAliasIn == NULL)
-		throw runtime_error("this alias is not in your wallet");
+    if (vchEscrowTxHash.empty())
+	{
+		if(!IsSyscoinTxMine(aliastx)) {
+			throw runtime_error("This alias is not yours.");
+		}
+		const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
+		if (wtxAliasIn == NULL)
+			throw runtime_error("this alias is not in your wallet");
+	}
 	vchPubKey = alias.vchPubKey;
 
 

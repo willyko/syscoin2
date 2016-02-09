@@ -1068,6 +1068,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	acceptParams.push_back(stringFromVch(escrow.vchPaymentMessage));
 	acceptParams.push_back("");
 	acceptParams.push_back("");
+	acceptParams.push_back("");
 	acceptParams.push_back(tx.GetHash().GetHex());
 
 	UniValue res;
