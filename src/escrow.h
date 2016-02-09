@@ -26,7 +26,6 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn);
 
 class CEscrow {
 public:
-	std::vector<unsigned char> vchBuyerKey;
 	std::vector<unsigned char> vchSellerKey;
 	std::vector<unsigned char> vchArbiterKey;
 	std::vector<unsigned char> vchRedeemScript;
@@ -34,6 +33,7 @@ public:
 	std::vector<unsigned char> vchPaymentMessage;
 	std::vector<unsigned char> rawTx;
 	std::vector<unsigned char> vchOfferAcceptLink;
+	std::vector<unsigned char> vchBuyerKey;
 	
     uint256 txHash;
 	uint256 escrowInputTxHash;
@@ -42,6 +42,7 @@ public:
 	int64_t nPricePerUnit;
 	void ClearEscrow()
 	{
+		vchBuyerKey.clear();
 		vchRedeemScript.clear();
 		vchOffer.clear();
 		vchPaymentMessage.clear();
@@ -57,7 +58,6 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(vchBuyerKey);
 		READWRITE(vchSellerKey);
 		READWRITE(vchArbiterKey);
 		READWRITE(vchRedeemScript);
@@ -70,8 +70,7 @@ public:
 		READWRITE(VARINT(nHeight));
 		READWRITE(VARINT(nQty));
 		READWRITE(VARINT(nPricePerUnit));
-		
-		
+        READWRITE(vchBuyerKey);	
 	}
 
     friend bool operator==(const CEscrow &a, const CEscrow &b) {
