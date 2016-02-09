@@ -707,7 +707,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 			throw runtime_error("Buyer or Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw runtime_error("Buyer or Arbiter private keys not known");
+			throw runtime_error("Buyer(" + HexStr(escrow.vchBuyerKey) + " }or Arbiter(" + HexStr(escrow.vchArbiterKey) + ") private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
      	// check for existing escrow 's
