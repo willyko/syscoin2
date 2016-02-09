@@ -316,7 +316,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if((!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+		if(!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
 		{
 			return error("escrow buyer pub key invalid length");
 		}
@@ -423,8 +423,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
                         tx.GetHash().ToString().c_str(),
                         nHeight);
 				}
-            }
-            
+			}
         }
     }
     return true;
@@ -1609,27 +1608,28 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
         // get txn hash, read txn index
         hash = item.second.GetHash();
 		const CWalletTx &wtx = item.second;        // skip non-syscoin txns
+		CTransaction tx;
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
-		vchName = vvch[0];
-		vector<CEscrow> vtxPos;
-		if (!pescrowdb->ReadEscrow(vchName, vtxPos) || vtxPos.empty())
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+		if (!DecodeEscrowTx(wtx, op, nOut, vvch) || !IsEscrowOp(op))
 			continue;
-		CEscrow escrow = vtxPos.back();
+		vchName = vvch[0];
+
+		CEscrow escrow;
+		if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
+			escrow, tx))
+			continue;
+
+		if (!DecodeEscrowTx(tx, op, nOut, vvch) || !IsEscrowOp(op))
+			continue;
+
 		// skip this escrow if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 			continue;
 		// get last active name only
 		if (vNamesI.find(vchName) != vNamesI.end() && (escrow.nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
-			continue;
-
-		if (!GetSyscoinTransaction(escrow.nHeight, escrow.txHash, tx, Params().GetConsensus()))
-			continue;
-
-		// decode txn, skip non-alias txns
-		vector<vector<unsigned char> > vvch;
-		int op, nOut;
-		if (!DecodeEscrowTx(tx, op, nOut, vvch) || !IsEscrowOp(op))
 			continue;
 
 		nHeight = escrow.nHeight;
