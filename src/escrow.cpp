@@ -524,9 +524,9 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 
 	// standard 2 of 3 multisig
 	arrayParams.push_back(2);
-	arrayOfKeys.push_back(HexStr(vchArbiterPubKey));
+	arrayOfKeys.push_back(HexStr(arbiteralias.vchPubKey));
 	arrayOfKeys.push_back(HexStr(theOffer.vchPubKey));
-	arrayOfKeys.push_back(HexStr(alias.vchPubKey));
+	arrayOfKeys.push_back(HexStr(buyeralias.vchPubKey));
 	arrayParams.push_back(arrayOfKeys);
 	UniValue resCreate;
 	try
