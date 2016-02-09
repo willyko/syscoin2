@@ -35,7 +35,7 @@ using namespace std;
 extern int IndexOfOfferOutput(const CTransaction& tx);
 extern int IndexOfCertOutput(const CTransaction& tx);
 extern int IndexOfAliasOutput(const CTransaction& tx);
-extern int IndexOfEscrowOutput(const CTransaction& tx);
+extern int IndexOfMyEscrowOutput(const CTransaction& tx);
 extern bool IsSyscoinScript(const CScript& scriptPubKey, int &op, vector<vector<unsigned char> > &vvchArgs);
 extern int GetSyscoinTxVersion();
 extern vector<unsigned char> vchFromString(const string &str);
