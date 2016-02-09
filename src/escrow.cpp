@@ -806,10 +806,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
 		hex_str = hex_value.get_str();
-	const UniValue& complete_value = find_value(o, "complete");
-	bool bComplete = false;
-	if (complete_value.isBool())
-		bComplete = complete_value.get_bool();
+
 
 	escrow.ClearEscrow();
 	escrow.rawTx = ParseHex(hex_str);
@@ -1314,14 +1311,6 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	const UniValue& hex_value = find_value(o, "hex");
 	if (hex_value.isStr())
 		hex_str = hex_value.get_str();
-	const UniValue& complete_value = find_value(o, "complete");
-	bool bComplete = false;
-	if (complete_value.isBool())
-		bComplete = complete_value.get_bool();
-
-	if(bComplete)
-		throw runtime_error("This is not a multisignature escrow!");
-
 
 	escrow.ClearEscrow();
 	escrow.rawTx = ParseHex(hex_str);
