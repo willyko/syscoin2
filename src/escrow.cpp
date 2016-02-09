@@ -320,11 +320,11 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		{
 			return error("escrow buyer pub key invalid length");
 		}
-		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
+		if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
 		{
 			return error("escrow seller pub key invalid length");
 		}
-		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
+		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
 		{
 			return error("escrow arbiter pub key invalid length");
 		}
