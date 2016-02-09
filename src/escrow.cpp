@@ -1618,7 +1618,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		vchName = vvch[0];
 
 		CEscrow escrow;
-		if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
+		if (!GetTxOfEscrow(*pescrowdb, vchName, 
 			escrow, tx))
 			continue;
 
