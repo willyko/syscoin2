@@ -138,7 +138,16 @@ int IndexOfEscrowOutput(const CTransaction& tx) {
 		return -1;
     return nOut;
 }
-
+int IndexOfMyEscrowOutput(const CTransaction& tx) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return -1;
+    vector<vector<unsigned char> > vvch;
+    int op, nOut;
+	bool good = DecodeMyEscrowTx(tx, op, nOut, vvch);
+	if (!good)
+		return -1;
+    return nOut;
+}
 bool GetTxOfEscrow(CEscrowDB& dbEscrow, const vector<unsigned char> &vchEscrow,
         CEscrow& txPos, CTransaction& tx) {
     vector<CEscrow> vtxPos;
@@ -165,6 +174,24 @@ bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
 	bool decode = DecodeEscrowTx(tx, op, nOut, vvch);
 	bool parse = escrow.UnserializeFromTx(tx);
 	return decode && parse;
+}
+bool DecodeMyEscrowTx(const CTransaction& tx, int& op, int& nOut,
+        vector<vector<unsigned char> >& vvch) {
+    bool found = false;
+	if(!pwalletMain)
+		return false;
+
+    // Strict check - bug disallowed
+    for (unsigned int i = 0; i < tx.vout.size(); i++) {
+        const CTxOut& out = tx.vout[i];
+        vector<vector<unsigned char> > vvchRead;
+        if (pwalletMain->IsMine(out) && DecodeEscrowScript(out.scriptPubKey, op, vvchRead)) {
+            nOut = i; found = true; vvch = vvchRead;
+            break;
+        }
+    }
+	if (!found) vvch.clear();
+    return found && IsEscrowOp(op);
 }
 bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut,
         vector<vector<unsigned char> >& vvch) {

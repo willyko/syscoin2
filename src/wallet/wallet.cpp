@@ -1926,7 +1926,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 	if(wtxInEscrow != NULL)
 	{
 		const CTransaction& txIn = wtxInEscrow[0];
-		nTxOutEscrow = IndexOfEscrowOutput(txIn);
+		// escrow sends multiple outs of same scriptpubkey to arbiter, seller and buyer.. we need the one this wallet owns to sign with it
+		nTxOutEscrow = IndexOfMyEscrowOutput(txIn);
 		if (nTxOutEscrow < 0)
 		{
 			strFailReason = _("Can't determine type of escrow input into syscoin service transaction");
