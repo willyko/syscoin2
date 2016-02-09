@@ -1611,11 +1611,6 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		const CWalletTx &wtx = item.second;        // skip non-syscoin txns
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
-		// decode txn, skip non-alias txns
-		vector<vector<unsigned char> > vvch;
-		int op, nOut;
-		if (!DecodeEscrowTx(wtx, op, nOut, vvch) || !IsEscrowOp(op))
-			continue;
 		vchName = vvch[0];
 		vector<CEscrow> vtxPos;
 		if (!pescrowdb->ReadEscrow(vchName, vtxPos) || vtxPos.empty())
@@ -1630,6 +1625,13 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		if (!GetSyscoinTransaction(escrow.nHeight, escrow.txHash, tx, Params().GetConsensus()))
 			continue;
+
+		// decode txn, skip non-alias txns
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+		if (!DecodeEscrowTx(tx, op, nOut, vvch) || !IsEscrowOp(op))
+			continue;
+
 		nHeight = escrow.nHeight;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
