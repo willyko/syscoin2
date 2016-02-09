@@ -316,7 +316,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
             return error("CheckEscrowInputs() : null escrow");
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("escrow tx GUID too big");
-		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+		if((!theEscrow.vchBuyerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
 		{
 			return error("escrow buyer pub key invalid length");
 		}
