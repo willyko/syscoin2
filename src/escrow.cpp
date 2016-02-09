@@ -429,8 +429,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 		throw runtime_error("failed to read alias from alias DB");
 	if (vtxPos.size() < 1)
 		throw runtime_error("no result returned");
-	CAliasIndex alias = vtxPos.back();
-	const std::vector<unsigned char> &vchArbiterPubKey = alias.vchPubKey;
+	CAliasIndex arbiteralias = vtxPos.back();
 
 	vector<unsigned char> vchMessage = vchFromValue(params[3]);
 	unsigned int nQty = 1;
@@ -458,7 +457,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 		throw runtime_error("failed to read alias from alias DB");
 	if (vtxPos.size() < 1)
 		throw runtime_error("no result returned");
-	alias = vtxPos.back();
+	CAliasIndex buyeralias = vtxPos.back();
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
@@ -497,7 +496,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
 
-	CPubKey ArbiterPubKey(vchArbiterPubKey);
+	CPubKey ArbiterPubKey(arbiteralias.vchPubKey);
 	CSyscoinAddress arbiteraddy(ArbiterPubKey.GetID());
 	arbiteraddy = CSyscoinAddress(arbiteraddy.ToString());
 	if(!arbiteraddy.IsValid() || !arbiteraddy.isAlias)
@@ -509,7 +508,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
 		throw runtime_error("Invalid seller alias or address");
 
-	CPubKey BuyerPubKey(alias.vchPubKey);
+	CPubKey BuyerPubKey(buyeralias.vchPubKey);
 	scriptArbiter= GetScriptForDestination(ArbiterPubKey.GetID());
 	scriptSeller= GetScriptForDestination(SellerPubKey.GetID());
 	scriptBuyer= GetScriptForDestination(BuyerPubKey.GetID());
@@ -707,7 +706,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 			throw runtime_error("Buyer or Arbiter address does not refer to a key");
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
-			throw runtime_error("Buyer(" + HexStr(escrow.vchBuyerKey) + " }or Arbiter(" + HexStr(escrow.vchArbiterKey) + ") private keys not known");
+			throw runtime_error("Buyer or Arbiter private keys not known");
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
      	// check for existing escrow 's
