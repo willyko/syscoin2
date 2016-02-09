@@ -349,7 +349,9 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			case OP_ESCROW_ACTIVATE:
 				break;
 			case OP_ESCROW_RELEASE:
-				if(prevOp != OP_ESCROW_ACTIVATE)
+				if(theEscrow.IsNull() && prevOp != OP_ESCROW_RELEASE)
+					return error("CheckEscrowInputs() : null escrow must have release escrow input");
+				else if(prevOp != OP_ESCROW_ACTIVATE)
 					return error("CheckEscrowInputs() : can only release an activated escrow");
 				// Check input
 				if (vvchPrevArgs[0] != vvchArgs[0])
