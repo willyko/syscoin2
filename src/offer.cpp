@@ -988,7 +988,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				}
 				else if(op == OP_OFFER_REFUND)
 				{
-					theOfferAccept = theOffer.accept;
+					theOfferAccept = serializedOffer.accept;
 					if(!fExternal &&  pwalletMain && vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS){
 						string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_COMPLETE);
 						if (strError != "" && fDebug)							
@@ -1007,7 +1007,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					
 				}
 				else if (op == OP_OFFER_ACCEPT) {	
-					theOfferAccept = theOffer.accept;
+					theOfferAccept = serializedOffer.accept;
 					if(!theOffer.vchLinkOffer.empty())
 					{
 						if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
