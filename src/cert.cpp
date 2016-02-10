@@ -264,27 +264,29 @@ bool CheckCertInputs(const CTransaction &tx,
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!prevOutput)
-				continue;
-			// ensure inputs are unspent when doing consensus check to add to block
-			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-				continue;
-			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-				continue;
+		if(!fExternal)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				int op;
+				prevOutput = &tx.vin[i].prevout;
+				if(!prevOutput)
+					continue;
+				// ensure inputs are unspent when doing consensus check to add to block
+				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+					continue;
+				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+					continue;
 
-			if (!foundCert && IsCertOp(op)) {
-				foundCert = true; 
-				prevOp = op;
-				vvchPrevArgs = vvch;
-				break;
+				if (!foundCert && IsCertOp(op)) {
+					foundCert = true; 
+					prevOp = op;
+					vvchPrevArgs = vvch;
+					break;
+				}
 			}
 		}
-		
         // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
             if (foundCert)
@@ -317,33 +319,35 @@ bool CheckCertInputs(const CTransaction &tx,
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
 		vector<CAliasIndex> vtxAliasPos;
-		switch (op) {
-		case OP_CERT_ACTIVATE:
-			if (foundCert)
-				return error(
-						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-			break;
+		if(!fExternal)
+		{
+			switch (op) {
+			case OP_CERT_ACTIVATE:
+				if (foundCert)
+					return error(
+							"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+				break;
 
-		case OP_CERT_UPDATE:
-			// previous op must be a cert
-			if ( !foundCert || !IsCertOp(prevOp))
-				return error("CheckCertInputs(): certupdate previous op is invalid");
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
-			break;
+			case OP_CERT_UPDATE:
+				// previous op must be a cert
+				if ( !foundCert || !IsCertOp(prevOp))
+					return error("CheckCertInputs(): certupdate previous op is invalid");
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
+				break;
 
-		case OP_CERT_TRANSFER:
-			// validate conditions
-			if ( !foundCert || !IsCertOp(prevOp))
-				return error("certtransfer previous op is invalid");
-			if (vvchPrevArgs[0] != vvchArgs[0])
-				return error("CheckCertInputs() : certtransfer cert mismatch");
-			break;
+			case OP_CERT_TRANSFER:
+				// validate conditions
+				if ( !foundCert || !IsCertOp(prevOp))
+					return error("certtransfer previous op is invalid");
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckCertInputs() : certtransfer cert mismatch");
+				break;
 
-		default:
-			return error( "CheckCertInputs() : cert transaction has unknown op");
+			default:
+				return error( "CheckCertInputs() : cert transaction has unknown op");
+			}
 		}
-	
 
 
 

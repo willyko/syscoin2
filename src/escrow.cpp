@@ -273,23 +273,26 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;	
-			if(!prevOutput)
-				continue;
-			// ensure inputs are unspent when doing consensus check to add to block
-			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-				continue;
-			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-				continue;
+		if(!fExternal)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				int op;
+				prevOutput = &tx.vin[i].prevout;	
+				if(!prevOutput)
+					continue;
+				// ensure inputs are unspent when doing consensus check to add to block
+				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+					continue;
+				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+					continue;
 
-			if (IsEscrowOp(op)) {
-				prevOp = op;
-				vvchPrevArgs = vvch;
-				break;
+				if (IsEscrowOp(op)) {
+					prevOp = op;
+					vvchPrevArgs = vvch;
+					break;
+				}
 			}
 		}
     if (!tx.IsCoinBase()) {
@@ -297,7 +300,6 @@ bool CheckEscrowInputs(const CTransaction &tx,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-		bool fExternal = fInit || fRescan;
         // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
@@ -345,33 +347,35 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		{
 			return error("escrow offeraccept guid too long");
 		}		
-
-		switch (op) {
-			case OP_ESCROW_ACTIVATE:
-				break;
-			case OP_ESCROW_RELEASE:
-				if(prevOp != OP_ESCROW_ACTIVATE)
-					return error("CheckEscrowInputs() : can only release an activated escrow");
-				// Check input
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckEscrowInputs() : escrow input guid mismatch");				
-				break;
-			case OP_ESCROW_COMPLETE:
-				if(prevOp != OP_ESCROW_RELEASE)
-					return error("CheckEscrowInputs() : can only complete a released escrow");
-				// Check input
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckEscrowInputs() : escrow input guid mismatch");
-				break;
-			case OP_ESCROW_REFUND:
-				if(prevOp != OP_ESCROW_ACTIVATE)
-					return error("CheckEscrowInputs() : can only refund an activated escrow");
-				// Check input
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckEscrowInputs() : escrow input guid mismatch");				
-				break;
-			default:
-				return error( "CheckEscrowInputs() : escrow transaction has unknown op");
+		if(!fExternal)
+		{
+			switch (op) {
+				case OP_ESCROW_ACTIVATE:
+					break;
+				case OP_ESCROW_RELEASE:
+					if(prevOp != OP_ESCROW_ACTIVATE)
+						return error("CheckEscrowInputs() : can only release an activated escrow");
+					// Check input
+					if (vvchPrevArgs[0] != vvchArgs[0])
+						return error("CheckEscrowInputs() : escrow input guid mismatch");				
+					break;
+				case OP_ESCROW_COMPLETE:
+					if(prevOp != OP_ESCROW_RELEASE)
+						return error("CheckEscrowInputs() : can only complete a released escrow");
+					// Check input
+					if (vvchPrevArgs[0] != vvchArgs[0])
+						return error("CheckEscrowInputs() : escrow input guid mismatch");
+					break;
+				case OP_ESCROW_REFUND:
+					if(prevOp != OP_ESCROW_ACTIVATE)
+						return error("CheckEscrowInputs() : can only refund an activated escrow");
+					// Check input
+					if (vvchPrevArgs[0] != vvchArgs[0])
+						return error("CheckEscrowInputs() : escrow input guid mismatch");				
+					break;
+				default:
+					return error( "CheckEscrowInputs() : escrow transaction has unknown op");
+			}
 		}
 	
         // these ifs are problably total bullshit except for the escrownew

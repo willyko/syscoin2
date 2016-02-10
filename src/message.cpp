@@ -235,25 +235,28 @@ bool CheckMessageInputs(const CTransaction &tx,
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevAliasArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!prevOutput)
-				continue;
-			// ensure inputs are unspent when doing consensus check to add to block
-			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-				continue;
-			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-				continue;
-			if (IsAliasOp(op))
-			{
-				prevAliasOp = op;
-				vvchPrevAliasArgs = vvch;
-				break;
-			}
-		}	
+		if(!fExternal)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				int op;
+				prevOutput = &tx.vin[i].prevout;
+				if(!prevOutput)
+					continue;
+				// ensure inputs are unspent when doing consensus check to add to block
+				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+					continue;
+				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+					continue;
+				if (IsAliasOp(op))
+				{
+					prevAliasOp = op;
+					vvchPrevAliasArgs = vvch;
+					break;
+				}
+			}	
+		}
         // Make sure message outputs are not spent by a regular transaction, or the message would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
@@ -291,24 +294,26 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-		if(op == OP_MESSAGE_ACTIVATE)
+		if(!fExternal)
 		{
-			if(!IsAliasOp(prevAliasOp))
-				return error("CheckMessageInputs(): alias not provided as input");
-			if(fJustCheck && !fBlock)
+			if(op == OP_MESSAGE_ACTIVATE)
 			{
-				vector<CAliasIndex> vtxPos;
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-					return error("CheckMessageInputs(): failed to read alias from alias DB");
-				if (vtxPos.size() < 1)
-					return error("CheckMessageInputs(): no alias result returned");
-				if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
-					return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+				if(!IsAliasOp(prevAliasOp))
+					return error("CheckMessageInputs(): alias not provided as input");
+				if(fJustCheck && !fBlock)
+				{
+					vector<CAliasIndex> vtxPos;
+					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+						return error("CheckMessageInputs(): failed to read alias from alias DB");
+					if (vtxPos.size() < 1)
+						return error("CheckMessageInputs(): no alias result returned");
+					if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
+						return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+				}
 			}
+			else
+				return error( "CheckMessageInputs() : message transaction has unknown op");
 		}
-		else
-			return error( "CheckMessageInputs() : message transaction has unknown op");
-		
         // these ifs are problably total bullshit except for the messagenew
         if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
 			// save serialized message for later use

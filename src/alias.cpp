@@ -409,23 +409,26 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		// Strict check - bug disallowed
-		for (unsigned int i = 0; i < tx.vin.size(); i++) {
-			vector<vector<unsigned char> > vvch;
-			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!prevOutput)
-				continue;
-			// ensure inputs are unspent when doing consensus check to add to block
-			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-				continue;
-			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-				continue;
+		if(!fExternal)
+		{
+			// Strict check - bug disallowed
+			for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvch;
+				int op;
+				prevOutput = &tx.vin[i].prevout;
+				if(!prevOutput)
+					continue;
+				// ensure inputs are unspent when doing consensus check to add to block
+				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+					continue;
+				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+					continue;
 
-			if (IsAliasOp(op)) {
-				prevOp = op;
-				vvchPrevArgs = vvch;
-				break;
+				if (IsAliasOp(op)) {
+					prevOp = op;
+					vvchPrevArgs = vvch;
+					break;
+				}
 			}
 		}
 		// Make sure alias outputs are not spent by a regular transaction, or the alias would be lost
@@ -459,19 +462,22 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		switch (op) {
-			case OP_ALIAS_ACTIVATE:
-				break;
-			case OP_ALIAS_UPDATE:
-				if (!IsAliasOp(prevOp))
-					return error("aliasupdate previous tx not found");
-				// Check name
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckAliasInputs() : aliasupdate alias mismatch");
-				break;
-		default:
-			return error(
-					"CheckAliasInputs() : alias transaction has unknown op");
+		if(!fExternal)
+		{
+			switch (op) {
+				case OP_ALIAS_ACTIVATE:
+					break;
+				case OP_ALIAS_UPDATE:
+					if (!IsAliasOp(prevOp))
+						return error("aliasupdate previous tx not found");
+					// Check name
+					if (vvchPrevArgs[0] != vvchArgs[0])
+						return error("CheckAliasInputs() : aliasupdate alias mismatch");
+					break;
+			default:
+				return error(
+						"CheckAliasInputs() : alias transaction has unknown op");
+			}
 		}
 		
 
