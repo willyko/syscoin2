@@ -2735,32 +2735,31 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
 			vector<unsigned char> vchEscrowLink;
-			if(IsSyscoinTxMine(offerTx)) 
-			{
-				vector<unsigned char> vchOfferLink;
-				bool foundOffer = false;
-				bool foundEscrow = false;
-				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
-					vector<vector<unsigned char> > vvchIn;
-					int opIn;
-					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
-					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
-						continue;
-					if(foundOffer && foundEscrow)
-						break;
+	
+			vector<unsigned char> vchOfferLink;
+			bool foundOffer = false;
+			bool foundEscrow = false;
+			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvchIn;
+				int opIn;
+				const COutPoint *prevOutput = &acceptTx.vin[i].prevout;
+				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+					continue;
+				if(foundOffer && foundEscrow)
+					break;
 
-					if (!foundOffer && IsOfferOp(opIn)) {
-						foundOffer = true; 
-						vchOfferLink = vvchIn[0];
-					}
-					if (!foundEscrow && IsEscrowOp(opIn)) {
-						foundEscrow = true; 
-						vchEscrowLink = vvchIn[0];
-					}
+				if (!foundOffer && IsOfferOp(opIn)) {
+					foundOffer = true; 
+					vchOfferLink = vvchIn[0];
 				}
-				if(foundOffer)
-					theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
+				if (!foundEscrow && IsEscrowOp(opIn)) {
+					foundEscrow = true; 
+					vchEscrowLink = vvchIn[0];
+				}
 			}
+			if(IsSyscoinTxMine(offerTx) && foundOffer)
+				theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
+			
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
@@ -2839,7 +2838,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(theOffer.IsNull())
 				continue;
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
-			string offer = stringFromVch(vchOffer);
+			string offer = stringFromVch(theEscrow.vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
@@ -2860,27 +2859,27 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
-			if(IsSyscoinTxMine(offerTx)) 
-			{
-				bool foundEscrow = false;
-				for (unsigned int i = 0; i < offerTx.vin.size(); i++) {
-					vector<vector<unsigned char> > vvchIn;
-					int opIn;
-					const COutPoint *prevOutput = &offerTx.vin[i].prevout;
-					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
-						continue;
-					if(foundEscrow)
-						break;
+	
+			bool foundEscrow = false;
+			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
+				vector<vector<unsigned char> > vvchIn;
+				int opIn;
+				const COutPoint *prevOutput = &acceptTx.vin[i].prevout;
+				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+					continue;
+				if(foundEscrow)
+					break;
 
-					if (!foundEscrow && IsEscrowOp(opIn)) {
-						foundEscrow = true; 
-						vchEscrowLink = vvchIn[0];
-					}
+				if (!foundEscrow && IsEscrowOp(opIn)) {
+					foundEscrow = true; 
+					vchEscrowLink = vvchIn[0];
 				}
 			}
+			
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
-			convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, 0, chainActive.Tip()->nHeight, precision);
+			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
+			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
