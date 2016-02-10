@@ -240,13 +240,10 @@ bool CheckMessageInputs(const CTransaction &tx,
 			vector<vector<unsigned char> > vvch;
 			int op;
 			prevOutput = &tx.vin[i].prevout;
-			if(!fExternal)
-			{
-				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(prevOutput->hash, prevCoins);
-				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
-			}
-			else if(!GetPreviousInput(prevOutput, op, vvch))
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
 				continue;
 			if (IsAliasOp(op))
 			{

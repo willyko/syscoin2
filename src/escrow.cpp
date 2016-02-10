@@ -277,15 +277,12 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
-			prevOutput = &tx.vin[i].prevout;
-			if(!fExternal)
-			{				
-				// ensure inputs are unspent when doing consensus check to add to block
-				inputs.GetCoins(prevOutput->hash, prevCoins);
-				IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch);
-			}
-			else if(!GetPreviousInput(prevOutput, op, vvch))
-				continue;		
+			prevOutput = &tx.vin[i].prevout;		
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
 
 			if (IsEscrowOp(op)) {
 				prevOp = op;
