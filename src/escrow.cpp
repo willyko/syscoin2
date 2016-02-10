@@ -664,9 +664,8 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch) 
-    	|| !IsEscrowOp(op) 
-    	|| (op != OP_ESCROW_ACTIVATE))
-        throw runtime_error("Release can only happen on an activated escrow address");
+    	|| !IsEscrowOp(op))
+        throw runtime_error("could not decode escrow tx");
 	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this escrow is not in your wallet");
@@ -711,6 +710,8 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	catch(...)
 	{
 	}
+    if (op != OP_ESCROW_ACTIVATE)
+        throw runtime_error("Release can only happen on an activated escrow address");
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;
@@ -1193,9 +1194,8 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
     vector<vector<unsigned char> > vvch;
     int op, nOut;
     if (!DecodeEscrowTx(tx, op, nOut, vvch) 
-    	|| !IsEscrowOp(op) 
-    	|| (op != OP_ESCROW_ACTIVATE))
-        throw runtime_error("Refund can only happen on an activated escrow address");
+    	|| !IsEscrowOp(op))
+        throw runtime_error("could not decode escrow tx");
 	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 	if (wtxIn == NULL)
 		throw runtime_error("this escrow is not in your wallet");
@@ -1240,6 +1240,8 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	catch(...)
 	{
 	}
+	if(op != OP_ESCROW_ACTIVATE)
+		 throw runtime_error("Refund can only happen on an activated escrow address");
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;
