@@ -133,8 +133,6 @@ void MyEscrowListPage::setModel(WalletModel *walletModel, EscrowTableModel *mode
 	ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Status, QHeaderView::ResizeToContents);
 #endif
 
-    connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-            this, SLOT(selectionChanged()));
 
     // Select row for newly created escrow
     connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(selectNewEscrow(QModelIndex,int,int)));
@@ -217,39 +215,6 @@ void MyEscrowListPage::on_refundButton_clicked()
 			QMessageBox::Ok, QMessageBox::Ok);
 	}
 }
-void MyEscrowListPage::on_completeButton_clicked()
-{
-	if(!model)	
-		return;
-	if(!ui->tableView->selectionModel())
-        return;
-    QModelIndexList selection = ui->tableView->selectionModel()->selectedRows();
-    if(selection.isEmpty())
-    {
-        return;
-    }
-	QString escrow = selection.at(0).data(EscrowTableModel::EscrowRole).toString();
-	UniValue params(UniValue::VARR);
-	string strMethod = string("escrowclaimrelease");
-	params.push_back(escrow.toStdString());
-	try {
-		UniValue result = tableRPC.execute(strMethod, params);
-	}
-	catch (UniValue& objError)
-	{
-		string strError = find_value(objError, "message").get_str();
-		QMessageBox::critical(this, windowTitle(),
-        tr("Error completing escrow: \"%1\"").arg(QString::fromStdString(strError)),
-			QMessageBox::Ok, QMessageBox::Ok);
-	}
-	catch(std::exception& e)
-	{
-		QMessageBox::critical(this, windowTitle(),
-            tr("General exception completing escrow"),
-			QMessageBox::Ok, QMessageBox::Ok);
-	}
-
-}
 void MyEscrowListPage::on_buyerMessageButton_clicked()
 {
  	if(!model)	
@@ -304,78 +269,6 @@ void MyEscrowListPage::on_refreshButton_clicked()
         return;
     model->refreshEscrowTable();
 }
-void MyEscrowListPage::selectionChanged()
-{
-    // Set button states based on selected tab and selection
-    QTableView *table = ui->tableView;
-    if(!table->selectionModel())
-        return;
-    QModelIndexList selection = ui->tableView->selectionModel()->selectedRows();
-
-	
-    if(table->selectionModel()->hasSelection())
-    {
-		QString status = selection.at(0).data(EscrowTableModel::StatusRole).toString();
-		releaseAction->setEnabled(false);
-		refundAction->setEnabled(false);
-		completeAction->setEnabled(false);
-		ui->refundButton->setEnabled(false);
-		ui->releaseButton->setEnabled(false);
-		ui->completeButton->setEnabled(false);
-		buyerMessageAction->setEnabled(true);
-		sellerMessageAction->setEnabled(true);
-		arbiterMessageAction->setEnabled(true);
-		ui->buyerMessageButton->setEnabled(true);
-		ui->sellerMessageButton->setEnabled(true);
-		ui->arbiterMessageButton->setEnabled(true);
-
-        ui->copyEscrow->setEnabled(true);
-		if(status == QString("inescrow"))
-		{
-			releaseAction->setEnabled(true);
-			ui->refundButton->setEnabled(true);
-			ui->releaseButton->setEnabled(true);
-			refundAction->setEnabled(true);
-		}
-		else if(status == QString("escrowreleased"))
-		{
-			completeAction->setEnabled(true);
-			ui->completeButton->setEnabled(true);
-		}
-		else if(status == QString("escrowrefunded"))
-		{
-			completeAction->setEnabled(true);
-			ui->completeButton->setEnabled(true);
-		}
-		else if(status == QString("complete"))
-		{
-			buyerMessageAction->setEnabled(false);
-			sellerMessageAction->setEnabled(false);
-			arbiterMessageAction->setEnabled(false);
-			ui->buyerMessageButton->setEnabled(false);
-			ui->sellerMessageButton->setEnabled(false);
-			ui->arbiterMessageButton->setEnabled(false);
-		}
-    }
-    else
-    {
-        ui->copyEscrow->setEnabled(false);
-		releaseAction->setEnabled(false);
-		refundAction->setEnabled(false);
-		completeAction->setEnabled(false);
-		ui->refundButton->setEnabled(false);
-		ui->releaseButton->setEnabled(false);
-		ui->completeButton->setEnabled(false);
-		ui->buyerMessageButton->setEnabled(false);
-		ui->sellerMessageButton->setEnabled(false);
-		ui->arbiterMessageButton->setEnabled(false);
-		buyerMessageAction->setEnabled(false);
-		sellerMessageAction->setEnabled(false);
-		arbiterMessageAction->setEnabled(false);
-    }
-}
-
-
 
 void MyEscrowListPage::on_exportButton_clicked()
 {

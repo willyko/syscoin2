@@ -52,6 +52,7 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	ui->infoCert->setVisible(false);
 	ui->certLabel->setVisible(false);
 	RefreshImage();
+	loadAliases();
 
 }
 void AcceptandPayOfferListPage::loadAliases()
@@ -325,7 +326,6 @@ void AcceptandPayOfferListPage::setValue(const QString& strAlias, const QString&
     ui->offeridEdit->setText(strRand);
 	if(!offer.vchCert.empty())
 	{
-		loadAliases();
 		ui->infoCert->setVisible(true);
 		ui->certLabel->setVisible(true);
 		ui->infoCert->setText(QString::fromStdString(stringFromVch(offer.vchCert)));

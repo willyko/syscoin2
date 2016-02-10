@@ -680,7 +680,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to escrow transaction");
+		throw runtime_error("failed to find escrow transaction");
 
 	CPubKey arbiterKey(escrow.vchArbiterKey);
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
@@ -696,7 +696,21 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
-
+	try
+	{
+		// if this is the seller calling release, try to claim the release
+		CKeyID keyID;
+		if (!sellerAddress.GetKeyID(keyID))
+			throw runtime_error("Seller address does not refer to a key");
+		CKey vchSecret;
+		if (!pwalletMain->GetKey(keyID, vchSecret))
+			throw runtime_error("Private key for seller address " + sellerAddress.ToString() + " is not known");
+		return tableRPC.execute("escrowclaimrelease", params);
+		
+	}
+	catch(...)
+	{
+	}
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;
@@ -869,7 +883,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to escrow transaction");
+		throw runtime_error("failed to find escrow transaction");
 
  	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
@@ -1194,7 +1208,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to escrow transaction");
+		throw runtime_error("failed to find escrow transaction");
 
 	CPubKey arbiterKey(escrow.vchArbiterKey);
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
@@ -1205,12 +1219,27 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	CSyscoinAddress buyerAddress(buyerKey.GetID());
 	if(!buyerAddress.IsValid())
 		throw runtime_error("Buyer address is invalid!");
-
 	
 	CPubKey sellerKey(escrow.vchSellerKey);
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
+
+	try
+	{
+		// if this is the buyer calling refund, try to claim the refund
+		CKeyID keyID;
+		if (!buyerAddress.GetKeyID(keyID))
+			throw runtime_error("Buyer address does not refer to a key");
+		CKey vchSecret;
+		if (!pwalletMain->GetKey(keyID, vchSecret))
+			throw runtime_error("Private key for buyer address " + buyerAddress.ToString() + " is not known");
+		return tableRPC.execute("escrowclaimrefund", params);
+		
+	}
+	catch(...)
+	{
+	}
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;
@@ -1380,7 +1409,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
-		throw runtime_error("failed to escrow transaction");
+		throw runtime_error("failed to find escrow transaction");
 
  	int nOutMultiSig = 0;
 	// 0.5% escrow fee
@@ -1685,11 +1714,11 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		}  
 		string status = "unknown";
 		if(op == OP_ESCROW_ACTIVATE)
-			status = "inescrow";
+			status = "in-escrow";
 		else if(op == OP_ESCROW_RELEASE)
-			status = "escrowreleased";
+			status = "escrow released";
 		else if(op == OP_ESCROW_REFUND)
-			status = "escrowrefunded";
+			status = "escrow refunded";
 		else if(op == OP_ESCROW_COMPLETE)
 			status = "complete";
 		oName.push_back(Pair("status", status));

@@ -60,9 +60,6 @@ private Q_SLOTS:
 	void on_arbiterMessageButton_clicked();
 	void on_releaseButton_clicked();
 	void on_refundButton_clicked();
-	void on_completeButton_clicked();
-    /** Set button states based on selected tab and selection */
-    void selectionChanged();
     /** Spawn contextual menu (right mouse menu) for cert book entry */
     void contextualMenu(const QPoint &point);
     /** New entry/entries were added to cert table */

@@ -114,17 +114,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="completeButton">
-       <property name="text">
-        <string>Complete Escrow</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/escrow</normaloff>:/icons/escrow</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="buyerMessageButton">
        <property name="text">
         <string>Send Message To Buyer</string>
