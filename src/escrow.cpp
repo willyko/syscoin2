@@ -711,7 +711,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	{
 	}
     if (op != OP_ESCROW_ACTIVATE)
-        throw runtime_error("Release can only happen on an activated escrow address");
+        throw runtime_error("Release can only happen on an activated escrow");
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;
@@ -1241,7 +1241,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	{
 	}
 	if(op != OP_ESCROW_ACTIVATE)
-		 throw runtime_error("Refund can only happen on an activated escrow address");
+		 throw runtime_error("Refund can only happen on an activated escrow");
 	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
 	CRecipient recipientFee;

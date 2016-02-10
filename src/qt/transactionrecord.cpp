@@ -35,7 +35,7 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
     }
     return true;
 }
-static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
+static bool CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const vector<vector<unsigned char> > &vvchArgs, const CWalletTx &wtx, int type)
 {
 	switch(op)
 	{
@@ -114,8 +114,11 @@ static void CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 		else if(type == RECV)
 			sub.type = TransactionRecord::MessageRecv;
 		break;
+	case default:
+		return false;
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
+	return true;
 }
 static bool CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wtx, QList<TransactionRecord>& parts, const int64_t &nTime, const CAmount &nNet, const int type)
 {
@@ -134,7 +137,8 @@ static bool CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			if(DecodeAndParseSyscoinTx(wtx, op, nOut, vvchArgs))
 			{
 				TransactionRecord sub(hash, nTime);
-				CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type);
+				if(!CreateSyscoinTransactionRecord(sub, op, vvchArgs, wtx, type))
+					return false;
 				sub.idx = parts.size(); // sequence number
 				if(type == RECV)
 					sub.credit = nNet;
@@ -145,7 +149,7 @@ static bool CreateSyscoinTransactions(const CWallet *wallet, const CWalletTx& wt
 			}			
 		}
 	}
-	return true;
+	return false;
 }
 
 /*
