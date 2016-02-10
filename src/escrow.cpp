@@ -585,13 +585,16 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CAmount nTotal = nPricePerUnit*nQty;
 
 	CAmount nEscrowFee = GetEscrowArbiterFee(nTotal);
-	CAmount nAmountWithEscrowFee = nTotal+nEscrowFee;
+	CRecipient recipientFee;
+	CreateRecipient(scriptPubKey, recipientFee);
+	CAmount nAmountWithEscrowFee = nTotal+nEscrowFee+recipientFee.nAmount;
 
 	CWalletTx escrowWtx;
 	vector<CRecipient> vecSendEscrow;
 	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithEscrowFee, false};
 	vecSendEscrow.push_back(recipientEscrow);
-	SendMoneySyscoin(vecSendEscrow, nAmountWithEscrowFee, false, escrowWtx, NULL, NULL, NULL, NULL, false);
+	
+	SendMoneySyscoin(vecSendEscrow, recipientEscrow.nAmount, false, escrowWtx, NULL, NULL, NULL, NULL, false);
 	
 	// send to seller/arbiter so they can track the escrow through GUI
     // build escrow
@@ -695,12 +698,15 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		throw runtime_error("Seller address is invalid!");
 
 	int nOutMultiSig = 0;
+	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
+	CRecipient recipientFee;
+	CreateRecipient(redeemScriptPubKey, recipientFee);
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
-	int64_t nExpectedAmountWithEscrowFee = nExpectedAmount+nEscrowFee;
+	int64_t nExpectedAmountWithFee = nExpectedAmount+nEscrowFee+recipientFee.nAmount;
 	for(unsigned int i=0;i<fundingTx.vout.size();i++)
 	{
-		if(fundingTx.vout[i].nValue == nExpectedAmountWithEscrowFee)
+		if(fundingTx.vout[i].nValue == nExpectedAmountWithFee)
 		{
 			nOutMultiSig = i;
 			break;
@@ -866,12 +872,15 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 		throw runtime_error("failed to escrow transaction");
 
  	int nOutMultiSig = 0;
+	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
+	CRecipient recipientFee;
+	CreateRecipient(redeemScriptPubKey, recipientFee);
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
-	int64_t nExpectedAmountWithEscrowFee = nExpectedAmount+nEscrowFee;
+	int64_t nExpectedAmountWithFee = nExpectedAmount+nEscrowFee+recipientFee.nAmount;
 	for(unsigned int i=0;i<fundingTx.vout.size();i++)
 	{
-		if(fundingTx.vout[i].nValue == nExpectedAmountWithEscrowFee)
+		if(fundingTx.vout[i].nValue == nExpectedAmountWithFee)
 		{
 			nOutMultiSig = i;
 			break;
@@ -879,7 +888,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	} 
 	int64_t nAmount = fundingTx.vout[nOutMultiSig].nValue;
 	string strEscrowScriptPubKey = HexStr(fundingTx.vout[nOutMultiSig].scriptPubKey.begin(), fundingTx.vout[nOutMultiSig].scriptPubKey.end());
-	if(nAmount != nExpectedAmountWithEscrowFee)
+	if(nAmount != nExpectedAmountWithFee)
 		throw runtime_error("Expected amount of escrow does not match what is held in escrow!");
 	// decode rawTx and check it pays enough and it pays to buyer/seller appropriately
 	// check that right amount is going to be sent to seller
@@ -1203,12 +1212,15 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
 	int nOutMultiSig = 0;
+	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
+	CRecipient recipientFee;
+	CreateRecipient(redeemScriptPubKey, recipientFee);
 	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
-	int64_t nExpectedAmountWithEscrowFee = nExpectedAmount+nEscrowFee;
+	int64_t nExpectedAmountWithFee = nExpectedAmount+nEscrowFee+recipientFee.nAmount;
 	for(unsigned int i=0;i<fundingTx.vout.size();i++)
 	{
-		if(fundingTx.vout[i].nValue == nExpectedAmountWithEscrowFee)
+		if(fundingTx.vout[i].nValue == nExpectedAmountWithFee)
 		{
 			nOutMultiSig = i;
 			break;
@@ -1216,7 +1228,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	} 
 	int64_t nAmount = fundingTx.vout[nOutMultiSig].nValue;
 	string strEscrowScriptPubKey = HexStr(fundingTx.vout[nOutMultiSig].scriptPubKey.begin(), fundingTx.vout[nOutMultiSig].scriptPubKey.end());
-	if(nAmount != nExpectedAmountWithEscrowFee)
+	if(nAmount != nExpectedAmountWithFee)
 		throw runtime_error("Expected amount of escrow does not match what is held in escrow!");
 	string strPrivateKey ;
 	bool arbiterSigning = false;
@@ -1371,13 +1383,16 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 		throw runtime_error("failed to escrow transaction");
 
  	int nOutMultiSig = 0;
-	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	// 0.5% escrow fee
+	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
+	CRecipient recipientFee;
+	CreateRecipient(redeemScriptPubKey, recipientFee);
+	int64_t nExpectedAmount = escrow.nPricePerUnit*escrow.nQty;
 	int64_t nEscrowFee = GetEscrowArbiterFee(nExpectedAmount);
-	int64_t nExpectedAmountWithEscrowFee = nExpectedAmount+nEscrowFee;
+	int64_t nExpectedAmountWithFee = nExpectedAmount+nEscrowFee+recipientFee.nAmount;
 	for(unsigned int i=0;i<fundingTx.vout.size();i++)
 	{
-		if(fundingTx.vout[i].nValue == nExpectedAmountWithEscrowFee)
+		if(fundingTx.vout[i].nValue == nExpectedAmountWithFee)
 		{
 			nOutMultiSig = i;
 			break;
@@ -1385,7 +1400,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	} 
 	int64_t nAmount = fundingTx.vout[nOutMultiSig].nValue;
 	string strEscrowScriptPubKey = HexStr(fundingTx.vout[nOutMultiSig].scriptPubKey.begin(), fundingTx.vout[nOutMultiSig].scriptPubKey.end());
-	if(nAmount != nExpectedAmountWithEscrowFee)
+	if(nAmount != nExpectedAmountWithFee)
 		throw runtime_error("Expected amount of escrow does not match what is held in escrow!");
 	// decode rawTx and check it pays enough and it pays to buyer appropriately
 	// check that right amount is going to be sent to buyer
