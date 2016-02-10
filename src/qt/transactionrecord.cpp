@@ -114,7 +114,7 @@ static bool CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 		else if(type == RECV)
 			sub.type = TransactionRecord::MessageRecv;
 		break;
-	case default:
+	default:
 		return false;
 	}
 	sub.address = stringFromVch(vvchArgs[0]);
