@@ -181,6 +181,9 @@ void MyEscrowListPage::on_releaseButton_clicked()
             tr("General exception releasing escrow"),
 			QMessageBox::Ok, QMessageBox::Ok);
 	}	
+	QMessageBox::information(this, windowTitle(),
+		tr("Escrow released successfully!"),
+			QMessageBox::Ok, QMessageBox::Ok);
 }
 void MyEscrowListPage::on_refundButton_clicked()
 {
@@ -213,6 +216,9 @@ void MyEscrowListPage::on_refundButton_clicked()
             tr("General exception refunding escrow"),
 			QMessageBox::Ok, QMessageBox::Ok);
 	}
+	QMessageBox::information(this, windowTitle(),
+		tr("Escrow refunded successfully!"),
+			QMessageBox::Ok, QMessageBox::Ok);
 }
 void MyEscrowListPage::on_buyerMessageButton_clicked()
 {
