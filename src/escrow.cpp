@@ -277,7 +277,9 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		for (unsigned int i = 0; i < tx.vin.size(); i++) {
 			vector<vector<unsigned char> > vvch;
 			int op;
-			prevOutput = &tx.vin[i].prevout;		
+			prevOutput = &tx.vin[i].prevout;	
+			if(!prevOutput)
+				continue;
 			// ensure inputs are unspent when doing consensus check to add to block
 			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
 				continue;

@@ -570,7 +570,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 			vector<vector<unsigned char> > vvch;
 			int op;
 			prevOutput = &tx.vin[i].prevout;
-
+			if(!prevOutput)
+				continue;
 			// ensure inputs are unspent when doing consensus check to add to block
 			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
 				continue;
