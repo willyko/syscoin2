@@ -587,11 +587,11 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CAmount nEscrowFee = GetEscrowArbiterFee(nTotal);
 	CRecipient recipientFee;
 	CreateRecipient(scriptPubKey, recipientFee);
-	CAmount nAmountWithEscrowFee = nTotal+nEscrowFee+recipientFee.nAmount;
+	CAmount nAmountWithFee = nTotal+nEscrowFee+recipientFee.nAmount;
 
 	CWalletTx escrowWtx;
 	vector<CRecipient> vecSendEscrow;
-	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithEscrowFee, false};
+	CRecipient recipientEscrow  = {scriptPubKey, nAmountWithFee, false};
 	vecSendEscrow.push_back(recipientEscrow);
 	
 	SendMoneySyscoin(vecSendEscrow, recipientEscrow.nAmount, false, escrowWtx, NULL, NULL, NULL, NULL, false);
@@ -714,7 +714,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	} 
 	int64_t nAmount = fundingTx.vout[nOutMultiSig].nValue;
 	string strEscrowScriptPubKey = HexStr(fundingTx.vout[nOutMultiSig].scriptPubKey.begin(), fundingTx.vout[nOutMultiSig].scriptPubKey.end());
-	if(nAmount != nExpectedAmountWithEscrowFee)
+	if(nAmount != nExpectedAmountWithFee)
 		throw runtime_error("Expected amount of escrow does not match what is held in escrow!");
 
 	string strPrivateKey ;
@@ -1276,7 +1276,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	}
 	else
 	{
-		createAddressUniValue.push_back(Pair(buyerAddress.ToString(), ValueFromAmount(nExpectedAmountWithEscrowFee)));
+		createAddressUniValue.push_back(Pair(buyerAddress.ToString(), ValueFromAmount(nExpectedAmount+nEscrowFee)));
 	}	
 	arrayCreateParams.push_back(createTxInputsArray);
 	arrayCreateParams.push_back(createAddressUniValue);
@@ -1450,7 +1450,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 			{
 				if(!foundBuyerPayment)
 				{
-					if(iVout == nExpectedAmountWithEscrowFee || iVout == nExpectedAmount)
+					if(iVout == (nExpectedAmount+nEscrowFee) || iVout == nExpectedAmount)
 					{
 						foundBuyerPayment = true;
 						break;
