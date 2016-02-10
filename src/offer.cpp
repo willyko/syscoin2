@@ -1013,23 +1013,22 @@ bool CheckOfferInputs(const CTransaction &tx,
 						if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
 							return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
 					}
+					if(theOfferAccept.nQty <= 0)
+						theOfferAccept.nQty = 1;
 					// 2 step refund: send an offer accept with nRefunded property set to inprogress and then send another with complete later
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)
 					// this is to ensure that the coins sent during accept are available to spend to refund to avoid having to hold double the balance of an accept amount
 					// in order to refund.
-					if(!fExternal)
-					{
-						if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty))) {
-							if(IsSyscoinTxMine(tx))
-							{
-								string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
-								if (strError != "" && fDebug)
-									LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
-							}
-							if(fDebug)
-								LogPrintf("txn %s accepted but desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-							return true;
+					if(theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
+						if(!fExternal && IsSyscoinTxMine(tx))
+						{
+							string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							if (strError != "" && fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
 						}
+						if(fDebug)
+							LogPrintf("txn %s accepted but desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+						return true;
 					}
 
 					// only if we are the root offer owner do we even consider xfering a cert					
