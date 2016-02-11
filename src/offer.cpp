@@ -2406,9 +2406,9 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if(!theOffer.vchCert.empty())
 	{
 		// ensure you can't accept an offer that is updating a cert
-		/*if (ExistsInMempool(theOffer.vchCert, OP_CERT_UPDATE) || ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
+		if (ExistsInMempool(theOffer.vchCert, OP_CERT_UPDATE) || ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
 			throw runtime_error("there are pending operations on that cert");
-		}*/
+		}
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
