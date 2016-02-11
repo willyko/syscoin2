@@ -685,7 +685,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
 	// check to see if certificate in wallet
 	wtxIn = pwalletMain->GetWalletTx(theCert.txHash);
-	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
+	if (wtxIn == NULL || !IsSyscoinTxMine(wtxIn))
 		throw runtime_error("this certificate is not in your wallet");
 
 	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
