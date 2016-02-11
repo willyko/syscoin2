@@ -873,6 +873,10 @@ bool CheckOfferInputs(const CTransaction &tx,
 						COffer myPriceOffer;
 						myPriceOffer.nHeight = heightToCheckAgainst;
 						myPriceOffer.GetOfferFromList(vtxPos);
+						float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
+						if(priceAtTimeOfAccept != theOfferAccept.nPrice)
+							return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, theOffer.sCurrencyCode, theOfferAccept.nPrice, theOffer.sCurrencyCode);
+
 						int precision = 2;
 						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
 						CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
@@ -2213,12 +2217,12 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("Invalid syscoin alias");
 
 	// check for alias existence in DB
-	vector<CAliasIndex> vtxPos;
-	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), vtxPos))
+	vector<CAliasIndex> aliasVtxPos;
+	if (!paliasdb->ReadAlias(vchFromString(aliasAddress.aliasName), aliasVtxPos))
 		throw runtime_error("failed to read alias from alias DB");
-	if (vtxPos.size() < 1)
+	if (aliasVtxPos.size() < 1)
 		throw runtime_error("no result returned");
-	CAliasIndex alias = vtxPos.back();
+	CAliasIndex alias = aliasVtxPos.back();
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
@@ -2290,12 +2294,13 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}
 	// look for a transaction with this key
 	CTransaction tx, acceptTx;
-	COffer theOffer;
+	COffer theOffer, tmpOffer;
 	COfferAccept theLinkedOfferAccept;
-	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
+	if (!GetTxOfOffer(*pofferdb, vchOffer, tmpOffer, tx))
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
+
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 	if (!vchLinkOfferAccept.empty())
 	{
@@ -2304,6 +2309,16 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		else
 			throw runtime_error("could not find an offer accept with this identifier");
 	}
+	// load the offer data from the DB
+	vector<COffer> vtxPos;
+	if (pofferdb->ExistsOffer(vchOffer)) {
+		if (!pofferdb->ReadOffer(vchOffer, vtxPos))
+			return error(
+					"CheckOfferInputs() : failed to read from offer DB");
+	}
+	// get offer price at the time of accept from buyer
+	theOffer.nHeight = nHeight;
+	theOffer.GetOfferFromList(vtxPos);
 
 	COffer linkedOffer;
 	CTransaction tmpTx;
@@ -2412,7 +2427,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// in checkescrowinput we override this if its from an escrow release, just like above.
 	txAccept.nHeight = nHeight>0?nHeight:chainActive.Tip()->nHeight;
 	txAccept.vchBuyerKey = vchPubKey;
-
     CAmount nTotalValue = ( nPrice * nQty );
     
 
