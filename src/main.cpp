@@ -1732,31 +1732,29 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 		int nOut;	
 		if(tx.nVersion == SYSCOIN_TX_VERSION)
 		{
+			bool good = true;
 			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
 			{
-				if (!CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;
+				good = CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
 			}
 			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
 			{	
-				if (!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;		 
+				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
 			}
 			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
-				if (!CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
+				good = CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{
-				if (!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
+				good = CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
 			{
-				if (!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight))
-					return false;			
+				good = CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
 			}
+			if(!good)
+				return false;
 		}
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,

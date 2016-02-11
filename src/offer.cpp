@@ -162,7 +162,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 
 }
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
-string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchAcceptRand, const vector<unsigned char> &refundCode)
+string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchAcceptRand, const vector<unsigned char> &refundCode, const CTransaction *tx=NULL)
 {
 	CTransaction myOfferAcceptTx, offerTx;
 	COfferAccept theOfferAccept;
@@ -198,7 +198,10 @@ string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<uns
 		return string("makeOfferRefundTX(): could not find an offer with this name");
 
 	const CWalletTx *wtxPrevIn;
-	wtxPrevIn = pwalletMain->GetWalletTx(myOfferAcceptTx.GetHash());
+	if(tx != NULL)
+		wtxPrevIn = pwalletMain->GetWalletTx(tx->GetHash());
+	else
+		wtxPrevIn = pwalletMain->GetWalletTx(myOfferAcceptTx.GetHash());
 	if (wtxPrevIn == NULL)
 	{
 		return string("makeOfferRefundTX() : can't find this offer in your wallet");
@@ -1026,7 +1029,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
 						if(!fExternal && IsSyscoinTxMine(tx))
 						{
-							string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
 							if (strError != "" && fDebug)
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT %s\n", strError.c_str());
 						}
@@ -1039,13 +1042,28 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
+						CTransaction txCert;
+						CCert theCert;
+						// make sure this cert is still valid
+						if (!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - Can't find this certificate transaction");
+							return false;
+						}
+						if(txCert != tx)
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - Latest certificate transaction in db doesn't match this certificate offer accept transaction");
+							return false;
+						}
 						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
 						{
 							if(fDebug)
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
 							// if there is a problem refund this accept
-							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
 							if (strError != "" && fDebug)
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX(makeOfferRefundTX) %s\n", strError.c_str());
 
@@ -1090,7 +1108,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());
 							}
 							// if there is a problem refund this accept
-							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
 							if (strError != "" && fDebug)
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX(makeOfferRefundTX) %s\n", strError.c_str());
 
