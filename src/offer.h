@@ -306,14 +306,11 @@ public:
 		// find the closest offer without going over in height, assuming offerList orders entries by nHeight ascending
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
-            if(o.nHeight < nHeight) {
+            if(o.nHeight <= nHeight) {
                 myOffer = offerList[i];
             }
-			else if(o.nHeight >= nHeight)
-			{
-				myOffer = offerList[i];
+			else
 				break;
-			}
         }
         *this = myOffer;
         return true;
