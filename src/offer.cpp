@@ -875,7 +875,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						myPriceOffer.GetOfferFromList(vtxPos);
 						float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
 						if(priceAtTimeOfAccept != theOfferAccept.nPrice)
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, theOffer.sCurrencyCode, theOfferAccept.nPrice, theOffer.sCurrencyCode);
+							return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
 
 						int precision = 2;
 						// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
