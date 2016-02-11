@@ -120,7 +120,14 @@ bool OfferAcceptInfoDialog::lookup()
 				ui->certEdit->setVisible(true);
 				ui->certLabel->setVisible(true);
 				ui->certEdit->setText(certStr);
-			}		
+			}	
+			QString escrowStr = QString::fromStdString(find_value(result.get_obj(), "escrowlink").get_str());
+			if(escrowStr != "")
+			{
+				ui->escrowEdit->setVisible(true);
+				ui->escrowLabel->setVisible(true);
+				ui->escrowEdit->setText(escrowStr);
+			}
 			return true;
 		}
 		 

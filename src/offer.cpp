@@ -1043,9 +1043,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 						if(strError != "")
 						{
 							if(fDebug)
-							{
 								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
-							}
+							// if there is a problem refund this accept
+							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS);
+							if (strError != "" && fDebug)
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX(makeOfferRefundTX) %s\n", strError.c_str());
+
 						}
 					}
 				
@@ -2009,8 +2012,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		throw runtime_error("there are pending operations or refunds on that offer");
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE) /*|| ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)*/) {
+		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer UniValue from txn
 	if(!theOffer.UnserializeFromTx(tx))
@@ -2554,6 +2557,25 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("time", sTime));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
+			vector<unsigned char> vchEscrowLink;
+	
+			bool foundEscrow = false;
+			for (unsigned int i = 0; i < txA.vin.size(); i++) {
+				vector<vector<unsigned char> > vvchIn;
+				int opIn;
+				const COutPoint *prevOutput = &txA.vin[i].prevout;
+				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+					continue;
+				if(foundEscrow)
+					break;
+
+				if (!foundEscrow && IsEscrowOp(opIn)) {
+					foundEscrow = true; 
+					vchEscrowLink = vvchIn[0];
+				}
+			}
+			
+			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
 			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
 			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
