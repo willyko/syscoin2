@@ -677,27 +677,20 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
     EnsureWalletIsUnlocked();
 
-    // look for a transaction with this key, also returns
-    // an cert object if it is found
-    CTransaction tx;
-    CCert theCert;
-    if (!GetTxOfCert(*pcertdb, vchCert, theCert, tx))
-        throw runtime_error("could not find a certificate with this key");
+	// get the cert from DB
+	vector<CCert> vtxPos;
+	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
+		throw runtime_error("could not read cert from DB");
+	theCert = vtxPos.back();
 
 	// check to see if certificate in wallet
-	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+	wtxIn = pwalletMain->GetWalletTx(theCert.txHash);
 	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
 		throw runtime_error("this certificate is not in your wallet");
 
 	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 		throw runtime_error("there are pending operations on that cert ");
 	}
-
-	// get the cert from DB
-	vector<CCert> vtxPos;
-	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read cert from DB");
-	theCert = vtxPos.back();
 
 	// if cert is private, decrypt the data
 	vector<unsigned char> vchData = theCert.vchData;

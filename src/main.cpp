@@ -1737,13 +1737,13 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 			{
 				good = CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{	
-				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
-			}
 			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
 				good = CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{

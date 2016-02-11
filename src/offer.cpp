@@ -1042,21 +1042,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
-						CTransaction txCert;
-						CCert theCert;
-						// make sure this cert is still valid
-						if (!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
-						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - Can't find this certificate transaction");
-							return false;
-						}
-						if(txCert != tx)
-						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - Latest certificate transaction in db doesn't match this certificate offer accept transaction");
-							return false;
-						}
 						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
 						{
