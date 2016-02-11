@@ -676,7 +676,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
     CScript scriptPubKeyOrig;
 
     EnsureWalletIsUnlocked();
-
+	CCert theCert;
 	// get the cert from DB
 	vector<CCert> vtxPos;
 	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
