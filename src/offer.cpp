@@ -166,22 +166,27 @@ string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<uns
 {
 	CTransaction myOfferAcceptTx, offerTx;
 	COfferAccept theOfferAccept;
-	if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, myOfferAcceptTx))
+	if(!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, myOfferAcceptTx))
 	{
-		if(!IsSyscoinTxMine(myOfferAcceptTx))
-			return string("makeOfferRefundTX(): cannot refund an accept of an offer that isn't mine");
-
-		// check for existence of offeraccept in txn offer obj
-		if(theOfferAccept.vchAcceptRand != vchAcceptRand)
-			return string("makeOfferRefundTX(): cannot find accept in offer txn");
-
-		if(theOfferAccept.nQty <= 0)
-			return string("makeOfferRefundTX(): cannot refund an accept with 0 quantity");
-
+		if(tx == NULL)
+			return string("makeOfferRefundTX(): cannot find accept transaction");
 	}
-	else
-		return string("makeOfferRefundTX(): cannot find accept transaction");
 
+	if(tx != NULL)
+		myOfferAcceptTx = *tx;
+	if(!IsSyscoinTxMine(myOfferAcceptTx))
+		return string("makeOfferRefundTX(): cannot refund an accept of an offer that isn't mine");
+
+	COffer theOffer;
+	theOffer.UnserializeFromTx(myOfferAcceptTx);
+	theOfferAccept = theOffer.accept;
+
+	// check for existence of offeraccept in txn offer obj
+	if(theOfferAccept.vchAcceptRand != vchAcceptRand)
+		return string("makeOfferRefundTX(): cannot find accept in offer txn");
+
+	if(theOfferAccept.nQty <= 0)
+		return string("makeOfferRefundTX(): cannot refund an accept with 0 quantity");
 	if(!pwalletMain)
 	{
 		return string("makeOfferRefundTX(): no wallet found");
@@ -191,17 +196,14 @@ string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<uns
 		return string("makeOfferRefundTX(): this offer accept has already been refunded");
 	}	
 
-	COffer theOffer(myOfferAcceptTx);
+
 	if(theOffer.IsNull())
 		return string("makeOfferRefundTX(): could not decode offer");
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))
 		return string("makeOfferRefundTX(): could not find an offer with this name");
 
 	const CWalletTx *wtxPrevIn;
-	if(tx != NULL)
-		wtxPrevIn = pwalletMain->GetWalletTx(tx->GetHash());
-	else
-		wtxPrevIn = pwalletMain->GetWalletTx(myOfferAcceptTx.GetHash());
+	wtxPrevIn = pwalletMain->GetWalletTx(myOfferAcceptTx.GetHash());
 	if (wtxPrevIn == NULL)
 	{
 		return string("makeOfferRefundTX() : can't find this offer in your wallet");
@@ -1042,6 +1044,16 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
+						vector<CCert> certVtxPos;
+						if (pcertdb->ExistsCert(theOffer.vchCert)) {
+							if (!pcertdb->ReadCert(theOffer.vchCert, certVtxPos))
+								return error(
+									"CheckOfferInputs() : - OP_OFFER_ACCEPT - failed to read from cert DB");
+						}
+						if(certVtxPos.empty() || certVtxPos.back().txHash != tx.GetHash())
+						{
+							return error("CheckOfferInputs() - OP_OFFER_ACCEPT - Latest certificate transaction in db doesn't match this certificate offer accept transaction");
+						}
 						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
 						{
