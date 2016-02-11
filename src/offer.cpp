@@ -12,7 +12,6 @@
 #include "wallet/wallet.h"
 #include "consensus/validation.h"
 #include "chainparams.h"
-#include <boost/algorithm/hex.hpp>
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
@@ -84,121 +83,16 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 	return false;
 }
 // transfer cert if its linked to offer
-string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept, const CTransaction tx)
+string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept)
 {
-
-	vector<unsigned char> vchCert = theOffer.vchCert;
-	string strAddress = HexStr(theOfferAccept.vchBuyerKey);
-	CPubKey xferKey;
-	std::vector<unsigned char> vchPubKey;
-	std::vector<unsigned char> vchPubKeyByte;
-	try
-	{
-		vchPubKey = vchFromString(strAddress);		
-		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
-		xferKey  = CPubKey(vchPubKeyByte);
-		if(!xferKey.IsValid())
-		{
-			throw runtime_error("Invalid public key");
-		}
-	}
-	catch(...)
-	{
-		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
-		if (!myAddress.IsValid())
-			return "Invalid syscoin address";
-		if (!myAddress.isAlias)
-			return "You must transfer to a valid alias";
-
-		// check for alias existence in DB
-		vector<CAliasIndex> vtxAliasPos;
-		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
-			return  "failed to read alias from alias DB";
-		if (vtxAliasPos.size() < 1)
-			return "no result returned";
-		CAliasIndex xferAlias = vtxAliasPos.back();
-		vchPubKeyByte = xferAlias.vchPubKey;
-		xferKey = CPubKey(vchPubKeyByte);
-		if(!xferKey.IsValid())
-		{
-			return "Invalid transfer public key";
-		}
-	}
-
-	CSyscoinAddress sendAddr;
-    // this is a syscoin txn
-    CWalletTx wtx;
-	const CWalletTx* wtxIn;
-    CScript scriptPubKeyOrig;
-
-    EnsureWalletIsUnlocked();
-	CCert theCert;
-	// get the cert from DB
-	vector<CCert> vtxPos;
-	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-		return "could not read cert from DB";
-	theCert = vtxPos.back();
-
-	// check to see if certificate in wallet
-	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn))
-		return "this certificate is not in your wallet";
-
-	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		return "there are pending operations on that cert ";
-	}
-
-	// if cert is private, decrypt the data
-	vector<unsigned char> vchData = theCert.vchData;
-	if(theCert.bPrivate)
-	{		
-		string strData;
-		string strCipherText;
-		
-		// decrypt using old key
-		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
-		{
-			return "Could not decrypt certificate data!";
-		}
-		// encrypt using new key
-		if(!EncryptMessage(vchPubKeyByte, vchFromString(strData), strCipherText))
-		{
-			return "Could not encrypt certificate data!";
-		}
-		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-			return "data length cannot exceed 1023 bytes!";
-		vchData = vchFromString(strCipherText);
-	}	
-	CCert copyCert = theCert;
-	theCert.ClearCert();
-    scriptPubKeyOrig= GetScriptForDestination(xferKey.GetID());
-    CScript scriptPubKey;
-    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCert << OP_2DROP;
-    scriptPubKey += scriptPubKeyOrig;
-	
-	theCert.nHeight = chainActive.Tip()->nHeight;
-	theCert.vchPubKey = vchPubKeyByte;
-	if(copyCert.vchData != vchData)
-		theCert.vchData = vchData;
-    // send the cert pay txn
-	vector<CRecipient> vecSend;
-	CRecipient recipient;
-	CreateRecipient(scriptPubKey, recipient);
-	vecSend.push_back(recipient);
-
-	const vector<unsigned char> &data = theCert.Serialize();
-	CScript scriptData;
-	scriptData << OP_RETURN << data;
-	CRecipient fee;
-	CreateFeeRecipient(scriptData, data, fee);
-	vecSend.push_back(fee);
-	const CWalletTx * wtxInOffer=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	const CWalletTx * wtxInEscrow=NULL;
-	try
-	{
-		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);
-
+	string strPubKey = HexStr(theOfferAccept.vchBuyerKey);
+	string strError;
+	string strMethod = string("certtransfer");
+	UniValue params(UniValue::VARR);
+	params.push_back(stringFromVch(theOffer.vchCert));
+	params.push_back(strPubKey);	
+    try {
+        tableRPC.execute(strMethod, params);
 	}
 	catch (UniValue& objError)
 	{
@@ -327,7 +221,7 @@ string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<uns
 	else
 	{
 		if (!theOffer.vchLinkOffer.empty())
-			string("makeOfferRefundTX() :You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
+			return string("makeOfferRefundTX() :You cannot refund an offer that is linked to another offer, only the owner of the original offer can issue a refund.");
 	}
 
 
@@ -338,9 +232,11 @@ string makeOfferRefundTX(const vector<unsigned char> &vchOffer, const vector<uns
 
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_REFUND) << vchOffer << vchAcceptRand << refundCode << OP_2DROP << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
-	
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
-		return string("makeOfferRefundTX(): there are pending operations or refunds on that offer");
+	if(tx == NULL)
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+			return string("makeOfferRefundTX(): there are pending operations or refunds on that offer");
+		}
 	}
 
 	if(foundRefundInWallet(vchAcceptRand, refundCode))
@@ -1148,7 +1044,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
-						string strError = makeTransferCertTX(theOffer, theOfferAccept, tx);
+						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
 						{
 							if(fDebug)
@@ -1156,7 +1052,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 							// if there is a problem refund this accept
 							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
 							if (strError != "" && fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX(makeOfferRefundTX) %s\n", strError.c_str());
+								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
 
 						}
 					}
@@ -2121,7 +2017,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE) /*|| ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)*/) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer UniValue from txn
@@ -2509,6 +2405,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!theOffer.vchCert.empty())
 	{
+		// ensure you can't accept an offer that is updating a cert
+		/*if (ExistsInMempool(theOffer.vchCert, OP_CERT_UPDATE) || ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
+			throw runtime_error("there are pending operations on that cert");
+		}*/
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
