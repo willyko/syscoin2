@@ -83,19 +83,121 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 	return false;
 }
 // transfer cert if its linked to offer
-string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept)
+string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept, const CTransaction tx)
 {
 
-	string strPubKey = HexStr(theOfferAccept.vchBuyerKey);
-	string strError;
-	string strMethod = string("certtransfer");
-	UniValue params(UniValue::VARR);
+	vector<unsigned char> vchCert = theOffer.vchCert;
+	string strAddress = HexStr(theOfferAccept.vchBuyerKey);
+	CPubKey xferKey;
+	std::vector<unsigned char> vchPubKey;
+	std::vector<unsigned char> vchPubKeyByte;
+	try
+	{
+		vchPubKey = vchFromString(strAddress);		
+		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
+		xferKey  = CPubKey(vchPubKeyByte);
+		if(!xferKey.IsValid())
+		{
+			throw runtime_error("Invalid public key");
+		}
+	}
+	catch(...)
+	{
+		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
+		if (!myAddress.IsValid())
+			return "Invalid syscoin address";
+		if (!myAddress.isAlias)
+			return "You must transfer to a valid alias";
 
+		// check for alias existence in DB
+		vector<CAliasIndex> vtxAliasPos;
+		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxAliasPos))
+			return  "failed to read alias from alias DB";
+		if (vtxAliasPos.size() < 1)
+			return "no result returned";
+		CAliasIndex xferAlias = vtxAliasPos.back();
+		vchPubKeyByte = xferAlias.vchPubKey;
+		xferKey = CPubKey(vchPubKeyByte);
+		if(!xferKey.IsValid())
+		{
+			return "Invalid transfer public key";
+		}
+	}
+
+	CSyscoinAddress sendAddr;
+    // this is a syscoin txn
+    CWalletTx wtx;
+	const CWalletTx* wtxIn;
+    CScript scriptPubKeyOrig;
+
+    EnsureWalletIsUnlocked();
+	CCert theCert;
+	// get the cert from DB
+	vector<CCert> vtxPos;
+	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
+		return "could not read cert from DB";
+	theCert = vtxPos.back();
+
+	// check to see if certificate in wallet
+	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn))
+		return "this certificate is not in your wallet";
+
+	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		return "there are pending operations on that cert ";
+	}
+
+	// if cert is private, decrypt the data
+	vector<unsigned char> vchData = theCert.vchData;
+	if(theCert.bPrivate)
+	{		
+		string strData;
+		string strCipherText;
+		
+		// decrypt using old key
+		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
+		{
+			return "Could not decrypt certificate data!";
+		}
+		// encrypt using new key
+		if(!EncryptMessage(vchPubKeyByte, vchFromString(strData), strCipherText))
+		{
+			return "Could not encrypt certificate data!";
+		}
+		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+			return "data length cannot exceed 1023 bytes!";
+		vchData = vchFromString(strCipherText);
+	}	
+	CCert copyCert = theCert;
+	theCert.ClearCert();
+    scriptPubKeyOrig= GetScriptForDestination(xferKey.GetID());
+    CScript scriptPubKey;
+    scriptPubKey << CScript::EncodeOP_N(OP_CERT_TRANSFER) << vchCert << OP_2DROP;
+    scriptPubKey += scriptPubKeyOrig;
 	
-	params.push_back(stringFromVch(theOffer.vchCert));
-	params.push_back(strPubKey);	
-    try {
-        tableRPC.execute(strMethod, params);
+	theCert.nHeight = chainActive.Tip()->nHeight;
+	theCert.vchPubKey = vchPubKeyByte;
+	if(copyCert.vchData != vchData)
+		theCert.vchData = vchData;
+    // send the cert pay txn
+	vector<CRecipient> vecSend;
+	CRecipient recipient;
+	CreateRecipient(scriptPubKey, recipient);
+	vecSend.push_back(recipient);
+
+	const vector<unsigned char> &data = theCert.Serialize();
+	CScript scriptData;
+	scriptData << OP_RETURN << data;
+	CRecipient fee;
+	CreateFeeRecipient(scriptData, data, fee);
+	vecSend.push_back(fee);
+	const CWalletTx * wtxInOffer=NULL;
+	const CWalletTx * wtxInAlias=NULL;
+	const CWalletTx * wtxInEscrow=NULL;
+	try
+	{
+		SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);
+
 	}
 	catch (UniValue& objError)
 	{
@@ -105,6 +207,7 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 	{
 		return string(e.what()).c_str();
 	}
+
 	return "";
 
 }
@@ -1044,17 +1147,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
-						vector<CCert> certVtxPos;
-						if (pcertdb->ExistsCert(theOffer.vchCert)) {
-							if (!pcertdb->ReadCert(theOffer.vchCert, certVtxPos))
-								return error(
-									"CheckOfferInputs() : - OP_OFFER_ACCEPT - failed to read from cert DB");
-						}
-						if(certVtxPos.empty() || certVtxPos.back().txHash != tx.GetHash())
-						{
-							return error("CheckOfferInputs() - OP_OFFER_ACCEPT - Latest certificate transaction in db doesn't match this certificate offer accept transaction");
-						}
-						string strError = makeTransferCertTX(theOffer, theOfferAccept);
+						string strError = makeTransferCertTX(theOffer, theOfferAccept, tx);
 						if(strError != "")
 						{
 							if(fDebug)
