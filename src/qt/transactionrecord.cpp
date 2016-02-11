@@ -191,7 +191,13 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 					{
 						// Received by Syscoin Address
 						sub.type = TransactionRecord::RecvWithAddress;
-						sub.address = CSyscoinAddress(address).ToString();
+						// SYSCOIN show alias in record
+						CSyscoinAddress sysAddress = CSyscoinAddress(address);
+						sysAddress = CSyscoinAddress(sysAddress.ToString());
+						if(sysAddress.isAlias)
+							sub.address = sysAddress.aliasName;
+						else
+							sub.address = sysAddress.ToString();
 					}
 					else
 					{
@@ -265,7 +271,13 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 					{
 						// Sent to Syscoin Address
 						sub.type = TransactionRecord::SendToAddress;
-						sub.address = CSyscoinAddress(address).ToString();
+						// SYSCOIN show alias in record
+						CSyscoinAddress sysAddress = CSyscoinAddress(address);
+						sysAddress = CSyscoinAddress(sysAddress.ToString());
+						if(sysAddress.isAlias)
+							sub.address = sysAddress.aliasName;
+						else
+							sub.address = sysAddress.ToString();
 					}
 					else
 					{
