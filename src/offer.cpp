@@ -1046,15 +1046,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 					{
 						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
-						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
-							// if there is a problem refund this accept
-							strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
-							if (strError != "" && fDebug)
-								LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());
-
-						}
+							return error("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCertTX %s\n", strError.c_str());						
+						
 					}
 				
 					if(theOffer.vchLinkOffer.empty())
@@ -1651,6 +1644,12 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
+	}
 	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1746,7 +1745,12 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	COffer theOffer;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
 		throw runtime_error("could not find an offer with this name");
-
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
+	}
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
@@ -2035,7 +2039,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
 		// check for existing cert 's
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER) || ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
 		vector<vector<unsigned char> > vvch;
