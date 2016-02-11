@@ -2214,7 +2214,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
 	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
 	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=8?params[7]:"");
-	int64_t nHeight = 0;
+	int64_t nHeight = chainActive.Tip()->nHeight;
 	unsigned int nQty = 1;
 	if (params.size() >= 3) {
 		if(atof(params[2].get_str().c_str()) < 0)
@@ -2254,9 +2254,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("this alias is not in your wallet");
 	}
 	vchPubKey = alias.vchPubKey;
-
-
-
 	// this is a syscoin txn
 	CWalletTx wtx;
 	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig;
@@ -2398,7 +2395,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("not enough remaining quantity to fulfill this orderaccept");
 
 	int precision = 2;
-	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight>0?nHeight:chainActive.Tip()->nHeight, precision);
+	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight, precision);
 	string strCipherText = "";
 	// encryption should only happen once even when not a resell or not an escrow accept. It is already encrypted in both cases.
 	if(vchLinkOfferAccept.empty() && vchEscrowTxHash.empty())
