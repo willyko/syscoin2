@@ -850,7 +850,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
 			continue;
 		COffer offer;
-		if(IsOfferOp(opOffer))
+		if(IsOfferOp(opOffer) && !vvchOffer.empty())
 		{
 			if(opOffer != OP_OFFER_ACCEPT)
 				continue;
@@ -860,10 +860,16 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 			offer = vtxOfferPos.back();
 			if(offer.accept.vchCertPrivateData.empty() || offer.vchCert.empty() || offer.accept.vchBuyerKey.empty())
 				continue;
+			if(IsSyscoinTxMine(tx))
+				continue;
 			vchName = offer.vchCert;
 		}
 		else
+		{
+			if(!IsSyscoinTxMine(tx))
+				continue;
 			vchName = vvch[0];
+		}
 		
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
@@ -880,8 +886,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!GetSyscoinTransaction(cert.nHeight, cert.txHash, tx, Params().GetConsensus()))
 			continue;
 		
-		if(!IsSyscoinTxMine(tx))
-			continue;
+
 		
         // build the output object
 		UniValue oName(UniValue::VOBJ);
