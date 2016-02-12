@@ -889,11 +889,11 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		string strData;
 		if(offer.accept.vchCertPrivateData.empty())
 			strData = stringFromVch(cert.vchData);
-		else
-			strData = stringFromVch(offer.accept.vchCertPrivateData);
+
 		string strDecrypted = "";
 		if(cert.bPrivate)
 		{
+			strData = "Encrypted for owner of certificate private data";
 			if(offer.accept.vchCertPrivateData.empty())
 			{
 				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
