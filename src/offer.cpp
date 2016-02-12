@@ -97,7 +97,6 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 	if(!IsSyscoinTxMine(txCert))
 		return "This certificate is not yours, you cannot transfer it";
 	// if cert is private, decrypt the data
-	vector<unsigned char> vchData = theCert.vchData;
 	if(theCert.bPrivate)
 	{		
 		string strData;
@@ -117,6 +116,8 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 			return "data length cannot exceed 1023 bytes!";
 		theOfferAccept.vchCertPrivateData = vchFromString(strCipherText);
 	}
+	else
+		return "Certificate is not private!";
 	return "";
 
 }
