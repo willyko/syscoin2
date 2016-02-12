@@ -850,7 +850,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
 			continue;
 		COffer offer;
-		if(IsOfferOp(opOffer) && vvchOffer.empty())
+		if(IsOfferOp(opOffer) && !vvchOffer.empty())
 		{
 			if(opOffer != OP_OFFER_ACCEPT)
 				continue;
@@ -885,7 +885,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         oName.push_back(Pair("cert", stringFromVch(vchName)));
         oName.push_back(Pair("title", stringFromVch(cert.vchTitle)));
 
-		string strData;
+		string strData = "";
 		if(offer.accept.vchCertPrivateData.empty())
 			strData = stringFromVch(cert.vchData);
 
