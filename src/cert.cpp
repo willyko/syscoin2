@@ -845,31 +845,28 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
 		// decode txn, skip non-cert txns
-		vector<vector<unsigned char> > vvch, vvchOffer;
-		int op, nOut, opOffer, nOutOffer;
-		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
-			continue;
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+
 		COffer offer;
-		if(IsOfferOp(opOffer) && !vvchOffer.empty())
+		if(DecodeOfferTx(wtx, op, nOut, vvch))
 		{
-			if(opOffer != OP_OFFER_ACCEPT)
+			if(op != OP_OFFER_ACCEPT)
 				continue;
 			vector<COffer> vtxOfferPos;
-			if (!pofferdb->ReadOffer(vvchOffer[0], vtxOfferPos) || vtxOfferPos.empty())
+			if (!pofferdb->ReadOffer(vvch[0], vtxOfferPos) || vtxOfferPos.empty())
 				continue;
 			offer = vtxOfferPos.back();
 			if(offer.accept.vchCertPrivateData.empty() || offer.vchCert.empty() || offer.accept.vchBuyerKey.empty())
 				continue;
-			if(IsSyscoinTxMine(tx))
-				continue;
 			vchName = offer.vchCert;
 		}
-		else
+		else if(DecodeCertTx(wtx, op, nOut, vvch))
 		{
-			if(!IsSyscoinTxMine(tx))
-				continue;
 			vchName = vvch[0];
 		}
+		else
+			continue;
 		
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
@@ -883,10 +880,6 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		// get last active name only
 		if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 			continue;
-		if (!GetSyscoinTransaction(cert.nHeight, cert.txHash, tx, Params().GetConsensus()))
-			continue;
-		
-
 		
         // build the output object
 		UniValue oName(UniValue::VOBJ);
