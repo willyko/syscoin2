@@ -2642,7 +2642,11 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			{
 				oOfferAccept.push_back(Pair("refunded", "false"));
 			}
-			
+			string strCertData = string("NA");
+			string strDecryptedCertData;
+			if(!theOfferAccept.vchCertPrivateData.empty() && DecryptMessage(ca.vchBuyerKey, ca.vchCertPrivateData, strDecryptedCertData))
+				strCertData = strDecryptedCertData;
+			oOfferAccept.push_back(Pair("cert_data", strCertData));		
 			
 
 			aoOfferAccepts.push_back(oOfferAccept);
@@ -2843,6 +2847,13 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
+
+			string strCertData = string("NA");
+			string strDecryptedCertData;
+			if(!theOfferAccept.vchCertPrivateData.empty() && DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecryptedCertData))
+				strCertData = strDecryptedCertData;
+			oOfferAccept.push_back(Pair("cert_data", strCertData));	
+
 			oRes.push_back(oOfferAccept);
         }
 		vNamesI.clear();

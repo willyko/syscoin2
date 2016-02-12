@@ -128,6 +128,13 @@ bool OfferAcceptInfoDialog::lookup()
 				ui->escrowLabel->setVisible(true);
 				ui->escrowEdit->setText(escrowStr);
 			}
+			QString certDataStr = QString::fromStdString(find_value(result.get_obj(), "cert_data").get_str());
+			if(certDataStr != "NA")
+			{
+				ui->certDataEdit->setVisible(true);
+				ui->certDataLabel->setVisible(true);
+				ui->certDataEdit->setText(certDataStr);
+			}
 			return true;
 		}
 		 
