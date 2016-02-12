@@ -32,6 +32,10 @@ OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *pa
 	ui->btctxidLabel->setVisible(false);
 	ui->certEdit->setVisible(false);
 	ui->certLabel->setVisible(false);
+	ui->certDataEdit->setVisible(false);
+	ui->certDataLabel->setVisible(false);
+	ui->escrowEdit->setVisible(false);
+	ui->escrowLabel->setVisible(false);
 	lookup();
 }
 
@@ -110,7 +114,20 @@ bool OfferAcceptInfoDialog::lookup()
 				
 				ui->refundedEdit->setText(refundedStr);
 				ui->paymessageEdit->setText(QString::fromStdString(find_value(acceptObj, "pay_message").get_str()));
-
+				QString certDataStr = QString::fromStdString(find_value(acceptObj.get_obj(), "cert_data").get_str());
+				if(certDataStr != "NA")
+				{
+					ui->certDataEdit->setVisible(true);
+					ui->certDataLabel->setVisible(true);
+					ui->certDataEdit->setText(certDataStr);
+				}
+				QString escrowStr = QString::fromStdString(find_value(result.get_obj(), "escrowlink").get_str());
+				if(escrowStr != "NA")
+				{
+					ui->escrowEdit->setVisible(true);
+					ui->escrowLabel->setVisible(true);
+					ui->escrowEdit->setText(escrowStr);
+				}
 			}
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
@@ -121,20 +138,6 @@ bool OfferAcceptInfoDialog::lookup()
 				ui->certLabel->setVisible(true);
 				ui->certEdit->setText(certStr);
 			}	
-			QString escrowStr = QString::fromStdString(find_value(result.get_obj(), "escrowlink").get_str());
-			if(escrowStr != "NA")
-			{
-				ui->escrowEdit->setVisible(true);
-				ui->escrowLabel->setVisible(true);
-				ui->escrowEdit->setText(escrowStr);
-			}
-			QString certDataStr = QString::fromStdString(find_value(result.get_obj(), "cert_data").get_str());
-			if(certDataStr != "NA")
-			{
-				ui->certDataEdit->setVisible(true);
-				ui->certDataLabel->setVisible(true);
-				ui->certDataEdit->setText(certDataStr);
-			}
 			return true;
 		}
 		 
