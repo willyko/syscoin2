@@ -697,7 +697,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchData = theCert.vchData;
 	if(theCert.bPrivate)
 	{		
-		string strData;
+		string strData = "";
 		string strCipherText;
 		
 		// decrypt using old key

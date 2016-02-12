@@ -99,17 +99,19 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 	// if cert is private, decrypt the data
 	if(theCert.bPrivate)
 	{		
-		string strData;
+		string strData = "";
+		string strDecrypted = "";
 		string strCipherText;
 		
 		// decrypt using old key
 		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
 		{
+			strDecrypted = strData;
 			return "Could not decrypt certificate data!";
 		}
-		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), HexStr(theOffer.vchPubKey), strData);
+		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), HexStr(theOffer.vchPubKey), strDecrypted);
 		// encrypt using new key
-		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strData), strCipherText))
+		if(!EncryptMessage(theOfferAccept.vchBuyerKey, strDecrypted, strCipherText))
 		{
 			return "Could not encrypt certificate data!";
 		}
