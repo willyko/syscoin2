@@ -847,7 +847,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		// decode txn, skip non-cert txns
 		vector<vector<unsigned char> > vvch, vvchOffer;
 		int op, nOut, opOffer, nOutOffer;
-		if (!DecodeCertTx(wtx, op, nOut, vvch) || !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
+		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
 			continue;
 		COffer offer;
 		if(IsOfferOp(opOffer))
