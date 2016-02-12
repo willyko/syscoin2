@@ -844,12 +844,24 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
 		// decode txn, skip non-cert txns
-		vector<vector<unsigned char> > vvch;
-		int op, nOut;
-		if (!DecodeCertTx(wtx, op, nOut, vvch) || !IsCertOp(op))
+		vector<vector<unsigned char> > vvch, vvchOffer;
+		int op, nOut, opOffer, nOutOffer;
+		if (!DecodeCertTx(wtx, op, nOut, vvch) || !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
 			continue;
-		
-		vchName = vvch[0];
+		COffer offer;
+		if(IsOfferOp(opOffer))
+		{
+			if(opOffer != OP_OFFER_ACCEPT)
+				continue;
+			offer.UnserializeFromTx(wtx);
+			if(offer.IsNull())
+				continue;
+			if(offer.accept.vchCertPrivateData.empty() || offer.vchCert.empty() || offer.accept.vchBuyerKey.empty())
+				continue;
+			vchName = offer.vchCert;
+		}
+		else
+			vchName = vvch[0];
 		
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
@@ -874,12 +886,24 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         oName.push_back(Pair("cert", stringFromVch(vchName)));
         oName.push_back(Pair("title", stringFromVch(cert.vchTitle)));
 
-		string strData = stringFromVch(cert.vchData);
+		string strData;
+		if(offer.accept.vchCertPrivateData.empty())
+			strData = stringFromVch(cert.vchData);
+		else
+			strData = stringFromVch(offer.accept.vchCertPrivateData);
 		string strDecrypted = "";
 		if(cert.bPrivate)
 		{
-			if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
-                strData = strDecrypted;
+			if(offer.accept.vchCertPrivateData.empty())
+			{
+				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
+					strData = strDecrypted;
+			}
+			else
+			{
+				if(DecryptMessage(offer.accept.vchBuyerKey, offer.accept.vchCertPrivateData, strDecrypted))
+					strData = strDecrypted;
+			}
 		}
 		oName.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 		oName.push_back(Pair("data", strData));

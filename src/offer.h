@@ -45,6 +45,7 @@ public:
 	std::vector<unsigned char> vchLinkOfferAccept;
 	std::vector<unsigned char> vchLinkOffer;
 	std::vector<unsigned char> vchBuyerKey;	
+	std::vector<unsigned char> vchCertPrivateData;	
 	COfferAccept() {
         SetNull();
     }
@@ -63,6 +64,7 @@ public:
 		READWRITE(vchBuyerKey);	
 		READWRITE(vchLinkOffer);
 		READWRITE(txBTCId);	
+		READWRITE(vchCertPrivateData);	
 		
 	}
 
@@ -79,6 +81,7 @@ public:
 		&& a.vchBuyerKey == b.vchBuyerKey
 		&& a.vchLinkOffer == b.vchLinkOffer 
 		&& a.txBTCId == b.txBTCId
+		&& a.vchCertPrivateData == b.vchCertPrivateData
         );
     }
 
@@ -94,6 +97,7 @@ public:
 		vchBuyerKey = b.vchBuyerKey;
 		vchLinkOffer = b.vchLinkOffer;
 		txBTCId = b.txBTCId;
+		vchCertPrivateData = b.vchCertPrivateData;
         return *this;
     }
 
@@ -101,8 +105,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchLinkOfferAccept.clear();}
-    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bRefunded == false  && txBTCId.IsNull() && vchBuyerKey.empty()); }
+    void SetNull() { vchCertPrivateData.clear(); vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchLinkOfferAccept.clear();}
+    bool IsNull() const { return (vchCertPrivateData.empty && vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bRefunded == false  && txBTCId.IsNull() && vchBuyerKey.empty()); }
 
 };
 class COfferLinkWhitelistEntry {
@@ -216,7 +220,7 @@ public:
 	std::vector<unsigned char> sDescription;
 	float nPrice;
 	unsigned char nCommission;
-	unsigned int nQty;
+	int nQty;
 	COfferAccept accept;
 	std::vector<unsigned char> vchLinkOffer;
 	std::vector<unsigned char> sCurrencyCode;
