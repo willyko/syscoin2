@@ -2644,7 +2644,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			}
 			string strCertData = string("NA");
 			string strDecryptedCertData;
-			if(!theOfferAccept.vchCertPrivateData.empty() && DecryptMessage(ca.vchBuyerKey, ca.vchCertPrivateData, strDecryptedCertData))
+			if(!ca.vchCertPrivateData.empty() && DecryptMessage(ca.vchBuyerKey, ca.vchCertPrivateData, strDecryptedCertData))
 				strCertData = strDecryptedCertData;
 			oOfferAccept.push_back(Pair("cert_data", strCertData));		
 			
