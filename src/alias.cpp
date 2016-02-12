@@ -382,6 +382,7 @@ int GetSyscoinTxVersion()
 {
 	return SYSCOIN_TX_VERSION;
 }
+
 /**
  * [IsSyscoinTxMine description]
  * @param  tx [description]
@@ -390,8 +391,25 @@ int GetSyscoinTxVersion()
 bool IsSyscoinTxMine(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return false;
+	int op, nOut, myNout;
+	vector<vector<unsigned char> > vvch;
+	if (DecodeAliasTx(tx, op, nOut, vvch, -1))
+		myNout = nOut;
+	else if (DecodeOfferTx(tx, op, nOut, vvch, -1))
+		myNout = nOut;
+	else if (DecodeCertTx(tx, op, nOut, vvch, -1))
+		myNout = nOut;
+	else if (DecodeMessageTx(tx, op, nOut, vvch, -1))
+		myNout = nOut;
+	else if (DecodeEscrowTx(tx, op, nOut, vvch, -1))
+		myNout = nOut;
 
-	return pwalletMain->IsMine(tx);
+	CScript scriptPubKey;
+	RemoveSyscoinScript(tx.vout[nOut], scriptPubKey);
+	CTxDestination dest;
+	ExtractDestination(scriptPubKey, dest);
+	CSyscoin address(dest);
+	return IsMine(*pwalletMain, address.Get());
 }
 
 bool CheckAliasInputs(const CTransaction &tx,
