@@ -698,15 +698,16 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	if(theCert.bPrivate)
 	{		
 		string strData = "";
+		string strDecryptedData = "";
 		string strCipherText;
 		
 		// decrypt using old key
-		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
-		{
+		if(DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
+			strDecryptedData = strData;
+		else
 			throw runtime_error("Could not decrypt certificate data!");
-		}
 		// encrypt using new key
-		if(!EncryptMessage(vchPubKeyByte, vchFromString(strData), strCipherText))
+		if(!EncryptMessage(vchPubKeyByte, vchFromString(strDecryptedData), strCipherText))
 		{
 			throw runtime_error("Could not encrypt certificate data!");
 		}
