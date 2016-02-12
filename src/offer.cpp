@@ -107,7 +107,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		{
 			return "Could not decrypt certificate data!";
 		}
-		LogPrintf("theCert.vchData %s, decrypted %s\n", stringFromVch(theCert.vchData).c_str(), strData);
+		LogPrintf("decrypted %s\n", strData.c_str());
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strData), strCipherText))
 		{
@@ -116,7 +116,6 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 			return "data length cannot exceed 1023 bytes!";
 		theOfferAccept.vchCertPrivateData = vchFromString(strCipherText);
-		LogPrintf("theOfferAccept.vchCertPrivateData %s\n", stringFromVch(theOfferAccept.vchCertPrivateData).c_str());
 	}
 	else
 		return "Certificate is not private!";
@@ -1062,7 +1061,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!fExternal && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
 						string strError = makeTransferCert(theOffer, theOfferAccept);
-						LogPrintf("theOfferAccept.vchCertPrivateData %s\n", stringFromVch(theOfferAccept.vchCertPrivateData).c_str());
 						if(strError != "")
 							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
 					}

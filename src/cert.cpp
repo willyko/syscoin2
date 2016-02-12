@@ -849,18 +849,20 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		int op, nOut, opOffer, nOutOffer;
 		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
 			continue;
-		COffer offer;
+		COfferAccept theOfferAccept;
 		if(IsOfferOp(opOffer) && !vvchOffer.empty())
 		{
+			CTransaction acceptTx;
 			if(opOffer != OP_OFFER_ACCEPT)
 				continue;
-			vector<COffer> vtxOfferPos;
-			if (!pofferdb->ReadOffer(vvchOffer[0], vtxOfferPos) || vtxOfferPos.empty())
+			if (!GetTxOfOfferAccept(*pofferdb, vvchOffer[0], vvchOffer[1], theOfferAccept, acceptTx))
 				continue;
-			offer = vtxOfferPos.back();
-			if(offer.accept.vchCertPrivateData.empty() || offer.vchCert.empty() || offer.accept.vchBuyerKey.empty())
+			COffer theOffer(acceptTx);
+			if(theOffer.IsNull())
 				continue;
-			vchName = offer.vchCert;
+			if(theOfferAccept.vchCertPrivateData.empty() || theOffer.vchCert.empty() || theOfferAccept.vchBuyerKey.empty())
+				continue;
+			vchName = theOfferAccept.vchCert;
 		}
 		else
 			vchName = vvch[0];
@@ -886,21 +888,21 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         oName.push_back(Pair("title", stringFromVch(cert.vchTitle)));
 
 		string strData = "";
-		if(offer.accept.vchCertPrivateData.empty())
+		if(theOfferAccept.vchCertPrivateData.empty())
 			strData = stringFromVch(cert.vchData);
 
 		string strDecrypted = "";
 		if(cert.bPrivate)
 		{
 			strData = "Encrypted for owner of certificate private data";
-			if(offer.accept.vchCertPrivateData.empty())
+			if(theOfferAccept.vchCertPrivateData.empty())
 			{
 				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
 					strData = strDecrypted;
 			}
 			else
 			{
-				if(DecryptMessage(offer.accept.vchBuyerKey, offer.accept.vchCertPrivateData, strDecrypted))
+				if(DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecrypted))
 					strData = strDecrypted;
 			}
 		}
