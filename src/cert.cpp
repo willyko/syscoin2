@@ -854,9 +854,10 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		{
 			if(opOffer != OP_OFFER_ACCEPT)
 				continue;
-			offer.UnserializeFromTx(wtx);
-			if(offer.IsNull())
+			vector<COffer> vtxOfferPos;
+			if (!pofferdb->ReadOffer(vvchOffer[0], vtxOfferPos) || vtxOfferPos.empty())
 				continue;
+			offer = vtxOfferPos.back();
 			if(offer.accept.vchCertPrivateData.empty() || offer.vchCert.empty() || offer.accept.vchBuyerKey.empty())
 				continue;
 			vchName = offer.vchCert;
