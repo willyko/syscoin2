@@ -911,7 +911,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 						if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
 							return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
 					}
-					if(theOfferAccept.nQty <= 0 || (theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)))
+					if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1)))
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
 				}
 				break;
@@ -1043,7 +1043,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					// first step is to send inprogress so that next block we can send a complete (also sends coins during second step to original acceptor)
 					// this is to ensure that the coins sent during accept are available to spend to refund to avoid having to hold double the balance of an accept amount
 					// in order to refund.
-					if(theOfferAccept.nQty > theOffer.nQty || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
+					if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (linkOffer.nQty != -1 && !linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
 						if(!fExternal && IsSyscoinTxMine(tx))
 						{
 							string strError = makeOfferRefundTX(vvchArgs[0], vvchArgs[1], OFFER_REFUND_PAYMENT_INPROGRESS, &tx);
@@ -1057,17 +1057,19 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 					// only if we are the root offer owner do we even consider xfering a cert					
 					// purchased a cert so xfer it
-					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+					if(!fExternal && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
+						LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert Start");
 						string strError = makeTransferCert(theOffer, theOfferAccept);
 						if(strError != "")
 							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
-						
+						LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert Done");
 					}
 				
 					if(theOffer.vchLinkOffer.empty())
 					{
-						theOffer.nQty -= theOfferAccept.nQty;
+						if(theOffer.nQty != -1)
+							theOffer.nQty -= theOfferAccept.nQty;
 						// go through the linked offers, if any, and update the linked offer qty based on the this qty
 						for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
 							vector<COffer> myVtxPos;
@@ -1262,11 +1264,11 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchDesc;
 	vector<unsigned char> vchCert;
 	bool bOnlyAcceptBTC = false;
-	unsigned int nQty;
+	int nQty;
 	if(atof(params[3].get_str().c_str()) < 0)
 		throw runtime_error("invalid quantity value, must be greator than 0");
 	try {
-		nQty = boost::lexical_cast<unsigned int>(params[3].get_str());
+		nQty = atoi(params[3].get_str());
 	} catch (std::exception &e) {
 		throw runtime_error("invalid quantity value, must be less than 4294967296");
 	}
@@ -1936,7 +1938,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchCert;
 	bool bExclusiveResell = true;
 	int bPrivate = false;
-	unsigned int nQty;
+	int nQty;
 	double price;
 	if (params.size() >= 7) vchDesc = vchFromValue(params[6]);
 	if (params.size() >= 8) bPrivate = atoi(params[7].get_str().c_str()) == 1? true: false;
@@ -1946,7 +1948,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("invalid quantity value, must be greator than 0");
 	
 	try {
-		nQty = boost::lexical_cast<unsigned int>(params[4].get_str());
+		nQty = atoi(params[4].get_str());
 		price = atof(params[5].get_str().c_str());
 
 	} catch (std::exception &e) {
@@ -2099,7 +2101,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (params.size() >= 8)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
-	if((nQty-memPoolQty) < 0)
+	if(nQty != -1 && (nQty-memPoolQty) < 0)
 		throw runtime_error("not enough remaining quantity to fulfill this offerupdate");
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
@@ -2384,7 +2386,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}
 
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
-	if(theOffer.nQty < (nQty+memPoolQty))
+	if(theOffer.nQty != -1 && theOffer.nQty < (nQty+memPoolQty))
 		throw runtime_error("not enough remaining quantity to fulfill this orderaccept");
 
 	int precision = 2;
