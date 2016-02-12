@@ -1,5 +1,6 @@
 #include "cert.h"
 #include "alias.h"
+#include "offer.h"
 #include "init.h"
 #include "main.h"
 #include "util.h"
