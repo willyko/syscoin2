@@ -92,7 +92,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 	CTransaction txCert;
 	CCert theCert;
 	// make sure this cert is still valid
-	if (!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
+	if(!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 		return "Certificate does not exist or may be expired";
 	if(!IsSyscoinTxMine(txCert))
 		return "This certificate is not yours, you cannot transfer it";
@@ -104,11 +104,11 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		string strCipherText;
 		
 		// decrypt using old key
-		if(!DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
-		{
+		if(DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
 			strDecrypted = strData;
+		else
 			return "Could not decrypt certificate data!";
-		}
+		
 		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), HexStr(theOffer.vchPubKey), strDecrypted);
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
