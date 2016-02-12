@@ -862,7 +862,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 				continue;
 			if(theOfferAccept.vchCertPrivateData.empty() || theOffer.vchCert.empty() || theOfferAccept.vchBuyerKey.empty())
 				continue;
-			vchName = theOfferAccept.vchCert;
+			vchName = theOffer.vchCert;
 		}
 		else
 			vchName = vvch[0];
