@@ -111,7 +111,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		}
 		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), HexStr(theOffer.vchPubKey), strDecrypted);
 		// encrypt using new key
-		if(!EncryptMessage(theOfferAccept.vchBuyerKey, strDecrypted, strCipherText))
+		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
 		{
 			return "Could not encrypt certificate data!";
 		}
