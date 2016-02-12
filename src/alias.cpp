@@ -403,9 +403,11 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 		myNout = nOut;
 	else if (DecodeEscrowTx(tx, op, nOut, vvch))
 		myNout = nOut;
+	else
+		return false;
 
 	CScript scriptPubKey;
-	RemoveSyscoinScript(tx.vout[nOut].scriptPubKey, scriptPubKey);
+	RemoveSyscoinScript(tx.vout[myNout].scriptPubKey, scriptPubKey);
 	CTxDestination dest;
 	ExtractDestination(scriptPubKey, dest);
 	CSyscoinAddress address(dest);
