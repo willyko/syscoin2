@@ -402,7 +402,6 @@ public:
 
     bool ReconstructOfferIndex(CBlockIndex *pindexRescan);
 };
-void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA);
 bool GetAcceptByHash(const std::vector<COffer> &offerList,  COfferAccept &ca);
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COfferAccept &theOfferAccept, CTransaction& tx);

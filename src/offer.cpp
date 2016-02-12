@@ -107,7 +107,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		{
 			return "Could not decrypt certificate data!";
 		}
-		LogPrintf("decrypted %s\n", strData.c_str());
+		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), stringFromVch(theOffer.vchPubKey), strData);
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strData), strCipherText))
 		{
@@ -1061,6 +1061,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!fExternal && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
 						string strError = makeTransferCert(theOffer, theOfferAccept);
+						LogPrintf("theOfferAccept.vchCertPrivateData %s\n", stringFromVch(theOfferAccept.vchCertPrivateData).c_str());
 						if(strError != "")
 							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
 					}
@@ -3387,19 +3388,6 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 	}
 
 	return oRes;
-}
-void PutOfferAccept(std::vector<COffer> &offerList, COffer& theOffer, const COfferAccept &theOA){
-	if(offerList.empty())
-		return;
-    for(int i=offerList.size()-1;i>=0;i--) {
-		if(offerList[i].accept.IsNull())
-			continue;
-        if(offerList[i].accept.vchAcceptRand == theOA.vchAcceptRand) {
-            offerList[i].accept = theOA;
-			return;
-        }
-    }
-	theOffer.accept = theOA;
 }
 bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
