@@ -393,22 +393,22 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 		return false;
 	int op, nOut, myNout;
 	vector<vector<unsigned char> > vvch;
-	if (DecodeAliasTx(tx, op, nOut, vvch, -1))
+	if (DecodeAliasTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeOfferTx(tx, op, nOut, vvch, -1))
+	else if (DecodeOfferTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeCertTx(tx, op, nOut, vvch, -1))
+	else if (DecodeCertTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeMessageTx(tx, op, nOut, vvch, -1))
+	else if (DecodeMessageTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeEscrowTx(tx, op, nOut, vvch, -1))
+	else if (DecodeEscrowTx(tx, op, nOut, vvch))
 		myNout = nOut;
 
 	CScript scriptPubKey;
-	RemoveSyscoinScript(tx.vout[nOut], scriptPubKey);
+	RemoveSyscoinScript(tx.vout[nOut].scriptPubKey, scriptPubKey);
 	CTxDestination dest;
 	ExtractDestination(scriptPubKey, dest);
-	CSyscoin address(dest);
+	CSyscoinAddress address(dest);
 	return IsMine(*pwalletMain, address.Get());
 }
 
