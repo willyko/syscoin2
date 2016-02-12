@@ -762,8 +762,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// make sure this cert is still valid
 						if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 						{
-							if(theCert.vchPubKey != theOffer.vchPubKey)
-								return error("CheckOfferInputs() : offerupdate cert and offer pubkey mismatch");
+							if(!theCert.bPrivate)
+								return error("CheckOfferInputs() OP_OFFER_UPDATE: Public certificates cannot be sold");
 						}
 						else
 							return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
@@ -1362,11 +1362,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	// unserialize offer from txn, serialize back
 	// build offer
 	COffer newOffer;
-	// if we sell a cert always use cert pubkey otherwise use alias
-	if(wtxCertIn == NULL)
-		newOffer.vchPubKey = alias.vchPubKey;
-	else
-		newOffer.vchPubKey = theCert.vchPubKey;
+	newOffer.vchPubKey = alias.vchPubKey;
 	newOffer.sCategory = vchCat;
 	newOffer.sTitle = vchTitle;
 	newOffer.sDescription = vchDesc;
@@ -2044,6 +2040,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
+		if(!theCert.bPrivate)
+			throw runtime_error("You may only sell private certificates!");
 		// check for existing cert 's
 		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 			throw runtime_error("there are pending operations on that cert");
@@ -2081,19 +2079,14 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		theOffer.sTitle = vchTitle;
 	if(offerCopy.sDescription != vchDesc)
 		theOffer.sDescription = vchDesc;
-	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
+
 	if(wtxCertIn != NULL)
-	{
 		theOffer.vchCert = vchCert;
-		theOffer.vchPubKey = theCert.vchPubKey;
-	}
-	// else if we remove the cert from this offer (don't sell a cert) then clear the cert
 	else
-	{
-		if(!alias.IsNull())
-			theOffer.vchPubKey = alias.vchPubKey;
 		theOffer.vchCert.clear();
-	}
+	
+	if(!alias.IsNull())
+		theOffer.vchPubKey = alias.vchPubKey;
 	// ensure pubkey points to an alias
 
 	CPubKey SellerPubKey(theOffer.vchPubKey);
