@@ -93,7 +93,7 @@ bool OfferAcceptInfoDialog::lookup()
 				if(currencyStr == "BTC")
 				{
 					QString btctxidStr = QString::fromStdString(find_value(acceptObj, "btctxid").get_str());
-					if(btctxidStr != "")
+					if(btctxidStr != "NA")
 					{
 						ui->btctxidEdit->setVisible(true);
 						ui->btctxidLabel->setVisible(true);
@@ -115,14 +115,14 @@ bool OfferAcceptInfoDialog::lookup()
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
 			QString certStr = QString::fromStdString(find_value(result.get_obj(), "cert").get_str());
-			if(certStr != "")
+			if(certStr != "NA")
 			{
 				ui->certEdit->setVisible(true);
 				ui->certLabel->setVisible(true);
 				ui->certEdit->setText(certStr);
 			}	
 			QString escrowStr = QString::fromStdString(find_value(result.get_obj(), "escrowlink").get_str());
-			if(escrowStr != "")
+			if(escrowStr != "NA")
 			{
 				ui->escrowEdit->setVisible(true);
 				ui->escrowLabel->setVisible(true);

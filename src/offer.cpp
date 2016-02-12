@@ -2567,12 +2567,15 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(ca.vchLinkOffer)));
 			oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
-			oOfferAccept.push_back(Pair("btctxid", ca.txBTCId.GetHex()));
+			string strBTCId = "NA";
+			if(!ca.txBTCId.IsNull())
+				strBTCId = ca.txBTCId.GetHex();
+			oOfferAccept.push_back(Pair("btctxid", strBTCId));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("time", sTime));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-			vector<unsigned char> vchEscrowLink;
+			vector<unsigned char> vchEscrowLink = vchFromString("NA");
 	
 			bool foundEscrow = false;
 			for (unsigned int i = 0; i < txA.vin.size(); i++) {
@@ -2653,8 +2656,11 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		expires_in = 0;
 		expired_block = 0;
         nHeight = theOffer.nHeight;
+		vector<unsigned char> vchCert = vchFromString("NA");
+		if(!theOffer.vchCert.empty())
+			vchCert = theOffer.vchCert;
 		oOffer.push_back(Pair("offer", offer));
-		oOffer.push_back(Pair("cert", stringFromVch(theOffer.vchCert)));
+		oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
 		oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
 		expired_block = nHeight + GetOfferExpirationDepth();
         if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
@@ -2770,7 +2776,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
-			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
+			string strBTCId = "NA";
+			if(!theOfferAccept.txBTCId.IsNull())
+				strBTCId = theOfferAccept.txBTCId.GetHex();
+			oOfferAccept.push_back(Pair("btctxid", strBTCId));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
 			CPubKey SellerPubKey(theOffer.vchPubKey);
@@ -2785,7 +2794,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
-			vector<unsigned char> vchEscrowLink;
+			vector<unsigned char> vchEscrowLink = vchFromString("NA");
 	
 			vector<unsigned char> vchOfferLink;
 			bool foundOffer = false;
@@ -2894,7 +2903,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
-			oOfferAccept.push_back(Pair("btctxid", theOfferAccept.txBTCId.GetHex()));
+			string strBTCId = "NA";
+			if(!theOfferAccept.txBTCId.IsNull())
+				strBTCId = theOfferAccept.txBTCId.GetHex();
+			oOfferAccept.push_back(Pair("btctxid", strBTCId));
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(theOfferAccept.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(theOfferAccept.vchLinkOffer)));
 			CPubKey SellerPubKey(theOffer.vchPubKey);
@@ -2909,7 +2921,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-			vector<unsigned char> vchEscrowLink;
+			vector<unsigned char> vchEscrowLink = vchFromString("NA");
 	
 			bool foundEscrow = false;
 			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
@@ -3040,7 +3052,10 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
             // build the output UniValue
             UniValue oName(UniValue::VOBJ);
             oName.push_back(Pair("offer", stringFromVch(vchName)));
-			oName.push_back(Pair("cert", stringFromVch(theOfferA.vchCert)));
+			vector<unsigned char> vchCert = vchFromString("NA");
+			if(!theOfferA.vchCert.empty())
+				vchCert = theOfferA.vchCert;
+			oName.push_back(Pair("cert", stringFromVch(vchCert)));
             oName.push_back(Pair("title", stringFromVch(theOfferA.sTitle)));
             oName.push_back(Pair("category", stringFromVch(theOfferA.sCategory)));
             oName.push_back(Pair("description", stringFromVch(theOfferA.sDescription)));
@@ -3130,7 +3145,10 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			oOffer.push_back(Pair("offer", offer));
 			string opName = offerFromOp(op);
 			oOffer.push_back(Pair("offertype", opName));
-			oOffer.push_back(Pair("cert", stringFromVch(theOfferA.vchCert)));
+			vector<unsigned char> vchCert = vchFromString("NA");
+			if(!theOfferA.vchCert.empty())
+				vchCert = theOfferA.vchCert;
+			oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
             oOffer.push_back(Pair("title", stringFromVch(theOfferA.sTitle)));
             oOffer.push_back(Pair("category", stringFromVch(theOfferA.sCategory)));
             oOffer.push_back(Pair("description", stringFromVch(theOfferA.sDescription)));
@@ -3253,7 +3271,10 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 			continue;
 		UniValue oOffer(UniValue::VOBJ);
 		oOffer.push_back(Pair("offer", offer));
-		oOffer.push_back(Pair("cert", stringFromVch(txOffer.vchCert)));
+			vector<unsigned char> vchCert = vchFromString("NA");
+			if(!txOffer.vchCert.empty())
+				vchCert = txOffer.vchCert;
+		oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
         oOffer.push_back(Pair("title", stringFromVch(txOffer.sTitle)));
 		oOffer.push_back(Pair("description", stringFromVch(txOffer.sDescription)));
         oOffer.push_back(Pair("category", stringFromVch(txOffer.sCategory)));
