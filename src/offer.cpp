@@ -109,7 +109,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		else
 			return "Could not decrypt certificate data!";
 		
-		LogPrintf("theOffer.vchCert %s, theCert.vchData %s theCert.vchPubKey %s, decrypted %s\n", stringFromVch(theOffer.vchCert), stringFromVch(theCert.vchData), HexStr(theOffer.vchPubKey), strDecrypted);
+		LogPrintf("decrypted %s\n", strDecrypted);
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
 		{
@@ -710,8 +710,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// make sure this cert is still valid
 						if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 						{
-							if(theCert.vchPubKey != theOffer.vchPubKey)
-								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
+							if(!theCert.bPrivate)
+								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: Public certificates cannot be sold");
 						}
 						else
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");

@@ -553,8 +553,8 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 
     // look for a transaction with this key
     CTransaction tx;
-	CCert cert;
-    if (!GetTxOfCert(*pcertdb, vchCert, cert, tx))
+	CCert theCert;
+    if (!GetTxOfCert(*pcertdb, vchCert, theCert, tx))
         throw runtime_error("could not find a certificate with this key");
     // make sure cert is in wallet
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
@@ -564,14 +564,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 		throw runtime_error("there are pending operations on that cert");
 	}
-    // unserialize cert object from txn
-    CCert theCert;
 
-    // get the cert from DB
-    vector<CCert> vtxPos;
-    if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-        throw runtime_error("could not read cert from DB");
-    theCert = vtxPos.back();
 	CCert copyCert = theCert;
 	theCert.ClearCert();
 	CPubKey currentKey(theCert.vchPubKey);
