@@ -99,7 +99,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 	if(theCert.bPrivate)
 	{		
 		string strData = "";
-		string strDecrypted = "";
+		string strDecrypted = "NA";
 		string strCipherText;
 		
 		// decrypt using old key
@@ -108,7 +108,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		else
 			return "Could not decrypt certificate data!";
 		
-		LogPrintf("decrypted %s\n", strDecrypted);
+		LogPrintf("decrypted %s len %d\n", strDecrypted, strDecrypted.size());
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
 		{
