@@ -92,7 +92,7 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 	CTransaction txCert;
 	
     vector<CCert> vtxPos;
-    if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
+    if (!pcertdb->ReadCert(theOffer.vchCert, vtxPos) || vtxPos.empty())
        return "failed to read from cert DB";
 	CCert theCert = vtxPos.back();
 	// if cert is private, decrypt the data
