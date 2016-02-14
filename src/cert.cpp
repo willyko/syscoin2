@@ -969,8 +969,16 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
             oCert.push_back(Pair("cert", cert));
 			string opName = certFromOp(op);
 			oCert.push_back(Pair("certtype", opName));
-            string value = stringFromVch(vchValue);
-            oCert.push_back(Pair("value", value));
+			string strDecrypted = "";
+			string strData = stringFromVch(txPos2.vchData);
+			if(txPos2.bPrivate)
+			{
+				strData = "Encrypted for owner of certificate private data";
+				if(DecryptMessage(txPos2.vchPubKey, txPos2.vchData, strDecrypted))
+					strData = strDecrypted;		
+			}
+			oCert.push_back(Pair("private", txPos2.bPrivate? "Yes": "No"));
+			oCert.push_back(Pair("data", strData));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());

@@ -90,12 +90,11 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		return "No certificate found linked to this offer";
 				
 	CTransaction txCert;
-	CCert theCert;
-	// make sure this cert is still valid
-	if(!GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
-		return "Certificate does not exist or may be expired";
-	if(!IsSyscoinTxMine(txCert))
-		return "This certificate is not yours, you cannot transfer it";
+	
+    vector<CCert> vtxPos;
+    if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
+       return "failed to read from cert DB";
+	CCert theCert = vtxPos.back();
 	// if cert is private, decrypt the data
 	if(theCert.bPrivate)
 	{		
