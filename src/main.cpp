@@ -1741,13 +1741,13 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 			{
 				good = CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{	
-				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
-			}
 			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{
 				good = CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
 			{

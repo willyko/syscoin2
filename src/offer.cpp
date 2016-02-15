@@ -391,11 +391,6 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 				DisconnectAlias(pindex, tx, op, vvch);	
 				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);		
 			}
-			if(DecodeOfferTx(tx, op, nOut, vvch))		
-			{
-				DisconnectOffer(pindex, tx, op, vvch);	
-				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
-			}
 			if(DecodeCertTx(tx, op, nOut, vvch))
 			{
 				DisconnectCertificate(pindex, tx, op, vvch);
@@ -405,6 +400,11 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			{
 				DisconnectEscrow(pindex, tx, op, vvch);
 				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvch))		
+			{
+				DisconnectOffer(pindex, tx, op, vvch);	
+				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvch))
 			{
@@ -1645,12 +1645,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
-	if(!theOffer.vchCert.empty())
-	{
-		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
-			throw runtime_error("there are pending operations on that offer");
-		}
-	}
 	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1756,12 +1750,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	// check for existing pending offers
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
-	}
-	if(!theOffer.vchCert.empty())
-	{
-		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
-			throw runtime_error("there are pending operations on that offer");
-		}
 	}
 	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
@@ -2041,7 +2029,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
 		// check for existing cert 's
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER) || ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
 		vector<vector<unsigned char> > vvch;
@@ -2300,7 +2288,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			}
 		}	
 	}
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
 	// look for a transaction with this key
@@ -2360,10 +2348,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
-			// check for existing cert 's
-			if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-				throw runtime_error("there are pending operations on that cert");
-			}
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -2411,10 +2395,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!theOffer.vchCert.empty())
 	{
-		// ensure you can't accept an offer that is updating a cert
-		if (ExistsInMempool(theOffer.vchCert, OP_CERT_UPDATE) || ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
-			throw runtime_error("there are pending operations on that cert");
-		}
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
