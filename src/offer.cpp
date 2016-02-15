@@ -804,9 +804,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("OP_OFFER_ACCEPT offer accept link field too big");
 				if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
 					return error("OP_OFFER_ACCEPT offer link field too big");
-				if (theOfferAccept.vchCertPrivateData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-					return error("OP_OFFER_ACCEPT cert data too big");
-				
 				if (fJustCheck && !fBlock) {
 					if(IsEscrowOp(prevEscrowOp))
 					{	
@@ -2642,13 +2639,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			{
 				oOfferAccept.push_back(Pair("refunded", "false"));
 			}
-			string strCertData = string("NA");
-			string strDecryptedCertData;
-			if(!ca.vchCertPrivateData.empty() && DecryptMessage(ca.vchBuyerKey, ca.vchCertPrivateData, strDecryptedCertData))
-				strCertData = strDecryptedCertData;
-			oOfferAccept.push_back(Pair("cert_data", strCertData));		
-			
-
 			aoOfferAccepts.push_back(oOfferAccept);
 		}
 		uint64_t nHeight;
@@ -2847,12 +2837,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
-
-			string strCertData = string("NA");
-			string strDecryptedCertData;
-			if(!theOfferAccept.vchCertPrivateData.empty() && DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecryptedCertData))
-				strCertData = strDecryptedCertData;
-			oOfferAccept.push_back(Pair("cert_data", strCertData));	
 
 			oRes.push_back(oOfferAccept);
         }

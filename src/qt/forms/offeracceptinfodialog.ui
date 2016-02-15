@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>530</width>
-    <height>661</height>
+    <height>625</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,6 +54,26 @@
      </item>
      <item row="2" column="1">
       <widget class="QLineEdit" name="linkGUIDEdit"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="certLabel">
+       <property name="text">
+        <string>Cert. ID:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="certEdit"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="escrowLabel">
+       <property name="text">
+        <string>Escrow ID</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="escrowEdit"/>
      </item>
      <item row="5" column="0">
       <widget class="QLabel" name="btctxidLabel">
@@ -237,36 +257,6 @@
         <bool>true</bool>
        </property>
       </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="certLabel">
-       <property name="text">
-        <string>Cert. ID:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="certEdit"/>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="escrowLabel">
-       <property name="text">
-        <string>Escrow ID</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="escrowEdit"/>
-     </item>
-     <item row="21" column="0">
-      <widget class="QLabel" name="certDataLabel">
-       <property name="text">
-        <string>Cert. Data</string>
-       </property>
-      </widget>
-     </item>
-     <item row="21" column="1">
-      <widget class="QTextEdit" name="certDataEdit"/>
      </item>
     </layout>
    </item>

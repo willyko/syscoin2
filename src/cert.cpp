@@ -948,16 +948,9 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			if(cert.bPrivate)
 			{
 				strData = "Encrypted for owner of certificate private data";
-				if(theOfferAccept.vchCertPrivateData.empty())
-				{
-					if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
-						strData = strDecrypted;
-				}
-				else
-				{
-					if(DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecrypted))
-						strData = strDecrypted;
-				}
+				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
+					strData = strDecrypted;
+
 			}
 			oCert.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 			oCert.push_back(Pair("data", strData));
