@@ -370,6 +370,40 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         throw runtime_error(strError);
     }
+	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet annoyance
+	vector<vector<unsigned char> > vvch;
+	int op, nOut;
+	bool fBlock = false;
+	bool fMiner = false;
+	bool bCheckInputs = true;
+	CCoinsViewCache inputs(pcoinsTip);
+	CValidationState state;
+	if(DecodeAliasTx(wtxNew, op, nOut, vvch))
+	{
+		if(!CheckAliasInputs(wtxNew, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+			 throw runtime_error("Error: The transaction was rejected! Alias Inputs were invalid!");
+	}
+	if(DecodeCertTx(wtxNew, op, nOut, vvch))
+	{
+		if(!CheckCertInputs(wtxNew, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+			throw runtime_error("Error: The transaction was rejected! Certificate Inputs were invalid!");
+	}
+	if(DecodeEscrowTx(wtxNew, op, nOut, vvch))
+	{
+		if(!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+			throw runtime_error("Error: The transaction was rejected! Escrow Inputs were invalid!");
+	}
+	if(DecodeOfferTx(wtxNew, op, nOut, vvch))		
+	{
+		if(!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+			throw runtime_error("Error: The transaction was rejected! Offer Inputs were invalid!");
+	}
+	if(DecodeMessageTx(wtxNew, op, nOut, vvch))
+	{
+		if(!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+			throw runtime_error("Error: The transaction was rejected! Message Inputs were invalid!");
+	}
+
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
         throw runtime_error("Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
 }
