@@ -734,6 +734,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
+	wtx.nLockTime = chainActive.Tip()->nHeight+2;
 	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
