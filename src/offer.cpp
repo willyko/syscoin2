@@ -1633,7 +1633,12 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	COffer theOffer;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
 		throw runtime_error("could not find an offer with this name");
-
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
+	}
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
@@ -1739,7 +1744,12 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	COffer theOffer;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
 		throw runtime_error("could not find an offer with this name");
-
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
+	}
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
@@ -2028,7 +2038,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
 		// check for existing cert updates
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER) || ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
 		vector<vector<unsigned char> > vvch;
