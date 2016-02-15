@@ -2399,7 +2399,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if(!theOffer.vchCert.empty())
 	{
 		// check for existing cert updates
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		if (ExistsInMempool(theOffer.vchCert, OP_CERT_UPDATE) || ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
 		if(!vchBTCTxId.empty())
