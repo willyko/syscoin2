@@ -415,7 +415,7 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 }
 
 bool CheckAliasInputs(const CTransaction &tx,
-		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock,
+		const CCoinsViewCache &inputs, bool fBlock,
 		bool fMiner, bool fJustCheck, int nHeight, bool fRescan) {
 
 	if (!tx.IsCoinBase()) {

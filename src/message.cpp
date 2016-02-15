@@ -220,7 +220,7 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
 }
 
 bool CheckMessageInputs(const CTransaction &tx,
-        CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
+        const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
         bool fJustCheck, int nHeight, bool fRescan) {
 
     if (!tx.IsCoinBase()) {

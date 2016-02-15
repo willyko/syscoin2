@@ -11,7 +11,6 @@ class CTransaction;
 class CTxOut;
 class COutPoint;
 class CReserveKey;
-class CValidationState;
 class CCoinsViewCache;
 class CCoins;
 struct CRecipient;

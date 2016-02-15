@@ -8,7 +8,6 @@
 class CWalletTx;
 class CTransaction;
 class CReserveKey;
-class CValidationState;
 class CCoinsViewCache;
 class CCoins;
 

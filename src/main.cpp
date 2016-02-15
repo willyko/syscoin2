@@ -1735,23 +1735,23 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 			bool good = true;
 			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
 			{
-				good = CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);
+				good = CheckAliasInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);
 			}
 			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
-				good = CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
+				good = CheckCertInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
 			{
-				good = CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
+				good = CheckEscrowInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
 			}
 			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
 			{	
-				good = CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
+				good = CheckOfferInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
 			{
-				good = CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
+				good = CheckMessageInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
 			}
 			// remove tx's that don't pass our check
 			if(!good)

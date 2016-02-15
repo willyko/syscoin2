@@ -367,7 +367,6 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
  */
 void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
     CBlockIndex* pindex = pindexRescan;  
-	CValidationState state;
 	bool fBlock = true;
 	bool fMiner = false;
 	bool bCheckInputs = false;
@@ -389,27 +388,27 @@ void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
 			{
 				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
 				DisconnectAlias(pindex, tx, op, vvch);	
-				CheckAliasInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);		
+				CheckAliasInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);		
 			}
 			if(DecodeCertTx(tx, op, nOut, vvch))
 			{
 				DisconnectCertificate(pindex, tx, op, vvch);
-				CheckCertInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				CheckCertInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeEscrowTx(tx, op, nOut, vvch))
 			{
 				DisconnectEscrow(pindex, tx, op, vvch);
-				CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				CheckEscrowInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeOfferTx(tx, op, nOut, vvch))		
 			{
 				DisconnectOffer(pindex, tx, op, vvch);	
-				CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				CheckOfferInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 			if(DecodeMessageTx(tx, op, nOut, vvch))
 			{
 				DisconnectMessage(pindex, tx, op, vvch);
-				CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
+				CheckMessageInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight, true);
 			}
 		}
 		pindex = chainActive.Next(pindex);
@@ -552,7 +551,7 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 }
 
 bool CheckOfferInputs(const CTransaction &tx,
-		CValidationState &state, const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
+		const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
 		bool fJustCheck, int nHeight, bool fRescan) {
 	if (!tx.IsCoinBase()) {
 		if (fDebug)

@@ -23,8 +23,18 @@
 #include <boost/assign/list_of.hpp>
 
 #include <univalue.h>
-
 using namespace std;
+// SYSCOIN
+extern bool DecodeAliasTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeMessageTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
+extern bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan);
+extern bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan);
+extern bool CheckCertInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan);
+extern bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan);
+extern bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -370,37 +380,36 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         throw runtime_error(strError);
     }
-	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet annoyance
+	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet anno
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
 	bool fBlock = false;
 	bool fMiner = false;
 	bool bCheckInputs = true;
 	CCoinsViewCache inputs(pcoinsTip);
-	CValidationState state;
 	if(DecodeAliasTx(wtxNew, op, nOut, vvch))
 	{
-		if(!CheckAliasInputs(wtxNew, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+		if(!CheckAliasInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
 			 throw runtime_error("Error: The transaction was rejected! Alias Inputs were invalid!");
 	}
 	if(DecodeCertTx(wtxNew, op, nOut, vvch))
 	{
-		if(!CheckCertInputs(wtxNew, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+		if(!CheckCertInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
 			throw runtime_error("Error: The transaction was rejected! Certificate Inputs were invalid!");
 	}
 	if(DecodeEscrowTx(wtxNew, op, nOut, vvch))
 	{
-		if(!CheckEscrowInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+		if(!CheckEscrowInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
 			throw runtime_error("Error: The transaction was rejected! Escrow Inputs were invalid!");
 	}
 	if(DecodeOfferTx(wtxNew, op, nOut, vvch))		
 	{
-		if(!CheckOfferInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+		if(!CheckOfferInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
 			throw runtime_error("Error: The transaction was rejected! Offer Inputs were invalid!");
 	}
 	if(DecodeMessageTx(wtxNew, op, nOut, vvch))
 	{
-		if(!CheckMessageInputs(tx, state, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+		if(!CheckMessageInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
 			throw runtime_error("Error: The transaction was rejected! Message Inputs were invalid!");
 	}
 
