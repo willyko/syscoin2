@@ -945,6 +945,7 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			string opName = certFromOp(op);
 			oCert.push_back(Pair("certtype", opName));
 			string strDecrypted = "";
+			string strData = "";
 			if(txPos2.bPrivate)
 			{
 				strData = "Encrypted for owner of certificate private data";
