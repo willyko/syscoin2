@@ -839,80 +839,41 @@ UniValue certlist(const UniValue& params, bool fHelp) {
         if (wtx.nVersion != SYSCOIN_TX_VERSION)
             continue;
 		// decode txn, skip non-cert txns
-		vector<vector<unsigned char> > vvch, vvchOffer;
-		int op, nOut, opOffer, nOutOffer;
-		LogPrintf("1\n");
-		if (!DecodeCertTx(wtx, op, nOut, vvch) && !DecodeOfferTx(wtx, opOffer, nOutOffer, vvchOffer))
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+		if (!DecodeCertTx(wtx, op, nOut, vvch))
 			continue;
-		LogPrintf("2\n");
-		COfferAccept theOfferAccept;
-		if(IsOfferOp(opOffer) && !vvchOffer.empty())
-		{
-			LogPrintf("2a\n");
-			CTransaction acceptTx;
-			if(opOffer != OP_OFFER_ACCEPT)
-				continue;
-			LogPrintf("2b\n");
-			if (!GetTxOfOfferAccept(*pofferdb, vvchOffer[0], vvchOffer[1], theOfferAccept, acceptTx))
-				continue;
-			LogPrintf("2c\n");
-			COffer theOffer(acceptTx);
-			if(theOffer.IsNull())
-				continue;
-			LogPrintf("2d\n");
-			if(theOfferAccept.vchCertPrivateData.empty())
-				continue;
-			LogPrintf("2d1\n");
-			if(theOffer.vchCert.empty())
-				continue;
-			LogPrintf("2d2\n");
-			if(theOfferAccept.vchBuyerKey.empty())
-				continue;
-			LogPrintf("2e\n");
-			vchName = theOffer.vchCert;
-		}
-		else
-			vchName = vvch[0];
+
+		vchName = vvch[0];
 		
-		LogPrintf("3\n");
+		
 		// skip this cert if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 			continue;
-			LogPrintf("4\n");
+			
 		vector<CCert> vtxPos;
 		if (!pcertdb->ReadCert(vchName, vtxPos) || vtxPos.empty())
 			continue;
-		LogPrintf("5\n");
 		CCert cert = vtxPos.back();
 		nHeight = cert.nHeight;
 		// get last active name only
 		if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 			continue;
 
-		LogPrintf("6\n");
+		
         // build the output object
 		UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("cert", stringFromVch(vchName)));
         oName.push_back(Pair("title", stringFromVch(cert.vchTitle)));
 
-		string strData = "";
-		if(theOfferAccept.vchCertPrivateData.empty())
-			strData = stringFromVch(cert.vchData);
+		string strData = stringFromVch(cert.vchData);
 
 		string strDecrypted = "";
 		if(cert.bPrivate)
 		{
 			strData = "Encrypted for owner of certificate private data";
-			if(theOfferAccept.vchCertPrivateData.empty())
-			{
-				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
-					strData = strDecrypted;
-			}
-			else
-			{
-				if(DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecrypted))
-					strData = strDecrypted;
-			}
+			if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
+				strData = strDecrypted;	
 		}
 		oName.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 		oName.push_back(Pair("data", strData));
@@ -984,14 +945,21 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			string opName = certFromOp(op);
 			oCert.push_back(Pair("certtype", opName));
 			string strDecrypted = "";
-			string strData = stringFromVch(txPos2.vchData);
-			if(txPos2.bPrivate)
+			if(cert.bPrivate)
 			{
 				strData = "Encrypted for owner of certificate private data";
-				if(DecryptMessage(txPos2.vchPubKey, txPos2.vchData, strDecrypted))
-					strData = strDecrypted;		
+				if(theOfferAccept.vchCertPrivateData.empty())
+				{
+					if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
+						strData = strDecrypted;
+				}
+				else
+				{
+					if(DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchCertPrivateData, strDecrypted))
+						strData = strDecrypted;
+				}
 			}
-			oCert.push_back(Pair("private", txPos2.bPrivate? "Yes": "No"));
+			oCert.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
 			oCert.push_back(Pair("data", strData));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);

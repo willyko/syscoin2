@@ -82,43 +82,27 @@ bool foundOfferLinkInWallet(const vector<unsigned char> &vchOffer, const vector<
 	}
 	return false;
 }
-// make cert data readable by buyer pubkey
-string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
+// transfer cert if its linked to offer
+string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAccept)
 {
 
-	if(theOffer.vchCert.empty())
-		return "No certificate found linked to this offer";
-				
-	CTransaction txCert;
-	
-    vector<CCert> vtxPos;
-    if (!pcertdb->ReadCert(theOffer.vchCert, vtxPos) || vtxPos.empty())
-       return "failed to read from cert DB";
-	CCert theCert = vtxPos.back();
-	// if cert is private, decrypt the data
-	if(theCert.bPrivate)
-	{		
-		string strData = "";
-		string strDecrypted = "NA";
-		string strCipherText;
-		
-		// decrypt using old key
-		if(DecryptMessage(theCert.vchPubKey, theCert.vchData, strData))
-			strDecrypted = strData;
-		else
-			return "Could not decrypt certificate data!";
-		
-		// encrypt using new key
-		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
-		{
-			return "Could not encrypt certificate data!";
-		}
-		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-			return "data length cannot exceed 1023 bytes!";
-		theOfferAccept.vchCertPrivateData = vchFromString(strCipherText);
+	string strPubKey = HexStr(theOfferAccept.vchBuyerKey);
+	string strError;
+	string strMethod = string("certtransfer");
+	UniValue params(UniValue::VARR);
+	params.push_back(stringFromVch(theOffer.vchCert));
+	params.push_back(strPubKey);	
+    try {
+        tableRPC.execute(strMethod, params);
 	}
-	else
-		return "Certificate is not private!";
+	catch (UniValue& objError)
+	{
+		return find_value(objError, "message").get_str().c_str();
+	}
+	catch(std::exception& e)
+	{
+		return string(e.what()).c_str();
+	}
 	return "";
 
 }
@@ -708,8 +692,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// make sure this cert is still valid
 						if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 						{
-							if(!theCert.bPrivate)
-								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: Public certificates cannot be sold");
+							if(theCert.vchPubKey != theOffer.vchPubKey)
+								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
 						}
 						else
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
@@ -763,8 +747,8 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// make sure this cert is still valid
 						if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 						{
-							if(!theCert.bPrivate)
-								return error("CheckOfferInputs() OP_OFFER_UPDATE: Public certificates cannot be sold");
+							if(theCert.vchPubKey != theOffer.vchPubKey)
+								return error("CheckOfferInputs() : offerupdate cert and offer pubkey mismatch");
 						}
 						else
 							return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
@@ -849,8 +833,11 @@ bool CheckOfferInputs(const CTransaction &tx,
 						// make sure this cert is still valid
 						if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 						{
-							if(!theCert.bPrivate)
-								return error("CheckOfferInputs() OP_OFFER_ACCEPT: Public certificates cannot be sold");
+							// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
+							// so in that case the escrow is attached to the accept and we skip this check
+							// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
+							if(theCert.vchPubKey != theOffer.vchPubKey && !IsEscrowOp(prevOp))
+								return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
 							theOfferAccept.nQty = 1;
 						}
 						else
@@ -1058,11 +1045,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 
 					// only if we are the root offer owner do we even consider xfering a cert					
 					// purchased a cert so xfer it
-					if(!fExternal && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
-						string strError = makeTransferCert(theOffer, theOfferAccept);
+						string strError = makeTransferCertTX(theOffer, theOfferAccept);
 						if(strError != "")
 							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
+						
 					}
 				
 					if(theOffer.vchLinkOffer.empty())
@@ -1306,8 +1294,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 			if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 				throw runtime_error("there are pending operations on that cert");
 			}
-			if(!theCert.bPrivate)
-				throw runtime_error("You may only sell private certificates!");
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -1363,7 +1349,11 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	// unserialize offer from txn, serialize back
 	// build offer
 	COffer newOffer;
-	newOffer.vchPubKey = alias.vchPubKey;
+	// if we sell a cert always use cert pubkey otherwise use alias
+	if(wtxCertIn == NULL)
+		newOffer.vchPubKey = alias.vchPubKey;
+	else
+		newOffer.vchPubKey = theCert.vchPubKey;
 	newOffer.sCategory = vchCat;
 	newOffer.sTitle = vchTitle;
 	newOffer.sDescription = vchDesc;
@@ -1658,6 +1648,12 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
+	}
 	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
 		throw runtime_error("cannot unserialize offer from txn");
@@ -1763,6 +1759,12 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	// check for existing pending offers
 	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
+	}
+	if(!theOffer.vchCert.empty())
+	{
+		if (ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
+			throw runtime_error("there are pending operations on that offer");
+		}
 	}
 	// unserialize offer from txn
 	if(!theOffer.UnserializeFromTx(tx))
@@ -2041,10 +2043,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
-		if(!theCert.bPrivate)
-			throw runtime_error("You may only sell private certificates!");
 		// check for existing cert 's
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER) || ExistsInMempool(vchOffer, OP_OFFER_ACCEPT)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
 		vector<vector<unsigned char> > vvch;
@@ -2080,14 +2080,19 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		theOffer.sTitle = vchTitle;
 	if(offerCopy.sDescription != vchDesc)
 		theOffer.sDescription = vchDesc;
-
+	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
 	if(wtxCertIn != NULL)
+	{
 		theOffer.vchCert = vchCert;
+		theOffer.vchPubKey = theCert.vchPubKey;
+	}
+	// else if we remove the cert from this offer (don't sell a cert) then clear the cert
 	else
+	{
+		if(!alias.IsNull())
+			theOffer.vchPubKey = alias.vchPubKey;
 		theOffer.vchCert.clear();
-	
-	if(!alias.IsNull())
-		theOffer.vchPubKey = alias.vchPubKey;
+	}
 	// ensure pubkey points to an alias
 
 	CPubKey SellerPubKey(theOffer.vchPubKey);
@@ -2298,7 +2303,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			}
 		}	
 	}
-	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_REFUND) || ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations or refunds on that offer");
 	}
 	// look for a transaction with this key
