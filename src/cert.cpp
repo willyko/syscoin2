@@ -866,7 +866,7 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 			if(theOffer.vchCert.empty())
 				continue;
 			LogPrintf("2d2\n");
-			if(ttheOfferAccept.vchBuyerKey.empty())
+			if(theOfferAccept.vchBuyerKey.empty())
 				continue;
 			LogPrintf("2e\n");
 			vchName = theOffer.vchCert;
