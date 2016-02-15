@@ -108,7 +108,6 @@ string makeTransferCert(const COffer& theOffer, COfferAccept& theOfferAccept)
 		else
 			return "Could not decrypt certificate data!";
 		
-		LogPrintf("decrypted %s len %d\n", strDecrypted, strDecrypted.size());
 		// encrypt using new key
 		if(!EncryptMessage(theOfferAccept.vchBuyerKey, vchFromString(strDecrypted), strCipherText))
 		{
@@ -1062,7 +1061,6 @@ bool CheckOfferInputs(const CTransaction &tx,
 					if(!fExternal && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 					{
 						string strError = makeTransferCert(theOffer, theOfferAccept);
-						LogPrintf("theOfferAccept.vchCertPrivateData %s\n", stringFromVch(theOfferAccept.vchCertPrivateData).c_str());
 						if(strError != "")
 							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
 					}
