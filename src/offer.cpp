@@ -2027,7 +2027,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
-		// check for existing cert 's
+		// check for existing cert updates
 		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
 			throw runtime_error("there are pending operations on that cert");
 		}
@@ -2347,6 +2347,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
+			// check for existing cert updates
+			if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
+				throw runtime_error("there are pending operations on that cert");
+			}
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -2394,6 +2398,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!theOffer.vchCert.empty())
 	{
+		// check for existing cert updates
+		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+			throw runtime_error("there are pending operations on that cert");
+		}
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;
