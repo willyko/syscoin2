@@ -1956,6 +1956,9 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
     CMutableTransaction txNew;
+	// SYSCOIN: set syscoin tx version if its a syscoin service call
+	if(sysTx)
+		txNew.nVersion = GetSyscoinTxVersion();
     // Discourage fee sniping.
     //
     // For a large miner the value of the transactions in the best block and
@@ -1976,15 +1979,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     // enough, that fee sniping isn't a problem yet, but by implementing a fix
     // now we ensure code won't be written that makes assumptions about
     // nLockTime that preclude a fix later.
-	// SYSCOIN: set syscoin tx version if its a syscoin service call
-	unsigned int height = chainActive.Height();
-	if(sysTx)
-	{
-		txNew.nVersion = GetSyscoinTxVersion();
-		height += 1;
-	}
-
-	txNew.nLockTime = height;
+    txNew.nLockTime = chainActive.Height();
 
     // Secondly occasionally randomly pick a nLockTime even further back, so
     // that transactions that are delayed after signing for whatever reason,
@@ -1993,8 +1988,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     if (GetRandInt(10) == 0)
         txNew.nLockTime = std::max(0, (int)txNew.nLockTime - GetRandInt(100));
 
-	// SYSCOIN
-    assert(txNew.nLockTime <= height);
+    assert(txNew.nLockTime <= (unsigned int)chainActive.Height());
     assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
 
     {

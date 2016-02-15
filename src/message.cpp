@@ -235,7 +235,7 @@ bool CheckMessageInputs(const CTransaction &tx,
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevAliasArgs;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -294,13 +294,13 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			if(op == OP_MESSAGE_ACTIVATE)
 			{
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckMessageInputs(): alias not provided as input");
-				if(fJustCheck && !fBlock)
+				if(fJustCheck)
 				{
 					vector<CAliasIndex> vtxPos;
 					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))

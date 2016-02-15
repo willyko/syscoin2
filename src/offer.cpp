@@ -569,7 +569,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		int prevOp, prevCertOp, prevEscrowOp;
 		prevOp = prevCertOp = prevEscrowOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 			{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -671,7 +671,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 		vector<CAliasIndex> vtxAliasPos;
 		COffer linkOffer;
 		CTransaction linkedTx;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			switch (op) {
 			case OP_OFFER_ACTIVATE:
@@ -681,7 +681,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 					return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 				// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block
-				if(fJustCheck && !fBlock)
+				if(fJustCheck)
 				{
 					// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 					if(!theOffer.vchCert.empty())
@@ -736,7 +736,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("offerupdate previous op is invalid");			
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckOfferInputs() : offerupdate offer mismatch");	
-				if(fJustCheck && !fBlock)
+				if(fJustCheck)
 				{
 					// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 					if(!theOffer.vchCert.empty())
@@ -770,7 +770,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 				if(theOfferAccept.vchAcceptRand != vvchArgs[1])
 					return error("OP_OFFER_REFUND could not read accept from offer txn");
 				theOfferAccept.vchAcceptRand = vvchArgs[1];
-				if (fJustCheck && !fBlock) {
+				if (fJustCheck) {
 					// load the offer data from the DB
 					vector<COffer> vtxPos;
 					if (pofferdb->ExistsOffer(vvchArgs[0])) {
@@ -803,7 +803,7 @@ bool CheckOfferInputs(const CTransaction &tx,
 					return error("OP_OFFER_ACCEPT offer accept link field too big");
 				if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
 					return error("OP_OFFER_ACCEPT offer link field too big");
-				if (fJustCheck && !fBlock) {
+				if (fJustCheck) {
 					if(IsEscrowOp(prevEscrowOp))
 					{	
 						vector<CEscrow> escrowVtxPos;

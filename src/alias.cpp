@@ -429,7 +429,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -482,7 +482,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			switch (op) {
 				case OP_ALIAS_ACTIVATE:

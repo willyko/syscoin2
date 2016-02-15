@@ -273,7 +273,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -347,7 +347,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		{
 			return error("escrow offeraccept guid too long");
 		}		
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			switch (op) {
 				case OP_ESCROW_ACTIVATE:

@@ -265,7 +265,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -320,7 +320,7 @@ bool CheckCertInputs(const CTransaction &tx,
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
 		vector<CAliasIndex> vtxAliasPos;
-		if(!fExternal)
+		if(!fExternal && !fBlock)
 		{
 			switch (op) {
 			case OP_CERT_ACTIVATE:
