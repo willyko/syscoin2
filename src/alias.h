@@ -120,7 +120,7 @@ std::string stringFromValue(const UniValue& value);
 bool IsCompressedOrUncompressedPubKey(const std::vector<unsigned char> &vchPubKey);
 int GetSyscoinTxVersion();
 const int SYSCOIN_TX_VERSION = 0x7400;
-bool CheckAliasInputs(const CTransaction &tx, CValidationState &state,
+bool CheckAliasInputs(const CTransaction &tx,
 	const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);
 void CreateFeeRecipient(const CScript& scriptPubKey, const std::vector<unsigned char>& data, CRecipient& recipient);
