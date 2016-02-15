@@ -945,14 +945,14 @@ UniValue certhistory(const UniValue& params, bool fHelp) {
 			string opName = certFromOp(op);
 			oCert.push_back(Pair("certtype", opName));
 			string strDecrypted = "";
-			if(cert.bPrivate)
+			if(txPos2.bPrivate)
 			{
 				strData = "Encrypted for owner of certificate private data";
-				if(DecryptMessage(cert.vchPubKey, cert.vchData, strDecrypted))
+				if(DecryptMessage(txPos2.vchPubKey, txPos2.vchData, strDecrypted))
 					strData = strDecrypted;
 
 			}
-			oCert.push_back(Pair("private", cert.bPrivate? "Yes": "No"));
+			oCert.push_back(Pair("private", txPos2.bPrivate? "Yes": "No"));
 			oCert.push_back(Pair("data", strData));
             oCert.push_back(Pair("txid", tx.GetHash().GetHex()));
 			CPubKey PubKey(txPos2.vchPubKey);
