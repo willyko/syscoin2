@@ -97,17 +97,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="refundButton">
-       <property name="text">
-        <string>Refund</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/syscoin</normaloff>:/icons/syscoin</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="messageButton">
        <property name="text">
         <string>Send Message To Buyer</string>

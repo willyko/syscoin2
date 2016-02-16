@@ -87,8 +87,6 @@ public:
         OfferUpdate,
         OfferAccept,
 		OfferAcceptRecv,
-		OfferAcceptRefundInProgress,
-		OfferAcceptRefundComplete,
       
         CertActivate,
         CertUpdate,

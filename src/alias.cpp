@@ -241,7 +241,6 @@ CAmount convertCurrencyCodeToSyscoin(const vector<unsigned char> &vchCurrencyCod
 	}
 	return sysPrice;
 }
-// refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
 string getCurrencyToSYSFromAlias(const vector<unsigned char> &vchCurrency, CAmount &nFee, const unsigned int &nHeightToFind, vector<string>& rateList, int &precision)
 {
 	vector<unsigned char> vchName = vchFromString("SYS_RATES");

@@ -108,9 +108,6 @@ bool OfferAcceptInfoDialog::lookup()
 				ui->discountEdit->setText(QString::fromStdString(find_value(acceptObj, "offer_discount_percentage").get_str()));
 				ui->paidEdit->setText(QString::fromStdString(find_value(acceptObj, "paid").get_str()));
 				
-				QString refundedStr = QString::fromStdString(find_value(acceptObj, "refunded").get_str());	
-				
-				ui->refundedEdit->setText(refundedStr);
 				ui->paymessageEdit->setText(QString::fromStdString(find_value(acceptObj, "pay_message").get_str()));
 				QString escrowStr = QString::fromStdString(find_value(acceptObj.get_obj(), "escrowlink").get_str());
 				if(escrowStr != "NA")

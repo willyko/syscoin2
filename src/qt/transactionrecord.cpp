@@ -57,19 +57,6 @@ static bool CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 		if(type == SEND)
 			sub.type = TransactionRecord::OfferUpdate;
 		break;
-	case OP_OFFER_REFUND:
-		if(type == SEND)
-		{
-			if(vvchArgs[2] == OFFER_REFUND_PAYMENT_INPROGRESS)
-			{
-				sub.type = TransactionRecord::OfferAcceptRefundInProgress;
-			}
-			else
-			{
-				sub.type = TransactionRecord::OfferAcceptRefundComplete;
-			}
-		}
-		break;
 	case OP_OFFER_ACCEPT:
 		if(type == SEND)
 			sub.type = TransactionRecord::OfferAccept;

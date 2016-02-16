@@ -251,7 +251,6 @@ extern UniValue aliasscan(const UniValue& params, bool fHelp);
 extern UniValue offernew(const UniValue& params, bool fHelp);
 extern UniValue offerupdate(const UniValue& params, bool fHelp);
 extern UniValue offeraccept(const UniValue& params, bool fHelp);
-extern UniValue offerrefund(const UniValue& params, bool fHelp);
 extern UniValue offerlink(const UniValue& params, bool fHelp);
 extern UniValue offeraddwhitelist(const UniValue& params, bool fHelp);
 extern UniValue offerremovewhitelist(const UniValue& params, bool fHelp);

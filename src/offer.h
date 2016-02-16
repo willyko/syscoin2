@@ -24,12 +24,6 @@ int GetOfferExpirationDepth();
 std::string offerFromOp(int op);
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
 void rescanforsyscoinservices(CBlockIndex *pindexRescan);
-static const char* norefund = "norefund";
-static const char* inprogress = "inprogress";
-static const char* complete = "complete";
-const std::vector<unsigned char> OFFER_NOREFUND = std::vector<unsigned char>(norefund, norefund + strlen(norefund));
-static const std::vector<unsigned char> OFFER_REFUND_PAYMENT_INPROGRESS = std::vector<unsigned char>(inprogress, inprogress + strlen(inprogress));
-static const std::vector<unsigned char> OFFER_REFUND_COMPLETE = std::vector<unsigned char>(complete, complete + strlen(complete));
 
 class COfferAccept {
 public:
@@ -39,7 +33,6 @@ public:
 	uint64_t nHeight;
 	unsigned int nQty;
 	float nPrice;
-	bool bRefunded;
 	uint256 txBTCId;
 	std::vector<unsigned char> vchLinkOfferAccept;
 	std::vector<unsigned char> vchLinkOffer;
@@ -57,7 +50,6 @@ public:
 		READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nQty));
     	READWRITE(nPrice);
-		READWRITE(bRefunded);
 		READWRITE(vchLinkOfferAccept);
 		READWRITE(vchBuyerKey);	
 		READWRITE(vchLinkOffer);
@@ -73,7 +65,6 @@ public:
         && a.nHeight == b.nHeight
         && a.nQty == b.nQty
         && a.nPrice == b.nPrice
-		&& a.bRefunded == b.bRefunded
 		&& a.vchLinkOfferAccept == b.vchLinkOfferAccept
 		&& a.vchBuyerKey == b.vchBuyerKey
 		&& a.vchLinkOffer == b.vchLinkOffer 
@@ -88,7 +79,6 @@ public:
         nHeight = b.nHeight;
         nQty = b.nQty;
         nPrice = b.nPrice;
-		bRefunded = b.bRefunded;
 		vchLinkOfferAccept = b.vchLinkOfferAccept;
 		vchBuyerKey = b.vchBuyerKey;
 		vchLinkOffer = b.vchLinkOffer;
@@ -100,8 +90,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); bRefunded=false;vchLinkOfferAccept.clear();}
-    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && bRefunded == false  && txBTCId.IsNull() && vchBuyerKey.empty()); }
+    void SetNull() { vchLinkOffer.clear(); vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); vchLinkOfferAccept.clear();}
+    bool IsNull() const { return (vchLinkOffer.empty() && vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && txBTCId.IsNull() && vchBuyerKey.empty()); }
 
 };
 class COfferLinkWhitelistEntry {

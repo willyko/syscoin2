@@ -811,12 +811,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 				if (vvch[1].size() > MAX_NAME_LENGTH)
 					err = error("offeraccept tx with accept GUID too big");
 				break;
-			case OP_OFFER_REFUND: 
-				if (vvch[1].size() > MAX_NAME_LENGTH)
-					err = error("offerrefund tx with accept GUID too big");
-				if (vvch[2].size() > MAX_ID_LENGTH)
-					err = error("offerrefund tx with refund status too long");
-				break;
 			default:
 				break;
 		

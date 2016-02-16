@@ -394,10 +394,6 @@ QString TransactionTableModel::formatTxType(const TransactionRecord *wtx) const
         return tr("Offer Accepted");
     case TransactionRecord::OfferAcceptRecv:
         return tr("Offer Accept Received");
-	case TransactionRecord::OfferAcceptRefundInProgress:
-		return tr("Offer Refund In Progress");
-	case TransactionRecord::OfferAcceptRefundComplete:
-		return tr("Offer Refund Complete");
     case TransactionRecord::CertActivate:
         return tr("Cert. Activated");
     case TransactionRecord::CertUpdate:
@@ -447,8 +443,6 @@ QVariant TransactionTableModel::txAddressDecoration(const TransactionRecord *wtx
     case TransactionRecord::AliasTransfer:
     case TransactionRecord::OfferActivate:
     case TransactionRecord::OfferAccept:
-	case TransactionRecord::OfferAcceptRefundInProgress:
-	case TransactionRecord::OfferAcceptRefundComplete:
     case TransactionRecord::CertActivate:
 	case TransactionRecord::CertTransfer:
     case TransactionRecord::EscrowActivate:
@@ -488,8 +482,6 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
     case TransactionRecord::OfferUpdate:
     case TransactionRecord::OfferAccept:
 	case TransactionRecord::OfferAcceptRecv:
- 	case TransactionRecord::OfferAcceptRefundInProgress:
-	case TransactionRecord::OfferAcceptRefundComplete:
     case TransactionRecord::CertActivate:
     case TransactionRecord::CertUpdate:
     case TransactionRecord::CertTransfer:

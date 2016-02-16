@@ -35,7 +35,6 @@ MyAcceptedOfferListPage::MyAcceptedOfferListPage(QWidget *parent) :
     ui->exportButton->setIcon(QIcon());
 	ui->messageButton->setIcon(QIcon());
 	ui->detailButton->setIcon(QIcon());
-	ui->refundButton->setIcon(QIcon());
 #endif
 
 	ui->buttonBox->setVisible(false);
@@ -47,7 +46,6 @@ MyAcceptedOfferListPage::MyAcceptedOfferListPage(QWidget *parent) :
     QAction *copyOfferAction = new QAction(ui->copyOffer->text(), this);
     QAction *copyOfferValueAction = new QAction(tr("&Copy OfferAccept ID"), this);
 	QAction *detailsAction = new QAction(tr("&Details"), this);
-	QAction *refundAction = new QAction(tr("&Refund"), this);
 	QAction *messageAction = new QAction(tr("&Message Buyer"), this);
 
     // Build context menu
@@ -57,12 +55,10 @@ MyAcceptedOfferListPage::MyAcceptedOfferListPage(QWidget *parent) :
 	contextMenu->addSeparator();
 	contextMenu->addAction(detailsAction);
 	contextMenu->addAction(messageAction);
-	contextMenu->addAction(refundAction);
     // Connect signals for context menu actions
     connect(copyOfferAction, SIGNAL(triggered()), this, SLOT(on_copyOffer_clicked()));
     connect(copyOfferValueAction, SIGNAL(triggered()), this, SLOT(onCopyOfferValueAction()));
 	connect(detailsAction, SIGNAL(triggered()), this, SLOT(on_detailButton_clicked()));
-	connect(refundAction, SIGNAL(triggered()), this, SLOT(on_refundButton_clicked()));
 	connect(messageAction, SIGNAL(triggered()), this, SLOT(on_messageButton_clicked()));
 
     connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextualMenu(QPoint)));
@@ -102,60 +98,6 @@ void MyAcceptedOfferListPage::on_detailButton_clicked()
         OfferAcceptInfoDialog dlg(selection.at(0));
         dlg.exec();
     }
-}
-void MyAcceptedOfferListPage::on_refundButton_clicked()
-{
-    if(!ui->tableView->selectionModel())
-        return;
-    QModelIndexList selection = ui->tableView->selectionModel()->selectedRows();
-    if(selection.isEmpty())
-    {
-        return;
-    }
-	QString offerAcceptGUID = selection.at(0).data(OfferAcceptTableModel::GUIDRole).toString();
-	QString offerGUID = selection.at(0).data(OfferAcceptTableModel::Name).toString();
-
-    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm refund"),
-             tr("Warning: If this offer accept was resold you should ensure the reseller's wallet is online to process the refund to the buyer!") + "<br><br>" + tr("Coins will be returned to the buyer. Are you sure you wish to refund this offer accept?"),
-             QMessageBox::Yes|QMessageBox::Cancel,
-             QMessageBox::Cancel);
-    if(retval == QMessageBox::Yes)
-    {
-		string strError;
-		string strMethod = string("offerrefund");
-		UniValue params(UniValue::VARR);
-		UniValue result;
-		params.push_back(offerGUID.toStdString());
-		params.push_back(offerAcceptGUID.toStdString());
-
-		try {
-			result = tableRPC.execute(strMethod, params);
-
-			if (result.type() == UniValue::VSTR)
-			{
-				QMessageBox::information(this, windowTitle(),
-					tr("offer accept %1 refund was initiated successfully, please confirm with the buyer that he has recieved his funds after a few blocks!").arg(offerAcceptGUID),
-					QMessageBox::Ok, QMessageBox::Ok);				
-			}
-			 
-
-		}
-		catch (UniValue& objError)
-		{
-			string strError = find_value(objError, "message").get_str();
-			QMessageBox::critical(this, windowTitle(),
-				tr("Could not refund this offer accept: %1").arg(QString::fromStdString(strError)),
-					QMessageBox::Ok, QMessageBox::Ok);
-
-		}
-		catch(std::exception& e)
-		{
-			QMessageBox::critical(this, windowTitle(),
-				tr("There was an exception trying to refund this offer accept: ") + QString::fromStdString(e.what()),
-					QMessageBox::Ok, QMessageBox::Ok);
-		}
-
-	}
 }
 void MyAcceptedOfferListPage::showEvent ( QShowEvent * event )
 {
@@ -259,14 +201,12 @@ void MyAcceptedOfferListPage::selectionChanged()
         ui->copyOffer->setEnabled(true);
 		ui->messageButton->setEnabled(true);
 		ui->detailButton->setEnabled(true);
-		ui->refundButton->setEnabled(true);
     }
     else
     {
         ui->copyOffer->setEnabled(false);
 		ui->messageButton->setEnabled(false);
 		ui->detailButton->setEnabled(false);
-		ui->refundButton->setEnabled(false);
     }
 }
 
