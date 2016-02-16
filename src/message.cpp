@@ -14,7 +14,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 using namespace std;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true, bool manualCheck=true);
 void PutToMessageList(std::vector<CMessage> &messageList, CMessage& index) {
 	int i = messageList.size() - 1;
 	BOOST_REVERSE_FOREACH(CMessage &o, messageList) {

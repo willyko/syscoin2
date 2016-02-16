@@ -359,7 +359,7 @@ UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
     return ret;
 }
 // SYSCOIN: Send service transactions
-void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxOfferIn=NULL,  const CWalletTx* wtxCertIn=NULL, const CWalletTx* wtxAliasIn=NULL, const CWalletTx* wtxEscrowIn=NULL, bool syscoinTx=true)
+void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxOfferIn=NULL,  const CWalletTx* wtxCertIn=NULL, const CWalletTx* wtxAliasIn=NULL, const CWalletTx* wtxEscrowIn=NULL, bool syscoinTx=true, bool manualCheck=true)
 {
     CAmount curBalance = pwalletMain->GetBalance();
 
@@ -381,36 +381,39 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
         throw runtime_error(strError);
     }
 	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet anno
-	vector<vector<unsigned char> > vvch;
-	int op, nOut;
-	bool fBlock = false;
-	bool fMiner = false;
-	bool bCheckInputs = true;
-	CCoinsViewCache inputs(pcoinsTip);
-	if(DecodeAliasTx(wtxNew, op, nOut, vvch))
+	if(manualCheck)
 	{
-		if(!CheckAliasInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
-			 throw runtime_error("Error: The transaction was rejected! Alias Inputs were invalid!");
-	}
-	if(DecodeCertTx(wtxNew, op, nOut, vvch))
-	{
-		if(!CheckCertInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
-			throw runtime_error("Error: The transaction was rejected! Certificate Inputs were invalid!");
-	}
-	if(DecodeEscrowTx(wtxNew, op, nOut, vvch))
-	{
-		if(!CheckEscrowInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
-			throw runtime_error("Error: The transaction was rejected! Escrow Inputs were invalid!");
-	}
-	if(DecodeOfferTx(wtxNew, op, nOut, vvch))		
-	{
-		if(!CheckOfferInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
-			throw runtime_error("Error: The transaction was rejected! Offer Inputs were invalid!");
-	}
-	if(DecodeMessageTx(wtxNew, op, nOut, vvch))
-	{
-		if(!CheckMessageInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
-			throw runtime_error("Error: The transaction was rejected! Message Inputs were invalid!");
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+		bool fBlock = false;
+		bool fMiner = false;
+		bool bCheckInputs = true;
+		CCoinsViewCache inputs(pcoinsTip);
+		if(DecodeAliasTx(wtxNew, op, nOut, vvch))
+		{
+			if(!CheckAliasInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+				 throw runtime_error("Error: The transaction was rejected! Alias Inputs were invalid!");
+		}
+		if(DecodeCertTx(wtxNew, op, nOut, vvch))
+		{
+			if(!CheckCertInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+				throw runtime_error("Error: The transaction was rejected! Certificate Inputs were invalid!");
+		}
+		if(DecodeEscrowTx(wtxNew, op, nOut, vvch))
+		{
+			if(!CheckEscrowInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+				throw runtime_error("Error: The transaction was rejected! Escrow Inputs were invalid!");
+		}
+		if(DecodeOfferTx(wtxNew, op, nOut, vvch))		
+		{
+			if(!CheckOfferInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+				throw runtime_error("Error: The transaction was rejected! Offer Inputs were invalid!");
+		}
+		if(DecodeMessageTx(wtxNew, op, nOut, vvch))
+		{
+			if(!CheckMessageInputs(wtxNew, inputs, fBlock, fMiner, bCheckInputs, chainActive.Tip()->nHeight))
+				throw runtime_error("Error: The transaction was rejected! Message Inputs were invalid!");
+		}
 	}
 
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))

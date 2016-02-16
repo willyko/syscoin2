@@ -18,7 +18,7 @@
 #include <boost/thread.hpp>
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true, bool manualCheck=true);
 bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
 bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, int op, vector<vector<unsigned char> > &vvchArgs );
@@ -91,7 +91,9 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 	string strMethod = string("certtransfer");
 	UniValue params(UniValue::VARR);
 	params.push_back(stringFromVch(theOffer.vchCert));
-	params.push_back(strPubKey);	
+	params.push_back(strPubKey);
+	// so input checks aren't done in sendmoneysyscoin
+	params.push_back(false);
     try {
         tableRPC.execute(strMethod, params);
 	}
