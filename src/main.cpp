@@ -2940,7 +2940,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     }
 	// SYSCOIN update syscoin db
 	CCoinsViewCache view(pcoinsTip);
-    if (!AddSyscoinServicesToDB(*pblock, view, pindex->nHeight))
+    if (!AddSyscoinServicesToDB(*pblock, view, pindexNew->nHeight))
 		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindexNew->GetBlockHash().ToString());
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
