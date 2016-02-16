@@ -728,7 +728,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	
 	// save serialized offer for later use
 	COffer serializedOffer = theOffer;
-	COffer linkOffer;
 	// load the offer data from the DB
 	vector<COffer> vtxPos;
 	if (pofferdb->ExistsOffer(vvchArgs[0]) && !fJustCheck) {
