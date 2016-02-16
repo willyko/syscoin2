@@ -15,7 +15,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 using namespace std;
-extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true, bool manualCheck=true);
+extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
 bool EncryptMessage(const vector<unsigned char> &vchPubKey, const vector<unsigned char> &vchMessage, string &strCipherText)
 {
 	CMessageCrypter crypter;
@@ -606,21 +606,17 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 
 
 UniValue certtransfer(const UniValue& params, bool fHelp) {
- if (fHelp || params.size() < 2 || params.size() > 3)
+ if (fHelp || params.size() != 2)
         throw runtime_error(
 		"certtransfer <certkey> <alias>\n"
                 "<certkey> certificate guidkey.\n"
 				"<alias> Alias to transfer this certificate to.\n"
-				"<manualCheck> For internal use. Leave blank.\n"
                  + HelpRequiringPassphrase());
 
     // gather & validate inputs
 	vector<unsigned char> vchCert = vchFromValue(params[0]);
 
 	string strAddress = params[1].get_str();
-	bool manualCheck = true;
-	if(params.size() >= 3)
-		manualCheck = params[2].get_str() == "false"? false: true;
 	CPubKey xferKey;
 	std::vector<unsigned char> vchPubKey;
 	std::vector<unsigned char> vchPubKeyByte;
@@ -734,7 +730,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow, true, manualCheck);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow, true);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
