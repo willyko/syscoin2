@@ -267,161 +267,161 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
 
 bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 		fRescan = fInit || fRescan;
-		const COutPoint *prevOutput = NULL;
-		CCoins prevCoins;
-		int prevOp = 0;
-		vector<vector<unsigned char> > vvchPrevArgs;
-		if(fJustCheck)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
-				int op;
-				prevOutput = &tx.vin[i].prevout;	
-				if(!prevOutput)
-					continue;
-				// ensure inputs are unspent when doing consensus check to add to block
-				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-					continue;
-				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-					continue;
+	if (tx.IsCoinBase())
+		return true;
+	const COutPoint *prevOutput = NULL;
+	CCoins prevCoins;
+	int prevOp = 0;
+	vector<vector<unsigned char> > vvchPrevArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;	
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
 
-				if (IsEscrowOp(op)) {
-					prevOp = op;
-					vvchPrevArgs = vvch;
-					break;
-				}
+			if (IsEscrowOp(op)) {
+				prevOp = op;
+				vvchPrevArgs = vvch;
+				break;
 			}
 		}
-    if (!tx.IsCoinBase()) {
-			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
-				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fJustCheck ? "JUSTCHECK" : "BLOCK");
-        // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
-        if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
-            return true;
-        }
-        vector<vector<unsigned char> > vvchArgs;
-        int op, nOut;
-        bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs);
-        if (!good)
-            return error("CheckEscrowInputs() : could not decode a syscoin tx");
-        // unserialize escrow UniValue from txn, check for valid
-        CEscrow theEscrow;
-        theEscrow.UnserializeFromTx(tx);
-		if(theEscrow.IsNull() && op == OP_ESCROW_RELEASE)
-			return true;
-        if (theEscrow.IsNull())
-            return error("CheckEscrowInputs() : null escrow");
-        if (vvchArgs[0].size() > MAX_NAME_LENGTH)
-            return error("escrow tx GUID too big");
-		if(!IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
-		{
-			return error("escrow buyer pub key invalid length");
-		}
-		if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
-		{
-			return error("escrow seller pub key invalid length");
-		}
-		if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
-		{
-			return error("escrow arbiter pub key invalid length");
-		}
-		if(theEscrow.vchRedeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
-		{
-			return error("escrow redeem script too long");
-		}
-		if(theEscrow.vchOffer.size() > MAX_ID_LENGTH)
-		{
-			return error("escrow offer guid too long");
-		}
-		if(theEscrow.rawTx.size() > MAX_STANDARD_TX_SIZE)
-		{
-			return error("escrow message tx too long");
-		}
-		if(theEscrow.vchOfferAcceptLink.size() > MAX_STANDARD_TX_SIZE)
-		{
-			return error("escrow offeraccept guid too long");
-		}		
-		if(fJustCheck)
-		{
-			switch (op) {
-				case OP_ESCROW_ACTIVATE:
-					break;
-				case OP_ESCROW_RELEASE:
-					if(prevOp != OP_ESCROW_ACTIVATE)
-						return error("CheckEscrowInputs() : can only release an activated escrow");
-					// Check input
-					if (vvchPrevArgs[0] != vvchArgs[0])
-						return error("CheckEscrowInputs() : escrow input guid mismatch");				
-					break;
-				case OP_ESCROW_COMPLETE:
-					if(prevOp != OP_ESCROW_RELEASE)
-						return error("CheckEscrowInputs() : can only complete a released escrow");
-					// Check input
-					if (vvchPrevArgs[0] != vvchArgs[0])
-						return error("CheckEscrowInputs() : escrow input guid mismatch");
-					break;
-				case OP_ESCROW_REFUND:
-					if(prevOp != OP_ESCROW_ACTIVATE)
-						return error("CheckEscrowInputs() : can only refund an activated escrow");
-					// Check input
-					if (vvchPrevArgs[0] != vvchArgs[0])
-						return error("CheckEscrowInputs() : escrow input guid mismatch");				
-					break;
-				default:
-					return error( "CheckEscrowInputs() : escrow transaction has unknown op");
-			}
-		}
-	
-		// save serialized escrow for later use
-		CEscrow serializedEscrow = theEscrow;
-
-		// if not an escrownew, load the escrow data from the DB
-		vector<CEscrow> vtxPos;
-		if (pescrowdb->ExistsEscrow(vvchArgs[0]) && !fJustCheck) {
-			if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-				return error(
-						"CheckEscrowInputs() : failed to read from escrow DB");
-		}
-        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
-
-			// make sure escrow settings don't change (besides rawTx) outside of activation
-			if(op != OP_ESCROW_ACTIVATE) 
-			{
-				// make sure we have found this escrow in db
-				if(!vtxPos.empty())
-				{
-					theEscrow = vtxPos.back();					
-					// these are the only settings allowed to change outside of activate
-					if(!serializedEscrow.rawTx.empty())
-						theEscrow.rawTx = serializedEscrow.rawTx;
-					if(!serializedEscrow.vchOfferAcceptLink.empty())
-						theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;						
-				}
-			}
-            // set the escrow's txn-dependent values
-			theEscrow.txHash = tx.GetHash();
-			theEscrow.nHeight = nHeight;
-			PutToEscrowList(vtxPos, theEscrow);
-			{
-			TRY_LOCK(cs_main, cs_trymain);
-            // write escrow  
-            if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
-                return error( "CheckEscrowInputs() : failed to write to escrow DB");
-
-          			
-            // debug
-			if(fDebug)
-				LogPrintf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
-                    escrowFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-			}
-		}
+	}
+		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
+			fJustCheck ? "JUSTCHECK" : "BLOCK");
+    // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
+    if (tx.nVersion != SYSCOIN_TX_VERSION) {
+		LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
+        return true;
     }
+    vector<vector<unsigned char> > vvchArgs;
+    int op, nOut;
+    bool good = DecodeEscrowTx(tx, op, nOut, vvchArgs);
+    if (!good)
+        return error("CheckEscrowInputs() : could not decode a syscoin tx");
+    // unserialize escrow UniValue from txn, check for valid
+    CEscrow theEscrow;
+    theEscrow.UnserializeFromTx(tx);
+	if(theEscrow.IsNull() && op == OP_ESCROW_RELEASE)
+		return true;
+    if (theEscrow.IsNull())
+        return error("CheckEscrowInputs() : null escrow");
+    if (vvchArgs[0].size() > MAX_NAME_LENGTH)
+        return error("escrow tx GUID too big");
+	if(!IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
+	{
+		return error("escrow buyer pub key invalid length");
+	}
+	if(!theEscrow.vchSellerKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchSellerKey))
+	{
+		return error("escrow seller pub key invalid length");
+	}
+	if(!theEscrow.vchArbiterKey.empty() && !IsCompressedOrUncompressedPubKey(theEscrow.vchArbiterKey))
+	{
+		return error("escrow arbiter pub key invalid length");
+	}
+	if(theEscrow.vchRedeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
+	{
+		return error("escrow redeem script too long");
+	}
+	if(theEscrow.vchOffer.size() > MAX_ID_LENGTH)
+	{
+		return error("escrow offer guid too long");
+	}
+	if(theEscrow.rawTx.size() > MAX_STANDARD_TX_SIZE)
+	{
+		return error("escrow message tx too long");
+	}
+	if(theEscrow.vchOfferAcceptLink.size() > MAX_STANDARD_TX_SIZE)
+	{
+		return error("escrow offeraccept guid too long");
+	}		
+	if(fJustCheck)
+	{
+		switch (op) {
+			case OP_ESCROW_ACTIVATE:
+				break;
+			case OP_ESCROW_RELEASE:
+				if(prevOp != OP_ESCROW_ACTIVATE)
+					return error("CheckEscrowInputs() : can only release an activated escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");				
+				break;
+			case OP_ESCROW_COMPLETE:
+				if(prevOp != OP_ESCROW_RELEASE)
+					return error("CheckEscrowInputs() : can only complete a released escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");
+				break;
+			case OP_ESCROW_REFUND:
+				if(prevOp != OP_ESCROW_ACTIVATE)
+					return error("CheckEscrowInputs() : can only refund an activated escrow");
+				// Check input
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckEscrowInputs() : escrow input guid mismatch");				
+				break;
+			default:
+				return error( "CheckEscrowInputs() : escrow transaction has unknown op");
+		}
+	}
+
+	// save serialized escrow for later use
+	CEscrow serializedEscrow = theEscrow;
+
+	// if not an escrownew, load the escrow data from the DB
+	vector<CEscrow> vtxPos;
+	if (pescrowdb->ExistsEscrow(vvchArgs[0]) && !fJustCheck) {
+		if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
+			return error(
+					"CheckEscrowInputs() : failed to read from escrow DB");
+	}
+    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+
+		// make sure escrow settings don't change (besides rawTx) outside of activation
+		if(op != OP_ESCROW_ACTIVATE) 
+		{
+			// make sure we have found this escrow in db
+			if(!vtxPos.empty())
+			{
+				theEscrow = vtxPos.back();					
+				// these are the only settings allowed to change outside of activate
+				if(!serializedEscrow.rawTx.empty())
+					theEscrow.rawTx = serializedEscrow.rawTx;
+				if(!serializedEscrow.vchOfferAcceptLink.empty())
+					theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;						
+			}
+		}
+        // set the escrow's txn-dependent values
+		theEscrow.txHash = tx.GetHash();
+		theEscrow.nHeight = nHeight;
+		PutToEscrowList(vtxPos, theEscrow);
+		{
+		TRY_LOCK(cs_main, cs_trymain);
+        // write escrow  
+        if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
+            return error( "CheckEscrowInputs() : failed to write to escrow DB");
+
+      			
+        // debug
+		if(fDebug)
+			LogPrintf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
+                escrowFromOp(op).c_str(),
+                stringFromVch(vvchArgs[0]).c_str(),
+                tx.GetHash().ToString().c_str(),
+                nHeight);
+		}
+	}
     return true;
 }
 

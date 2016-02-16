@@ -408,443 +408,528 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 
 bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	fRescan = fInit || fRescan;	
-	if (!tx.IsCoinBase()) {
-		if (fDebug)
-			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
-				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fJustCheck ? "JUSTCHECK" : "BLOCK");
-		bool foundOffer = false;
-		bool foundCert = false;
-		bool foundEscrow = false;
-		bool foundAlias = false;
-		const COutPoint *prevOutput = NULL;
-		CCoins prevCoins;
-		int prevOp, prevCertOp, prevEscrowOp;
-		prevOp = prevCertOp = prevEscrowOp = 0;
-		vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
-		if(fJustCheck)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
-				int op;
-				prevOutput = &tx.vin[i].prevout;
-				if(!prevOutput)
-					continue;
-				// ensure inputs are unspent when doing consensus check to add to block
-				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-					continue;
-				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-					continue;
+	if (tx.IsCoinBase())
+		return true;
+	if (fDebug)
+		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
+			fJustCheck ? "JUSTCHECK" : "BLOCK");
+	bool foundOffer = false;
+	bool foundCert = false;
+	bool foundEscrow = false;
+	bool foundAlias = false;
+	const COutPoint *prevOutput = NULL;
+	CCoins prevCoins;
+	int prevOp, prevCertOp, prevEscrowOp;
+	prevOp = prevCertOp = prevEscrowOp = 0;
+	vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
 
 
-				if(foundEscrow && foundOffer && foundCert)
-					break;
-
-				if (!foundOffer && IsOfferOp(op)) {
-					foundOffer = true; 
-					prevOp = op;
-					vvchPrevArgs = vvch;
-				}
-				else if (!foundCert && IsCertOp(op))
-				{
-					foundCert = true; 
-					prevCertOp = op;
-					vvchPrevCertArgs = vvch;
-				}
-				else if (!foundEscrow && IsEscrowOp(op))
-				{
-					foundEscrow = true; 
-					prevEscrowOp = op;
-					vvchPrevEscrowArgs = vvch;
-				}
-			}
-		}
-		
-
-		// Make sure offer outputs are not spent by a regular transaction, or the offer would be lost
-		if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			if (foundOffer)
-				return error(
-						"CheckOfferInputs() : a non-syscoin transaction with a syscoin input");
-			return true;
-		}
-
-		vector<vector<unsigned char> > vvchArgs;
-		int op;
-		int nOut;
-		bool good = DecodeOfferTx(tx, op, nOut, vvchArgs);
-		if (!good)
-			return error("CheckOfferInputs() : could not decode offer tx");
-		// unserialize offer from txn, check for valid
-		COffer theOffer(tx);
-		COfferAccept theOfferAccept;
-		if (theOffer.IsNull())
-			return error("CheckOfferInputs() : null offer");
-		if(theOffer.sDescription.size() > MAX_VALUE_LENGTH)
-		{
-			return error("offer description too big");
-		}
-		if(theOffer.sTitle.size() > MAX_NAME_LENGTH)
-		{
-			return error("offer title too big");
-		}
-		if(theOffer.sCategory.size() > MAX_NAME_LENGTH)
-		{
-			return error("offer category too big");
-		}
-		if(theOffer.vchLinkOffer.size() > MAX_NAME_LENGTH)
-		{
-			return error("offer link guid too big");
-		}
-		if(!IsCompressedOrUncompressedPubKey(theOffer.vchPubKey))
-		{
-			return error("offer pub key too invalid length");
-		}
-		if(theOffer.sCurrencyCode.size() > MAX_NAME_LENGTH)
-		{
-			return error("offer currency code too big");
-		}
-		if(theOffer.offerLinks.size() > 0)
-		{
-			return error("offer links are not allowed in tx data");
-		}
-		if(theOffer.linkWhitelist.entries.size() > 1)
-		{
-			return error("offer has too many whitelist entries, only one allowed per tx");
-		}
-
-		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
-			return error("offer hex guid too long");
-
-		if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
-		{
-			return error("An offer that only accepts BTC must have BTC specified as its currency");
-		}
-		vector<CAliasIndex> vtxAliasPos;
-		COffer linkOffer;
-		CTransaction linkedTx;
-		// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
-		if(fJustCheck)
-		{
-			switch (op) {
-			case OP_OFFER_ACTIVATE:
-			
-				if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
-					return error("CheckOfferInputs() : you must own a cert you wish to sell");
-				if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
-					return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-				
-				// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
-				if(!theOffer.vchCert.empty())
-				{
-					CTransaction txCert;
-					CCert theCert;
-					// make sure this cert is still valid
-					if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
-					{
-						if(theCert.vchPubKey != theOffer.vchPubKey)
-							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
-					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
-				}	
-			
-				if(!theOffer.vchLinkOffer.empty())
-				{
-					vector<COffer> myVtxPos;
-					if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-						if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
-						{
-							COffer myParentOffer = myVtxPos.back();
-							// ensure we can link against the offer if its in exclusive mode
-							if(myParentOffer.linkWhitelist.bExclusiveResell)
-							{
-								if (!IsCertOp(prevCertOp) || theOffer.linkWhitelist.IsNull())
-									return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish or link to");			
-								if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
-									return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert input and offer whitelist guid mismatch");
-							}
-						}
-						else
-							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");	
-					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");
-				}
-				
-				break;
-			case OP_OFFER_UPDATE:
-				if (!IsOfferOp(prevOp) )
-					return error("CheckOfferInputs() :offerupdate previous op is invalid");		
-				if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
-					return error("CheckOfferInputs() : you must own the cert offer you wish to update");
-				if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
-					return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-				if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
-					return error("CheckOfferInputs() : cert input and offer whitelist entry guid mismatch");
-		 
-				if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
-					return error("offerupdate previous op is invalid");			
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckOfferInputs() : offerupdate offer mismatch");	
-
-				// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
-				if(!theOffer.vchCert.empty())
-				{
-					CTransaction txCert;
-					CCert theCert;
-					// make sure this cert is still valid
-					if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
-					{
-						if(theCert.vchPubKey != theOffer.vchPubKey)
-							return error("CheckOfferInputs() : offerupdate cert and offer pubkey mismatch");
-					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
-				}
-				
-				break;
-			case OP_OFFER_ACCEPT:
-				if (foundOffer || (foundEscrow && !IsEscrowOp(prevEscrowOp)) || (foundCert && !IsCertOp(prevCertOp)))
-					return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
-				if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-					return error("offeraccept tx with guid too big");
-				// check for existence of offeraccept in txn offer obj
-				theOfferAccept = theOffer.accept;
-				if(theOfferAccept.IsNull())
-					return error("OP_OFFER_ACCEPT null accept object");
-				if(theOfferAccept.vchAcceptRand != vvchArgs[1])
-					return error("OP_OFFER_ACCEPT could not read accept from offer txn");
-				if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
-					return error("OP_OFFER_ACCEPT offer accept hex guid too long");
-				if (theOfferAccept.vchMessage.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-					return error("OP_OFFER_ACCEPT message field too big");
-				if (theOfferAccept.vchLinkOfferAccept.size() > MAX_NAME_LENGTH)
-					return error("OP_OFFER_ACCEPT offer accept link field too big");
-				if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
-					return error("OP_OFFER_ACCEPT offer link field too big");
-				if(IsEscrowOp(prevEscrowOp))
-				{	
-					vector<CEscrow> escrowVtxPos;
-					if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
-						if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
-						{	
-							// we want the initial funding escrow transaction height as when to calculate this offer accept price
-							CEscrow fundingEscrow = escrowVtxPos.front();
-							if(fundingEscrow.vchOffer != vvchArgs[0])
-								return error("CheckOfferInputs() OP_OFFER_ACCEPT: escrow guid does not match the guid of the offer you are accepting");		
-						}
-						else
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");		
-					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");	
-				}
-				// trying to purchase a cert
-				if(!theOffer.vchCert.empty())
-				{
-					CTransaction txCert;
-					CCert theCert;
-					// make sure this cert is still valid
-					if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
-					{
-						// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
-						// so in that case the escrow is attached to the accept and we skip this check
-						// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
-						if(theCert.vchPubKey != theOffer.vchPubKey && !IsEscrowOp(prevOp))
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
-						theOfferAccept.nQty = 1;
-					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
-				}
-
-				if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
-		
-				COffer myOffer;
-				CTransaction offerTx;			
-				// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-				uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
-				COfferLinkWhitelistEntry entry;
-				if(IsCertOp(prevCertOp))
-					theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
-
-				// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-				if(IsEscrowOp(prevEscrowOp))
-				{	
-					vector<CEscrow> escrowVtxPos;
-					if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
-						if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
-						{	
-							// we want the initial funding escrow transaction height as when to calculate this offer accept price
-							CEscrow fundingEscrow = escrowVtxPos.front();
-							heightToCheckAgainst = fundingEscrow.nHeight;
-						}
-					}
-				}
-				// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-				if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
-				{
-					// load the offer data from the DB
-					vector<COffer> vtxPos;
-					if (pofferdb->ExistsOffer(vvchArgs[0])) {
-						if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-							return error(
-									"CheckOfferInputs() : failed to read from offer DB");
-					}
-					COffer myPriceOffer;
-					myPriceOffer.nHeight = heightToCheckAgainst;
-					myPriceOffer.GetOfferFromList(vtxPos);
-					float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
-					if(priceAtTimeOfAccept != theOfferAccept.nPrice)
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
-
-					int precision = 2;
-					// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-					CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
-					if(tx.vout[nOut].nValue != nPrice)
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
-					
-
-				}						
-			
-				if(!theOffer.vchLinkOffer.empty())
-				{
-					if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
-				}
-				if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-			
+			if(foundEscrow && foundOffer && foundCert)
 				break;
 
-			default:
-				return error( "CheckOfferInputs() : offer transaction has unknown op");
+			if (!foundOffer && IsOfferOp(op)) {
+				foundOffer = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 			}
-		}
-		
-		// save serialized offer for later use
-		COffer serializedOffer = theOffer;
-		COffer linkOffer;
-		// load the offer data from the DB
-		vector<COffer> vtxPos;
-		if (pofferdb->ExistsOffer(vvchArgs[0]) && !fJustCheck) {
-			if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-				return error(
-						"CheckOfferInputs() : failed to read from offer DB");
-		}
-
-		if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
-			// get the latest offer from the db
-			if(!vtxPos.empty())
-				theOffer = vtxPos.back();				
-
-			// If update, we make the serialized offer the master
-			// but first we assign the offerLinks/whitelists from the DB since
-			// they are not shipped in an update txn to keep size down
-			if(op == OP_OFFER_UPDATE) {
-				serializedOffer.offerLinks = theOffer.offerLinks;
-				serializedOffer.accept.SetNull();
-				theOffer = serializedOffer;
-				if(!vtxPos.empty())
-				{
-					const COffer& dbOffer = vtxPos.back();
-					// if updating whitelist, we dont allow updating any offer details
-					if(theOffer.linkWhitelist.entries.size() > 0)
-						theOffer = dbOffer;
-					else
-					{
-						// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
-						theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
-						// btc setting cannot change on update
-						theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
-						// currency cannot change after creation
-						theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
-						// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
-						if(serializedOffer.sCategory.empty())
-							theOffer.sCategory = dbOffer.sCategory;
-						if(serializedOffer.sTitle.empty())
-							theOffer.sTitle = dbOffer.sTitle;
-						if(serializedOffer.sDescription.empty())
-							theOffer.sDescription = dbOffer.sDescription;
-					}
-				}
-				if(!theOffer.vchCert.empty())						
-					theOffer.nQty = 1;
-				
-			}
-			else if(op == OP_OFFER_ACTIVATE)
+			else if (!foundCert && IsCertOp(op))
 			{
-				// by default offers are private on new, need to update it out of privacy
-				theOffer.bPrivate = true;
-				if(!theOffer.vchCert.empty())
-					theOffer.nQty = 1;
-					
-				// if this is a linked offer activate, then add it to the parent offerLinks list
-				if(!theOffer.vchLinkOffer.empty())
-				{
-					vector<COffer> myVtxPos;
-					if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-						if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
-						{
-							COffer myParentOffer = myVtxPos.back();
-							// if creating a linked offer we set some mandatory fields to the parent
-							theOffer.nQty = myParentOffer.nQty;
-							theOffer.vchPubKey = myParentOffer.vchPubKey;
-							theOffer.sCategory = myParentOffer.sCategory;
-							theOffer.sTitle = myParentOffer.sTitle;
-							theOffer.linkWhitelist.bExclusiveResell = true;
-							theOffer.sCurrencyCode = myParentOffer.sCurrencyCode;
+				foundCert = true; 
+				prevCertOp = op;
+				vvchPrevCertArgs = vvch;
+			}
+			else if (!foundEscrow && IsEscrowOp(op))
+			{
+				foundEscrow = true; 
+				prevEscrowOp = op;
+				vvchPrevEscrowArgs = vvch;
+			}
+		}
+	}
+	
 
-							myParentOffer.offerLinks.push_back(vvchArgs[0]);							
-							myParentOffer.PutToOfferList(myVtxPos);
+	// Make sure offer outputs are not spent by a regular transaction, or the offer would be lost
+	if (tx.nVersion != SYSCOIN_TX_VERSION) {
+		if (foundOffer)
+			return error(
+					"CheckOfferInputs() : a non-syscoin transaction with a syscoin input");
+		return true;
+	}
+
+	vector<vector<unsigned char> > vvchArgs;
+	int op;
+	int nOut;
+	bool good = DecodeOfferTx(tx, op, nOut, vvchArgs);
+	if (!good)
+		return error("CheckOfferInputs() : could not decode offer tx");
+	// unserialize offer from txn, check for valid
+	COffer theOffer(tx);
+	COfferAccept theOfferAccept;
+	if (theOffer.IsNull())
+		return error("CheckOfferInputs() : null offer");
+	if(theOffer.sDescription.size() > MAX_VALUE_LENGTH)
+	{
+		return error("offer description too big");
+	}
+	if(theOffer.sTitle.size() > MAX_NAME_LENGTH)
+	{
+		return error("offer title too big");
+	}
+	if(theOffer.sCategory.size() > MAX_NAME_LENGTH)
+	{
+		return error("offer category too big");
+	}
+	if(theOffer.vchLinkOffer.size() > MAX_NAME_LENGTH)
+	{
+		return error("offer link guid too big");
+	}
+	if(!IsCompressedOrUncompressedPubKey(theOffer.vchPubKey))
+	{
+		return error("offer pub key too invalid length");
+	}
+	if(theOffer.sCurrencyCode.size() > MAX_NAME_LENGTH)
+	{
+		return error("offer currency code too big");
+	}
+	if(theOffer.offerLinks.size() > 0)
+	{
+		return error("offer links are not allowed in tx data");
+	}
+	if(theOffer.linkWhitelist.entries.size() > 1)
+	{
+		return error("offer has too many whitelist entries, only one allowed per tx");
+	}
+
+	if (vvchArgs[0].size() > MAX_NAME_LENGTH)
+		return error("offer hex guid too long");
+
+	if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && theOffer.bOnlyAcceptBTC)
+	{
+		return error("An offer that only accepts BTC must have BTC specified as its currency");
+	}
+	vector<CAliasIndex> vtxAliasPos;
+	COffer linkOffer;
+	CTransaction linkedTx;
+	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
+	if(fJustCheck)
+	{
+		switch (op) {
+		case OP_OFFER_ACTIVATE:
+		
+			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : you must own a cert you wish to sell");
+			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+			
+			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
+			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				CCert theCert;
+				// make sure this cert is still valid
+				if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
+				{
+					if(theCert.vchPubKey != theOffer.vchPubKey)
+						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
+				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
+			}	
+		
+			if(!theOffer.vchLinkOffer.empty())
+			{
+				vector<COffer> myVtxPos;
+				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
+					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+					{
+						COffer myParentOffer = myVtxPos.back();
+						// ensure we can link against the offer if its in exclusive mode
+						if(myParentOffer.linkWhitelist.bExclusiveResell)
+						{
+							if (!IsCertOp(prevCertOp) || theOffer.linkWhitelist.IsNull())
+								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish or link to");			
+							if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
+								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert input and offer whitelist guid mismatch");
+						}
+					}
+					else
+						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");	
+				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");
+			}
+			
+			break;
+		case OP_OFFER_UPDATE:
+			if (!IsOfferOp(prevOp) )
+				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
+			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
+				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
+			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer whitelist entry guid mismatch");
+	 
+			if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
+				return error("offerupdate previous op is invalid");			
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckOfferInputs() : offerupdate offer mismatch");	
+
+			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
+			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				CCert theCert;
+				// make sure this cert is still valid
+				if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
+				{
+					if(theCert.vchPubKey != theOffer.vchPubKey)
+						return error("CheckOfferInputs() : offerupdate cert and offer pubkey mismatch");
+				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
+			}
+			
+			break;
+		case OP_OFFER_ACCEPT:
+			if (foundOffer || (foundEscrow && !IsEscrowOp(prevEscrowOp)) || (foundCert && !IsCertOp(prevCertOp)))
+				return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
+			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
+				return error("offeraccept tx with guid too big");
+			// check for existence of offeraccept in txn offer obj
+			theOfferAccept = theOffer.accept;
+			if(theOfferAccept.IsNull())
+				return error("OP_OFFER_ACCEPT null accept object");
+			if(theOfferAccept.vchAcceptRand != vvchArgs[1])
+				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
+			if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
+				return error("OP_OFFER_ACCEPT offer accept hex guid too long");
+			if (theOfferAccept.vchMessage.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+				return error("OP_OFFER_ACCEPT message field too big");
+			if (theOfferAccept.vchLinkOfferAccept.size() > MAX_NAME_LENGTH)
+				return error("OP_OFFER_ACCEPT offer accept link field too big");
+			if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
+				return error("OP_OFFER_ACCEPT offer link field too big");
+			if(IsEscrowOp(prevEscrowOp))
+			{	
+				vector<CEscrow> escrowVtxPos;
+				if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
+					if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
+					{	
+						// we want the initial funding escrow transaction height as when to calculate this offer accept price
+						CEscrow fundingEscrow = escrowVtxPos.front();
+						if(fundingEscrow.vchOffer != vvchArgs[0])
+							return error("CheckOfferInputs() OP_OFFER_ACCEPT: escrow guid does not match the guid of the offer you are accepting");		
+					}
+					else
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");		
+				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");	
+			}
+			// trying to purchase a cert
+			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				CCert theCert;
+				// make sure this cert is still valid
+				if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
+				{
+					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
+					// so in that case the escrow is attached to the accept and we skip this check
+					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
+					if(theCert.vchPubKey != theOffer.vchPubKey && !IsEscrowOp(prevOp))
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+					theOfferAccept.nQty = 1;
+				}
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
+			}
+
+			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
+			{
+			COffer myOffer;
+			CTransaction offerTx;			
+			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
+			uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
+			COfferLinkWhitelistEntry entry;
+			if(IsCertOp(prevCertOp))
+				theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
+
+			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
+			if(IsEscrowOp(prevEscrowOp))
+			{	
+				vector<CEscrow> escrowVtxPos;
+				if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
+					if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
+					{	
+						// we want the initial funding escrow transaction height as when to calculate this offer accept price
+						CEscrow fundingEscrow = escrowVtxPos.front();
+						heightToCheckAgainst = fundingEscrow.nHeight;
+					}
+				}
+			}
+			// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
+			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
+			{
+				// load the offer data from the DB
+				vector<COffer> vtxPos;
+				if (pofferdb->ExistsOffer(vvchArgs[0])) {
+					if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+						return error(
+								"CheckOfferInputs() : failed to read from offer DB");
+				}
+				COffer myPriceOffer;
+				myPriceOffer.nHeight = heightToCheckAgainst;
+				myPriceOffer.GetOfferFromList(vtxPos);
+				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
+				if(priceAtTimeOfAccept != theOfferAccept.nPrice)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
+
+				int precision = 2;
+				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
+				CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+				if(tx.vout[nOut].nValue != nPrice)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
+				
+
+			}						
+		
+			if(!theOffer.vchLinkOffer.empty())
+			{
+				if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
+			}
+			if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+			}
+			break;
+
+		default:
+			return error( "CheckOfferInputs() : offer transaction has unknown op");
+		}
+	}
+	
+	// save serialized offer for later use
+	COffer serializedOffer = theOffer;
+	COffer linkOffer;
+	// load the offer data from the DB
+	vector<COffer> vtxPos;
+	if (pofferdb->ExistsOffer(vvchArgs[0]) && !fJustCheck) {
+		if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+			return error(
+					"CheckOfferInputs() : failed to read from offer DB");
+	}
+
+	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+		// get the latest offer from the db
+		if(!vtxPos.empty())
+			theOffer = vtxPos.back();				
+
+		// If update, we make the serialized offer the master
+		// but first we assign the offerLinks/whitelists from the DB since
+		// they are not shipped in an update txn to keep size down
+		if(op == OP_OFFER_UPDATE) {
+			serializedOffer.offerLinks = theOffer.offerLinks;
+			serializedOffer.accept.SetNull();
+			theOffer = serializedOffer;
+			if(!vtxPos.empty())
+			{
+				const COffer& dbOffer = vtxPos.back();
+				// if updating whitelist, we dont allow updating any offer details
+				if(theOffer.linkWhitelist.entries.size() > 0)
+					theOffer = dbOffer;
+				else
+				{
+					// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
+					theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
+					// btc setting cannot change on update
+					theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
+					// currency cannot change after creation
+					theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
+					// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
+					if(serializedOffer.sCategory.empty())
+						theOffer.sCategory = dbOffer.sCategory;
+					if(serializedOffer.sTitle.empty())
+						theOffer.sTitle = dbOffer.sTitle;
+					if(serializedOffer.sDescription.empty())
+						theOffer.sDescription = dbOffer.sDescription;
+				}
+			}
+			if(!theOffer.vchCert.empty())						
+				theOffer.nQty = 1;
+			
+		}
+		else if(op == OP_OFFER_ACTIVATE)
+		{
+			// by default offers are private on new, need to update it out of privacy
+			theOffer.bPrivate = true;
+			if(!theOffer.vchCert.empty())
+				theOffer.nQty = 1;
+				
+			// if this is a linked offer activate, then add it to the parent offerLinks list
+			if(!theOffer.vchLinkOffer.empty())
+			{
+				vector<COffer> myVtxPos;
+				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
+					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+					{
+						COffer myParentOffer = myVtxPos.back();
+						// if creating a linked offer we set some mandatory fields to the parent
+						theOffer.nQty = myParentOffer.nQty;
+						theOffer.vchPubKey = myParentOffer.vchPubKey;
+						theOffer.sCategory = myParentOffer.sCategory;
+						theOffer.sTitle = myParentOffer.sTitle;
+						theOffer.linkWhitelist.bExclusiveResell = true;
+						theOffer.sCurrencyCode = myParentOffer.sCurrencyCode;
+
+						myParentOffer.offerLinks.push_back(vvchArgs[0]);							
+						myParentOffer.PutToOfferList(myVtxPos);
+						{
+						TRY_LOCK(cs_main, cs_trymain);
+						// write parent offer
+						if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
+							return error( "CheckOfferInputs() : failed to write to offer link to DB");
+						}
+					}
+				}
+				
+			}
+		}
+		else if (op == OP_OFFER_ACCEPT) {	
+			theOfferAccept = serializedOffer.accept;
+			if(!theOffer.vchLinkOffer.empty())
+			{
+				if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
+			}
+			if(theOfferAccept.nQty <= 0)
+				theOfferAccept.nQty = 1;
+			
+			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (linkOffer.nQty != -1 && !linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
+				if(fDebug)
+					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+				return true;
+			}
+			// only if we are the root offer owner do we even consider xfering a cert					
+			// purchased a cert so xfer it
+			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+			{
+				string strError = makeTransferCertTX(theOffer, theOfferAccept);
+				if(strError != "")
+					LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
+				
+			}
+		
+			if(theOffer.vchLinkOffer.empty())
+			{
+				if(theOffer.nQty != -1)
+				{
+					theOffer.nQty -= theOfferAccept.nQty;
+					if(theOffer.nQty < 0)
+						theOffer.nQty = 0;
+				}
+				// go through the linked offers, if any, and update the linked offer qty based on the this qty
+				for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
+					vector<COffer> myVtxPos;
+					if (pofferdb->ExistsOffer(theOffer.offerLinks[i])) {
+						if (pofferdb->ReadOffer(theOffer.offerLinks[i], myVtxPos))
+						{
+							COffer myLinkOffer = myVtxPos.back();
+							myLinkOffer.nQty = theOffer.nQty;	
+							myLinkOffer.PutToOfferList(myVtxPos);
 							{
 							TRY_LOCK(cs_main, cs_trymain);
-							// write parent offer
-							if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
+							// write offer
+							if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
 								return error( "CheckOfferInputs() : failed to write to offer link to DB");
 							}
 						}
 					}
-					
 				}
 			}
-			else if (op == OP_OFFER_ACCEPT) {	
-				theOfferAccept = serializedOffer.accept;
+			if (!fRescan && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx))
+			{	
+				// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
+				// theOffer.vchLinkOffer is the linked offer guid
+				// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
+				// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
+				// we are now accepting the linked	 offer, up the link offer stack.
+
+				string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[1], theOffer);
+				if(strError != "")
+				{
+					if(fDebug)
+					{
+						LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());
+					}
+				}
+			}
+			theOfferAccept.nHeight = nHeight;
+			theOfferAccept.vchAcceptRand = vvchArgs[1];
+			theOfferAccept.txHash = tx.GetHash();
+			theOffer.accept = theOfferAccept;
+		}
+		
+		if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
+			if(op == OP_OFFER_UPDATE)
+			{
+				// if the txn whitelist entry exists (meaning we want to remove or add)
+				if(serializedOffer.linkWhitelist.entries.size() == 1)
+				{
+					COfferLinkWhitelistEntry entry;
+					// special case we use to remove all entries
+					if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == 127)
+					{
+						theOffer.linkWhitelist.SetNull();
+					}
+					// the stored offer has this entry meaning we want to remove this entry
+					else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
+					{
+						theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
+					}
+					// we want to add it to the whitelist
+					else
+					{
+						if(!serializedOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && serializedOffer.linkWhitelist.entries[0].nDiscountPct <= 99)
+							theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist.entries[0]);
+					}
+				}
+				// if this offer is linked to a parent update it with parent information
 				if(!theOffer.vchLinkOffer.empty())
 				{
-					if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
-						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
-				}
-				if(theOfferAccept.nQty <= 0)
-					theOfferAccept.nQty = 1;
-				
-				if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (linkOffer.nQty != -1 && !linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-					return true;
-				}
-				// only if we are the root offer owner do we even consider xfering a cert					
-				// purchased a cert so xfer it
-				if(!fRescan && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
-				{
-					string strError = makeTransferCertTX(theOffer, theOfferAccept);
-					if(strError != "")
-						LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
-					
-				}
-			
-				if(theOffer.vchLinkOffer.empty())
-				{
-					if(theOffer.nQty != -1)
-					{
-						theOffer.nQty -= theOfferAccept.nQty;
-						if(theOffer.nQty < 0)
-							theOffer.nQty = 0;
+					vector<COffer> myVtxPos;
+					if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
+						if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+						{
+							COffer myLinkOffer = myVtxPos.back();
+							theOffer.nQty = myLinkOffer.nQty;	
+							theOffer.nHeight = myLinkOffer.nHeight;
+							theOffer.SetPrice(myLinkOffer.nPrice);
+							
+						}
 					}
-					// go through the linked offers, if any, and update the linked offer qty based on the this qty
+						
+				}
+				else
+				{
+					// go through the linked offers, if any, and update the linked offer info based on the this info
 					for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
 						vector<COffer> myVtxPos;
 						if (pofferdb->ExistsOffer(theOffer.offerLinks[i])) {
@@ -852,6 +937,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 							{
 								COffer myLinkOffer = myVtxPos.back();
 								myLinkOffer.nQty = theOffer.nQty;	
+								myLinkOffer.SetPrice(theOffer.nPrice);
 								myLinkOffer.PutToOfferList(myVtxPos);
 								{
 								TRY_LOCK(cs_main, cs_trymain);
@@ -862,118 +948,31 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 							}
 						}
 					}
+					
 				}
-				if (!fRescan && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx))
-				{	
-					// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
-					// theOffer.vchLinkOffer is the linked offer guid
-					// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
-					// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
-					// we are now accepting the linked	 offer, up the link offer stack.
-
-					string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[1], theOffer);
-					if(strError != "")
-					{
-						if(fDebug)
-						{
-							LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());
-						}
-					}
-				}
-				theOfferAccept.nHeight = nHeight;
-				theOfferAccept.vchAcceptRand = vvchArgs[1];
-				theOfferAccept.txHash = tx.GetHash();
-				theOffer.accept = theOfferAccept;
-			}
-			
-			if(op == OP_OFFER_ACTIVATE || op == OP_OFFER_UPDATE) {
-				if(op == OP_OFFER_UPDATE)
-				{
-					// if the txn whitelist entry exists (meaning we want to remove or add)
-					if(serializedOffer.linkWhitelist.entries.size() == 1)
-					{
-						COfferLinkWhitelistEntry entry;
-						// special case we use to remove all entries
-						if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == 127)
-						{
-							theOffer.linkWhitelist.SetNull();
-						}
-						// the stored offer has this entry meaning we want to remove this entry
-						else if(theOffer.linkWhitelist.GetLinkEntryByHash(serializedOffer.linkWhitelist.entries[0].certLinkVchRand, entry))
-						{
-							theOffer.linkWhitelist.RemoveWhitelistEntry(serializedOffer.linkWhitelist.entries[0].certLinkVchRand);
-						}
-						// we want to add it to the whitelist
-						else
-						{
-							if(!serializedOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && serializedOffer.linkWhitelist.entries[0].nDiscountPct <= 99)
-								theOffer.linkWhitelist.PutWhitelistEntry(serializedOffer.linkWhitelist.entries[0]);
-						}
-					}
-					// if this offer is linked to a parent update it with parent information
-					if(!theOffer.vchLinkOffer.empty())
-					{
-						vector<COffer> myVtxPos;
-						if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-							if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
-							{
-								COffer myLinkOffer = myVtxPos.back();
-								theOffer.nQty = myLinkOffer.nQty;	
-								theOffer.nHeight = myLinkOffer.nHeight;
-								theOffer.SetPrice(myLinkOffer.nPrice);
-								
-							}
-						}
-							
-					}
-					else
-					{
-						// go through the linked offers, if any, and update the linked offer info based on the this info
-						for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
-							vector<COffer> myVtxPos;
-							if (pofferdb->ExistsOffer(theOffer.offerLinks[i])) {
-								if (pofferdb->ReadOffer(theOffer.offerLinks[i], myVtxPos))
-								{
-									COffer myLinkOffer = myVtxPos.back();
-									myLinkOffer.nQty = theOffer.nQty;	
-									myLinkOffer.SetPrice(theOffer.nPrice);
-									myLinkOffer.PutToOfferList(myVtxPos);
-									{
-									TRY_LOCK(cs_main, cs_trymain);
-									// write offer
-									if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
-										return error( "CheckOfferInputs() : failed to write to offer link to DB");
-									}
-								}
-							}
-						}
-						
-					}
-				}
-			}
-			theOffer.nHeight = nHeight;
-			theOffer.txHash = tx.GetHash();
-			theOffer.PutToOfferList(vtxPos);
-			{
-			TRY_LOCK(cs_main, cs_trymain);
-			// write offer
-			if (!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
-				return error( "CheckOfferInputs() : failed to write to offer DB");
-
-           				
-			// debug
-			if (fDebug)
-				LogPrintf( "CONNECTED OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
-					offerFromOp(op).c_str(),
-					stringFromVch(vvchArgs[0]).c_str(),
-					stringFromVch(theOffer.sTitle).c_str(),
-					theOffer.nQty,
-					tx.GetHash().ToString().c_str(), 
-					nHeight);
 			}
 		}
+		theOffer.nHeight = nHeight;
+		theOffer.txHash = tx.GetHash();
+		theOffer.PutToOfferList(vtxPos);
+		{
+		TRY_LOCK(cs_main, cs_trymain);
+		// write offer
+		if (!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
+			return error( "CheckOfferInputs() : failed to write to offer DB");
+
+       				
+		// debug
+		if (fDebug)
+			LogPrintf( "CONNECTED OFFER: op=%s offer=%s title=%s qty=%u hash=%s height=%d\n",
+				offerFromOp(op).c_str(),
+				stringFromVch(vvchArgs[0]).c_str(),
+				stringFromVch(theOffer.sTitle).c_str(),
+				theOffer.nQty,
+				tx.GetHash().ToString().c_str(), 
+				nHeight);
+		}
 	}
-	
 	return true;
 }
 

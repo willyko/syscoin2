@@ -250,149 +250,147 @@ CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
 bool CheckCertInputs(const CTransaction &tx,
         const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	fRescan = fInit || fRescan;
-    if (!tx.IsCoinBase()) {
-			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
-				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fJustCheck ? "JUSTCHECK" : "BLOCK");
-        bool foundCert = false;
-        const COutPoint *prevOutput = NULL;
-        CCoins prevCoins;
+	if (tx.IsCoinBase())
+		return true;
+		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
+			fJustCheck ? "JUSTCHECK" : "BLOCK");
+    bool foundCert = false;
+    const COutPoint *prevOutput = NULL;
+    CCoins prevCoins;
 
-        int prevOp = 0;
-		int prevAliasOp = 0;
-		
-        vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
-		if(fJustCheck)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
-				int op;
-				prevOutput = &tx.vin[i].prevout;
-				if(!prevOutput)
-					continue;
-				// ensure inputs are unspent when doing consensus check to add to block
-				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-					continue;
-				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-					continue;
+    int prevOp = 0;
+	int prevAliasOp = 0;
+	
+    vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
 
-				if (!foundCert && IsCertOp(op)) {
-					foundCert = true; 
-					prevOp = op;
-					vvchPrevArgs = vvch;
-					break;
-				}
-			}
-		}
-        // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
-        if (tx.nVersion != SYSCOIN_TX_VERSION) {
-            if (foundCert)
-                return error(
-                        "CheckCertInputs() : a non-syscoin transaction with a syscoin input");
-            return true;
-        }
-        vector<vector<unsigned char> > vvchArgs;
-        int op, nOut;
-        bool good = DecodeCertTx(tx, op, nOut, vvchArgs);
-        if (!good)
-            return error("CheckCertInputs() : could not decode cert tx");
-        // unserialize cert object from txn, check for valid
-        CCert theCert(tx);
-		// we need to check for cert update specially because a cert update without data is sent along with offers linked with the cert
-        if (theCert.IsNull() && op != OP_CERT_UPDATE)
-            return error("CheckCertInputs() : null cert object");
-		if(theCert.vchData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-		{
-			return error("cert data too big");
-		}
-		if(theCert.vchTitle.size() > MAX_NAME_LENGTH)
-		{
-			return error("cert title too big");
-		}
-		if(!theCert.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theCert.vchPubKey))
-		{
-			return error("cert pub key invalid length");
-		}
-        if (vvchArgs[0].size() > MAX_NAME_LENGTH)
-            return error("cert hex guid too long");
-		vector<CAliasIndex> vtxAliasPos;
-		if(fJustCheck)
-		{
-			switch (op) {
-			case OP_CERT_ACTIVATE:
-				if (foundCert)
-					return error(
-							"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+			if (!foundCert && IsCertOp(op)) {
+				foundCert = true; 
+				prevOp = op;
+				vvchPrevArgs = vvch;
 				break;
-
-			case OP_CERT_UPDATE:
-				// previous op must be a cert
-				if ( !foundCert || !IsCertOp(prevOp))
-					return error("CheckCertInputs(): certupdate previous op is invalid");
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
-				break;
-
-			case OP_CERT_TRANSFER:
-				// validate conditions
-				if ( !foundCert || !IsCertOp(prevOp))
-					return error("certtransfer previous op is invalid");
-				if (vvchPrevArgs[0] != vvchArgs[0])
-					return error("CheckCertInputs() : certtransfer cert mismatch");
-				break;
-
-			default:
-				return error( "CheckCertInputs() : cert transaction has unknown op");
 			}
 		}
-
-		// if not an certnew, load the cert data from the DB
-		vector<CCert> vtxPos;
-		if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
-			if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-				return error(
-						"CheckCertInputs() : failed to read from cert DB");
-		}
-        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
-			if(!vtxPos.empty())
-			{
-				if(theCert.IsNull())
-					theCert = vtxPos.back();
-				else
-				{
-					const CCert& dbCert = vtxPos.back();
-					if(theCert.vchData.empty())
-						theCert.vchData = dbCert.vchData;
-					if(theCert.vchTitle.empty())
-						theCert.vchTitle = dbCert.vchTitle;
-				}
-			}
-    
-            // set the cert's txn-dependent values
-			theCert.nHeight = nHeight;
-			theCert.txHash = tx.GetHash();
-			PutToCertList(vtxPos, theCert);
-			{
-			TRY_LOCK(cs_main, cs_trymain);
-            // write cert  
-            if (!pcertdb->WriteCert(vvchArgs[0], vtxPos))
-                return error( "CheckCertInputs() : failed to write to cert DB");
-
-          			
-            // debug
-			if(fDebug)
-				LogPrintf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
-                    certFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    stringFromVch(theCert.vchTitle).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-			}
-        }
-        
+	}
+    // Make sure cert outputs are not spent by a regular transaction, or the cert would be lost
+    if (tx.nVersion != SYSCOIN_TX_VERSION) {
+        if (foundCert)
+            return error(
+                    "CheckCertInputs() : a non-syscoin transaction with a syscoin input");
+        return true;
     }
-    
+    vector<vector<unsigned char> > vvchArgs;
+    int op, nOut;
+    bool good = DecodeCertTx(tx, op, nOut, vvchArgs);
+    if (!good)
+        return error("CheckCertInputs() : could not decode cert tx");
+    // unserialize cert object from txn, check for valid
+    CCert theCert(tx);
+	// we need to check for cert update specially because a cert update without data is sent along with offers linked with the cert
+    if (theCert.IsNull() && op != OP_CERT_UPDATE)
+        return error("CheckCertInputs() : null cert object");
+	if(theCert.vchData.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+	{
+		return error("cert data too big");
+	}
+	if(theCert.vchTitle.size() > MAX_NAME_LENGTH)
+	{
+		return error("cert title too big");
+	}
+	if(!theCert.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theCert.vchPubKey))
+	{
+		return error("cert pub key invalid length");
+	}
+    if (vvchArgs[0].size() > MAX_NAME_LENGTH)
+        return error("cert hex guid too long");
+	vector<CAliasIndex> vtxAliasPos;
+	if(fJustCheck)
+	{
+		switch (op) {
+		case OP_CERT_ACTIVATE:
+			if (foundCert)
+				return error(
+						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
+			break;
+
+		case OP_CERT_UPDATE:
+			// previous op must be a cert
+			if ( !foundCert || !IsCertOp(prevOp))
+				return error("CheckCertInputs(): certupdate previous op is invalid");
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckCertInputs(): certupdate prev cert mismatch vvchPrevArgs[0]: %s, vvchArgs[0] %s", stringFromVch(vvchPrevArgs[0]).c_str(), stringFromVch(vvchArgs[0]).c_str());
+			break;
+
+		case OP_CERT_TRANSFER:
+			// validate conditions
+			if ( !foundCert || !IsCertOp(prevOp))
+				return error("certtransfer previous op is invalid");
+			if (vvchPrevArgs[0] != vvchArgs[0])
+				return error("CheckCertInputs() : certtransfer cert mismatch");
+			break;
+
+		default:
+			return error( "CheckCertInputs() : cert transaction has unknown op");
+		}
+	}
+
+	// if not an certnew, load the cert data from the DB
+	vector<CCert> vtxPos;
+	if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
+		if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
+			return error(
+					"CheckCertInputs() : failed to read from cert DB");
+	}
+    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+		if(!vtxPos.empty())
+		{
+			if(theCert.IsNull())
+				theCert = vtxPos.back();
+			else
+			{
+				const CCert& dbCert = vtxPos.back();
+				if(theCert.vchData.empty())
+					theCert.vchData = dbCert.vchData;
+				if(theCert.vchTitle.empty())
+					theCert.vchTitle = dbCert.vchTitle;
+			}
+		}
+
+        // set the cert's txn-dependent values
+		theCert.nHeight = nHeight;
+		theCert.txHash = tx.GetHash();
+		PutToCertList(vtxPos, theCert);
+		{
+		TRY_LOCK(cs_main, cs_trymain);
+        // write cert  
+        if (!pcertdb->WriteCert(vvchArgs[0], vtxPos))
+            return error( "CheckCertInputs() : failed to write to cert DB");
+
+      			
+        // debug
+		if(fDebug)
+			LogPrintf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
+                certFromOp(op).c_str(),
+                stringFromVch(vvchArgs[0]).c_str(),
+                stringFromVch(theCert.vchTitle).c_str(),
+                tx.GetHash().ToString().c_str(),
+                nHeight);
+		}
+    }
     return true;
 }
 

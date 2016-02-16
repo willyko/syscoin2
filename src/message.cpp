@@ -221,129 +221,128 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
 
 bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	fRescan = fInit || fRescan;
-    if (!tx.IsCoinBase()) {
-			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
-				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fJustCheck ? "JUSTCHECK" : "BLOCK");
-        const COutPoint *prevOutput = NULL;
-        CCoins prevCoins;
+	if (tx.IsCoinBase())
+		return true;
+	LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
+			fJustCheck ? "JUSTCHECK" : "BLOCK");
+    const COutPoint *prevOutput = NULL;
+    CCoins prevCoins;
 
-		int prevAliasOp = 0;
-		
-        vector<vector<unsigned char> > vvchPrevAliasArgs;
-		if(fJustCheck)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
-				int op;
-				prevOutput = &tx.vin[i].prevout;
-				if(!prevOutput)
-					continue;
-				// ensure inputs are unspent when doing consensus check to add to block
-				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-					continue;
-				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-					continue;
-				if (IsAliasOp(op))
-				{
-					prevAliasOp = op;
-					vvchPrevAliasArgs = vvch;
-					break;
-				}
-			}	
-		}
-        // Make sure message outputs are not spent by a regular transaction, or the message would be lost
-        if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
-            return true;
-        }
-        vector<vector<unsigned char> > vvchArgs;
-        int op, nOut;
-        bool good = DecodeMessageTx(tx, op, nOut, vvchArgs);
-        if (!good)
-            return error("CheckMessageInputs() : could not decode a syscoin tx");
-        // unserialize message UniValue from txn, check for valid
-        CMessage theMessage;
-        theMessage.UnserializeFromTx(tx);
-        if (theMessage.IsNull())
-            return error("CheckMessageInputs() : null message");
-        if (vvchArgs[0].size() > MAX_NAME_LENGTH)
-            return error("message tx GUID too big");
-		if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
-		{
-			return error("message public key to, invalid length");
-		}
-		if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
-		{
-			return error("message public key from, invalid length");
-		}
-		if(theMessage.vchSubject.size() > MAX_NAME_LENGTH)
-		{
-			return error("message subject too big");
-		}
-		if(theMessage.vchMessageTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-		{
-			return error("message data to too big");
-		}
-		if(theMessage.vchMessageFrom.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-		{
-			return error("message data from too big");
-		}
-		if(fJustCheck)
-		{
-			if(op == OP_MESSAGE_ACTIVATE)
+	int prevAliasOp = 0;
+	
+    vector<vector<unsigned char> > vvchPrevAliasArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
+			if (IsAliasOp(op))
 			{
-				if(!IsAliasOp(prevAliasOp))
-					return error("CheckMessageInputs(): alias not provided as input");
-				
-				vector<CAliasIndex> vtxPos;
-				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-					return error("CheckMessageInputs(): failed to read alias from alias DB");
-				if (vtxPos.size() < 1)
-					return error("CheckMessageInputs(): no alias result returned");
-				if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
-					return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
-			
+				prevAliasOp = op;
+				vvchPrevAliasArgs = vvch;
+				break;
 			}
-			else
-				return error( "CheckMessageInputs() : message transaction has unknown op");
-		}
-		// save serialized message for later use
-		CMessage serializedMessage = theMessage;
-
-		// if not an messagenew, load the message data from the DB
-		vector<CMessage> vtxPos;
-		if (pmessagedb->ExistsMessage(vvchArgs[0]) && !fJustCheck) {
-			if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-				return error(
-						"CheckMessageInputs() : failed to read from message DB");
-		}
-        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
-            
-            // set the message's txn-dependent values
-			theMessage.txHash = tx.GetHash();
-			theMessage.nHeight = nHeight;
-			PutToMessageList(vtxPos, theMessage);
-			{
-			TRY_LOCK(cs_main, cs_trymain);
-            // write message  
-            if (!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
-                return error( "CheckMessageInputs() : failed to write to message DB");
-
-          			
-            // debug
-			if(fDebug)
-				LogPrintf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
-                    messageFromOp(op).c_str(),
-                    stringFromVch(vvchArgs[0]).c_str(),
-                    tx.GetHash().ToString().c_str(),
-                    nHeight);
-			}
-        }
-        
+		}	
+	}
+    // Make sure message outputs are not spent by a regular transaction, or the message would be lost
+    if (tx.nVersion != SYSCOIN_TX_VERSION) {
+		LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
+        return true;
     }
-    
+    vector<vector<unsigned char> > vvchArgs;
+    int op, nOut;
+    bool good = DecodeMessageTx(tx, op, nOut, vvchArgs);
+    if (!good)
+        return error("CheckMessageInputs() : could not decode a syscoin tx");
+    // unserialize message UniValue from txn, check for valid
+    CMessage theMessage;
+    theMessage.UnserializeFromTx(tx);
+    if (theMessage.IsNull())
+        return error("CheckMessageInputs() : null message");
+    if (vvchArgs[0].size() > MAX_NAME_LENGTH)
+        return error("message tx GUID too big");
+	if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyTo))
+	{
+		return error("message public key to, invalid length");
+	}
+	if(!IsCompressedOrUncompressedPubKey(theMessage.vchPubKeyFrom))
+	{
+		return error("message public key from, invalid length");
+	}
+	if(theMessage.vchSubject.size() > MAX_NAME_LENGTH)
+	{
+		return error("message subject too big");
+	}
+	if(theMessage.vchMessageTo.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+	{
+		return error("message data to too big");
+	}
+	if(theMessage.vchMessageFrom.size() > MAX_ENCRYPTED_VALUE_LENGTH)
+	{
+		return error("message data from too big");
+	}
+	if(fJustCheck)
+	{
+		if(op == OP_MESSAGE_ACTIVATE)
+		{
+			if(!IsAliasOp(prevAliasOp))
+				return error("CheckMessageInputs(): alias not provided as input");
+			
+			vector<CAliasIndex> vtxPos;
+			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+				return error("CheckMessageInputs(): failed to read alias from alias DB");
+			if (vtxPos.size() < 1)
+				return error("CheckMessageInputs(): no alias result returned");
+			if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
+				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+		
+		}
+		else
+			return error( "CheckMessageInputs() : message transaction has unknown op");
+	}
+	// save serialized message for later use
+	CMessage serializedMessage = theMessage;
+
+	// if not an messagenew, load the message data from the DB
+	vector<CMessage> vtxPos;
+	if (pmessagedb->ExistsMessage(vvchArgs[0]) && !fJustCheck) {
+		if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
+			return error(
+					"CheckMessageInputs() : failed to read from message DB");
+	}
+    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+        
+        // set the message's txn-dependent values
+		theMessage.txHash = tx.GetHash();
+		theMessage.nHeight = nHeight;
+		PutToMessageList(vtxPos, theMessage);
+		{
+		TRY_LOCK(cs_main, cs_trymain);
+        // write message  
+        if (!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
+            return error( "CheckMessageInputs() : failed to write to message DB");
+
+      			
+        // debug
+		if(fDebug)
+			LogPrintf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
+                messageFromOp(op).c_str(),
+                stringFromVch(vvchArgs[0]).c_str(),
+                tx.GetHash().ToString().c_str(),
+                nHeight);
+		}
+    }
+ 
     return true;
 }
 

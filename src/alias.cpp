@@ -415,130 +415,129 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 
 bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	fRescan = fInit || fRescan;
-	if (!tx.IsCoinBase()) {
-		if (fDebug)
-			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
-				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fJustCheck ? "JUSTCHECK" : "BLOCK");
-		const COutPoint *prevOutput = NULL;
-		CCoins prevCoins;
-		int prevOp = 0;
-		vector<vector<unsigned char> > vvchPrevArgs;
-		if(fJustCheck)
-		{
-			// Strict check - bug disallowed
-			for (unsigned int i = 0; i < tx.vin.size(); i++) {
-				vector<vector<unsigned char> > vvch;
-				int op;
-				prevOutput = &tx.vin[i].prevout;
-				if(!prevOutput)
-					continue;
-				// ensure inputs are unspent when doing consensus check to add to block
-				if(!inputs.GetCoins(prevOutput->hash, prevCoins))
-					continue;
-				if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
-					continue;
+	if (tx.IsCoinBase())
+		return true;
+	if (fDebug)
+		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
+			fJustCheck ? "JUSTCHECK" : "BLOCK");
+	const COutPoint *prevOutput = NULL;
+	CCoins prevCoins;
+	int prevOp = 0;
+	vector<vector<unsigned char> > vvchPrevArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
 
-				if (IsAliasOp(op)) {
-					prevOp = op;
-					vvchPrevArgs = vvch;
-					break;
-				}
+			if (IsAliasOp(op)) {
+				prevOp = op;
+				vvchPrevArgs = vvch;
+				break;
 			}
 		}
-		// Make sure alias outputs are not spent by a regular transaction, or the alias would be lost
-		if (tx.nVersion != SYSCOIN_TX_VERSION) {
-			LogPrintf("CheckAliasInputs() : non-syscoin transaction\n");
-			return true;
-		}
-		// decode alias info from transaction
-		vector<vector<unsigned char> > vvchArgs;
-		int op, nOut;
-		if (!DecodeAliasTx(tx, op, nOut, vvchArgs))
+	}
+	// Make sure alias outputs are not spent by a regular transaction, or the alias would be lost
+	if (tx.nVersion != SYSCOIN_TX_VERSION) {
+		LogPrintf("CheckAliasInputs() : non-syscoin transaction\n");
+		return true;
+	}
+	// decode alias info from transaction
+	vector<vector<unsigned char> > vvchArgs;
+	int op, nOut;
+	if (!DecodeAliasTx(tx, op, nOut, vvchArgs))
+		return error(
+				"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
+				tx.GetHash().GetHex().c_str());
+	// unserialize alias from txn, check for valid
+	CAliasIndex theAlias(tx);
+	// we need to check for cert update specially because an alias update without data is sent along with offers linked with the alias
+	if (theAlias.IsNull() && op != OP_ALIAS_UPDATE)
+		return error("CheckAliasInputs() : null alias");
+	if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
+	{
+		return error("alias pub value too big");
+	}
+	if(theAlias.vchPrivateValue.size() > MAX_VALUE_LENGTH)
+	{
+		return error("alias priv value too big");
+	}
+	if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
+	{
+		return error("alias pub key invalid length");
+	}
+	if (vvchArgs[0].size() > MAX_NAME_LENGTH)
+		return error("alias hex guid too long");
+	if(fJustCheck)
+	{
+		switch (op) {
+			case OP_ALIAS_ACTIVATE:
+				break;
+			case OP_ALIAS_UPDATE:
+				if (!IsAliasOp(prevOp))
+					return error("aliasupdate previous tx not found");
+				// Check name
+				if (vvchPrevArgs[0] != vvchArgs[0])
+					return error("CheckAliasInputs() : aliasupdate alias mismatch");
+				break;
+		default:
 			return error(
-					"CheckAliasInputs() : could not decode syscoin alias info from tx %s",
-					tx.GetHash().GetHex().c_str());
-		// unserialize alias from txn, check for valid
-		CAliasIndex theAlias(tx);
-		// we need to check for cert update specially because an alias update without data is sent along with offers linked with the alias
-		if (theAlias.IsNull() && op != OP_ALIAS_UPDATE)
-			return error("CheckAliasInputs() : null alias");
-		if(theAlias.vchPublicValue.size() > MAX_VALUE_LENGTH)
-		{
-			return error("alias pub value too big");
+					"CheckAliasInputs() : alias transaction has unknown op");
 		}
-		if(theAlias.vchPrivateValue.size() > MAX_VALUE_LENGTH)
-		{
-			return error("alias priv value too big");
-		}
-		if(!theAlias.vchPubKey.empty() && !IsCompressedOrUncompressedPubKey(theAlias.vchPubKey))
-		{
-			return error("alias pub key invalid length");
-		}
-		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
-			return error("alias hex guid too long");
-		if(fJustCheck)
-		{
-			switch (op) {
-				case OP_ALIAS_ACTIVATE:
-					break;
-				case OP_ALIAS_UPDATE:
-					if (!IsAliasOp(prevOp))
-						return error("aliasupdate previous tx not found");
-					// Check name
-					if (vvchPrevArgs[0] != vvchArgs[0])
-						return error("CheckAliasInputs() : aliasupdate alias mismatch");
-					break;
-			default:
-				return error(
-						"CheckAliasInputs() : alias transaction has unknown op");
-			}
-		}
-		
-		// get the alias from the DB
-		vector<CAliasIndex> vtxPos;
-		if (paliasdb->ExistsAlias(vvchArgs[0]) && !fJustCheck) {
-			if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-				return error(
-						"CheckAliasInputs() : failed to read from alias DB");
-		}
-		if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
-			if(!vtxPos.empty())
-			{
-				if(theAlias.IsNull())
-					theAlias = vtxPos.back();
-				else
-				{
-					const CAliasIndex& dbAlias = vtxPos.back();
-					if(theAlias.vchPublicValue.empty())
-						theAlias.vchPublicValue = dbAlias.vchPublicValue;	
-					if(theAlias.vchPrivateValue.empty())
-						theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
-				}
-			}
-		
-
-			theAlias.nHeight = nHeight;
-			theAlias.txHash = tx.GetHash();
-
-			PutToAliasList(vtxPos, theAlias);
-			{
-			TRY_LOCK(cs_main, cs_trymain);
-			CPubKey PubKey(theAlias.vchPubKey);
-			CSyscoinAddress address(PubKey.GetID());
-			if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
-				return error( "CheckAliasInputs() :  failed to write to alias DB");
-			if(fDebug)
-				LogPrintf(
-					"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
-					stringFromVch(vvchArgs[0]).c_str(),
-					aliasFromOp(op).c_str(),
-					tx.GetHash().ToString().c_str(), nHeight);
-			}
-		}
-		
 	}
 	
+	// get the alias from the DB
+	vector<CAliasIndex> vtxPos;
+	if (paliasdb->ExistsAlias(vvchArgs[0]) && !fJustCheck) {
+		if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
+			return error(
+					"CheckAliasInputs() : failed to read from alias DB");
+	}
+	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+		if(!vtxPos.empty())
+		{
+			if(theAlias.IsNull())
+				theAlias = vtxPos.back();
+			else
+			{
+				const CAliasIndex& dbAlias = vtxPos.back();
+				if(theAlias.vchPublicValue.empty())
+					theAlias.vchPublicValue = dbAlias.vchPublicValue;	
+				if(theAlias.vchPrivateValue.empty())
+					theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
+			}
+		}
+	
+
+		theAlias.nHeight = nHeight;
+		theAlias.txHash = tx.GetHash();
+
+		PutToAliasList(vtxPos, theAlias);
+		{
+		TRY_LOCK(cs_main, cs_trymain);
+		CPubKey PubKey(theAlias.vchPubKey);
+		CSyscoinAddress address(PubKey.GetID());
+		if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
+			return error( "CheckAliasInputs() :  failed to write to alias DB");
+		if(fDebug)
+			LogPrintf(
+				"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
+				stringFromVch(vvchArgs[0]).c_str(),
+				aliasFromOp(op).c_str(),
+				tx.GetHash().ToString().c_str(), nHeight);
+		}
+	}
+
 	return true;
 }
 
