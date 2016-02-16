@@ -413,7 +413,7 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 	return IsMine(*pwalletMain, address.Get());
 }
 
-bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, bool fRescan) {
+bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	fRescan = fInit || fRescan;
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
