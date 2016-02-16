@@ -629,7 +629,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	string strAddress = params[1].get_str();
 	bool manualCheck = true;
 	if(params.size() >= 3)
-		manualCheck = params[2].get_bool();
+		manualCheck = params[2].get_str() == "false"? false: true;
 	CPubKey xferKey;
 	std::vector<unsigned char> vchPubKey;
 	std::vector<unsigned char> vchPubKeyByte;
