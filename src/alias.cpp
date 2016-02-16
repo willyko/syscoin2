@@ -413,22 +413,19 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 	return IsMine(*pwalletMain, address.Get());
 }
 
-bool CheckAliasInputs(const CTransaction &tx,
-		const CCoinsViewCache &inputs, bool fBlock,
-		bool fMiner, bool fJustCheck, int nHeight, bool fRescan) {
-
+bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, bool fRescan) {
+	fRescan = fInit || fRescan;
 	if (!tx.IsCoinBase()) {
 		if (fDebug)
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-		bool fExternal = fInit || fRescan;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -481,7 +478,7 @@ bool CheckAliasInputs(const CTransaction &tx,
 		}
 		if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 			return error("alias hex guid too long");
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			switch (op) {
 				case OP_ALIAS_ACTIVATE:
@@ -499,53 +496,50 @@ bool CheckAliasInputs(const CTransaction &tx,
 			}
 		}
 		
-
-		if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
-
-			// get the alias from the DB
-			vector<CAliasIndex> vtxPos;
-			if (paliasdb->ExistsAlias(vvchArgs[0]) && !fJustCheck) {
-				if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-					return error(
-							"CheckAliasInputs() : failed to read from alias DB");
-			}
-			if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
-				if(!vtxPos.empty())
-				{
-					if(theAlias.IsNull())
-						theAlias = vtxPos.back();
-					else
-					{
-						const CAliasIndex& dbAlias = vtxPos.back();
-						if(theAlias.vchPublicValue.empty())
-							theAlias.vchPublicValue = dbAlias.vchPublicValue;	
-						if(theAlias.vchPrivateValue.empty())
-							theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
-					}
-				}
-			
-	
-				theAlias.nHeight = nHeight;
-				theAlias.txHash = tx.GetHash();
-
-				PutToAliasList(vtxPos, theAlias);
-				{
-				TRY_LOCK(cs_main, cs_trymain);
-				CPubKey PubKey(theAlias.vchPubKey);
-				CSyscoinAddress address(PubKey.GetID());
-				if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
-					return error( "CheckAliasInputs() :  failed to write to alias DB");
-				if(fDebug)
-					LogPrintf(
-						"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
-						stringFromVch(vvchArgs[0]).c_str(),
-						aliasFromOp(op).c_str(),
-						tx.GetHash().ToString().c_str(), nHeight);
-				}
-			}
-			
+		// get the alias from the DB
+		vector<CAliasIndex> vtxPos;
+		if (paliasdb->ExistsAlias(vvchArgs[0]) && !fJustCheck) {
+			if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
+				return error(
+						"CheckAliasInputs() : failed to read from alias DB");
 		}
+		if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+			if(!vtxPos.empty())
+			{
+				if(theAlias.IsNull())
+					theAlias = vtxPos.back();
+				else
+				{
+					const CAliasIndex& dbAlias = vtxPos.back();
+					if(theAlias.vchPublicValue.empty())
+						theAlias.vchPublicValue = dbAlias.vchPublicValue;	
+					if(theAlias.vchPrivateValue.empty())
+						theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
+				}
+			}
+		
+
+			theAlias.nHeight = nHeight;
+			theAlias.txHash = tx.GetHash();
+
+			PutToAliasList(vtxPos, theAlias);
+			{
+			TRY_LOCK(cs_main, cs_trymain);
+			CPubKey PubKey(theAlias.vchPubKey);
+			CSyscoinAddress address(PubKey.GetID());
+			if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
+				return error( "CheckAliasInputs() :  failed to write to alias DB");
+			if(fDebug)
+				LogPrintf(
+					"CONNECTED ALIAS: name=%s  op=%s  hash=%s  height=%d\n",
+					stringFromVch(vvchArgs[0]).c_str(),
+					aliasFromOp(op).c_str(),
+					tx.GetHash().ToString().c_str(), nHeight);
+			}
+		}
+		
 	}
+	
 	return true;
 }
 

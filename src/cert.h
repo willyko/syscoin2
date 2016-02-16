@@ -10,7 +10,7 @@ class CTransaction;
 class CReserveKey;
 class CCoinsViewCache;
 class CCoins;
-bool CheckCertInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
+bool CheckCertInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan = false);
 bool DecodeCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeCertScript(const CScript& script, int& op, std::vector<std::vector<unsigned char> > &vvch);

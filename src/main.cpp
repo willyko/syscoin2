@@ -1236,7 +1236,11 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
             return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
         }
-
+        if (!CheckSyscoinInputs(tx, view))
+        {
+            return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
+                __func__, hash.ToString(), FormatStateMessage(state));
+        }
         // Remove conflicting transactions from the mempool
         BOOST_FOREACH(const CTxMemPool::txiter it, allConflicting)
         {
@@ -1690,8 +1694,117 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
 }
 
 namespace Consensus {
-// SYSCOIN 3 params added for syscoin check inputs
-bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, bool bCheckInputs, bool fBlock, bool fMiner, int nHeight)
+// SYSCOIN
+bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
+{
+	vector<vector<unsigned char> > vvchArgs;
+	int op;
+	int nOut;	
+	bool fJustCheck = true;
+	int nHeight = 0;
+	if(tx.nVersion == GetSyscoinTxVersion())
+	{
+		if(tx.nVersion == SYSCOIN_TX_VERSION)
+		{
+			bool good = true;
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
+			}
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
+			}
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}
+		}
+	}
+		
+	
+}
+bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, int nHeight)
+{
+	vector<vector<unsigned char> > vvchArgs;
+	int op;
+	int nOut;	
+	bool fJustCheck = false;
+	// first pass check cert/escrow inputs which are dependent to other services, second pass do the rest
+	for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const CTransaction &tx = block.vtx[i];
+		if(tx.nVersion == GetSyscoinTxVersion())
+		{	
+			bool good = true;
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
+			}
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}	
+		}
+	}
+	for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const CTransaction &tx = block.vtx[i];
+		if(tx.nVersion == GetSyscoinTxVersion())
+		{
+			
+			bool good = true;
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
+			}
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}
+		}
+	}
+}
+bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight)
 {
         // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
         // for an attacker to attempt to split the network.
@@ -1720,43 +1833,6 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         }
-		// SYSCOIN check inputs
-		vector<vector<unsigned char> > vvchArgs;
-		int op;
-		int nOut;	
-		if(tx.nVersion == SYSCOIN_TX_VERSION)
-		{
-			bool good = true;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckAliasInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);
-			}
-			if(DecodeCertTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckCertInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);			
-			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckEscrowInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
-			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{	
-				good = CheckOfferInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);	 
-			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckMessageInputs(tx, inputs, fBlock, fMiner, bCheckInputs, nHeight);		
-			}
-			// remove tx's that don't pass our check
-			if(!good)
-			{
-				std::list<CTransaction> dummy;
-				mempool.remove(tx, dummy, false);
-				mempool.removeConflicts(tx, dummy);
-				mempool.ClearPrioritisation(tx.GetHash());
-				return false;
-			}
-		}
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
                 strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
@@ -1771,13 +1847,11 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
     return true;
 }
 }// namespace Consensus
-// SYSCOIN checkinputs add's 3 bools for syscoin check input functions
-bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, std::vector<CScriptCheck> *pvChecks, bool bCheckInputs, bool fBlock, bool fMiner, int nHeight)
+bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks, unsigned int flags, bool cacheStore, std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
-		// SYSCOIN pass in 3 params to CheckTxInputs
-        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), bCheckInputs, fBlock, fMiner, nHeight))
+        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
             return false;
 
         if (pvChecks)
@@ -2525,8 +2599,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-			// SYSCOIN pass in 3 params for syscoin check inputs
-            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, nScriptCheckThreads ? &vChecks : NULL, fJustCheck, true, false, pindex->nHeight))
+            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -2537,7 +2610,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             blockundo.vtxundo.push_back(CTxUndo());
         }
         UpdateCoins(tx, state, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
-
+		// SYSCOIN update syscoin db
+        if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
+             return error("ConnectBlock(): AddSyscoinServicesToDB on %s failed", tx.GetHash().ToString());
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }

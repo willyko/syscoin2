@@ -12,7 +12,7 @@ class CCoinsViewCache;
 class CCoins;
 class CBlockIndex;
 
-bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
+bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan = false);
 
 
 bool DecodeOfferTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);

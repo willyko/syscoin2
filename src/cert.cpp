@@ -248,15 +248,12 @@ CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
 }
 
 bool CheckCertInputs(const CTransaction &tx,
-        const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight, bool fRescan) {
-
+        const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
+	fRescan = fInit || fRescan;
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
-				fJustCheck ? "JUSTCHECK" : "");
-		bool fExternal = fInit || fRescan;
+				fJustCheck ? "JUSTCHECK" : "BLOCK");
         bool foundCert = false;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
@@ -265,7 +262,7 @@ bool CheckCertInputs(const CTransaction &tx,
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -320,7 +317,7 @@ bool CheckCertInputs(const CTransaction &tx,
         if (vvchArgs[0].size() > MAX_NAME_LENGTH)
             return error("cert hex guid too long");
 		vector<CAliasIndex> vtxAliasPos;
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			switch (op) {
 			case OP_CERT_ACTIVATE:
@@ -350,56 +347,52 @@ bool CheckCertInputs(const CTransaction &tx,
 			}
 		}
 
-
-
-        // these ifs are problably total bullshit except for the certnew
-        if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
-			// if not an certnew, load the cert data from the DB
-			vector<CCert> vtxPos;
-			if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
-				if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-					return error(
-							"CheckCertInputs() : failed to read from cert DB");
+		// if not an certnew, load the cert data from the DB
+		vector<CCert> vtxPos;
+		if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
+			if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
+				return error(
+						"CheckCertInputs() : failed to read from cert DB");
+		}
+        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+			if(!vtxPos.empty())
+			{
+				if(theCert.IsNull())
+					theCert = vtxPos.back();
+				else
+				{
+					const CCert& dbCert = vtxPos.back();
+					if(theCert.vchData.empty())
+						theCert.vchData = dbCert.vchData;
+					if(theCert.vchTitle.empty())
+						theCert.vchTitle = dbCert.vchTitle;
+				}
 			}
-            if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
-				if(!vtxPos.empty())
-				{
-					if(theCert.IsNull())
-						theCert = vtxPos.back();
-					else
-					{
-						const CCert& dbCert = vtxPos.back();
-						if(theCert.vchData.empty())
-							theCert.vchData = dbCert.vchData;
-						if(theCert.vchTitle.empty())
-							theCert.vchTitle = dbCert.vchTitle;
-					}
-				}
-        
-                // set the cert's txn-dependent values
-				theCert.nHeight = nHeight;
-				theCert.txHash = tx.GetHash();
-				PutToCertList(vtxPos, theCert);
-				{
-				TRY_LOCK(cs_main, cs_trymain);
-                // write cert  
-                if (!pcertdb->WriteCert(vvchArgs[0], vtxPos))
-                    return error( "CheckCertInputs() : failed to write to cert DB");
+    
+            // set the cert's txn-dependent values
+			theCert.nHeight = nHeight;
+			theCert.txHash = tx.GetHash();
+			PutToCertList(vtxPos, theCert);
+			{
+			TRY_LOCK(cs_main, cs_trymain);
+            // write cert  
+            if (!pcertdb->WriteCert(vvchArgs[0], vtxPos))
+                return error( "CheckCertInputs() : failed to write to cert DB");
 
-              			
-                // debug
-				if(fDebug)
-					LogPrintf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
-                        certFromOp(op).c_str(),
-                        stringFromVch(vvchArgs[0]).c_str(),
-                        stringFromVch(theCert.vchTitle).c_str(),
-                        tx.GetHash().ToString().c_str(),
-                        nHeight);
-				}
-            }
-            
+          			
+            // debug
+			if(fDebug)
+				LogPrintf( "CONNECTED CERT: op=%s cert=%s title=%s hash=%s height=%d\n",
+                    certFromOp(op).c_str(),
+                    stringFromVch(vvchArgs[0]).c_str(),
+                    stringFromVch(theCert.vchTitle).c_str(),
+                    tx.GetHash().ToString().c_str(),
+                    nHeight);
+			}
         }
+        
     }
+    
     return true;
 }
 

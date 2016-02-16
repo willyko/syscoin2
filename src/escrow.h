@@ -12,7 +12,7 @@ class CCoinsViewCache;
 class CCoins;
 
 
-bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fBlock, bool fMiner, bool fJustCheck, int nHeight, bool fRescan = false);
+bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan = false);
 bool DecodeEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeMyEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);
 bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut, std::vector<std::vector<unsigned char> >& vvch);

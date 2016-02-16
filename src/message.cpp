@@ -219,23 +219,20 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
     return CScript(pc, scriptIn.end());
 }
 
-bool CheckMessageInputs(const CTransaction &tx,
-        const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight, bool fRescan) {
-
+bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, bool fRescan) {
+	fRescan = fInit || fRescan;
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
 				fJustCheck ? "JUSTCHECK" : "");
-		bool fExternal = fInit || fRescan;
         const COutPoint *prevOutput = NULL;
         CCoins prevCoins;
 
 		int prevAliasOp = 0;
 		
         vector<vector<unsigned char> > vvchPrevAliasArgs;
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -294,63 +291,60 @@ bool CheckMessageInputs(const CTransaction &tx,
 		{
 			return error("message data from too big");
 		}
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			if(op == OP_MESSAGE_ACTIVATE)
 			{
 				if(!IsAliasOp(prevAliasOp))
 					return error("CheckMessageInputs(): alias not provided as input");
-				if(fJustCheck)
-				{
-					vector<CAliasIndex> vtxPos;
-					if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
-						return error("CheckMessageInputs(): failed to read alias from alias DB");
-					if (vtxPos.size() < 1)
-						return error("CheckMessageInputs(): no alias result returned");
-					if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
-						return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
-				}
+				
+				vector<CAliasIndex> vtxPos;
+				if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+					return error("CheckMessageInputs(): failed to read alias from alias DB");
+				if (vtxPos.size() < 1)
+					return error("CheckMessageInputs(): no alias result returned");
+				if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
+					return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+			
 			}
 			else
 				return error( "CheckMessageInputs() : message transaction has unknown op");
 		}
-        // these ifs are problably total bullshit except for the messagenew
-        if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
-			// save serialized message for later use
-			CMessage serializedMessage = theMessage;
+		// save serialized message for later use
+		CMessage serializedMessage = theMessage;
 
-			// if not an messagenew, load the message data from the DB
-			vector<CMessage> vtxPos;
-			if (pmessagedb->ExistsMessage(vvchArgs[0]) && !fJustCheck) {
-				if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-					return error(
-							"CheckMessageInputs() : failed to read from message DB");
-			}
-            if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
-                
-                // set the message's txn-dependent values
-				theMessage.txHash = tx.GetHash();
-				theMessage.nHeight = nHeight;
-				PutToMessageList(vtxPos, theMessage);
-				{
-				TRY_LOCK(cs_main, cs_trymain);
-                // write message  
-                if (!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
-                    return error( "CheckMessageInputs() : failed to write to message DB");
-
-              			
-                // debug
-				if(fDebug)
-					LogPrintf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
-                        messageFromOp(op).c_str(),
-                        stringFromVch(vvchArgs[0]).c_str(),
-                        tx.GetHash().ToString().c_str(),
-                        nHeight);
-				}
-            }
+		// if not an messagenew, load the message data from the DB
+		vector<CMessage> vtxPos;
+		if (pmessagedb->ExistsMessage(vvchArgs[0]) && !fJustCheck) {
+			if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
+				return error(
+						"CheckMessageInputs() : failed to read from message DB");
+		}
+        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
             
+            // set the message's txn-dependent values
+			theMessage.txHash = tx.GetHash();
+			theMessage.nHeight = nHeight;
+			PutToMessageList(vtxPos, theMessage);
+			{
+			TRY_LOCK(cs_main, cs_trymain);
+            // write message  
+            if (!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
+                return error( "CheckMessageInputs() : failed to write to message DB");
+
+          			
+            // debug
+			if(fDebug)
+				LogPrintf( "CONNECTED MESSAGE: op=%s message=%s hash=%s height=%d\n",
+                    messageFromOp(op).c_str(),
+                    stringFromVch(vvchArgs[0]).c_str(),
+                    tx.GetHash().ToString().c_str(),
+                    nHeight);
+			}
         }
+        
     }
+    
     return true;
 }
 

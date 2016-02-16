@@ -265,15 +265,13 @@ CScript RemoveEscrowScriptPrefix(const CScript& scriptIn) {
     return CScript(pc, scriptIn.end());
 }
 
-bool CheckEscrowInputs(const CTransaction &tx,
-        const CCoinsViewCache &inputs, bool fBlock, bool fMiner,
-        bool fJustCheck, int nHeight, bool fRescan) {
-		bool fExternal = fInit || fRescan;
+bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, bool fRescan) {
+		fRescan = fInit || fRescan;
 		const COutPoint *prevOutput = NULL;
 		CCoins prevCoins;
 		int prevOp = 0;
 		vector<vector<unsigned char> > vvchPrevArgs;
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			// Strict check - bug disallowed
 			for (unsigned int i = 0; i < tx.vin.size(); i++) {
@@ -347,7 +345,7 @@ bool CheckEscrowInputs(const CTransaction &tx,
 		{
 			return error("escrow offeraccept guid too long");
 		}		
-		if(!fExternal && !fBlock)
+		if(fJustCheck)
 		{
 			switch (op) {
 				case OP_ESCROW_ACTIVATE:
@@ -378,55 +376,52 @@ bool CheckEscrowInputs(const CTransaction &tx,
 			}
 		}
 	
-        // these ifs are problably total bullshit except for the escrownew
-        if (fBlock || (!fBlock && !fMiner && !fJustCheck)) {
-			// save serialized escrow for later use
-			CEscrow serializedEscrow = theEscrow;
+		// save serialized escrow for later use
+		CEscrow serializedEscrow = theEscrow;
 
-			// if not an escrownew, load the escrow data from the DB
-			vector<CEscrow> vtxPos;
-			if (pescrowdb->ExistsEscrow(vvchArgs[0]) && !fJustCheck) {
-				if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-					return error(
-							"CheckEscrowInputs() : failed to read from escrow DB");
-			}
-            if (!fMiner && !fJustCheck && (chainActive.Tip()->nHeight != nHeight || fExternal)) {
- 
-				// make sure escrow settings don't change (besides rawTx) outside of activation
-				if(op != OP_ESCROW_ACTIVATE) 
-				{
-					// make sure we have found this escrow in db
-					if(!vtxPos.empty())
-					{
-						theEscrow = vtxPos.back();					
-						// these are the only settings allowed to change outside of activate
-						if(!serializedEscrow.rawTx.empty())
-							theEscrow.rawTx = serializedEscrow.rawTx;
-						if(!serializedEscrow.vchOfferAcceptLink.empty())
-							theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;						
-					}
-				}
-                // set the escrow's txn-dependent values
-				theEscrow.txHash = tx.GetHash();
-				theEscrow.nHeight = nHeight;
-				PutToEscrowList(vtxPos, theEscrow);
-				{
-				TRY_LOCK(cs_main, cs_trymain);
-                // write escrow  
-                if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
-                    return error( "CheckEscrowInputs() : failed to write to escrow DB");
+		// if not an escrownew, load the escrow data from the DB
+		vector<CEscrow> vtxPos;
+		if (pescrowdb->ExistsEscrow(vvchArgs[0]) && !fJustCheck) {
+			if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
+				return error(
+						"CheckEscrowInputs() : failed to read from escrow DB");
+		}
+        if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
 
-              			
-                // debug
-				if(fDebug)
-					LogPrintf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
-                        escrowFromOp(op).c_str(),
-                        stringFromVch(vvchArgs[0]).c_str(),
-                        tx.GetHash().ToString().c_str(),
-                        nHeight);
+			// make sure escrow settings don't change (besides rawTx) outside of activation
+			if(op != OP_ESCROW_ACTIVATE) 
+			{
+				// make sure we have found this escrow in db
+				if(!vtxPos.empty())
+				{
+					theEscrow = vtxPos.back();					
+					// these are the only settings allowed to change outside of activate
+					if(!serializedEscrow.rawTx.empty())
+						theEscrow.rawTx = serializedEscrow.rawTx;
+					if(!serializedEscrow.vchOfferAcceptLink.empty())
+						theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;						
 				}
 			}
-        }
+            // set the escrow's txn-dependent values
+			theEscrow.txHash = tx.GetHash();
+			theEscrow.nHeight = nHeight;
+			PutToEscrowList(vtxPos, theEscrow);
+			{
+			TRY_LOCK(cs_main, cs_trymain);
+            // write escrow  
+            if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
+                return error( "CheckEscrowInputs() : failed to write to escrow DB");
+
+          			
+            // debug
+			if(fDebug)
+				LogPrintf( "CONNECTED ESCROW: op=%s escrow=%s hash=%s height=%d\n",
+                    escrowFromOp(op).c_str(),
+                    stringFromVch(vvchArgs[0]).c_str(),
+                    tx.GetHash().ToString().c_str(),
+                    nHeight);
+			}
+		}
     }
     return true;
 }
