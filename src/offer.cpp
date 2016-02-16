@@ -412,8 +412,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		if (fDebug)
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
-				fJustCheck ? "JUSTCHECK" : "");
+				fJustCheck ? "JUSTCHECK" : "BLOCK");
 		bool foundOffer = false;
 		bool foundCert = false;
 		bool foundEscrow = false;

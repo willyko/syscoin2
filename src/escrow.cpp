@@ -296,8 +296,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
     if (!tx.IsCoinBase()) {
 			LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
 				chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
-				fBlock ? "BLOCK" : "", fMiner ? "MINER" : "",
-				fJustCheck ? "JUSTCHECK" : "");
+				fJustCheck ? "JUSTCHECK" : "BLOCK");
         // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
         if (tx.nVersion != SYSCOIN_TX_VERSION) {
 			LogPrintf("CheckEscrowInputs() : non-syscoin transaction\n");
