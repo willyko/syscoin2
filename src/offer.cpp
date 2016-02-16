@@ -67,8 +67,6 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 	UniValue params(UniValue::VARR);
 	params.push_back(stringFromVch(theOffer.vchCert));
 	params.push_back(strPubKey);
-	// so input checks aren't done in sendmoneysyscoin
-	params.push_back("false");
     try {
         tableRPC.execute(strMethod, params);
 	}
