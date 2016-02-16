@@ -831,7 +831,12 @@ bool CheckOfferInputs(const CTransaction &tx,
 					}
 					if(theOfferAccept.nQty <= 0)
 						theOfferAccept.nQty = 1;
-
+					
+					if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (linkOffer.nQty != -1 && !linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+						return true;
+					}
 					// only if we are the root offer owner do we even consider xfering a cert					
 					// purchased a cert so xfer it
 					if(!fExternal && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
