@@ -328,9 +328,6 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& ma
  * This does not modify the UTXO set. If pvChecks is not NULL, script checks are pushed onto it
  * instead of being performed inline.
  */
-// SYSCOIN
-bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache &view, int nHeight);
-bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache &view);
 bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &view, bool fScriptChecks,
                  unsigned int flags, bool cacheStore, std::vector<CScriptCheck> *pvChecks = NULL);
 

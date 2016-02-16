@@ -855,7 +855,116 @@ std::string FormatStateMessage(const CValidationState &state)
         state.GetDebugMessage().empty() ? "" : ", "+state.GetDebugMessage(),
         state.GetRejectCode());
 }
-
+// SYSCOIN
+bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
+{
+	vector<vector<unsigned char> > vvchArgs;
+	int op;
+	int nOut;	
+	bool fJustCheck = true;
+	int nHeight = 0;
+	if(tx.nVersion == GetSyscoinTxVersion())
+	{
+		if(tx.nVersion == SYSCOIN_TX_VERSION)
+		{
+			bool good = true;
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
+			}
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
+			}
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}
+		}
+	}
+		
+	
+}
+bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, int nHeight)
+{
+	vector<vector<unsigned char> > vvchArgs;
+	int op;
+	int nOut;	
+	bool fJustCheck = false;
+	// first pass check cert/escrow inputs which are dependent to other services, second pass do the rest
+	for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const CTransaction &tx = block.vtx[i];
+		if(tx.nVersion == GetSyscoinTxVersion())
+		{	
+			bool good = true;
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
+			}
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}	
+		}
+	}
+	for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const CTransaction &tx = block.vtx[i];
+		if(tx.nVersion == GetSyscoinTxVersion())
+		{
+			
+			bool good = true;
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{	
+				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
+			}
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
+			}
+			// remove tx's that don't pass our check
+			if(!good)
+			{
+				std::list<CTransaction> dummy;
+				mempool.remove(tx, dummy, false);
+				mempool.removeConflicts(tx, dummy);
+				mempool.ClearPrioritisation(tx.GetHash());
+				return false;
+			}
+		}
+	}
+}
 bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                               bool* pfMissingInputs, bool fOverrideMempoolLimit, bool fRejectAbsurdFee,
                               std::vector<uint256>& vHashTxnToUncache)
@@ -1694,116 +1803,6 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
 }
 
 namespace Consensus {
-// SYSCOIN
-bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
-{
-	vector<vector<unsigned char> > vvchArgs;
-	int op;
-	int nOut;	
-	bool fJustCheck = true;
-	int nHeight = 0;
-	if(tx.nVersion == GetSyscoinTxVersion())
-	{
-		if(tx.nVersion == SYSCOIN_TX_VERSION)
-		{
-			bool good = true;
-			if(DecodeCertTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
-			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
-			}
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
-			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{	
-				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
-			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
-			}
-			// remove tx's that don't pass our check
-			if(!good)
-			{
-				std::list<CTransaction> dummy;
-				mempool.remove(tx, dummy, false);
-				mempool.removeConflicts(tx, dummy);
-				mempool.ClearPrioritisation(tx.GetHash());
-				return false;
-			}
-		}
-	}
-		
-	
-}
-bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, int nHeight)
-{
-	vector<vector<unsigned char> > vvchArgs;
-	int op;
-	int nOut;	
-	bool fJustCheck = false;
-	// first pass check cert/escrow inputs which are dependent to other services, second pass do the rest
-	for (unsigned int i = 0; i < block.vtx.size(); i++)
-    {
-        const CTransaction &tx = block.vtx[i];
-		if(tx.nVersion == GetSyscoinTxVersion())
-		{	
-			bool good = true;
-			if(DecodeCertTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
-			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckEscrowInputs(tx, inputs, fJustCheck, nHeight);		
-			}
-			// remove tx's that don't pass our check
-			if(!good)
-			{
-				std::list<CTransaction> dummy;
-				mempool.remove(tx, dummy, false);
-				mempool.removeConflicts(tx, dummy);
-				mempool.ClearPrioritisation(tx.GetHash());
-				return false;
-			}	
-		}
-	}
-	for (unsigned int i = 0; i < block.vtx.size(); i++)
-    {
-        const CTransaction &tx = block.vtx[i];
-		if(tx.nVersion == GetSyscoinTxVersion())
-		{
-			
-			bool good = true;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
-			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{	
-				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 
-			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckMessageInputs(tx, inputs, fJustCheck, nHeight);		
-			}
-			// remove tx's that don't pass our check
-			if(!good)
-			{
-				std::list<CTransaction> dummy;
-				mempool.remove(tx, dummy, false);
-				mempool.removeConflicts(tx, dummy);
-				mempool.ClearPrioritisation(tx.GetHash());
-				return false;
-			}
-		}
-	}
-}
 bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight)
 {
         // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
