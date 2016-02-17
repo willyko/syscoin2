@@ -2635,7 +2635,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return true;
 
 	// SYSCOIN update syscoin db
-	CCoinsViewCache view(pcoinsTip);
     if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
 		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
 
