@@ -2011,6 +2011,7 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	string opName = aliasFromOp(op);
 	vector<CAliasIndex> vtxPos;
 	paliasdb->ReadAlias(vvchArgs[0], vtxPos);
+	CAliasIndex foundAlias = vtxPos.back();
 	while (vtxPos.back().txHash == tx.GetHash())	
 		vtxPos.pop_back();
 	
