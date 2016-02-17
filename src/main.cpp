@@ -2634,6 +2634,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (fJustCheck)
         return true;
 
+	// SYSCOIN update syscoin db
+	CCoinsViewCache view(pcoinsTip);
+    if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
+		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
+
+
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
     {
@@ -2944,11 +2950,6 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
         SyncWithWallets(tx, pblock);
     }
-	// SYSCOIN update syscoin db
-	CCoinsViewCache view(pcoinsTip);
-    if (!AddSyscoinServicesToDB(*pblock, view, pindexNew->nHeight))
-		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindexNew->GetBlockHash().ToString());
-
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
