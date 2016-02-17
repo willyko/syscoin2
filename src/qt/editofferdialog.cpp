@@ -94,9 +94,13 @@ void EditOfferDialog::certChanged(int index)
 	{
 		ui->qtyEdit->setText("1");
 		ui->qtyEdit->setEnabled(false);
+		ui->aliasEdit->setEnabled(false);
+		ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
 	}
 	else if(index == 0)
 	{
+		ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this offer</font>"));
+		ui->aliasEdit->setEnabled(true);
 		ui->qtyEdit->setEnabled(true);
 	}
 }
@@ -165,6 +169,8 @@ void EditOfferDialog::loadCerts()
 						if ( index != -1 ) 
 						{
 						    ui->aliasEdit->setCurrentIndex(index);
+							ui->aliasEdit->setEnabled(false);
+							ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
 						}
 					}
 				}
