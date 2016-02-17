@@ -552,7 +552,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
 		throw runtime_error("this cert is not in your wallet");
       	// check for existing cert 's
-	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
+	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that cert");
 	}
 
@@ -673,9 +673,6 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn))
 		throw runtime_error("this certificate is not in your wallet");
 
-	if (ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		throw runtime_error("there is are pending operations on that cert ");
-	}
 	// if cert is private, decrypt the data
 	vector<unsigned char> vchData = theCert.vchData;
 	if(theCert.bPrivate)

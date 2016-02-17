@@ -384,10 +384,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchFromString(strFromAddress), aliastx))
 		throw runtime_error("could not find an alias with this name");
-	// check for existing pending alias updates
-	if (ExistsInMempool(vchFromString(strFromAddress), OP_ALIAS_UPDATE)) {
-		throw runtime_error("there are pending operations on that alias");
-	}
+
     if(!IsSyscoinTxMine(aliastx)) {
 		throw runtime_error("This alias is not yours.");
     }

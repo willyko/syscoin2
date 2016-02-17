@@ -1006,10 +1006,6 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		{
-      		// check for existing cert 's
-			if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-				throw runtime_error("there are pending operations on that cert");
-			}
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -1206,10 +1202,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 			// make sure this cert is still valid
 			if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 			{
-      			// check for existing cert 's
-				if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
-					throw runtime_error("there are pending operations on that cert");
-				}
 				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 				// make sure its in your wallet (you control this cert)		
 				if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -1327,10 +1319,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxCertIn = NULL;
 	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		throw runtime_error("could not find a certificate with this key");
-    // check for existing cert 's
-	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		throw runtime_error("there are pending operations on that cert");
-	}
 	// this is a syscoin txn
 	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
 	// create OFFERUPDATE/CERTUPDATE txn keys
@@ -1361,7 +1349,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer from txn
@@ -1432,10 +1420,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxCertIn = NULL;
 	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 		throw runtime_error("could not find a certificate with this key");
-    // check for existing cert 's
-	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		throw runtime_error("there are pending operations on that cert");
-	}
 	// this is a syscoin txn
 	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
 	// create OFFERUPDATE/CERTUPDATE txn keys
@@ -1467,7 +1451,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer from txn
@@ -1541,7 +1525,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer UniValue from txn
@@ -1730,7 +1714,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this offer is not in your wallet");
 	// check for existing pending offers
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// unserialize offer UniValue from txn
@@ -1747,10 +1731,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	// make sure this cert is still valid
 	if (GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
 	{
-		// check for existing cert updates
-		if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-			throw runtime_error("there are pending operations on that cert");
-		}
 		vector<vector<unsigned char> > vvch;
 		wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 		// make sure its in your wallet (you control this cert)		
@@ -2016,10 +1996,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
 		{
-			// check for existing cert updates/transfers
-			if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
-				throw runtime_error("there is are pending operations on that cert");
-			}
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
@@ -2067,10 +2043,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if(!theOffer.vchCert.empty())
 	{
-		// check for existing cert transfer
-		if (ExistsInMempool(theOffer.vchCert, OP_CERT_TRANSFER)) {
-			throw runtime_error("there is a pending transfer operation on that cert");
-		}
 		if(!vchBTCTxId.empty())
 			throw runtime_error("Cannot purchase certificates with Bitcoins!");
 		CTransaction txCert;

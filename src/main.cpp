@@ -903,13 +903,17 @@ bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, 
 	int op;
 	int nOut;	
 	bool fJustCheck = false;
-	// first pass check cert/escrow inputs which are dependent to other services, second pass do the rest
+	// first pass check cert/escrow/alias inputs which are dependent to other services, second pass do the rest
 	for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
 		if(tx.nVersion == GetSyscoinTxVersion())
 		{	
 			bool good = true;
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
+			}
 			if(DecodeCertTx(tx, op, nOut, vvchArgs))
 			{
 				good = CheckCertInputs(tx, inputs, fJustCheck, nHeight);			
@@ -936,10 +940,6 @@ bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, 
 		{
 			
 			bool good = true;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
-			{
-				good = CheckAliasInputs(tx, inputs, fJustCheck, nHeight);
-			}
 			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
 			{	
 				good = CheckOfferInputs(tx, inputs, fJustCheck, nHeight);	 

@@ -1009,7 +1009,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if (wtxIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
 	// check for existing pending aliases
-	if (ExistsInMempool(vchName, OP_ALIAS_ACTIVATE) || ExistsInMempool(vchName, OP_ALIAS_UPDATE)) {
+	if (ExistsInMempool(vchName, OP_ALIAS_ACTIVATE)) {
 		throw runtime_error("there are pending operations on that alias");
 	}
    // get the alias from DB
