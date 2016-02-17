@@ -70,7 +70,6 @@ int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
-bool fInit = false;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
@@ -2012,32 +2011,9 @@ bool DisconnectAlias(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	string opName = aliasFromOp(op);
 	vector<CAliasIndex> vtxPos;
 	paliasdb->ReadAlias(vvchArgs[0], vtxPos);
-	// erase from back to front up to the reorg affected service tx position
-	CAliasIndex foundAlias;
-	for(unsigned int i=0;i<vtxPos.size();i++)
-	{
-		if (vtxPos[i].txHash == tx.GetHash())
-		{
-			foundAlias = vtxPos[i];
-			break;
-		}
-
-	}
-	if(!foundAlias.IsNull())
-	{
-		while(!vtxPos.empty())
-		{
-			if (vtxPos.back().txHash == tx.GetHash())
-			{
-				vtxPos.pop_back();
-				break;
-			}
-			else
-			{
-				vtxPos.pop_back();
-			}
-		}
-	}
+	while (vtxPos.back().txHash == tx.GetHash())	
+		vtxPos.pop_back();
+	
 	CPubKey PubKey(foundAlias.vchPubKey);
 	CSyscoinAddress address(PubKey.GetID());
 	if(!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
@@ -2062,36 +2038,13 @@ bool DisconnectOffer(const CBlockIndex *pindex, const CTransaction &tx, int op, 
 	TRY_LOCK(cs_main, cs_maintry);
     vector<COffer> vtxPos;
     pofferdb->ReadOffer(vvchArgs[0], vtxPos);  
-	// erase from back to front up to the reorg affected service tx position
-	bool found = false;
-	for(unsigned int i=0;i<vtxPos.size();i++)
-	{
-		if (vtxPos[i].txHash == tx.GetHash())
-		{
-			found = true;
-			break;
-		}
-
-	}
-	if(found)
-	{
-		while(!vtxPos.empty())
-		{
-			if (vtxPos.back().txHash == tx.GetHash())
-			{
-				vtxPos.pop_back();
-				break;
-			}
-			else
-			{
-				vtxPos.pop_back();
-			}
-		}
-	}
+	while (vtxPos.back().txHash == tx.GetHash())	
+		vtxPos.pop_back();
+		
 
     // write new offer state to db
 	if(!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to offer DB");
+		return error("DisconnectOffer() : failed to write to offer DB");
 	
 	if(fDebug)
 		LogPrintf("DISCONNECTED offer TXN: offer=%s op=%s hash=%s  height=%d\n",
@@ -2110,38 +2063,14 @@ bool DisconnectCertificate(const CBlockIndex *pindex, const CTransaction &tx, in
 	// make sure a DB record exists for this cert
 	vector<CCert> vtxPos;
 	pcertdb->ReadCert(vvchArgs[0], vtxPos);
-
-	// erase from back to front up to the reorg affected service tx position
-	bool found = false;
-	for(unsigned int i=0;i<vtxPos.size();i++)
-	{
-		if (vtxPos[i].txHash == tx.GetHash())
-		{
-			found = true;
-			break;
-		}
-
-	}
-	if(found)
-	{
-		while(!vtxPos.empty())
-		{
-			if (vtxPos.back().txHash == tx.GetHash())
-			{
-				vtxPos.pop_back();
-				break;
-			}
-			else
-			{
-				vtxPos.pop_back();
-			}
-		}
-	}
+	while (vtxPos.back().txHash == tx.GetHash())	
+		vtxPos.pop_back();
+		
 
 
 	// write new offer state to db
 	if(!pcertdb->WriteCert(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to offer DB");
+		return error("DisconnectCertificate() : failed to write to offer DB");
 	if(fDebug)
 		LogPrintf("DISCONNECTED CERT TXN: cert=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
@@ -2159,38 +2088,13 @@ bool DisconnectEscrow(const CBlockIndex *pindex, const CTransaction &tx, int op,
 	// make sure a DB record exists for this cert
 	vector<CEscrow> vtxPos;
 	pescrowdb->ReadEscrow(vvchArgs[0], vtxPos);
-
-	// erase from back to front up to the reorg affected service tx position
-	bool found = false;
-	for(unsigned int i=0;i<vtxPos.size();i++)
-	{
-		if (vtxPos[i].txHash == tx.GetHash())
-		{
-			found = true;
-			break;
-		}
-
-	}
-	if(found)
-	{
-		while(!vtxPos.empty())
-		{
-			if (vtxPos.back().txHash == tx.GetHash())
-			{
-				vtxPos.pop_back();
-				break;
-			}
-			else
-			{
-				vtxPos.pop_back();
-			}
-		}
-	}
+	while (vtxPos.back().txHash == tx.GetHash())	
+		vtxPos.pop_back();
 
 
 	// write new escrow state to db
 	if(!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
-		return error("DisconnectBlock() : failed to write to escrow DB");
+		return error("DisconnectEscrow() : failed to write to escrow DB");
 	if(fDebug)
 		LogPrintf("DISCONNECTED ESCROW TXN: escrow=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
@@ -2208,38 +2112,13 @@ bool DisconnectMessage(const CBlockIndex *pindex, const CTransaction &tx, int op
 	// make sure a DB record exists for this cert
 	vector<CMessage> vtxPos;
 	pmessagedb->ReadMessage(vvchArgs[0], vtxPos);
-
-	// erase from back to front up to the reorg affected service tx position
-	bool found = false;
-	for(unsigned int i=0;i<vtxPos.size();i++)
-	{
-		if (vtxPos[i].txHash == tx.GetHash())
-		{
-			found = true;
-			break;
-		}
-
-	}
-	if(found)
-	{
-		while(!vtxPos.empty())
-		{
-			if (vtxPos.back().txHash == tx.GetHash())
-			{
-				vtxPos.pop_back();
-				break;
-			}
-			else
-			{
-				vtxPos.pop_back();
-			}
-		}
-	}
+	while (vtxPos.back().txHash == tx.GetHash())	
+		vtxPos.pop_back();
 
 
 	// write new message state to db
 	if(!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
-		return false;
+		return error("DisconnectMessage() : failed to write to message DB");
 	if(fDebug)
 		LogPrintf("DISCONNECTED MESSAGE TXN: message=%s op=%s hash=%s height=%d\n",
 		   stringFromVch(vvchArgs[0]).c_str(),
@@ -2291,31 +2170,6 @@ bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockI
         // remove outputs
         outs->Clear();
         }
-		// SYSCOIN disconnect syscoin related block
-		if (tx.nVersion == SYSCOIN_TX_VERSION) {
-		    vector<vector<unsigned char> > vvchArgs;
-		    int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
-			{
-				DisconnectAlias(pindex, tx, op, vvchArgs);	
-			}
-			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
-			{
-				DisconnectOffer(pindex, tx, op, vvchArgs); 
-			}
-			if(DecodeCertTx(tx, op, nOut, vvchArgs))
-			{
-				DisconnectCertificate(pindex, tx, op, vvchArgs);				
-			}
-			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
-			{
-				DisconnectEscrow(pindex, tx, op, vvchArgs);	
-			}
-			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
-			{
-				DisconnectMessage(pindex, tx, op, vvchArgs);	
-			}
-		}
         // restore inputs
         if (i > 0) { // not coinbases
             const CTxUndo &txundo = blockUndo.vtxundo[i-1];
@@ -2595,11 +2449,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
-			if(fJustCheck)
-			{
-				if (!CheckSyscoinInputs(tx, view))
-					return error("ConnectBlock(): CheckSyscoinInputs on %s failed",tx.GetHash().ToString());
-			}
+			// SYSCOIN
+			if (!CheckSyscoinInputs(tx, view))
+				return error("ConnectBlock(): CheckSyscoinInputs on %s failed",tx.GetHash().ToString());			
             control.Add(vChecks);
         }
 
@@ -2663,10 +2515,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     static uint256 hashPrevBestCoinBase;
     GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[0].GetHash();
-	// SYSCOIN update syscoin db
-    if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
-		return error("ConnectBlock(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
-
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
 
@@ -2880,6 +2728,31 @@ bool static DisconnectTip(CValidationState& state, const Consensus::Params& cons
     // 0-confirmed or conflicted:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         SyncWithWallets(tx, NULL);
+		// SYSCOIN disconnect syscoin related block
+		if (tx.nVersion == SYSCOIN_TX_VERSION) {
+			vector<vector<unsigned char> > vvchArgs;
+			int op, nOut;
+			if(DecodeAliasTx(tx, op, nOut, vvchArgs))
+			{
+				DisconnectAlias(pindexDelete, tx, op, vvchArgs);	
+			}
+			if(DecodeOfferTx(tx, op, nOut, vvchArgs))
+			{
+				DisconnectOffer(pindexDelete, tx, op, vvchArgs); 
+			}
+			if(DecodeCertTx(tx, op, nOut, vvchArgs))
+			{
+				DisconnectCertificate(pindexDelete, tx, op, vvchArgs);				
+			}
+			if(DecodeEscrowTx(tx, op, nOut, vvchArgs))
+			{
+				DisconnectEscrow(pindexDelete, tx, op, vvchArgs);	
+			}
+			if(DecodeMessageTx(tx, op, nOut, vvchArgs))
+			{
+				DisconnectMessage(pindexDelete, tx, op, vvchArgs);	
+			}
+		}
     }
     return true;
 }
@@ -2944,6 +2817,9 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     BOOST_FOREACH(const CTransaction &tx, pblock->vtx) {
         SyncWithWallets(tx, pblock);
     }
+	// SYSCOIN update syscoin db
+	if (!AddSyscoinServicesToDB(*pblock, view, pindexNew->nHeight))
+		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindexNew->GetBlockHash().ToString());
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
@@ -4125,8 +4001,8 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
                 return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
             if (!ConnectBlock(block, state, pindex, coins))
-                return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
-        }
+                return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());   
+		}
     }
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->nHeight, nGoodTransactions);

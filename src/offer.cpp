@@ -217,60 +217,6 @@ bool COfferDB::ScanOffers(const std::vector<unsigned char>& vchOffer, unsigned i
     return true;
 }
 
-/**
- * [ReconstructSyscoinServicesIndex description]
- * @param  pindexRescan [description]
- * @return              [description]
- */
-void ReconstructSyscoinServicesIndex(CBlockIndex *pindexRescan) {
-    CBlockIndex* pindex = pindexRescan;  
-	bool fJustCheck = false;
-	CCoinsViewCache inputs(pcoinsTip);
-	while (pindex) {  
-
-		int nHeight = pindex->nHeight;
-		CBlock block;
-		ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-		uint256 txblkhash;
-		// undo syscoin transactions in reverse order -- similar to disconnectblock()
-        for (int i = block.vtx.size() - 1; i >= 0; i--) {
-			const CTransaction &tx = block.vtx[i];
-			if (tx.nVersion != SYSCOIN_TX_VERSION)
-				continue;
-			vector<vector<unsigned char> > vvch;
-			int op, nOut;
-			if(DecodeAliasTx(tx, op, nOut, vvch))
-			{
-				// remove the service before adding it again, because some of the checks in checkinputs relies on data already being there and just updating it, or not being there and adding it
-				DisconnectAlias(pindex, tx, op, vvch);	
-				CheckAliasInputs(tx, inputs, fJustCheck, nHeight, true);		
-			}
-			if(DecodeCertTx(tx, op, nOut, vvch))
-			{
-				DisconnectCertificate(pindex, tx, op, vvch);
-				CheckCertInputs(tx, inputs, fJustCheck, nHeight, true);
-			}
-			if(DecodeEscrowTx(tx, op, nOut, vvch))
-			{
-				DisconnectEscrow(pindex, tx, op, vvch);
-				CheckEscrowInputs(tx, inputs, fJustCheck, nHeight, true);
-			}
-			if(DecodeOfferTx(tx, op, nOut, vvch))		
-			{
-				DisconnectOffer(pindex, tx, op, vvch);	
-				CheckOfferInputs(tx, inputs, fJustCheck, nHeight, true);
-			}
-			if(DecodeMessageTx(tx, op, nOut, vvch))
-			{
-				DisconnectMessage(pindex, tx, op, vvch);
-				CheckMessageInputs(tx, inputs, fJustCheck, nHeight, true);
-			}
-		}
-		pindex = chainActive.Next(pindex);
-	}
-	
-}
-
 int IndexOfOfferOutput(const CTransaction& tx) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return -1;
@@ -405,7 +351,7 @@ CScript RemoveOfferScriptPrefix(const CScript& scriptIn) {
 }
 
 bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
-	fRescan = fInit || fRescan;	
+		
 	if (tx.IsCoinBase())
 		return true;
 	if (fDebug)
@@ -734,7 +680,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					"CheckOfferInputs() : failed to read from offer DB");
 	}
 
-	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+	if (!fJustCheck ) {
 		// get the latest offer from the db
 		if(!vtxPos.empty())
 			theOffer = vtxPos.back();				
@@ -972,14 +918,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	}
 	return true;
 }
-
-
-void rescanforsyscoinservices(CBlockIndex *pindexRescan) {
-   LogPrintf("Scanning blockchain for syscoin services to create fast index...\n");
-   ReconstructSyscoinServicesIndex(pindexRescan);
-}
-
-
 
 UniValue offernew(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() < 7 || params.size() > 10)

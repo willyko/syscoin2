@@ -380,7 +380,7 @@ void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fS
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
         throw runtime_error(strError);
     }
-	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet anno
+	// run a check on the inputs without putting them into the db, just to ensure it will go into the mempool without issues and cause wallet annoyance
 	vector<vector<unsigned char> > vvch;
 	int op, nOut;
 	bool fJustCheck = true;

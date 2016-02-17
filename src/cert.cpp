@@ -249,7 +249,7 @@ CScript RemoveCertScriptPrefix(const CScript& scriptIn) {
 
 bool CheckCertInputs(const CTransaction &tx,
         const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
-	fRescan = fInit || fRescan;
+	
 	if (tx.IsCoinBase())
 		return true;
 		LogPrintf("*** %d %d %s %s\n", nHeight,
@@ -355,7 +355,7 @@ bool CheckCertInputs(const CTransaction &tx,
 			return error(
 					"CheckCertInputs() : failed to read from cert DB");
 	}
-    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+    if (!fJustCheck ) {
 		if(!vtxPos.empty())
 		{
 			if(theCert.IsNull())
@@ -724,7 +724,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow, true);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxIn, wtxInAlias, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());

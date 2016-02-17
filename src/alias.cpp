@@ -414,7 +414,7 @@ bool IsSyscoinTxMine(const CTransaction& tx) {
 }
 
 bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
-	fRescan = fInit || fRescan;
+	
 	if (tx.IsCoinBase())
 		return true;
 	if (fDebug)
@@ -501,7 +501,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			return error(
 					"CheckAliasInputs() : failed to read from alias DB");
 	}
-	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+	if (!fJustCheck ) {
 		if(!vtxPos.empty())
 		{
 			if(theAlias.IsNull())

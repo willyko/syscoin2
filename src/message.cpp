@@ -220,7 +220,7 @@ CScript RemoveMessageScriptPrefix(const CScript& scriptIn) {
 }
 
 bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
-	fRescan = fInit || fRescan;
+	
 	if (tx.IsCoinBase())
 		return true;
 	LogPrintf("*** %d %d %s %s\n", nHeight,
@@ -320,7 +320,7 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 			return error(
 					"CheckMessageInputs() : failed to read from message DB");
 	}
-    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+    if (!fJustCheck ) {
         
         // set the message's txn-dependent values
 		theMessage.txHash = tx.GetHash();

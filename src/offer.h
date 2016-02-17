@@ -23,7 +23,6 @@ int IndexOfOfferOutput(const CTransaction& tx);
 int GetOfferExpirationDepth();
 std::string offerFromOp(int op);
 CScript RemoveOfferScriptPrefix(const CScript& scriptIn);
-void rescanforsyscoinservices(CBlockIndex *pindexRescan);
 
 class COfferAccept {
 public:
