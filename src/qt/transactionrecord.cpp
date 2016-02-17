@@ -291,8 +291,12 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Mixed debit transaction, can't break down payees
             //
-            parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
-            parts.last().involvesWatchAddress = involvesWatchAddress;
+			// SYSCOIN - this should be a new service you've created
+			if(!CreateSyscoinTransactions(wallet, wtx, parts, nTime, nNet, SEND))
+			{
+				parts.append(TransactionRecord(hash, nTime, TransactionRecord::Other, "", nNet, 0));
+				parts.last().involvesWatchAddress = involvesWatchAddress;
+			}
         }
     }
 
