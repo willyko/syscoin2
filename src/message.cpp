@@ -320,7 +320,7 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 			return error(
 					"CheckMessageInputs() : failed to read from message DB");
 	}
-    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+    if (!fJustCheck || fRescan) {
         
         // set the message's txn-dependent values
 		theMessage.txHash = tx.GetHash();

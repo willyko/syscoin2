@@ -503,7 +503,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			return error(
 					"CheckAliasInputs() : failed to read from alias DB");
 	}
-	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+	if (!fJustCheck || fRescan) {
 		if(!vtxPos.empty())
 		{
 			if(theAlias.IsNull())

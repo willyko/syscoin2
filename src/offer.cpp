@@ -734,7 +734,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					"CheckOfferInputs() : failed to read from offer DB");
 	}
 
-	if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+	if (!fJustCheck || fRescan) {
 		// get the latest offer from the db
 		if(!vtxPos.empty())
 			theOffer = vtxPos.back();				

@@ -386,7 +386,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 			return error(
 					"CheckEscrowInputs() : failed to read from escrow DB");
 	}
-    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
+    if (!fJustCheck || fRescan) {
 
 		// make sure escrow settings don't change (besides rawTx) outside of activation
 		if(op != OP_ESCROW_ACTIVATE) 
