@@ -2630,11 +2630,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (fJustCheck)
         return true;
 
-	// SYSCOIN update syscoin db
-    if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
-		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
-
-
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
     {
@@ -2668,6 +2663,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     static uint256 hashPrevBestCoinBase;
     GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[0].GetHash();
+	// SYSCOIN update syscoin db
+    if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
+		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
+
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
 

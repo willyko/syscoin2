@@ -252,7 +252,7 @@ bool CheckCertInputs(const CTransaction &tx,
 	fRescan = fInit || fRescan;
 	if (tx.IsCoinBase())
 		return true;
-		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+		LogPrintf("*** %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
     bool foundCert = false;

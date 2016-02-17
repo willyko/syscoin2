@@ -295,7 +295,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 			}
 		}
 	}
-		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+		LogPrintf("*** %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
     // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost

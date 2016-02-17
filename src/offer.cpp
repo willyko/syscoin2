@@ -409,7 +409,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	if (tx.IsCoinBase())
 		return true;
 	if (fDebug)
-		LogPrintf("*** %d %d %s %s %s %s\n", nHeight,
+		LogPrintf("*** %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
 	bool foundOffer = false;
