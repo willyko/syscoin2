@@ -895,7 +895,7 @@ bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
 			}
 		}
 	}
-		
+	return true;	
 	
 }
 bool AddSyscoinServicesToDB(const CBlock& block, const CCoinsViewCache& inputs, int nHeight)
@@ -2665,7 +2665,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     hashPrevBestCoinBase = block.vtx[0].GetHash();
 	// SYSCOIN update syscoin db
     if (!AddSyscoinServicesToDB(block, view, pindex->nHeight))
-		return error("ConnectTip(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
+		return error("ConnectBlock(): AddSyscoinServicesToDB on %s failed", pindex->GetBlockHash().ToString());
 
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
