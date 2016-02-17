@@ -497,7 +497,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
 		throw runtime_error("could not find an offer with this identifier");
 
-	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE)) {
+	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	
@@ -754,7 +754,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE)) {
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
 	// create a raw tx that sends escrow amount to seller and collateral to buyer
@@ -1095,7 +1095,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 		throw runtime_error("this escrow is not in your wallet");
 	
       	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE)) {
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
 	CPubKey buyerKey(escrow.vchBuyerKey);
@@ -1283,7 +1283,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		strPrivateKey = CSyscoinSecret(vchSecret).ToString();
 	}
      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE)) {
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
 	// refunds buyer from escrow
@@ -1501,7 +1501,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	if(!foundBuyerPayment)
 		throw runtime_error("Expected payment amount from escrow does not match what was expected by the buyer!");
       	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE)) {
+	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
     // Seller signs it
