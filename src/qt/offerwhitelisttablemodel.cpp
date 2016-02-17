@@ -169,7 +169,7 @@ QVariant OfferWhitelistTableModel::data(const QModelIndex &index, int role) cons
     else if (role == Qt::FontRole)
     {
         QFont font;
-        if(index.column() == Address)
+        if(index.column() == Alias)
         {
             font = GUIUtil::fixedPitchFont();
         }
