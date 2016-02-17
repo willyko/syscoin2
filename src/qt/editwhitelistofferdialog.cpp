@@ -212,7 +212,7 @@ void EditWhitelistOfferDialog::on_removeButton_clicked()
 		QMessageBox::information(this, windowTitle(),
 		tr("Entry removed successfully!"),
 			QMessageBox::Ok, QMessageBox::Ok);
-		model->updateEntry(certGUID, certGUID, certGUID, certGUID, certGUID, certGUID, CT_DELETED); 
+		model->updateEntry(certGUID, certGUID, certGUID, certGUID, certGUID, CT_DELETED); 
 	}
 	catch (UniValue& objError)
 	{
@@ -279,8 +279,7 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 			string cert_str = "";
 			string title_str = "";
 			string mine_str = "";
-			string cert_address_str = "";
-			string cert_expiresin_str = "";
+			string cert_alias_str = "";
 			string offer_discount_percentage_str = "";
 			int cert_expiresin = 0;
 			const UniValue &arr = result.get_array();
