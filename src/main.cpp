@@ -891,10 +891,6 @@ bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
 			// remove tx's that don't pass our check
 			if(!good)
 			{
-				std::list<CTransaction> dummy;
-				mempool.remove(tx, dummy, false);
-				mempool.removeConflicts(tx, dummy);
-				mempool.ClearPrioritisation(tx.GetHash());
 				return false;
 			}
 		}

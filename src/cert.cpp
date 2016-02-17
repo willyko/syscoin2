@@ -355,7 +355,7 @@ bool CheckCertInputs(const CTransaction &tx,
 			return error(
 					"CheckCertInputs() : failed to read from cert DB");
 	}
-    if (!fJustCheck || fRescan) {
+    if (!fJustCheck && (chainActive.Tip()->nHeight != nHeight || fRescan)) {
 		if(!vtxPos.empty())
 		{
 			if(theCert.IsNull())
