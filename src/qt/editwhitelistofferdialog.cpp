@@ -280,6 +280,7 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 			string title_str = "";
 			string mine_str = "";
 			string cert_alias_str = "";
+			string cert_expiresin_str = "";
 			string offer_discount_percentage_str = "";
 			int cert_expiresin = 0;
 			const UniValue &arr = result.get_array();
