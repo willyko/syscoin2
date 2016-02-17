@@ -101,15 +101,13 @@ void EditWhitelistOfferDialog::setModel(WalletModel *walletModel, OfferWhitelist
 #if QT_VERSION < 0x050000
     ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Cert, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Title, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Mine, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Address, QHeaderView::ResizeToContents);
+	ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Alias, QHeaderView::ResizeToContents);
 	ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Expires, QHeaderView::ResizeToContents);
 	ui->tableView->horizontalHeader()->setResizeMode(OfferWhitelistTableModel::Discount, QHeaderView::ResizeToContents);
 #else
     ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Cert, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Title, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Mine, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Address, QHeaderView::ResizeToContents);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Alias, QHeaderView::ResizeToContents);
 	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Expires, QHeaderView::ResizeToContents);
 	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferWhitelistTableModel::Discount, QHeaderView::ResizeToContents);
 #endif
@@ -297,12 +295,9 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 				const UniValue& title_value = find_value(o, "title");
 				if (title_value.type() == UniValue::VSTR)
 					title_str = title_value.get_str();
-				const UniValue& mine_value = find_value(o, "ismine");
-				if (mine_value.type() == UniValue::VSTR)
-					mine_str = mine_value.get_str();
-				const UniValue& cert_address_value = find_value(o, "address");
-				if (cert_address_value.type() == UniValue::VSTR)
-					cert_address_str = cert_address_value.get_str();
+				const UniValue& cert_alias_value = find_value(o, "alias");
+				if (cert_alias_value.type() == UniValue::VSTR)
+					cert_alias_str = cert_alias_value.get_str();
 				const UniValue& cert_expiresin_value = find_value(o, "expiresin");
 				if (cert_expiresin_value.type() == UniValue::VNUM)
 					cert_expiresin = cert_expiresin_value.get_int();
@@ -310,8 +305,8 @@ void EditWhitelistOfferDialog::on_refreshButton_clicked()
 				if (offer_discount_percentage_value.type() == UniValue::VSTR)
 					offer_discount_percentage_str = offer_discount_percentage_value.get_str();
 				cert_expiresin_str = strprintf("%d Blocks", cert_expiresin);
-				model->addRow(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(mine_str), QString::fromStdString(cert_address_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str));
-				model->updateEntry(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(mine_str), QString::fromStdString(cert_address_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str), CT_NEW); 
+				model->addRow(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(cert_alias_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str));
+				model->updateEntry(QString::fromStdString(cert_str), QString::fromStdString(title_str), QString::fromStdString(cert_alias_str), QString::fromStdString(cert_expiresin_str), QString::fromStdString(offer_discount_percentage_str), CT_NEW); 
 				ui->removeAllButton->setEnabled(true);
 			}
 		}
@@ -382,8 +377,7 @@ void EditWhitelistOfferDialog::on_exportButton_clicked()
     writer.setModel(proxyModel);
     writer.addColumn("Cert", OfferWhitelistTableModel::Cert, Qt::EditRole);
 	writer.addColumn("Title", OfferWhitelistTableModel::Title, Qt::EditRole);
-	writer.addColumn("Mine", OfferWhitelistTableModel::Mine, Qt::EditRole);
-	writer.addColumn("Address", OfferWhitelistTableModel::Address, Qt::EditRole);
+	writer.addColumn("Alias", OfferWhitelistTableModel::Alias, Qt::EditRole);
 	writer.addColumn("Expires", OfferWhitelistTableModel::Expires, Qt::EditRole);
 	writer.addColumn("Discount", OfferWhitelistTableModel::Discount, Qt::EditRole);
 	

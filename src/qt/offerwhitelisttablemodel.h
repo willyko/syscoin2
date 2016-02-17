@@ -20,10 +20,9 @@ public:
     enum ColumnIndex {
         Cert = 0,  /**< cert  */
 		Title = 1,
-		Mine = 2,
-		Address = 3,
-		Expires = 4,
-		Discount = 5
+		Alias = 2,
+		Expires = 3,
+		Discount = 4
     };
 
     enum RoleIndex {
@@ -53,7 +52,7 @@ public:
     /* Add an offer to the model.
        Returns the added offer on success, and an empty string otherwise.
      */
-    QString addRow(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount);
+    QString addRow(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount);
 
     /* Look up row index of a cert in the model.
        Return -1 if not found.
@@ -73,7 +72,7 @@ private:
 public Q_SLOTS:
     /* Update offer list from core.
      */
-    void updateEntry(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount, int status);
+    void updateEntry(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount, int status);
 
     friend class OfferWhitelistTablePriv;
 };

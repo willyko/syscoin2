@@ -14,14 +14,13 @@ struct OfferWhitelistTableEntry
 
 	QString cert;
     QString title;
-	QString mine;
-    QString address;
+    QString alias;
 	QString expires;
 	QString discount;	
 
     OfferWhitelistTableEntry() {}
-    OfferWhitelistTableEntry(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount):
-        cert(cert), title(title), mine(mine),address(address), expires(expires),discount(discount) {}
+    OfferWhitelistTableEntry(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount):
+        cert(cert), title(title), alias(alias), expires(expires),discount(discount) {}
 };
 
 struct OfferWhitelistTableEntryLessThan
@@ -51,7 +50,7 @@ public:
         parent(parent) {}
 
 
-    void updateEntry(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount, int status)
+    void updateEntry(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount, int status)
     {
 		if(!parent)
 		{
@@ -74,7 +73,7 @@ public:
                 break;
             }
             parent->beginInsertRows(QModelIndex(), lowerIndex, lowerIndex);
-            cachedEntryTable.insert(lowerIndex, OfferWhitelistTableEntry(cert, title, mine, address, expires, discount));
+            cachedEntryTable.insert(lowerIndex, OfferWhitelistTableEntry(cert, title, alias, expires, discount));
             parent->endInsertRows();
             break;
         case CT_UPDATED:
@@ -84,8 +83,8 @@ public:
             }
             lower->cert = cert;
 			lower->title = title;
-			lower->mine = mine;
-			lower->address = address;
+
+			lower->alias = alias;
 			lower->expires = expires;
 			lower->discount = discount;
             parent->emitDataChanged(lowerIndex);
@@ -123,7 +122,7 @@ public:
 OfferWhitelistTableModel::OfferWhitelistTableModel(WalletModel *parent) :
     QAbstractTableModel(parent)
 {
-    columns << tr("GUID") << tr("Title") << tr("Owner") << tr("Address") << tr("Expires In") << tr("Discount");
+    columns << tr("GUID") << tr("Title") << tr("Owner") << tr("Expires In") << tr("Discount");
     priv = new OfferWhitelistTablePriv(this);
 
 }
@@ -159,10 +158,8 @@ QVariant OfferWhitelistTableModel::data(const QModelIndex &index, int role) cons
             return rec->cert;
         case Title:
             return rec->title;
-        case Mine:
-            return rec->mine;
-        case Address:
-            return rec->address;
+        case Alias:
+            return rec->alias;
         case Discount:
             return rec->discount;
         case Expires:
@@ -206,18 +203,9 @@ bool OfferWhitelistTableModel::setData(const QModelIndex &index, const QVariant 
             }
            
             break;
-        case Mine:
+        case Alias:
             // Do nothing, if old value == new value
-            if(rec->mine == value.toString())
-            {
-                editStatus = NO_CHANGES;
-                return false;
-            }
-           
-            break;
-        case Address:
-            // Do nothing, if old value == new value
-            if(rec->address == value.toString())
+            if(rec->alias == value.toString())
             {
                 editStatus = NO_CHANGES;
                 return false;
@@ -295,12 +283,12 @@ QModelIndex OfferWhitelistTableModel::index(int row, int column, const QModelInd
     }
 }
 
-void OfferWhitelistTableModel::updateEntry(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount, int status)
+void OfferWhitelistTableModel::updateEntry(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount, int status)
 {
-    priv->updateEntry(cert, title, mine, address, expires, discount, status);
+    priv->updateEntry(cert, title, alias, expires, discount, status);
 }
 
-QString OfferWhitelistTableModel::addRow(const QString &cert, const QString &title, const QString &mine,const QString &address, const QString &expires,const QString &discount)
+QString OfferWhitelistTableModel::addRow(const QString &cert, const QString &title, const QString &alias, const QString &expires,const QString &discount)
 {
     std::string strCert = cert.toStdString();
     editStatus = OK;

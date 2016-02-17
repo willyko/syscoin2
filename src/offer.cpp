@@ -1607,11 +1607,10 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			UniValue oList(UniValue::VOBJ);
 			oList.push_back(Pair("guid", stringFromVch(entry.certLinkVchRand)));
 			oList.push_back(Pair("title", stringFromVch(theCert.vchTitle)));
-			oList.push_back(Pair("ismine", IsSyscoinTxMine(txCert) ? "true" : "false"));
 			CPubKey PubKey(theCert.vchPubKey);
 			CSyscoinAddress address(PubKey.GetID());
 			address = CSyscoinAddress(address.ToString());
-			oList.push_back(Pair("address", address.ToString()));
+			oList.push_back(Pair("alias", address.aliasName));
 			int expires_in = 0;
 			uint64_t nHeight = theCert.nHeight;
 			if (!GetSyscoinTransaction(nHeight, txCert.GetHash(), txCert, Params().GetConsensus()))
