@@ -488,8 +488,8 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	const CWalletTx * wtxCertIn=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxAliasIn, wtxInEscrow);
+	const CWalletTx * wtxInCert=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -605,7 +605,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
 
-		CPubKey FromPubKey(message.vchPubKeyTo);
+		CPubKey FromPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
@@ -613,7 +613,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		else
 			oName.push_back(Pair("from", fromaddress.ToString()));
 
-		CPubKey ToPubKey(message.vchPubKeyFrom);
+		CPubKey ToPubKey(message.vchPubKeyTo);
 		CSyscoinAddress toaddress(ToPubKey.GetID());
 		toaddress = CSyscoinAddress(toaddress.ToString());
 		if(toaddress.isAlias)
@@ -624,8 +624,10 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 
 		oName.push_back(Pair("subject", stringFromVch(message.vchSubject)));
 		string strDecrypted = "";
-		string strData = string("Encrypted for receiver of message");
+		string strData = string("Encrypted for owner of message");
 		if(DecryptMessage(message.vchPubKeyTo, message.vchMessageTo, strDecrypted))
+			strData = strDecrypted;
+		else if(DecryptMessage(message.vchPubKeyFrom, message.vchMessageFrom, strDecrypted))
 			strData = strDecrypted;
 		oName.push_back(Pair("message", strData));
 		oRes.push_back(oName);
@@ -682,7 +684,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		}
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
-		CPubKey FromPubKey(message.vchPubKeyTo);
+		CPubKey FromPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
@@ -690,7 +692,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		else
 			oName.push_back(Pair("from", fromaddress.ToString()));
 
-		CPubKey ToPubKey(message.vchPubKeyFrom);
+		CPubKey ToPubKey(message.vchPubKeyTo);
 		CSyscoinAddress toaddress(ToPubKey.GetID());
 		toaddress = CSyscoinAddress(toaddress.ToString());
 		if(toaddress.isAlias)
@@ -700,8 +702,10 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 
 		oName.push_back(Pair("subject", stringFromVch(message.vchSubject)));
 		string strDecrypted = "";
-		string strData = string("Encrypted for sender of message");
-		if(DecryptMessage(message.vchPubKeyFrom, message.vchMessageFrom, strDecrypted))
+		string strData = string("Encrypted for owner of message");
+		if(DecryptMessage(message.vchPubKeyTo, message.vchMessageTo, strDecrypted))
+			strData = strDecrypted;
+		else if(DecryptMessage(message.vchPubKeyFrom, message.vchMessageFrom, strDecrypted))
 			strData = strDecrypted;
 		oName.push_back(Pair("message", strData));
 		oRes.push_back(oName);
@@ -753,7 +757,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			}
 			oMessage.push_back(Pair("time", sTime));
 
-			CPubKey FromPubKey(txPos2.vchPubKeyTo);
+			CPubKey FromPubKey(txPos2.vchPubKeyFrom);
 			CSyscoinAddress fromaddress(FromPubKey.GetID());
 			fromaddress = CSyscoinAddress(fromaddress.ToString());
 			if(fromaddress.isAlias)
@@ -761,7 +765,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			else
 				oMessage.push_back(Pair("from", fromaddress.ToString()));
 
-			CPubKey ToPubKey(txPos2.vchPubKeyFrom);
+			CPubKey ToPubKey(txPos2.vchPubKeyTo);
 			CSyscoinAddress toaddress(ToPubKey.GetID());
 			toaddress = CSyscoinAddress(toaddress.ToString());
 			if(toaddress.isAlias)
