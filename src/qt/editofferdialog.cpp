@@ -52,7 +52,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	cert = strCert;
 	ui->certEdit->clear();
 	ui->certEdit->addItem(tr("Select Certificate (optional)"));
-	connect(ui->certEdit, SIGNAL(activated(int)), this, SLOT(certChanged(int)));
+	connect(ui->certEdit, SIGNAL(currentIndexChanged(int)), this, SLOT(certChanged(int)));
 	loadAliases();
 	loadCerts();
 	
@@ -164,6 +164,8 @@ void EditOfferDialog::loadCerts()
 						if ( index != -1 ) 
 						{
 						    ui->certEdit->setCurrentIndex(index);
+							ui->aliasEdit->setEnabled(false);
+							ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
 						}
 						index = ui->aliasEdit->findData(alias);
 						if ( index != -1 ) 

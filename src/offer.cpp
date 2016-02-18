@@ -643,7 +643,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				myPriceOffer.nHeight = heightToCheckAgainst;
 				myPriceOffer.GetOfferFromList(vtxPos);
 				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
-				if(priceAtTimeOfAccept != theOfferAccept.nPrice)
+				if((priceAtTimeOfAccept*theOfferAccept.nQty) != theOfferAccept.nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
 
 				int precision = 2;
@@ -2216,7 +2216,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
 			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(ca.vchLinkOffer)));
 			oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
-			string strBTCId = "NA";
+			string strBTCId = "";
 			if(!ca.txBTCId.IsNull())
 				strBTCId = ca.txBTCId.GetHex();
 			oOfferAccept.push_back(Pair("btctxid", strBTCId));
@@ -2224,7 +2224,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("time", sTime));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-			vector<unsigned char> vchEscrowLink = vchFromString("NA");
+			vector<unsigned char> vchEscrowLink;
 	
 			bool foundEscrow = false;
 			for (unsigned int i = 0; i < txA.vin.size(); i++) {
@@ -2294,7 +2294,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		expires_in = 0;
 		expired_block = 0;
         nHeight = theOffer.nHeight;
-		vector<unsigned char> vchCert = vchFromString("NA");
+		vector<unsigned char> vchCert;
 		if(!theOffer.vchCert.empty())
 			vchCert = theOffer.vchCert;
 		oOffer.push_back(Pair("offer", offer));
@@ -2338,7 +2338,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		{
 			oOffer.push_back(Pair("commission", "0"));
 			oOffer.push_back(Pair("offerlink", "false"));
-			oOffer.push_back(Pair("offerlink_guid", "NA"));
+			oOffer.push_back(Pair("offerlink_guid", ""));
 		}
 		oOffer.push_back(Pair("exclusive_resell", theOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 		oOffer.push_back(Pair("private", theOffer.bPrivate ? "Yes" : "No"));
@@ -2414,7 +2414,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
-			string strBTCId = "NA";
+			string strBTCId = "";
 			if(!theOfferAccept.txBTCId.IsNull())
 				strBTCId = theOfferAccept.txBTCId.GetHex();
 			oOfferAccept.push_back(Pair("btctxid", strBTCId));
@@ -2432,7 +2432,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
-			vector<unsigned char> vchEscrowLink = vchFromString("NA");
+			vector<unsigned char> vchEscrowLink;
 	
 			vector<unsigned char> vchOfferLink;
 			bool foundOffer = false;
@@ -2539,7 +2539,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("offer", offer));
 			oOfferAccept.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
 			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
-			string strBTCId = "NA";
+			string strBTCId = "";
 			if(!theOfferAccept.txBTCId.IsNull())
 				strBTCId = theOfferAccept.txBTCId.GetHex();
 			oOfferAccept.push_back(Pair("btctxid", strBTCId));
@@ -2557,7 +2557,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-			vector<unsigned char> vchEscrowLink = vchFromString("NA");
+			vector<unsigned char> vchEscrowLink;
 	
 			bool foundEscrow = false;
 			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
@@ -2683,7 +2683,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
             // build the output UniValue
             UniValue oName(UniValue::VOBJ);
             oName.push_back(Pair("offer", stringFromVch(vchName)));
-			vector<unsigned char> vchCert = vchFromString("NA");
+			vector<unsigned char> vchCert;
 			if(!theOfferA.vchCert.empty())
 				vchCert = theOfferA.vchCert;
 			oName.push_back(Pair("cert", stringFromVch(vchCert)));
@@ -2776,7 +2776,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 			oOffer.push_back(Pair("offer", offer));
 			string opName = offerFromOp(op);
 			oOffer.push_back(Pair("offertype", opName));
-			vector<unsigned char> vchCert = vchFromString("NA");
+			vector<unsigned char> vchCert;
 			if(!theOfferA.vchCert.empty())
 				vchCert = theOfferA.vchCert;
 			oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
@@ -2902,7 +2902,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 			continue;
 		UniValue oOffer(UniValue::VOBJ);
 		oOffer.push_back(Pair("offer", offer));
-			vector<unsigned char> vchCert = vchFromString("NA");
+			vector<unsigned char> vchCert;
 			if(!txOffer.vchCert.empty())
 				vchCert = txOffer.vchCert;
 		oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
