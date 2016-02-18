@@ -322,10 +322,8 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
     // unserialize escrow UniValue from txn, check for valid
     CEscrow theEscrow;
     theEscrow.UnserializeFromTx(tx);
-	if(theEscrow.IsNull() && op == OP_ESCROW_RELEASE)
-		return true;
-    if (theEscrow.IsNull())
-        return error("CheckEscrowInputs() : null escrow");
+	if(theEscrow.IsNull() && op != OP_ESCROW_RELEASE)
+		return error("CheckAliasInputs() : null escrow");
     if (vvchArgs[0].size() > MAX_NAME_LENGTH)
         return error("escrow tx GUID too big");
 	if(!IsCompressedOrUncompressedPubKey(theEscrow.vchBuyerKey))
