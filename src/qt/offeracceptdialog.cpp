@@ -78,6 +78,9 @@ void OfferAcceptDialog::setupEscrowCheckboxState()
 void OfferAcceptDialog::onEscrowCheckBoxChanged(bool toggled)
 {
 	setupEscrowCheckboxState();
+	ui->cancelButton->setDefault(false);
+	ui->acceptButton->setDefault(true);
+	ui->acceptBtcButton->setDefault(true);
 }
 void OfferAcceptDialog::acceptBTCPayment()
 {

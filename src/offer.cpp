@@ -550,15 +550,14 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			break;
 		case OP_OFFER_ACCEPT:
 			if (IsEscrowOp(prevEscrowOp) && IsCertOp(prevCertOp))
-				return error("CheckOfferInputs() : Cannot have both certificate and escrow inputs to an accept");
+				return error("OP_OFFER_ACCEPT Cannot have both certificate and escrow inputs to an accept");
 			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.txBTCId.IsNull())
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't use BTC for escrow transactions!");		
-	
+				return error("OP_OFFER_ACCEPT can't use BTC for escrow transactions");				
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("offeraccept tx with guid too big");
 			// check for existence of offeraccept in txn offer obj
 			theOfferAccept = theOffer.accept;
-			if(theOfferAccept.IsNull())
+			if (theOfferAccept.IsNull())
 				return error("OP_OFFER_ACCEPT null accept object");
 			if (theOfferAccept.vchAcceptRand != vvchArgs[1])
 				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
@@ -570,7 +569,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				return error("OP_OFFER_ACCEPT offer accept link field too big");
 			if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT offer link field too big");
-			if(IsEscrowOp(prevEscrowOp))
+			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.vchLinkOfferAccept.empty())
+				return error("OP_OFFER_ACCEPT cannot accept linked offer accept using an escrow input");
+			if (IsEscrowOp(prevEscrowOp))
 			{	
 				vector<CEscrow> escrowVtxPos;
 				if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
@@ -970,8 +971,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchCert;
 	bool bOnlyAcceptBTC = false;
 	int nQty;
-	if(atof(params[3].get_str().c_str()) < 0)
-		throw runtime_error("invalid quantity value, must be greator than 0");
+
 	try {
 		nQty = atoi(params[3].get_str());
 	} catch (std::exception &e) {
@@ -1647,9 +1647,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (params.size() >= 8) bPrivate = atoi(params[7].get_str().c_str()) == 1? true: false;
 	if (params.size() >= 9) vchCert = vchFromValue(params[8]);
 	if(params.size() >= 10) bExclusiveResell = atoi(params[9].get_str().c_str()) == 1? true: false;
-	if(atof(params[4].get_str().c_str()) < 0)
-		throw runtime_error("invalid quantity value, must be greator than 0");
-	
+
 	try {
 		nQty = atoi(params[4].get_str());
 		price = atof(params[5].get_str().c_str());
@@ -1937,7 +1935,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch))
 			throw runtime_error("Cannot decode escrow tx hash");
-		
+		vector<unsigned char> vchEscrowCert;
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
@@ -1946,6 +1944,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			{	
 				// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
 				CEscrow fundingEscrow = escrowVtxPos.front();
+				vchEscrowCert = fundingEscrow.vchCert;
 				nHeight = fundingEscrow.nHeight;
 				CPubKey currentEscrowKey(fundingEscrow.vchSellerKey);
 				scriptPubKeyEscrowOrig = GetScriptForDestination(currentEscrowKey.GetID());
@@ -2019,18 +2018,23 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				throw runtime_error("there is are pending operations on that cert");
 			}
 			// make sure its in your wallet (you control this cert)
-			if (IsSyscoinTxMine(txCert, "cert")) 
+			// if escrow has a cert attached, use that to get the offerlinkwhitelist entry, else check the seller's whitelist to see if we own any certs from his whitelist
+			if (IsSyscoinTxMine(txCert, "cert") || vchEscrowCert == entry.certLinkVchRand) 
 			{
-				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
-				foundCert = entry;		
-				int op, nOut;
-				if(DecodeCertTx(txCert, op, nOut, vvch))
-					vchCert = vvch[0];
-				CPubKey currentCertKey(theCert.vchPubKey);
-				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
+				// find the entry with the biggest discount, for buyers convenience
+				if(entry.nDiscountPct >= foundCert.nDiscountPct || foundCert.nDiscountPct == 0)
+				{
+					wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
+					foundCert = entry;		
+					vchCert = entry.certLinkVchRand;
+					CPubKey currentCertKey(theCert.vchPubKey);
+					scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
+				}
 			}		
+
 		}
 	}
+
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
 

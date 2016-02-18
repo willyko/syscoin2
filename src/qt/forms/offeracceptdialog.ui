@@ -25,6 +25,12 @@
         <iconset resource="../syscoin.qrc">
          <normaloff>:/icons/quit</normaloff>:/icons/quit</iconset>
        </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -35,6 +41,9 @@
        <property name="icon">
         <iconset resource="../syscoin.qrc">
          <normaloff>:/icons/send</normaloff>:/icons/send</iconset>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
