@@ -424,7 +424,7 @@ UniValue certnew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-    if(!IsSyscoinTxMine(aliastx)) {
+    if(!IsSyscoinTxMine(aliastx, "alias")) {
 		throw runtime_error("This alias is not yours.");
     }
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -549,7 +549,7 @@ UniValue certupdate(const UniValue& params, bool fHelp) {
         throw runtime_error("could not find a certificate with this key");
     // make sure cert is in wallet
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL || !IsSyscoinTxMine(tx))
+	if (wtxIn == NULL || !IsSyscoinTxMine(tx, "cert"))
 		throw runtime_error("this cert is not in your wallet");
       	// check for existing cert 's
 	if (ExistsInMempool(vchCert, OP_CERT_ACTIVATE) || ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
@@ -670,7 +670,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 
 	// check to see if certificate in wallet
 	wtxIn = pwalletMain->GetWalletTx(theCert.txHash);
-	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn))
+	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn, "cert"))
 		throw runtime_error("this certificate is not in your wallet");
 
 	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
@@ -770,7 +770,7 @@ UniValue certinfo(const UniValue& params, bool fHelp) {
 	}
     oCert.push_back(Pair("data", strData));
 	oCert.push_back(Pair("private", ca.bPrivate? "Yes": "No"));
-    oCert.push_back(Pair("ismine", IsSyscoinTxMine(tx) ? "true" : "false"));
+    oCert.push_back(Pair("ismine", IsSyscoinTxMine(tx, "cert") ? "true" : "false"));
 
     uint64_t nHeight;
 	nHeight = ca.nHeight;

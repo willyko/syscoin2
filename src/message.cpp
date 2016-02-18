@@ -388,7 +388,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchFromString(strFromAddress), OP_ALIAS_UPDATE)) {
 		throw runtime_error("there are pending operations on that alias");
 	}
-    if(!IsSyscoinTxMine(aliastx)) {
+    if(!IsSyscoinTxMine(aliastx, "alias")) {
 		throw runtime_error("This alias is not yours.");
     }
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -591,9 +591,9 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		CMessage message = vtxPos.back();
 		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
-		if(!IsSyscoinTxMine(tx))
+		if(!IsSyscoinTxMine(tx, "message"))
 			continue;
-        // build the output UniValue
+        // build the output
         UniValue oName(UniValue::VOBJ);
         oName.push_back(Pair("GUID", stringFromVch(vchName)));
 
@@ -671,7 +671,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		CMessage message = vtxPos.back();
 		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
 			continue;
-		if(IsSyscoinTxMine(tx))
+		if(IsSyscoinTxMine(tx, "message"))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);

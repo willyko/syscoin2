@@ -387,20 +387,20 @@ int GetSyscoinTxVersion()
  * @param  tx [description]
  * @return    [description]
  */
-bool IsSyscoinTxMine(const CTransaction& tx) {
+bool IsSyscoinTxMine(const CTransaction& tx, const string &type) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return false;
 	int op, nOut, myNout;
 	vector<vector<unsigned char> > vvch;
-	if (DecodeAliasTx(tx, op, nOut, vvch))
+	if ((type == "alias" || type == "any") && DecodeAliasTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeOfferTx(tx, op, nOut, vvch))
+	else if ((type == "offer" || type == "any") && DecodeOfferTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeCertTx(tx, op, nOut, vvch))
+	else if ((type == "cert" || type == "any") && DecodeCertTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeMessageTx(tx, op, nOut, vvch))
+	else if ((type == "message" || type == "any") && DecodeMessageTx(tx, op, nOut, vvch))
 		myNout = nOut;
-	else if (DecodeEscrowTx(tx, op, nOut, vvch))
+	else if ((type == "escrow" || type == "any") && DecodeEscrowTx(tx, op, nOut, vvch))
 		myNout = nOut;
 	else
 		return false;
@@ -1002,7 +1002,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if (!GetTxOfAlias(vchName, tx))
 		throw runtime_error("could not find an alias with this name");
 
-    if(!IsSyscoinTxMine(tx)) {
+    if(!IsSyscoinTxMine(tx, "alias")) {
 		throw runtime_error("This alias is not yours, you cannot update it.");
     }
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
@@ -1119,7 +1119,7 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			CAliasIndex alias = vtxPos.back();	
 			if (!GetSyscoinTransaction(alias.nHeight, alias.txHash, tx, Params().GetConsensus()))
 				continue;
-			if(!IsSyscoinTxMine(tx))
+			if(!IsSyscoinTxMine(tx, "alias"))
 				continue;
 			nHeight = alias.nHeight;
 			// get last active name only
@@ -1213,7 +1213,7 @@ UniValue aliasinfo(const UniValue& params, bool fHelp) {
 		if(!address.IsValid())
 			throw runtime_error("Invalid alias address");
 		oName.push_back(Pair("address", address.ToString()));
-		bool fAliasMine = IsSyscoinTxMine(tx)? true:  false;
+		bool fAliasMine = IsSyscoinTxMine(tx, "alias")? true:  false;
 		oName.push_back(Pair("ismine", fAliasMine));
         oName.push_back(Pair("lastupdate_height", nHeight));
 		expired_block = nHeight + GetAliasExpirationDepth();

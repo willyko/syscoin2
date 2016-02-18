@@ -485,7 +485,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
 
-    if(!IsSyscoinTxMine(aliastx)) {
+    if(!IsSyscoinTxMine(aliastx, "alias")) {
 		throw runtime_error("This alias is not yours.");
     }
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());

@@ -772,7 +772,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			}
 			// only if we are the root offer owner do we even consider xfering a cert					
 			// purchased a cert so xfer it
-			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx) && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
 			{
 				string strError = makeTransferCertTX(theOffer, theOfferAccept);
 				if(strError != "")
@@ -807,7 +807,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					}
 				}
 			}
-			if (!fRescan && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx))
+			if (!fRescan && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx, "offer"))
 			{	
 				// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
 				// theOffer.vchLinkOffer is the linked offer guid
@@ -955,7 +955,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-    if(!IsSyscoinTxMine(aliastx)) {
+    if(!IsSyscoinTxMine(aliastx, "alias")) {
 		throw runtime_error("This alias is not yours.");
     }
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -1012,7 +1012,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 			}
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 			// make sure its in your wallet (you control this cert)		
-			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
+			if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
 			{
 				CPubKey currentCertKey(theCert.vchPubKey);
 				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
@@ -1144,7 +1144,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	CTransaction aliastx;
 	if (!GetTxOfAlias(vchAlias, aliastx))
 		throw runtime_error("could not find an alias with this name");
-    if(!IsSyscoinTxMine(aliastx)) {
+    if(!IsSyscoinTxMine(aliastx, "alias")) {
 		throw runtime_error("This alias is not yours.");
     }
 	const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -1212,7 +1212,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 				}
 				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 				// make sure its in your wallet (you control this cert)		
-				if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
+				if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
 				{
 					foundEntry = entry;
 					CPubKey currentCertKey(theCert.vchPubKey);
@@ -1337,7 +1337,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	CScript scriptPubKey, scriptPubKeyCert;
 	// check to see if certificate in wallet
 	wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
-	if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
+	if (!IsSyscoinTxMine(txCert, "cert") || wtxCertIn == NULL) 
 		throw runtime_error("this certificate is not yours");
 
 	CPubKey currentCertKey(theCert.vchPubKey);
@@ -1442,7 +1442,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CScript scriptPubKey, scriptPubKeyCert;
 	// check to see if certificate in wallet
 	wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
-	if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
+	if (!IsSyscoinTxMine(txCert, "cert") || wtxCertIn == NULL) 
 		throw runtime_error("this certificate is not yours");
 
 	CPubKey currentCertKey(theCert.vchPubKey);
@@ -1696,7 +1696,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		if (!GetTxOfAlias(vchAlias, aliastx))
 			throw runtime_error("could not find an alias with this name");
 
-		if(!IsSyscoinTxMine(aliastx)) {
+		if(!IsSyscoinTxMine(aliastx, "alias")) {
 			throw runtime_error("This alias is not yours.");
 		}
 		wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -1753,7 +1753,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		vector<vector<unsigned char> > vvch;
 		wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 		// make sure its in your wallet (you control this cert)		
-		if (!IsSyscoinTxMine(txCert) || wtxCertIn == NULL) 
+		if (!IsSyscoinTxMine(txCert, "cert") || wtxCertIn == NULL) 
 			throw runtime_error("Cannot sell this certificate, it is not yours!");
 		int op, nOut;
 		if(DecodeCertTx(txCert, op, nOut, vvch))
@@ -1897,7 +1897,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not find an alias with this name");
     if (vchEscrowTxHash.empty())
 	{
-		if(!IsSyscoinTxMine(aliastx)) {
+		if(!IsSyscoinTxMine(aliastx, "alias")) {
 			throw runtime_error("This alias is not yours.");
 		}
 		const CWalletTx *wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
@@ -2021,7 +2021,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			}
 			// make sure its in your wallet (you control this cert)
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
-			if (IsSyscoinTxMine(txCert) && wtxCertIn != NULL) 
+			if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
 			{
 				foundCert = entry;		
 				int op, nOut;
@@ -2254,7 +2254,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
 			COfferLinkWhitelistEntry entry;
 			
-			if(IsSyscoinTxMine(tx)) 
+			if(IsSyscoinTxMine(tx, "offer")) 
 			{
 				vector<unsigned char> vchOfferLink;
 				bool foundOffer = false;
@@ -2276,7 +2276,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 					theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
 			}
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA) ? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
 
 			if(!ca.txBTCId.IsNull())
 				oOfferAccept.push_back(Pair("paid","check payment"));
@@ -2331,8 +2331,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
-		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(tx) ? "true" : "false"));
-		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx)) {
+		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(tx, "offer") ? "true" : "false"));
+		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer")) {
 			oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
 			oOffer.push_back(Pair("offerlink", "true"));
 			oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
@@ -2458,7 +2458,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 					vchEscrowLink = vvchIn[0];
 				}
 			}
-			if(IsSyscoinTxMine(offerTx) && foundOffer)
+			if(IsSyscoinTxMine(offerTx, "offer") && foundOffer)
 				theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
 			
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
@@ -2469,7 +2469,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx)? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx, "offer")? "true" : "false"));
 
 			if(!theOfferAccept.txBTCId.IsNull())
 				oOfferAccept.push_back(Pair("status","check payment"));
@@ -2585,7 +2585,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx)? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx, "offer")? "true" : "false"));
 			if(!theOfferAccept.txBTCId.IsNull())
 				oOfferAccept.push_back(Pair("status","check payment"));
 			else

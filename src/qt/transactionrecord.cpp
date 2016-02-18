@@ -17,7 +17,7 @@ using namespace std;
 #include "offer.h"
 extern int GetSyscoinTxVersion();
 extern bool IsSyscoinDataOutput(const CTxOut& out);
-extern bool IsSyscoinTxMine(const CTransaction& tx);
+extern bool IsSyscoinTxMine(const CTransaction& tx, const string &type);
 extern std::string stringFromVch(const std::vector<unsigned char> &vch);
 extern bool DecodeAndParseSyscoinTx(const CTransaction& tx, int& op, int& nOut, vector<vector<unsigned char> >& vvch);
 enum {RECV=0, SEND=1};
@@ -45,7 +45,7 @@ static bool CreateSyscoinTransactionRecord(TransactionRecord& sub, int op, const
 		break;
 	case OP_ALIAS_UPDATE:
 		if(type == SEND)
-			sub.type = (IsSyscoinTxMine(wtx)) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
+			sub.type = (IsSyscoinTxMine(wtx, "alias")) ? TransactionRecord::AliasUpdate : TransactionRecord::AliasTransfer;	
 		else if(type == RECV)
 			sub.type = TransactionRecord::AliasRecv;
 		break;
