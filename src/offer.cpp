@@ -469,6 +469,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	vector<CAliasIndex> vtxAliasPos;
 	COffer linkOffer;
 	CTransaction linkedTx;
+	uint64_t heightToCheckAgainst;
+
 	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
 	if(fJustCheck)
 	{
@@ -608,7 +610,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-			uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
+			heightToCheckAgainst = theOfferAccept.nHeight;
 
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
 			if(IsEscrowOp(prevEscrowOp))
