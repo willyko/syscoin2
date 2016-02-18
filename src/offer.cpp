@@ -470,7 +470,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	COffer linkOffer;
 	CTransaction linkedTx;
 	uint64_t heightToCheckAgainst;
-
+	COfferLinkWhitelistEntry entry;
+	vector<unsigned char> vchCert;
 	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
 	if(fJustCheck)
 	{
@@ -503,7 +504,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
 					{
 						COffer myParentOffer = myVtxPos.back();
-						COfferLinkWhitelistEntry entry;
 						if (!IsCertOp(prevCertOp) && myParentOffer.linkWhitelist.bExclusiveResell)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish to link to");			
 						if (IsCertOp(prevCertOp) && !myParentOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
@@ -519,7 +519,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			
 			break;
 		case OP_OFFER_UPDATE:
-			COfferLinkWhitelistEntry entry;
 			if (!IsOfferOp(prevOp) )
 				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
@@ -550,9 +549,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			
 			break;
 		case OP_OFFER_ACCEPT:
-			COfferLinkWhitelistEntry entry;
-			vector<unsigned char> vchCert;
-			if (IsEscrowOp(prevEscrowOp)) && IsCertOp(prevCertOp))
+			if (IsEscrowOp(prevEscrowOp) && IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : Cannot have both certificate and escrow inputs to an accept");
 			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.txBTCId.IsNull())
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't use BTC for escrow transactions!");		
@@ -842,7 +839,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// if the txn whitelist entry exists (meaning we want to remove or add)
 				if(serializedOffer.linkWhitelist.entries.size() == 1)
 				{
-					COfferLinkWhitelistEntry entry;
 					// special case we use to remove all entries
 					if(serializedOffer.linkWhitelist.entries[0].nDiscountPct == 127)
 					{
