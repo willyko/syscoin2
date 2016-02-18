@@ -606,15 +606,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			}
 
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");					
-			{
-			COffer myOffer;
-			CTransaction offerTx;			
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 			uint64_t heightToCheckAgainst = theOfferAccept.nHeight;
-			COfferLinkWhitelistEntry entry;
-			if(IsCertOp(prevCertOp))
-				theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
 
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
 			if(IsEscrowOp(prevEscrowOp))
@@ -635,10 +629,14 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// load the offer data from the DB
 				vector<COffer> vtxPos;
 				if (pofferdb->ExistsOffer(vvchArgs[0])) {
-					if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+					if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
 						return error(
 								"CheckOfferInputs() : failed to read from offer DB");
 				}
+				COfferLinkWhitelistEntry entry;
+				if(IsCertOp(prevCertOp))
+					vtxPos.back().linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
+
 				COffer myPriceOffer;
 				myPriceOffer.nHeight = heightToCheckAgainst;
 				myPriceOffer.GetOfferFromList(vtxPos);
@@ -648,11 +646,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 
 				int precision = 2;
 				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-				CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, myPriceOffer.GetPrice(entry), heightToCheckAgainst, precision)*theOfferAccept.nQty;
+				CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
 				if(tx.vout[nOut].nValue != nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
-				
-
 			}						
 		
 			if(!theOffer.vchLinkOffer.empty())
@@ -662,7 +658,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			}
 			if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-			}
 			break;
 
 		default:

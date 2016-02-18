@@ -383,9 +383,10 @@ int GetSyscoinTxVersion()
 }
 
 /**
- * [IsSyscoinTxMine description]
- * @param  tx [description]
- * @return    [description]
+ * [IsSyscoinTxMine check if this transaction is mine or not, must contain a syscoin service vout]
+ * @param  tx [syscoin based transaction]
+ * @param  type [the type of syscoin service you expect in this transaction]
+ * @return    [if syscoin transaction is yours based on type passed in]
  */
 bool IsSyscoinTxMine(const CTransaction& tx, const string &type) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
