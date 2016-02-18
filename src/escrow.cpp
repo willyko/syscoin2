@@ -516,7 +516,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	COfferLinkWhitelistEntry foundCert;
 	const CWalletTx *wtxCertIn = NULL;
 	vector<unsigned char> vchCert;
-	CScript scriptPubKeyCert;
+	CScript scriptPubKeyCert, scriptPubKeyCertOrig;
 	// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		CTransaction txCert;
