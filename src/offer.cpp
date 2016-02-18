@@ -1920,6 +1920,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxEscrowIn = NULL;
 	CEscrow escrow;
 	vector<vector<unsigned char> > escrowVvch;
+	vector<unsigned char> vchEscrowCert;
 	if(!vchEscrowTxHash.empty())
 	{
 		if(!vchBTCTxId.empty())
@@ -1935,7 +1936,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		int op, nOut;
 		if (!DecodeEscrowTx(*wtxEscrowIn, op, nOut, escrowVvch))
 			throw runtime_error("Cannot decode escrow tx hash");
-		vector<unsigned char> vchEscrowCert;
+		
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
