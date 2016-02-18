@@ -272,7 +272,10 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	const COutPoint *prevOutput = NULL;
 	CCoins prevCoins;
 	int prevOp = 0;
-	vector<vector<unsigned char> > vvchPrevArgs;
+	int prevCertOp = 0;
+	bool foundCert = false;
+	bool foundEscrow = false;
+	vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs;
 	if(fJustCheck)
 	{
 		// Strict check - bug disallowed
@@ -287,11 +290,19 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 				continue;
 			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
 				continue;
+			if(foundEscrow && foundCert)
+				break;
 
-			if (IsEscrowOp(op)) {
+			if (!foundEscrow && IsEscrowOp(op)) {
+				foundEscrow = true; 
 				prevOp = op;
 				vvchPrevArgs = vvch;
-				break;
+			}
+			else if (!foundCert && IsCertOp(op))
+			{
+				foundCert = true; 
+				prevCertOp = op;
+				vvchPrevCertArgs = vvch;
 			}
 		}
 	}
@@ -337,6 +348,10 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	{
 		return error("escrow offer guid too long");
 	}
+	if(theEscrow.vchCert.size() > MAX_ID_LENGTH)
+	{
+		return error("escrow cert guid too long");
+	}
 	if(theEscrow.rawTx.size() > MAX_STANDARD_TX_SIZE)
 	{
 		return error("escrow message tx too long");
@@ -349,6 +364,8 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	{
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:
+				if(IsCertOp(prevCertOp) && vvchPrevCertArgs[0] != theEscrow.vchCert)
+					return error("CheckEscrowInputs() : escrow cert guid and cert input guid mismatch");
 				break;
 			case OP_ESCROW_RELEASE:
 				if(prevOp != OP_ESCROW_ACTIVATE)
@@ -379,15 +396,14 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	// save serialized escrow for later use
 	CEscrow serializedEscrow = theEscrow;
 
-	// if not an escrownew, load the escrow data from the DB
-	vector<CEscrow> vtxPos;
-	if (pescrowdb->ExistsEscrow(vvchArgs[0]) && !fJustCheck) {
-		if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-			return error(
-					"CheckEscrowInputs() : failed to read from escrow DB");
-	}
-    if (!fJustCheck ) {
 
+    if (!fJustCheck ) {
+		vector<CEscrow> vtxPos;
+		if (pescrowdb->ExistsEscrow(vvchArgs[0])) {
+			if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
+				return error(
+						"CheckEscrowInputs() : failed to read from escrow DB");
+		}
 		// make sure escrow settings don't change (besides rawTx) outside of activation
 		if(op != OP_ESCROW_ACTIVATE) 
 		{
@@ -497,6 +513,40 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
 		throw runtime_error("could not find an offer with this identifier");
 
+	COfferLinkWhitelistEntry foundCert;
+	const CWalletTx *wtxCertIn = NULL;
+	vector<unsigned char> vchCert;
+	CScript scriptPubKeyCert;
+	// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
+	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
+		CTransaction txCert;
+		
+		CCert theCert;
+		vector<vector<unsigned char> > vvch;
+		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
+		// make sure this cert is still valid
+		if (GetTxOfCert(*pcertdb, entry.certLinkVchRand, theCert, txCert))
+		{
+			// check for existing cert updates/transfers
+			if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
+				throw runtime_error("there is are pending operations on that cert");
+			}
+			// make sure its in your wallet (you control this cert)
+			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
+			if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
+			{
+				foundCert = entry;		
+				int op, nOut;
+				if(DecodeCertTx(txCert, op, nOut, vvch))
+					vchCert = vvch[0];
+				CPubKey currentCertKey(theCert.vchPubKey);
+				scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
+			}		
+		}
+	}
+	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
+	scriptPubKeyCert += scriptPubKeyCertOrig;
+
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
@@ -595,6 +645,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
     CEscrow newEscrow;
 	newEscrow.vchBuyerKey = buyeralias.vchPubKey;
 	newEscrow.vchArbiterKey = arbiteralias.vchPubKey;
+	newEscrow.vchCert = vchCert;
 	newEscrow.vchRedeemScript = redeemScript;
 	newEscrow.vchOffer = vchOffer;
 	newEscrow.vchSellerKey = theOffer.vchPubKey;
@@ -612,7 +663,11 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	CRecipient recipientSeller;
 	CreateRecipient(scriptPubKeySeller, recipientSeller);
 	vecSend.push_back(recipientSeller);
-
+	CRecipient certRecipient;
+	CreateRecipient(scriptPubKeyCert, certRecipient);
+	// if we use a cert as input to this escrow tx, we need another utxo for further cert transactions on this cert, so we create one here
+	if(wtxCertIn != NULL)
+		vecSend.push_back(certRecipient);
 
 	CRecipient recipientBuyer;
 	CreateRecipient(scriptPubKeyBuyer, recipientBuyer);
@@ -628,8 +683,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	const CWalletTx * wtxInCert=NULL;
-	SendMoneySyscoin(vecSend,recipientBuyer.nAmount+ recipientArbiter.nAmount+recipientSeller.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend,recipientBuyer.nAmount+ recipientArbiter.nAmount+recipientSeller.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxCertIn, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));

@@ -35,6 +35,8 @@ public:
 	std::vector<unsigned char> rawTx;
 	std::vector<unsigned char> vchOfferAcceptLink;
 	std::vector<unsigned char> vchBuyerKey;
+	std::vector<unsigned char> vchCert;
+	
 	
     uint256 txHash;
 	uint256 escrowInputTxHash;
@@ -48,6 +50,7 @@ public:
 		vchRedeemScript.clear();
 		vchOffer.clear();
 		vchPaymentMessage.clear();
+		vchCert.clear();
 	}
     CEscrow() {
         SetNull();
@@ -64,6 +67,7 @@ public:
 		READWRITE(vchArbiterKey);
 		READWRITE(vchRedeemScript);
         READWRITE(vchOffer);
+		READWRITE(vchCert);
 		READWRITE(vchPaymentMessage);
 		READWRITE(rawTx);
 		READWRITE(vchOfferAcceptLink);
@@ -82,6 +86,7 @@ public:
 		&& a.vchArbiterKey == b.vchArbiterKey
 		&& a.vchRedeemScript == b.vchRedeemScript
         && a.vchOffer == b.vchOffer
+		&& a.vchCert == b.vchCert
 		&& a.vchPaymentMessage == b.vchPaymentMessage
 		&& a.rawTx == b.rawTx
 		&& a.vchOfferAcceptLink == b.vchOfferAcceptLink
@@ -99,6 +104,7 @@ public:
 		vchArbiterKey = b.vchArbiterKey;
 		vchRedeemScript = b.vchRedeemScript;
         vchOffer = b.vchOffer;
+		vchCert = b.vchCert;
 		vchPaymentMessage = b.vchPaymentMessage;
 		rawTx = b.rawTx;
 		vchOfferAcceptLink = b.vchOfferAcceptLink;
@@ -114,7 +120,7 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { nHeight = 0; txHash.SetNull(); escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
+    void SetNull() { nHeight = 0; txHash.SetNull(); escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); vchCert.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
     bool IsNull() const { return (txHash.IsNull() && escrowInputTxHash.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0 && vchBuyerKey.empty() && vchArbiterKey.empty() && vchSellerKey.empty()); }
     bool UnserializeFromTx(const CTransaction &tx);
 	const std::vector<unsigned char> Serialize();

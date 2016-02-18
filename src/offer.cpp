@@ -476,7 +476,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	{
 		switch (op) {
 		case OP_OFFER_ACTIVATE:
-		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
@@ -504,14 +503,12 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
 					{
 						COffer myParentOffer = myVtxPos.back();
-						// ensure we can link against the offer if its in exclusive mode
-						if(myParentOffer.linkWhitelist.bExclusiveResell)
-						{
-							if (!IsCertOp(prevCertOp) || theOffer.linkWhitelist.IsNull())
-								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish or link to");			
-							if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
-								return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert input and offer whitelist guid mismatch");
-						}
+						COfferLinkWhitelistEntry entry;
+						if (!IsCertOp(prevCertOp) && myParentOffer.linkWhitelist.bExclusiveResell)
+							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish to link to");			
+						if (IsCertOp(prevCertOp) && !myParentOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
+							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this certificate in the parent offer whitelist");
+						
 					}
 					else
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");	
@@ -522,15 +519,15 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			
 			break;
 		case OP_OFFER_UPDATE:
+			COfferLinkWhitelistEntry entry;
 			if (!IsOfferOp(prevOp) )
 				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
 			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.entries[0].certLinkVchRand.empty() && theOffer.linkWhitelist.entries[0].certLinkVchRand != vvchPrevCertArgs[0])
-				return error("CheckOfferInputs() : cert input and offer whitelist entry guid mismatch");
-	 
+			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
+				return error("CheckOfferInputs() : cannot find this certificate in the offer's whitelist");
 			if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
 				return error("offerupdate previous op is invalid");			
 			if (vvchPrevArgs[0] != vvchArgs[0])
@@ -553,15 +550,20 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			
 			break;
 		case OP_OFFER_ACCEPT:
-			if (foundOffer || (foundEscrow && !IsEscrowOp(prevEscrowOp)) || (foundCert && !IsCertOp(prevCertOp)))
-				return error("CheckOfferInputs() : offeraccept cert/escrow input tx mismatch");
+			COfferLinkWhitelistEntry entry;
+			vector<unsigned char> vchCert;
+			if (IsEscrowOp(prevEscrowOp)) && IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : Cannot have both certificate and escrow inputs to an accept");
+			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.txBTCId.IsNull())
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't use BTC for escrow transactions!");		
+	
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
 				return error("offeraccept tx with guid too big");
 			// check for existence of offeraccept in txn offer obj
 			theOfferAccept = theOffer.accept;
 			if(theOfferAccept.IsNull())
 				return error("OP_OFFER_ACCEPT null accept object");
-			if(theOfferAccept.vchAcceptRand != vvchArgs[1])
+			if (theOfferAccept.vchAcceptRand != vvchArgs[1])
 				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
 			if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
 				return error("OP_OFFER_ACCEPT offer accept hex guid too long");
@@ -614,7 +616,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
 			if(IsEscrowOp(prevEscrowOp))
-			{	
+			{		
 				vector<CEscrow> escrowVtxPos;
 				if (pescrowdb->ExistsEscrow(vvchPrevEscrowArgs[0])) {
 					if (pescrowdb->ReadEscrow(vvchPrevEscrowArgs[0], escrowVtxPos) && !escrowVtxPos.empty())
@@ -622,6 +624,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						// we want the initial funding escrow transaction height as when to calculate this offer accept price
 						CEscrow fundingEscrow = escrowVtxPos.front();
 						heightToCheckAgainst = fundingEscrow.nHeight;
+						// if a certificate is attached to the escrow, meaning the buyer has a cert that may be in the seller's whitelist, get the cert guid here
+						if(!escrowVtxPos.back().vchCert.empty())
+							vchCert = escrowVtxPos.back().vchCert;
+
 					}
 				}
 			}
@@ -635,9 +641,12 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						return error(
 								"CheckOfferInputs() : failed to read from offer DB");
 				}
-				COfferLinkWhitelistEntry entry;
-				if(IsCertOp(prevCertOp))
-					vtxPos.back().linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry);	
+				// if there is no escrow being used here, vchCert should be empty so if the buyer uses a cert for a discount or a exclusive whitelist buy, then get the guid
+				if(IsCertOp(prevCertOp) && vchCert.empty())
+					vchCert = vvchPrevCertArgs[0];
+				
+				// try to get the whitelist entry here from the sellers whitelist, apply the discount with GetPrice()
+				vtxPos.back().linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
 
 				COffer myPriceOffer;
 				myPriceOffer.nHeight = heightToCheckAgainst;
@@ -667,17 +676,17 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		}
 	}
 	
-	// save serialized offer for later use
-	COffer serializedOffer = theOffer;
-	// load the offer data from the DB
-	vector<COffer> vtxPos;
-	if (pofferdb->ExistsOffer(vvchArgs[0]) && !fJustCheck) {
-		if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-			return error(
-					"CheckOfferInputs() : failed to read from offer DB");
-	}
 
 	if (!fJustCheck ) {
+		// save serialized offer for later use
+		COffer serializedOffer = theOffer;
+		// load the offer data from the DB
+		vector<COffer> vtxPos;
+		if (pofferdb->ExistsOffer(vvchArgs[0])) {
+			if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
+				return error(
+						"CheckOfferInputs() : failed to read from offer DB");
+		}
 		// get the latest offer from the db
 		if(!vtxPos.empty())
 			theOffer = vtxPos.back();				
@@ -1207,16 +1216,14 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 				if (ExistsInMempool(entry.certLinkVchRand, OP_CERT_UPDATE) || ExistsInMempool(entry.certLinkVchRand, OP_CERT_TRANSFER)) {
 					throw runtime_error("there are pending operations on that cert");
 				}
-				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 				// make sure its in your wallet (you control this cert)		
-				if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
+				if (IsSyscoinTxMine(txCert, "cert")) 
 				{
+					wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
 					foundEntry = entry;
 					CPubKey currentCertKey(theCert.vchPubKey);
 					scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
 				}
-				else
-					wtxCertIn = NULL;
 			}
 		}
 
@@ -1258,7 +1265,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	newOffer.SetPrice(price);
 	newOffer.nCommission = commissionInteger;
 	newOffer.vchLinkOffer = vchLinkOffer;
-	newOffer.linkWhitelist.PutWhitelistEntry(foundEntry);
 	newOffer.nHeight = chainActive.Tip()->nHeight;
 	
 	//create offeractivate txn keys
@@ -2108,13 +2114,14 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CreateRecipient(scriptPubKeyCert, certRecipient);
 	CRecipient escrowRecipient;
 	CreateRecipient(scriptPubKeyEscrow, escrowRecipient);
-	// if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
-	if(wtxCertIn != NULL)
-		vecSend.push_back(certRecipient);
-
 	// if we are accepting an escrow transaction then create another escrow utxo for escrowcomplete to be able to do its thing
 	if (wtxEscrowIn != NULL) 
 		vecSend.push_back(escrowRecipient);
+	// if not accepting an escrow accept, if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
+	else if(wtxCertIn != NULL)
+		vecSend.push_back(certRecipient);
+
+
 
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")

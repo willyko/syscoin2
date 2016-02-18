@@ -495,14 +495,14 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		}
 	}
 	
-	// get the alias from the DB
-	vector<CAliasIndex> vtxPos;
-	if (paliasdb->ExistsAlias(vvchArgs[0]) && !fJustCheck) {
-		if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-			return error(
-					"CheckAliasInputs() : failed to read from alias DB");
-	}
 	if (!fJustCheck ) {
+		// get the alias from the DB
+		vector<CAliasIndex> vtxPos;
+		if (paliasdb->ExistsAlias(vvchArgs[0])) {
+			if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
+				return error(
+						"CheckAliasInputs() : failed to read from alias DB");
+		}
 		if(!vtxPos.empty())
 		{
 			if(theAlias.IsNull())

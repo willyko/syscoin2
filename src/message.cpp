@@ -313,15 +313,14 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 	// save serialized message for later use
 	CMessage serializedMessage = theMessage;
 
-	// if not an messagenew, load the message data from the DB
-	vector<CMessage> vtxPos;
-	if (pmessagedb->ExistsMessage(vvchArgs[0]) && !fJustCheck) {
-		if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-			return error(
-					"CheckMessageInputs() : failed to read from message DB");
-	}
+
     if (!fJustCheck ) {
-        
+		vector<CMessage> vtxPos;
+		if (pmessagedb->ExistsMessage(vvchArgs[0])) {
+			if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
+				return error(
+						"CheckMessageInputs() : failed to read from message DB");
+		}      
         // set the message's txn-dependent values
 		theMessage.txHash = tx.GetHash();
 		theMessage.nHeight = nHeight;

@@ -348,14 +348,14 @@ bool CheckCertInputs(const CTransaction &tx,
 		}
 	}
 
-	// if not an certnew, load the cert data from the DB
-	vector<CCert> vtxPos;
-	if (pcertdb->ExistsCert(vvchArgs[0]) && !fJustCheck) {
-		if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-			return error(
-					"CheckCertInputs() : failed to read from cert DB");
-	}
     if (!fJustCheck ) {
+		// if not an certnew, load the cert data from the DB
+		vector<CCert> vtxPos;
+		if (pcertdb->ExistsCert(vvchArgs[0])) {
+			if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
+				return error(
+						"CheckCertInputs() : failed to read from cert DB");
+		}
 		if(!vtxPos.empty())
 		{
 			if(theCert.IsNull())
