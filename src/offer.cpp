@@ -2019,9 +2019,9 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				throw runtime_error("there is are pending operations on that cert");
 			}
 			// make sure its in your wallet (you control this cert)
-			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
-			if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
+			if (IsSyscoinTxMine(txCert, "cert")) 
 			{
+				wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 				foundCert = entry;		
 				int op, nOut;
 				if(DecodeCertTx(txCert, op, nOut, vvch))
@@ -2112,7 +2112,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CreateRecipient(scriptPubKeyEscrow, escrowRecipient);
 	// if we are accepting an escrow transaction then create another escrow utxo for escrowcomplete to be able to do its thing
 	if (wtxEscrowIn != NULL) 
+	{
+		wtxCertIn = NULL;
 		vecSend.push_back(escrowRecipient);
+	}
 	// if not accepting an escrow accept, if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	else if(wtxCertIn != NULL)
 		vecSend.push_back(certRecipient);
