@@ -535,7 +535,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 			wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());		
 			if (IsSyscoinTxMine(txCert, "cert") && wtxCertIn != NULL) 
 			{
-				foundCert = entry;		
+				foundCert = entry;
 				int op, nOut;
 				if(DecodeCertTx(txCert, op, nOut, vvch))
 					vchCert = vvch[0];
@@ -625,7 +625,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	// send to escrow address
 
 	int precision = 2;
-	CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), chainActive.Tip()->nHeight, precision);
+	CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), chainActive.Tip()->nHeight, precision);
 	CAmount nTotal = nPricePerUnit*nQty;
 
 	CAmount nEscrowFee = GetEscrowArbiterFee(nTotal);
