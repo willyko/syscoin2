@@ -743,6 +743,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
+	bool foundSellerKey = false;
 	try
 	{
 		// if this is the seller calling release, try to claim the release
@@ -752,12 +753,15 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
 			throw runtime_error("Private key for seller address " + sellerAddress.ToString() + " is not known");
-		return tableRPC.execute("escrowclaimrelease", params);
+		foundSellerKey = true;
 		
 	}
 	catch(...)
 	{
+		foundSellerKey = false;
 	}
+	if(foundSellerKey)
+		return tableRPC.execute("escrowclaimrelease", params);;
     if (op != OP_ESCROW_ACTIVATE)
         throw runtime_error("Release can only happen on an activated escrow");
 	int nOutMultiSig = 0;
@@ -1272,7 +1276,7 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 	CSyscoinAddress sellerAddress(sellerKey.GetID());
 	if(!sellerAddress.IsValid())
 		throw runtime_error("Seller address is invalid!");
-
+	bool foundBuyerKey = false;
 	try
 	{
 		// if this is the buyer calling refund, try to claim the refund
@@ -1282,12 +1286,14 @@ UniValue escrowrefund(const UniValue& params, bool fHelp) {
 		CKey vchSecret;
 		if (!pwalletMain->GetKey(keyID, vchSecret))
 			throw runtime_error("Private key for buyer address " + buyerAddress.ToString() + " is not known");
-		return tableRPC.execute("escrowclaimrefund", params);
-		
+		foundBuyerKey = true;
 	}
 	catch(...)
 	{
+		foundBuyerKey = false;
 	}
+	if(foundBuyerKey)
+		return tableRPC.execute("escrowclaimrefund", params);
 	if(op != OP_ESCROW_ACTIVATE)
 		 throw runtime_error("Refund can only happen on an activated escrow");
 	int nOutMultiSig = 0;
