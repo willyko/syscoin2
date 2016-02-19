@@ -2160,118 +2160,119 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
 	map< vector<unsigned char>, int > vNamesI;
 	string offer = stringFromVch(vchOffer);
-	{
-		vector<COffer> vtxPos;
-		if (!pofferdb->ReadOffer(vchOffer, vtxPos))
-			throw runtime_error("failed to read from offer DB");
-		if (vtxPos.size() < 1)
-			throw runtime_error("no result returned");
+	
+	vector<COffer> vtxPos;
+	if (!pofferdb->ReadOffer(vchOffer, vtxPos))
+		throw runtime_error("failed to read from offer DB");
+	if (vtxPos.size() < 1)
+		throw runtime_error("no result returned");
 
-        uint256 txHash = vtxPos.back().txHash;
-        COffer theOffer = vtxPos.back();
+    uint256 txHash = vtxPos.back().txHash;
+    COffer theOffer = vtxPos.back();
 
-		UniValue oOffer(UniValue::VOBJ);
-		vector<unsigned char> vchValue;
-		UniValue aoOfferAccepts(UniValue::VARR);
-		for(int i=vtxPos.size()-1;i>=0;i--) {
-			COfferAccept ca = vtxPos[i].accept;
-			if(ca.IsNull())
-				continue;
-			// get last active accept only
-			if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
-				continue;
-			vNamesI[ca.vchAcceptRand] = ca.nHeight;
-			UniValue oOfferAccept(UniValue::VOBJ);
+	UniValue oOffer(UniValue::VOBJ);
+	vector<unsigned char> vchValue;
+	UniValue aoOfferAccepts(UniValue::VARR);
+	for(int i=vtxPos.size()-1;i>=0;i--) {
+		COfferAccept ca = vtxPos[i].accept;
+		if(ca.IsNull())
+			continue;
+		// get last active accept only
+		if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
+			continue;
+		vNamesI[ca.vchAcceptRand] = ca.nHeight;
+		UniValue oOfferAccept(UniValue::VOBJ);
 
-	        // get transaction pointed to by offer
+        // get transaction pointed to by offer
 
-	        CTransaction txA;
-	        uint256 txHashA= ca.txHash;
-	        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus()))
-			{
-				error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
-				continue;
-			}
-			vector<vector<unsigned char> > vvch;
-            int op, nOut;
-            if (!DecodeOfferTx(txA, op, nOut, vvch) 
-            	|| !IsOfferOp(op) 
-            	|| (op != OP_OFFER_ACCEPT))
-                continue;
-			const vector<unsigned char> &vchAcceptRand = vvch[1];	
-			string sTime;
-			CBlockIndex *pindex = chainActive[ca.nHeight];
-			if (pindex) {
-				sTime = strprintf("%llu", pindex->nTime);
-			}
-            string sHeight = strprintf("%llu", ca.nHeight);
-			oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
-			oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
-			oOfferAccept.push_back(Pair("linkoffer", stringFromVch(ca.vchLinkOffer)));
-			oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
-			string strBTCId = "";
-			if(!ca.txBTCId.IsNull())
-				strBTCId = ca.txBTCId.GetHex();
-			oOfferAccept.push_back(Pair("btctxid", strBTCId));
-			oOfferAccept.push_back(Pair("height", sHeight));
-			oOfferAccept.push_back(Pair("time", sTime));
-			oOfferAccept.push_back(Pair("quantity", strprintf("%d", ca.nQty)));
-			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-			vector<unsigned char> vchEscrowLink;
-			COfferLinkWhitelistEntry entry;	
-			if(IsSyscoinTxMine(txA, "offer")) 
-			{
-				vector<unsigned char> vchOfferLink;
-				vector<unsigned char> vchCertLink;
-				bool foundOffer = false;
-				bool foundCert = false;
-				bool foundEscrow = false;
-				for (unsigned int i = 0; i < txA.vin.size(); i++) {
-					vector<vector<unsigned char> > vvchIn;
-					int opIn;
-					const COutPoint *prevOutput = &txA.vin[i].prevout;
-					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
-						continue;
-					if(foundOffer && foundCert && foundEscrow)
-						break;
-
-					if (!foundOffer && IsOfferOp(opIn)) {
-						foundOffer = true; 
-						vchOfferLink = vvchIn[0];
-					}
-					if (!foundEscrow && IsEscrowOp(opIn)) {
-						foundEscrow = true; 
-						vchEscrowLink = vvchIn[0];
-					}
-					if (!foundCert && IsCertOp(opIn)) {
-						foundCert = true; 
-						vchCertLink = vvchIn[0];
-					}
-				}
-				if(foundCert)
-					theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);		
-			}
-			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
-			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
-			int precision = 2;
-			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
-			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
-			oOfferAccept.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
-			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
-			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
-
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
-
-			if(!ca.txBTCId.IsNull())
-				oOfferAccept.push_back(Pair("paid","check payment"));
-			else
-				oOfferAccept.push_back(Pair("paid","true"));
-			string strMessage = string("");
-			if(!DecryptMessage(theOffer.vchPubKey, ca.vchMessage, strMessage))
-				strMessage = string("Encrypted for owner of offer");
-			oOfferAccept.push_back(Pair("pay_message", strMessage));
-			aoOfferAccepts.push_back(oOfferAccept);
+        CTransaction txA;
+        uint256 txHashA= ca.txHash;
+        if (!GetSyscoinTransaction(ca.nHeight, txHashA, txA, Params().GetConsensus()))
+		{
+			error(strprintf("failed to accept read transaction from disk: %s", txHashA.GetHex()).c_str());
+			continue;
 		}
+		vector<vector<unsigned char> > vvch;
+        int op, nOut;
+        if (!DecodeOfferTx(txA, op, nOut, vvch) 
+        	|| !IsOfferOp(op) 
+        	|| (op != OP_OFFER_ACCEPT))
+            continue;
+		const vector<unsigned char> &vchAcceptRand = vvch[1];	
+		string sTime;
+		CBlockIndex *pindex = chainActive[ca.nHeight];
+		if (pindex) {
+			sTime = strprintf("%llu", pindex->nTime);
+		}
+        string sHeight = strprintf("%llu", ca.nHeight);
+		oOfferAccept.push_back(Pair("id", stringFromVch(vchAcceptRand)));
+		oOfferAccept.push_back(Pair("linkofferaccept", stringFromVch(ca.vchLinkOfferAccept)));
+		oOfferAccept.push_back(Pair("linkoffer", stringFromVch(ca.vchLinkOffer)));
+		oOfferAccept.push_back(Pair("txid", ca.txHash.GetHex()));
+		string strBTCId = "";
+		if(!ca.txBTCId.IsNull())
+			strBTCId = ca.txBTCId.GetHex();
+		oOfferAccept.push_back(Pair("btctxid", strBTCId));
+		oOfferAccept.push_back(Pair("height", sHeight));
+		oOfferAccept.push_back(Pair("time", sTime));
+		oOfferAccept.push_back(Pair("quantity", strprintf("%d", ca.nQty)));
+		oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
+		vector<unsigned char> vchEscrowLink;
+		COfferLinkWhitelistEntry entry;	
+		if(IsSyscoinTxMine(txA, "offer")) 
+		{
+			vector<unsigned char> vchOfferLink;
+			vector<unsigned char> vchCertLink;
+			bool foundOffer = false;
+			bool foundCert = false;
+			bool foundEscrow = false;
+			for (unsigned int i = 0; i < txA.vin.size(); i++) {
+				vector<vector<unsigned char> > vvchIn;
+				int opIn;
+				const COutPoint *prevOutput = &txA.vin[i].prevout;
+				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+					continue;
+				if(foundOffer && foundCert && foundEscrow)
+					break;
+
+				if (!foundOffer && IsOfferOp(opIn)) {
+					foundOffer = true; 
+					vchOfferLink = vvchIn[0];
+				}
+				if (!foundEscrow && IsEscrowOp(opIn)) {
+					foundEscrow = true; 
+					vchEscrowLink = vvchIn[0];
+				}
+				if (!foundCert && IsCertOp(opIn)) {
+					foundCert = true; 
+					vchCertLink = vvchIn[0];
+				}
+			}
+			if(foundCert)
+				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);		
+		}
+		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
+		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
+		int precision = 2;
+		CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
+		oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
+		oOfferAccept.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
+		oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
+		oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
+
+		oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
+
+		if(!ca.txBTCId.IsNull())
+			oOfferAccept.push_back(Pair("paid","check payment"));
+		else
+			oOfferAccept.push_back(Pair("paid","true"));
+		string strMessage = string("");
+		if(!DecryptMessage(theOffer.vchPubKey, ca.vchMessage, strMessage))
+			strMessage = string("Encrypted for owner of offer");
+		oOfferAccept.push_back(Pair("pay_message", strMessage));
+		aoOfferAccepts.push_back(oOfferAccept);
+		
+
 		uint64_t nHeight;
 		int expired;
 		int expires_in;
@@ -2315,8 +2316,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 		
-		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(tx, "offer") ? "true" : "false"));
-		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer")) {
+		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
+		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(txA, "offer")) {
 			oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
 			oOffer.push_back(Pair("offerlink", "true"));
 			oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
