@@ -322,6 +322,8 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
     // unserialize escrow UniValue from txn, check for valid
     CEscrow theEscrow;
     theEscrow.UnserializeFromTx(tx);
+    CEscrow theOffer;
+    
 	if(theEscrow.IsNull() && op != OP_ESCROW_RELEASE)
 		return error("CheckAliasInputs() : null escrow");
     if (vvchArgs[0].size() > MAX_NAME_LENGTH)
@@ -378,6 +380,10 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 				// Check input
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckEscrowInputs() : escrow input guid mismatch");
+				theOffer.UnserializeFromTx(tx);
+				if(theOffer.accept.IsNull())
+					return error("CheckEscrowInputs() : no offeraccept payload found");
+
 				break;
 			case OP_ESCROW_REFUND:
 				if(prevOp != OP_ESCROW_ACTIVATE)
@@ -413,7 +419,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 				if(!serializedEscrow.rawTx.empty())
 					theEscrow.rawTx = serializedEscrow.rawTx;	
 				if(op == OP_ESCROW_COMPLETE)
-					theEscrow.vchOfferAcceptLink = tx.GetHash();
+					theEscrow.vchOfferAcceptLink = theOffer.accept.vchAcceptRand;	
 			}
 		}
         // set the escrow's txn-dependent values
