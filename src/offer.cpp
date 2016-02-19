@@ -930,7 +930,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 						"<alias> An alias you own.\n"
 						"<category> category, 255 chars max.\n"
 						"<title> title, 255 chars max.\n"
-						"<quantity> quantity, > 0\n"
+						"<quantity> quantity, > 0 or -1 for infinite\n"
 						"<price> price in <currency>, > 0\n"
 						"<description> description, 1 KB max.\n"
 						"<currency> The currency code that you want your offer to be in ie: USD.\n"
@@ -976,8 +976,10 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	try {
 		nQty = atoi(params[3].get_str());
 	} catch (std::exception &e) {
-		throw runtime_error("invalid quantity value, must be less than 4294967296");
+		throw runtime_error("invalid quantity value, must be less than 4294967296 and greater than or equal to -1");
 	}
+	if(nQty < -1)
+		throw runtime_error("qty must be greater than or equal to -1");
 	nPrice = atof(params[4].get_str().c_str());
 	if(nPrice <= 0)
 	{
@@ -1636,8 +1638,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		price = atof(params[5].get_str().c_str());
 
 	} catch (std::exception &e) {
-		throw runtime_error("invalid price and/or quantity values. Quantity must be less than 4294967296.");
+		throw runtime_error("invalid price and/or quantity values. Quantity must be less than 4294967296 and greater than or equal to -1.");
 	}
+	if(nQty < -1)
+		throw runtime_error("qty must be greater than or equal to -1");
 	if (params.size() >= 7) vchDesc = vchFromValue(params[6]);
 	if(price <= 0)
 	{
@@ -2216,7 +2220,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("btctxid", strBTCId));
 			oOfferAccept.push_back(Pair("height", sHeight));
 			oOfferAccept.push_back(Pair("time", sTime));
-			oOfferAccept.push_back(Pair("quantity", strprintf("%u", ca.nQty)));
+			oOfferAccept.push_back(Pair("quantity", strprintf("%d", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
 	
@@ -2313,7 +2317,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("address", selleraddy.ToString()));
 		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
 		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
-		oOffer.push_back(Pair("quantity", strprintf("%u", theOffer.nQty)));
+		oOffer.push_back(Pair("quantity", strprintf("%d", theOffer.nQty)));
 		oOffer.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 		
 		
@@ -2423,7 +2427,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyer", buyeraddy.aliasName));
 			oOfferAccept.push_back(Pair("height", sHeight));
-			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
+			oOfferAccept.push_back(Pair("quantity", strprintf("%d", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
 			vector<unsigned char> vchEscrowLink;
@@ -2549,7 +2553,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("alias", selleraddy.aliasName));
 			oOfferAccept.push_back(Pair("buyer", buyeraddy.aliasName));
 			oOfferAccept.push_back(Pair("height", sHeight));
-			oOfferAccept.push_back(Pair("quantity", strprintf("%u", theOfferAccept.nQty)));
+			oOfferAccept.push_back(Pair("quantity", strprintf("%d", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
 	
@@ -2690,7 +2694,7 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 
 			oName.push_back(Pair("currency", stringFromVch(theOfferA.sCurrencyCode) ) );
 			oName.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
-            oName.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
+            oName.push_back(Pair("quantity", strprintf("%d", theOfferA.nQty)));
 			CPubKey SellerPubKey(theOfferA.vchPubKey);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
@@ -2783,7 +2787,7 @@ UniValue offerhistory(const UniValue& params, bool fHelp) {
 
 			oOffer.push_back(Pair("currency", stringFromVch(theOfferA.sCurrencyCode) ) );
 			oOffer.push_back(Pair("commission", strprintf("%d%%", theOfferA.nCommission)));
-            oOffer.push_back(Pair("quantity", strprintf("%u", theOfferA.nQty)));
+            oOffer.push_back(Pair("quantity", strprintf("%d", theOfferA.nQty)));
 
 			oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
 			expired_block = nHeight + GetOfferExpirationDepth();
@@ -2909,7 +2913,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		oOffer.push_back(Pair("price", strprintf("%.*f", precision, foundOffer.GetPrice() ))); 	
 		oOffer.push_back(Pair("currency", stringFromVch(txOffer.sCurrencyCode)));
 		oOffer.push_back(Pair("commission", strprintf("%d%%", txOffer.nCommission)));
-        oOffer.push_back(Pair("quantity", strprintf("%u", txOffer.nQty)));
+        oOffer.push_back(Pair("quantity", strprintf("%d", txOffer.nQty)));
 		oOffer.push_back(Pair("exclusive_resell", txOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
 		oOffer.push_back(Pair("btconly", txOffer.bOnlyAcceptBTC ? "Yes" : "No"));
 		expired_block = nHeight + GetOfferExpirationDepth();
