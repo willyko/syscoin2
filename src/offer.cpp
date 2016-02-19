@@ -533,7 +533,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				return error("CheckOfferInputs() : offerupdate offer mismatch");	
 
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
-			if(!theOffer.vchCert.empty())
+			// also only do this if whitelist isn't being modified, because if it is, update just falls through and offer is stored as whats in the db, plus any whitelist changes
+			if(!theOffer.vchCert.empty() && theOffer.linkWhitelist.entries.empty())
 			{
 				CTransaction txCert;
 				CCert theCert;
