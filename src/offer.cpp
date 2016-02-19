@@ -2167,12 +2167,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		if (vtxPos.size() < 1)
 			throw runtime_error("no result returned");
 
-        // get transaction pointed to by offer
-        CTransaction tx;
         uint256 txHash = vtxPos.back().txHash;
-        if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
-            throw runtime_error("failed to read offer transaction from disk");
-
         COffer theOffer = vtxPos.back();
 
 		UniValue oOffer(UniValue::VOBJ);
@@ -2223,50 +2218,30 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%d", ca.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
-	
-			bool foundEscrow = false;
-			for (unsigned int i = 0; i < txA.vin.size(); i++) {
-				vector<vector<unsigned char> > vvchIn;
-				int opIn;
-				const COutPoint *prevOutput = &txA.vin[i].prevout;
-				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
-					continue;
-				if(foundEscrow)
-					break;
-
-				if (!foundEscrow && IsEscrowOp(opIn)) {
-					foundEscrow = true; 
-					vchEscrowLink = vvchIn[0];
-				}
-			}
-			
-			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
-			int precision = 2;
-			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
-			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
-			oOfferAccept.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
-			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
-			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
-			COfferLinkWhitelistEntry entry;
-			
-			if(IsSyscoinTxMine(tx, "offer")) 
+			COfferLinkWhitelistEntry entry;	
+			if(IsSyscoinTxMine(txA, "offer")) 
 			{
 				vector<unsigned char> vchOfferLink;
 				vector<unsigned char> vchCertLink;
 				bool foundOffer = false;
 				bool foundCert = false;
-				for (unsigned int i = 0; i < tx.vin.size(); i++) {
+				bool foundEscrow = false;
+				for (unsigned int i = 0; i < txA.vin.size(); i++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
-					const COutPoint *prevOutput = &tx.vin[i].prevout;
+					const COutPoint *prevOutput = &txA.vin[i].prevout;
 					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
 						continue;
-					if(foundOffer && foundCert)
+					if(foundOffer && foundCert && foundEscrow)
 						break;
 
 					if (!foundOffer && IsOfferOp(opIn)) {
 						foundOffer = true; 
 						vchOfferLink = vvchIn[0];
+					}
+					if (!foundEscrow && IsEscrowOp(opIn)) {
+						foundEscrow = true; 
+						vchEscrowLink = vvchIn[0];
 					}
 					if (!foundCert && IsCertOp(opIn)) {
 						foundCert = true; 
@@ -2274,9 +2249,17 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 					}
 				}
 				if(foundCert)
-					theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
+					theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);		
 			}
-			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
+			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
+			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
+			int precision = 2;
+			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, ca.nPrice, ca.nHeight, precision);
+			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * ca.nQty)));
+			oOfferAccept.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
+			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, ca.nPrice ))); 	
+			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, ca.nPrice * ca.nQty )));
+
 			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
 
 			if(!ca.txBTCId.IsNull())
@@ -2464,7 +2447,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 					vchCertLink = vvchIn[0];
 				}
 			}
-			if(IsSyscoinTxMine(offerTx, "offer") && foundCert)
+			if(foundCert)
 				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
 			
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
@@ -2567,23 +2550,37 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("quantity", strprintf("%d", theOfferAccept.nQty)));
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			vector<unsigned char> vchEscrowLink;
-	
+			vector<unsigned char> vchCertLink;
+			vector<unsigned char> vchOfferLink;
+			bool foundOffer = false;
 			bool foundEscrow = false;
+			bool foundCert = false;
 			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
 				vector<vector<unsigned char> > vvchIn;
 				int opIn;
 				const COutPoint *prevOutput = &acceptTx.vin[i].prevout;
 				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
 					continue;
-				if(foundEscrow)
+				if(foundOffer && foundEscrow && foundCert)
 					break;
 
+				if (!foundOffer && IsOfferOp(opIn)) {
+					foundOffer = true; 
+					vchOfferLink = vvchIn[0];
+				}
 				if (!foundEscrow && IsEscrowOp(opIn)) {
 					foundEscrow = true; 
 					vchEscrowLink = vvchIn[0];
 				}
+				if (!foundCert && IsCertOp(opIn)) {
+					foundCert = true; 
+					vchCertLink = vvchIn[0];
+				}
 			}
+			if(foundCert)
+				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
 			
+			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
 			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
