@@ -1190,7 +1190,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	if (wtxAcceptIn == NULL)
 		throw runtime_error("offer accept is not in your wallet");
 	UniValue ret(UniValue::VARR);
-	ret.push_back(wtxAcceptIn.GetHash().GetHex());
+	ret.push_back(wtxAcceptIn->GetHash().GetHex());
 	return ret;
 }
 UniValue escrowrefund(const UniValue& params, bool fHelp) {
