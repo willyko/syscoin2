@@ -419,7 +419,10 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 				if(!serializedEscrow.rawTx.empty())
 					theEscrow.rawTx = serializedEscrow.rawTx;	
 				if(op == OP_ESCROW_COMPLETE)
+				{
+					theEscrow.UnserializeFromTx(tx);
 					theEscrow.vchOfferAcceptLink = theOffer.accept.vchAcceptRand;	
+				}
 			}
 		}
         // set the escrow's txn-dependent values
