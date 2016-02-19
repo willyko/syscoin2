@@ -1428,28 +1428,11 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CCert theCert;
 	CWalletTx wtx;
 	const CWalletTx* wtxIn = NULL;
-	const CWalletTx *wtxCertIn = NULL;
-	if (!GetTxOfCert(*pcertdb, vchCert, theCert, txCert))
-		throw runtime_error("could not find a certificate with this key");
-    // check for existing cert 's
-	if (ExistsInMempool(vchCert, OP_CERT_UPDATE) || ExistsInMempool(vchCert, OP_CERT_TRANSFER)) {
-		throw runtime_error("there are pending operations on that cert");
-	}
+
 	// this is a syscoin txn
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig;
-	// create OFFERUPDATE/CERTUPDATE txn keys
-	CScript scriptPubKey, scriptPubKeyCert;
-	// check to see if certificate in wallet
-	wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
-	if (!IsSyscoinTxMine(txCert, "cert") || wtxCertIn == NULL) 
-		throw runtime_error("this certificate is not yours");
-
-	CPubKey currentCertKey(theCert.vchPubKey);
-	scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
-	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
-	scriptPubKeyCert += scriptPubKeyCertOrig;
-	// this is a syscoind txn
-
+	CScript scriptPubKeyOrig;
+	// create OFFERUPDATE txn keys
+	CScript scriptPubKey;
 
 	EnsureWalletIsUnlocked();
 
@@ -1505,7 +1488,8 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInAlias=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxCertIn, wtxInAlias, wtxInEscrow);
+	const CWalletTx * wtxInCert=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxIn, wtxInCert, wtxInAlias, wtxInEscrow);
 
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
