@@ -2252,23 +2252,29 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			if(IsSyscoinTxMine(tx, "offer")) 
 			{
 				vector<unsigned char> vchOfferLink;
+				vector<unsigned char> vchCertLink;
 				bool foundOffer = false;
+				bool foundCert = false;
 				for (unsigned int i = 0; i < tx.vin.size(); i++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
 					const COutPoint *prevOutput = &tx.vin[i].prevout;
 					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
 						continue;
-					if(foundOffer)
+					if(foundOffer && foundCert)
 						break;
 
 					if (!foundOffer && IsOfferOp(opIn)) {
 						foundOffer = true; 
 						vchOfferLink = vvchIn[0];
 					}
+					if (!foundCert && IsCertOp(opIn)) {
+						foundCert = true; 
+						vchCertLink = vvchIn[0];
+					}
 				}
-				if(foundOffer)
-					theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
+				if(foundCert)
+					theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
 			}
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
@@ -2431,17 +2437,18 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 			COfferLinkWhitelistEntry entry;
 			vector<unsigned char> vchEscrowLink;
-	
+			vector<unsigned char> vchCertLink;
 			vector<unsigned char> vchOfferLink;
 			bool foundOffer = false;
 			bool foundEscrow = false;
+			bool foundCert = false;
 			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
 				vector<vector<unsigned char> > vvchIn;
 				int opIn;
 				const COutPoint *prevOutput = &acceptTx.vin[i].prevout;
 				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
 					continue;
-				if(foundOffer && foundEscrow)
+				if(foundOffer && foundEscrow && foundCert)
 					break;
 
 				if (!foundOffer && IsOfferOp(opIn)) {
@@ -2452,9 +2459,13 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 					foundEscrow = true; 
 					vchEscrowLink = vvchIn[0];
 				}
+				if (!foundCert && IsCertOp(opIn)) {
+					foundCert = true; 
+					vchCertLink = vvchIn[0];
+				}
 			}
-			if(IsSyscoinTxMine(offerTx, "offer") && foundOffer)
-				theOffer.linkWhitelist.GetLinkEntryByHash(vchOfferLink, entry);
+			if(IsSyscoinTxMine(offerTx, "offer") && foundCert)
+				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
 			
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
