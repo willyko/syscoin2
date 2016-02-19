@@ -322,7 +322,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
     // unserialize escrow UniValue from txn, check for valid
     CEscrow theEscrow;
     theEscrow.UnserializeFromTx(tx);
-    CEscrow theOffer;
+    COffer theOffer;
     
 	if(theEscrow.IsNull() && op != OP_ESCROW_RELEASE)
 		return error("CheckAliasInputs() : null escrow");
