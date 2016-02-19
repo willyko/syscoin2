@@ -2167,7 +2167,11 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	if (vtxPos.size() < 1)
 		throw runtime_error("no result returned");
 
+    // get transaction pointed to by offer
+    CTransaction tx;
     uint256 txHash = vtxPos.back().txHash;
+    if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
+        throw runtime_error("failed to read offer transaction from disk");
     COffer theOffer = vtxPos.back();
 
 	UniValue oOffer(UniValue::VOBJ);
@@ -2287,7 +2291,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		vchCert = theOffer.vchCert;
 	oOffer.push_back(Pair("offer", offer));
 	oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
-	oOffer.push_back(Pair("txid", txA.GetHash().GetHex()));
+	oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
 	expired_block = nHeight + GetOfferExpirationDepth();
     if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 	{
@@ -2316,8 +2320,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
 	oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 	
-	oOffer.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
-	if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(txA, "offer")) {
+	oOffer.push_back(Pair("ismine", IsSyscoinTxMine(tx, "offer") ? "true" : "false"));
+	if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer")) {
 		oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
 		oOffer.push_back(Pair("offerlink", "true"));
 		oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
@@ -2335,7 +2339,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	oOffer.push_back(Pair("alias", selleraddy.aliasName));
 	oOffer.push_back(Pair("accepts", aoOfferAccepts));
 	oLastOffer = oOffer;
-	}
+	
 	return oLastOffer;
 
 }
