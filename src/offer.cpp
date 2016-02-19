@@ -1949,7 +1949,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				nHeight = fundingEscrow.nHeight;
 				CPubKey currentEscrowKey(fundingEscrow.vchSellerKey);
 				scriptPubKeyEscrowOrig = GetScriptForDestination(currentEscrowKey.GetID());
-				scriptPubKeyEscrow << CScript::EncodeOP_N(OP_ESCROW_RELEASE) << escrowVvch[0] << OP_2DROP;
+				scriptPubKeyEscrow << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
 				scriptPubKeyEscrow += scriptPubKeyEscrowOrig;
 			}
 		}	

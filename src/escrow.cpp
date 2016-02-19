@@ -411,9 +411,9 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 				theEscrow = vtxPos.back();					
 				// these are the only settings allowed to change outside of activate
 				if(!serializedEscrow.rawTx.empty())
-					theEscrow.rawTx = serializedEscrow.rawTx;
-				if(!serializedEscrow.vchOfferAcceptLink.empty())
-					theEscrow.vchOfferAcceptLink = serializedEscrow.vchOfferAcceptLink;						
+					theEscrow.rawTx = serializedEscrow.rawTx;	
+				if(op == OP_ESCROW_COMPLETE)
+					theEscrow.vchOfferAcceptLink = tx.GetHash();
 			}
 		}
         // set the escrow's txn-dependent values
@@ -1189,36 +1189,8 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	wtxAcceptIn = pwalletMain->GetWalletTx(acceptTxHash);
 	if (wtxAcceptIn == NULL)
 		throw runtime_error("offer accept is not in your wallet");
-
-    CScript scriptPubKey,scriptPubKeyOrig;
-	CPubKey currentKey(escrow.vchSellerKey);
-	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
-    scriptPubKey << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << vchEscrow << OP_2DROP;
-    scriptPubKey += scriptPubKeyOrig;
-
-	escrow.ClearEscrow();
-	escrow.vchOfferAcceptLink = vchFromString(acceptGUID);
-	escrow.nHeight = chainActive.Tip()->nHeight;
-
-
-	vector<CRecipient> vecSend;
-	CRecipient recipient;
-	CreateRecipient(scriptPubKey, recipient);
-	vecSend.push_back(recipient);
-
-	const vector<unsigned char> &data = escrow.Serialize();
-	CScript scriptData;
-	scriptData << OP_RETURN << data;
-	CRecipient fee;
-	CreateFeeRecipient(scriptData, data, fee);
-	vecSend.push_back(fee);
-
-	const CWalletTx * wtxInCert=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	const CWalletTx * wtxInOffer=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxAcceptIn);
 	UniValue ret(UniValue::VARR);
-	ret.push_back(wtx.GetHash().GetHex());
+	ret.push_back(wtxAcceptIn.GetHash().GetHex());
 	return ret;
 }
 UniValue escrowrefund(const UniValue& params, bool fHelp) {
