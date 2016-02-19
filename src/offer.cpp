@@ -2271,70 +2271,70 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			strMessage = string("Encrypted for owner of offer");
 		oOfferAccept.push_back(Pair("pay_message", strMessage));
 		aoOfferAccepts.push_back(oOfferAccept);
-		
+	}
 
-		uint64_t nHeight;
-		int expired;
-		int expires_in;
-		int expired_block;
-  
-		expired = 0;	
-		expires_in = 0;
-		expired_block = 0;
-        nHeight = theOffer.nHeight;
-		vector<unsigned char> vchCert;
-		if(!theOffer.vchCert.empty())
-			vchCert = theOffer.vchCert;
-		oOffer.push_back(Pair("offer", offer));
-		oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
-		oOffer.push_back(Pair("txid", txA.GetHash().GetHex()));
-		expired_block = nHeight + GetOfferExpirationDepth();
-        if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
-		{
-			expired = 1;
-		}  
-		if(expired == 0)
-		{
-			expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
-		}
-		oOffer.push_back(Pair("expires_in", expires_in));
-		oOffer.push_back(Pair("expired_block", expired_block));
-		oOffer.push_back(Pair("expired", expired));
-		oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
-		CPubKey SellerPubKey(theOffer.vchPubKey);
-		CSyscoinAddress selleraddy(SellerPubKey.GetID());
-		selleraddy = CSyscoinAddress(selleraddy.ToString());
-		oOffer.push_back(Pair("address", selleraddy.ToString()));
-		oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
-		oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
-		oOffer.push_back(Pair("quantity", strprintf("%d", theOffer.nQty)));
-		oOffer.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
-		
-		
-		int precision = 2;
-		CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
-		oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
-		oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
-		
-		oOffer.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
-		if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(txA, "offer")) {
-			oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
-			oOffer.push_back(Pair("offerlink", "true"));
-			oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
-		}
-		else
-		{
-			oOffer.push_back(Pair("commission", "0"));
-			oOffer.push_back(Pair("offerlink", "false"));
-			oOffer.push_back(Pair("offerlink_guid", ""));
-		}
-		oOffer.push_back(Pair("exclusive_resell", theOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
-		oOffer.push_back(Pair("private", theOffer.bPrivate ? "Yes" : "No"));
-		oOffer.push_back(Pair("btconly", theOffer.bOnlyAcceptBTC ? "Yes" : "No"));
-		oOffer.push_back(Pair("description", stringFromVch(theOffer.sDescription)));
-		oOffer.push_back(Pair("alias", selleraddy.aliasName));
-		oOffer.push_back(Pair("accepts", aoOfferAccepts));
-		oLastOffer = oOffer;
+	uint64_t nHeight;
+	int expired;
+	int expires_in;
+	int expired_block;
+
+	expired = 0;	
+	expires_in = 0;
+	expired_block = 0;
+    nHeight = theOffer.nHeight;
+	vector<unsigned char> vchCert;
+	if(!theOffer.vchCert.empty())
+		vchCert = theOffer.vchCert;
+	oOffer.push_back(Pair("offer", offer));
+	oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
+	oOffer.push_back(Pair("txid", txA.GetHash().GetHex()));
+	expired_block = nHeight + GetOfferExpirationDepth();
+    if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+	{
+		expired = 1;
+	}  
+	if(expired == 0)
+	{
+		expires_in = nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight;
+	}
+	oOffer.push_back(Pair("expires_in", expires_in));
+	oOffer.push_back(Pair("expired_block", expired_block));
+	oOffer.push_back(Pair("expired", expired));
+	oOffer.push_back(Pair("height", strprintf("%llu", nHeight)));
+	CPubKey SellerPubKey(theOffer.vchPubKey);
+	CSyscoinAddress selleraddy(SellerPubKey.GetID());
+	selleraddy = CSyscoinAddress(selleraddy.ToString());
+	oOffer.push_back(Pair("address", selleraddy.ToString()));
+	oOffer.push_back(Pair("category", stringFromVch(theOffer.sCategory)));
+	oOffer.push_back(Pair("title", stringFromVch(theOffer.sTitle)));
+	oOffer.push_back(Pair("quantity", strprintf("%d", theOffer.nQty)));
+	oOffer.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
+	
+	
+	int precision = 2;
+	CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(), nHeight, precision);
+	oOffer.push_back(Pair("sysprice", ValueFromAmount(nPricePerUnit)));
+	oOffer.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
+	
+	oOffer.push_back(Pair("ismine", IsSyscoinTxMine(txA, "offer") ? "true" : "false"));
+	if(!theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(txA, "offer")) {
+		oOffer.push_back(Pair("commission", strprintf("%d%%", theOffer.nCommission)));
+		oOffer.push_back(Pair("offerlink", "true"));
+		oOffer.push_back(Pair("offerlink_guid", stringFromVch(theOffer.vchLinkOffer)));
+	}
+	else
+	{
+		oOffer.push_back(Pair("commission", "0"));
+		oOffer.push_back(Pair("offerlink", "false"));
+		oOffer.push_back(Pair("offerlink_guid", ""));
+	}
+	oOffer.push_back(Pair("exclusive_resell", theOffer.linkWhitelist.bExclusiveResell ? "ON" : "OFF"));
+	oOffer.push_back(Pair("private", theOffer.bPrivate ? "Yes" : "No"));
+	oOffer.push_back(Pair("btconly", theOffer.bOnlyAcceptBTC ? "Yes" : "No"));
+	oOffer.push_back(Pair("description", stringFromVch(theOffer.sDescription)));
+	oOffer.push_back(Pair("alias", selleraddy.aliasName));
+	oOffer.push_back(Pair("accepts", aoOfferAccepts));
+	oLastOffer = oOffer;
 	}
 	return oLastOffer;
 
