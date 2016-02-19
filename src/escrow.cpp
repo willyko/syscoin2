@@ -420,7 +420,7 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 					theEscrow.rawTx = serializedEscrow.rawTx;	
 				if(op == OP_ESCROW_COMPLETE)
 				{
-					theEscrow.UnserializeFromTx(tx);
+					theOffer.UnserializeFromTx(tx);
 					theEscrow.vchOfferAcceptLink = theOffer.accept.vchAcceptRand;	
 				}
 			}
