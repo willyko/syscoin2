@@ -34,7 +34,6 @@ MyEscrowListPage::MyEscrowListPage(QWidget *parent) :
 	ui->refreshButton->setIcon(QIcon());
 	ui->releaseButton->setIcon(QIcon());
 	ui->refundButton->setIcon(QIcon());
-	ui->completeButton->setIcon(QIcon());
 	ui->buyerMessageButton->setIcon(QIcon());
 	ui->sellerMessageButton->setIcon(QIcon());
 	ui->arbiterMessageButton->setIcon(QIcon());
@@ -69,7 +68,6 @@ MyEscrowListPage::MyEscrowListPage(QWidget *parent) :
     connect(copyEscrowAction, SIGNAL(triggered()), this, SLOT(on_copyEscrow_clicked()));
 	connect(releaseAction, SIGNAL(triggered()), this, SLOT(on_releaseButton_clicked()));
 	connect(refundAction, SIGNAL(triggered()), this, SLOT(on_refundButton_clicked()));
-	connect(completeAction, SIGNAL(triggered()), this, SLOT(on_completeButton_clicked()));
 
 	connect(buyerMessageAction, SIGNAL(triggered()), this, SLOT(on_buyerMessageButton_clicked()));
 	connect(sellerMessageAction, SIGNAL(triggered()), this, SLOT(on_sellerMessageButton_clicked()));
