@@ -46,7 +46,6 @@ private:
     QString newEscrowToSelect;
 	QAction *releaseAction;
 	QAction *refundAction;
-	QAction *completeAction;
 	QAction *buyerMessageAction;
 	QAction *sellerMessageAction;
 	QAction *arbiterMessageAction;

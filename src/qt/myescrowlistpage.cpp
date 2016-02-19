@@ -48,7 +48,6 @@ MyEscrowListPage::MyEscrowListPage(QWidget *parent) :
     QAction *copyEscrowAction = new QAction(ui->copyEscrow->text(), this);
     releaseAction = new QAction(tr("Release Escrow"), this);
 	refundAction = new QAction(tr("Refund Escrow"), this);
-	completeAction = new QAction(tr("Complete Escrow"), this);
 
     buyerMessageAction = new QAction(tr("Send Message To Buyer"), this);
 	sellerMessageAction = new QAction(tr("Send Message To Seller"), this);
@@ -63,7 +62,6 @@ MyEscrowListPage::MyEscrowListPage(QWidget *parent) :
     contextMenu->addSeparator();
 	contextMenu->addAction(releaseAction);
 	contextMenu->addAction(refundAction);
-	contextMenu->addAction(completeAction);
     // Connect signals for context menu actions
     connect(copyEscrowAction, SIGNAL(triggered()), this, SLOT(on_copyEscrow_clicked()));
 	connect(releaseAction, SIGNAL(triggered()), this, SLOT(on_releaseButton_clicked()));
