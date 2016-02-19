@@ -2286,7 +2286,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			vchCert = theOffer.vchCert;
 		oOffer.push_back(Pair("offer", offer));
 		oOffer.push_back(Pair("cert", stringFromVch(vchCert)));
-		oOffer.push_back(Pair("txid", tx.GetHash().GetHex()));
+		oOffer.push_back(Pair("txid", txA.GetHash().GetHex()));
 		expired_block = nHeight + GetOfferExpirationDepth();
         if(nHeight + GetOfferExpirationDepth() - chainActive.Tip()->nHeight <= 0)
 		{
@@ -2555,6 +2555,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			bool foundOffer = false;
 			bool foundEscrow = false;
 			bool foundCert = false;
+			COfferLinkWhitelistEntry entry;
 			for (unsigned int i = 0; i < acceptTx.vin.size(); i++) {
 				vector<vector<unsigned char> > vvchIn;
 				int opIn;
