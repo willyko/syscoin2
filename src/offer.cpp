@@ -1477,9 +1477,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
 	vecSend.push_back(recipient);
-	CRecipient certRecipient;
-	CreateRecipient(scriptPubKeyCert, certRecipient);
-	vecSend.push_back(certRecipient);
+
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
