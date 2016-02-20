@@ -2253,7 +2253,15 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 				}
 			}
 			if(foundCert)
-				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);		
+				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);	
+			if(foundEscrow)
+			{
+				vector<CEscrow> vtxEscrowPos;
+				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				if(!vtxEscrowPos.back().vchCert.empty())
+					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
+					
+			}
 		}
 		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
 		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
@@ -2454,7 +2462,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			}
 			if(foundCert)
 				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
-			
+			if(foundEscrow)
+			{
+				vector<CEscrow> vtxEscrowPos;
+				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				if(!vtxEscrowPos.back().vchCert.empty())
+					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
+					
+			}		
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;
@@ -2585,7 +2600,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			}
 			if(foundCert)
 				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);
-			
+			if(foundEscrow)
+			{
+				vector<CEscrow> vtxEscrowPos;
+				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				if(!vtxEscrowPos.back().vchCert.empty())
+					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
+					
+			}			
 			oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
 			oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 			int precision = 2;

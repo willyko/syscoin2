@@ -364,6 +364,8 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	{
 		switch (op) {
 			case OP_ESCROW_ACTIVATE:
+				if(!theEscrow.vchCert.empty() && !IsCertOp(prevCertOp))
+					return error("CheckEscrowInputs() : an escrow offer accept using a cert must attach the cert as an input");
 				if(IsCertOp(prevCertOp) && vvchPrevCertArgs[0] != theEscrow.vchCert)
 					return error("CheckEscrowInputs() : escrow cert guid and cert input guid mismatch");
 				break;
