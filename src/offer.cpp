@@ -479,6 +479,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	uint64_t heightToCheckAgainst;
 	COfferLinkWhitelistEntry entry;
 	vector<unsigned char> vchCert;
+	vector<COffer> vtxPos;
 	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
 	if(fJustCheck)
 	{
@@ -622,7 +623,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
 			}
 			// load the offer data from the DB
-			vector<COffer> vtxPos;
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
 				if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
 					return error(
@@ -707,7 +707,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		// save serialized offer for later use
 		COffer serializedOffer = theOffer;
 		// load the offer data from the DB
-		vector<COffer> vtxPos;
 		if (pofferdb->ExistsOffer(vvchArgs[0])) {
 			if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
 				return error(
@@ -1932,7 +1931,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	EnsureWalletIsUnlocked();
 	CTransaction acceptTx;
 	COffer theOffer;
-	COfferAccept theLinkedOfferAccept;
 	const CWalletTx *wtxOfferIn = NULL;
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 	COfferAccept theLinkedOfferAccept;
