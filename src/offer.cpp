@@ -2158,7 +2158,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 
 	UniValue oLastOffer(UniValue::VOBJ);
 	vector<unsigned char> vchOffer = vchFromValue(params[0]);
-	map< vector<unsigned char>, int > vNamesI;
 	string offer = stringFromVch(vchOffer);
 	
 	vector<COffer> vtxPos;
@@ -2181,10 +2180,6 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		COfferAccept ca = vtxPos[i].accept;
 		if(ca.IsNull())
 			continue;
-		// get last active accept only
-		if (vNamesI.find(ca.vchAcceptRand) != vNamesI.end() && (ca.nHeight <= vNamesI[ca.vchAcceptRand] || vNamesI[ca.vchAcceptRand] < 0))
-			continue;
-		vNamesI[ca.vchAcceptRand] = ca.nHeight;
 		UniValue oOfferAccept(UniValue::VOBJ);
 
         // get transaction pointed to by offer
@@ -2223,7 +2218,8 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 		vector<unsigned char> vchEscrowLink;
 		COfferLinkWhitelistEntry entry;	
-		if(IsSyscoinTxMine(txA, "offer")) 
+		// if this accept is in your wallet, get escrow/whitelist discount information
+		if(pwalletMain->GetWalletTx(txA.GetHash())) 
 		{
 			vector<unsigned char> vchOfferLink;
 			vector<unsigned char> vchCertLink;
