@@ -1809,11 +1809,6 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			oEscrow.push_back(Pair("escrow", escrow));
 			string opName = escrowFromOp(op);
 			oEscrow.push_back(Pair("escrowtype", opName));
-			string sTime;
-			CBlockIndex *pindex = chainActive[txPos2.nHeight];
-			if (pindex) {
-				sTime = strprintf("%llu", pindex->nTime);
-			}
 			CPubKey SellerPubKey(txPos2.vchSellerKey);
 			CSyscoinAddress selleraddy(SellerPubKey.GetID());
 			selleraddy = CSyscoinAddress(selleraddy.ToString());
@@ -1826,7 +1821,6 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			CSyscoinAddress buyeraddy(BuyerPubKey.GetID());
 			buyeraddy = CSyscoinAddress(buyeraddy.ToString());
 
-			oEscrow.push_back(Pair("time", sTime));
 			oEscrow.push_back(Pair("txid", tx.GetHash().GetHex()));
 			oEscrow.push_back(Pair("seller", selleraddy.aliasName));
 			oEscrow.push_back(Pair("arbiter", arbiteraddy.aliasName));
@@ -1842,6 +1836,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			}  
 
 			oEscrow.push_back(Pair("expired", expired));
+			oEscrow.push_back(Pair("height", strprintf("%d", nHeight)));
 			oRes.push_back(oEscrow);
         }
         

@@ -2260,47 +2260,45 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 		vector<unsigned char> vchEscrowLink;
 		COfferLinkWhitelistEntry entry;	
-		// if this accept is in your wallet, get escrow/whitelist discount information
-		if(pwalletMain->GetWalletTx(txA.GetHash())) 
-		{
-			vector<unsigned char> vchOfferLink;
-			vector<unsigned char> vchCertLink;
-			bool foundOffer = false;
-			bool foundCert = false;
-			bool foundEscrow = false;
-			for (unsigned int i = 0; i < txA.vin.size(); i++) {
-				vector<vector<unsigned char> > vvchIn;
-				int opIn;
-				const COutPoint *prevOutput = &txA.vin[i].prevout;
-				if(!GetPreviousInput(prevOutput, opIn, vvchIn))
-					continue;
-				if(foundOffer && foundCert && foundEscrow)
-					break;
 
-				if (!foundOffer && IsOfferOp(opIn)) {
-					foundOffer = true; 
-					vchOfferLink = vvchIn[0];
-				}
-				if (!foundEscrow && IsEscrowOp(opIn)) {
-					foundEscrow = true; 
-					vchEscrowLink = vvchIn[0];
-				}
-				if (!foundCert && IsCertOp(opIn)) {
-					foundCert = true; 
-					vchCertLink = vvchIn[0];
-				}
+		vector<unsigned char> vchOfferLink;
+		vector<unsigned char> vchCertLink;
+		bool foundOffer = false;
+		bool foundCert = false;
+		bool foundEscrow = false;
+		for (unsigned int i = 0; i < txA.vin.size(); i++) {
+			vector<vector<unsigned char> > vvchIn;
+			int opIn;
+			const COutPoint *prevOutput = &txA.vin[i].prevout;
+			if(!GetPreviousInput(prevOutput, opIn, vvchIn))
+				continue;
+			if(foundOffer && foundCert && foundEscrow)
+				break;
+
+			if (!foundOffer && IsOfferOp(opIn)) {
+				foundOffer = true; 
+				vchOfferLink = vvchIn[0];
 			}
-			if(foundCert)
-				theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);	
-			if(foundEscrow)
-			{
-				vector<CEscrow> vtxEscrowPos;
-				pescrowdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
-				if(!vtxEscrowPos.back().vchCert.empty())
-					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
-					
+			if (!foundEscrow && IsEscrowOp(opIn)) {
+				foundEscrow = true; 
+				vchEscrowLink = vvchIn[0];
+			}
+			if (!foundCert && IsCertOp(opIn)) {
+				foundCert = true; 
+				vchCertLink = vvchIn[0];
 			}
 		}
+		if(foundCert)
+			theOffer.linkWhitelist.GetLinkEntryByHash(vchCertLink, entry);	
+		if(foundEscrow)
+		{
+			vector<CEscrow> vtxEscrowPos;
+			pescrowdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+			if(!vtxEscrowPos.back().vchCert.empty())
+				theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
+				
+		}
+		
 		theOffer = vtxPos.back();
 		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
 		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
