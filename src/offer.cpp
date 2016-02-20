@@ -250,7 +250,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 }
 
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAccept,
-		COfferAccept &theOfferAccept, CTransaction& tx) {
+		COffer &theOffer, COfferAccept &theOfferAccept, CTransaction& tx) {
 	vector<COffer> vtxPos;
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty()) return false;
 	theOfferAccept.SetNull();
@@ -259,6 +259,13 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 	if(theOfferAccept.IsNull())
 		return false;
 	int nHeight = theOfferAccept.nHeight;
+	theOffer.nHeight = nHeight;
+	if(!theOffer.GetOfferFromList(vtxPos) || theOffer.accept.vchAcceptRand != vchOfferAccept)
+	{
+		if(fDebug)
+			LogPrintf("GetTxOfOfferAccept() : cannot find offer from this offer accept position");
+		return false;
+	}
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
 		string offer = stringFromVch(vchOfferAccept);
@@ -612,7 +619,17 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 			heightToCheckAgainst = theOfferAccept.nHeight;
-
+			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
+			if (!theOfferAccept.vchLinkOfferAccept.empty())
+			{
+				CTransaction acceptTx;
+				COffer linkOffer;
+				COfferAccept theLinkedOfferAccept;
+				if(GetTxOfOfferAccept(*pofferdb, vvchArgs[0], theOfferAccept.vchLinkOfferAccept, linkOffer, theLinkedOfferAccept, acceptTx))
+					heightToCheckAgainst = theLinkedOfferAccept.nHeight;
+				else
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
+			}
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
 			if(IsEscrowOp(prevEscrowOp))
 			{		
@@ -622,7 +639,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					{	
 						// we want the initial funding escrow transaction height as when to calculate this offer accept price
 						CEscrow fundingEscrow = escrowVtxPos.front();
-						heightToCheckAgainst = fundingEscrow.nHeight;
+						// override height if funding escrow was before the accept that the buyer did, to index into sysrates
+						if(heightToCheckAgainst > fundingEscrow.nHeight)
+							heightToCheckAgainst = fundingEscrow.nHeight;
 						// if a certificate is attached to the escrow, meaning the buyer has a cert that may be in the seller's whitelist, get the cert guid here
 						if(!escrowVtxPos.back().vchCert.empty())
 							vchCert = escrowVtxPos.back().vchCert;
@@ -1904,6 +1923,17 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
 
 	EnsureWalletIsUnlocked();
+	CTransaction acceptTx;
+	COffer theOffer;
+	COfferAccept theLinkedOfferAccept;
+	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
+	if (!vchLinkOfferAccept.empty())
+	{
+		if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchLinkOfferAccept, theOffer, theLinkedOfferAccept, acceptTx))
+			nHeight = theLinkedOfferAccept.nHeight;
+		else
+			throw runtime_error("could not find an offer accept with this identifier");
+	}
 	const CWalletTx *wtxEscrowIn = NULL;
 	CEscrow escrow;
 	vector<vector<unsigned char> > escrowVvch;
@@ -1933,7 +1963,9 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
 				CEscrow fundingEscrow = escrowVtxPos.front();
 				vchEscrowCert = fundingEscrow.vchCert;
-				nHeight = fundingEscrow.nHeight;
+				// update height if it is bigger than escrow creation height, we want earlier of two, linked heifht or escrow creation to index into sysrates check
+				if(nHeight > fundingEscrow.nHeight)
+					nHeight = fundingEscrow.nHeight;
 				CPubKey currentEscrowKey(fundingEscrow.vchSellerKey);
 				scriptPubKeyEscrowOrig = GetScriptForDestination(currentEscrowKey.GetID());
 				scriptPubKeyEscrow << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
@@ -1945,22 +1977,14 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 	// look for a transaction with this key
-	CTransaction tx, acceptTx;
-	COffer theOffer, tmpOffer;
+	CTransaction tx;
+	COffer tmpOffer;
 	COfferAccept theLinkedOfferAccept;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, tmpOffer, tx))
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
 
-	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
-	if (!vchLinkOfferAccept.empty())
-	{
-		if(GetTxOfOfferAccept(*pofferdb, vchOffer, vchLinkOfferAccept, theLinkedOfferAccept, acceptTx))
-			nHeight = theLinkedOfferAccept.nHeight;
-		else
-			throw runtime_error("could not find an offer accept with this identifier");
-	}
 	// load the offer data from the DB
 	vector<COffer> vtxPos;
 	if (pofferdb->ExistsOffer(vchOffer)) {
@@ -2171,13 +2195,16 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
     uint256 txHash = vtxPos.back().txHash;
     if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
         throw runtime_error("failed to read offer transaction from disk");
-    COffer theOffer = vtxPos.back();
+    COffer theOffer;
 
 	UniValue oOffer(UniValue::VOBJ);
 	vector<unsigned char> vchValue;
 	UniValue aoOfferAccepts(UniValue::VARR);
 	for(int i=vtxPos.size()-1;i>=0;i--) {
 		COfferAccept ca = vtxPos[i].accept;
+		theOffer.nHeight = ca.nHeight;
+		if(!theOffer.GetOfferFromList(vtxPos))
+			continue;
 		if(ca.IsNull())
 			continue;
 		UniValue oOfferAccept(UniValue::VOBJ);
@@ -2259,6 +2286,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 					
 			}
 		}
+		theOffer = vtxPos.back();
 		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%d%%", entry.nDiscountPct)));			
 		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(vchEscrowLink)));
 		int precision = 2;
@@ -2394,16 +2422,13 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			const vector<unsigned char> &vchAcceptRand = vvch[1];			
 			CTransaction offerTx, acceptTx;
 			COffer theOffer;
-
-			if(!GetTxOfOffer(*pofferdb, vchOffer, theOffer, offerTx))	
-				continue;
-			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOfferAccept, acceptTx))
+			if (!GetTxOfOfferAccept(*pofferdb, vchOffer, vchAcceptRand, theOffer, theOfferAccept, acceptTx))
 				continue;
 			if(theOfferAccept.vchAcceptRand != vchAcceptRand)
 				continue;
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
-				continue;
+				continue;	
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(vchOffer);
 			string sHeight = strprintf("%llu", theOfferAccept.nHeight);
@@ -2474,7 +2499,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx, "offer")? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(acceptTx, "offer")? "true" : "false"));
 
 			if(!theOfferAccept.txBTCId.IsNull())
 				oOfferAccept.push_back(Pair("status","check payment"));
@@ -2510,7 +2535,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CTransaction escrowTx;
 			CEscrow theEscrow;
 			COffer theOffer;
-			CTransaction offerTx, acceptTx;
+			CTransaction acceptTx;
 			
 			if(!GetTxOfEscrow(*pescrowdb, vchEscrow, theEscrow, escrowTx))	
 				continue;
@@ -2518,9 +2543,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			CSyscoinAddress buyerAddress(buyerKey.GetID());
 			if(!buyerAddress.IsValid() || !IsMine(*pwalletMain, buyerAddress.Get()))
 				continue;
-			if(!GetTxOfOffer(*pofferdb, theEscrow.vchOffer, theOffer, offerTx))	
-				continue;
-			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOffer, theEscrow.vchOfferAcceptLink, theOfferAccept, acceptTx))
+			if (!GetTxOfOfferAccept(*pofferdb, theEscrow.vchOffer, theEscrow.vchOfferAcceptLink, theOffer, theOfferAccept, acceptTx))
 				continue;
 
 			// check for existence of offeraccept in txn offer obj
@@ -2538,8 +2561,6 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			const vector<unsigned char> &vchAcceptRand = offerVvch[1];
 			// get last active accept only
 			if (vNamesI.find(vchAcceptRand) != vNamesI.end() && (theOfferAccept.nHeight <= vNamesI[vchAcceptRand] || vNamesI[vchAcceptRand] < 0))
-				continue;
-			if(theOffer.IsNull())
 				continue;
 			vNamesI[vchAcceptRand] = theOfferAccept.nHeight;
 			string offer = stringFromVch(theEscrow.vchOffer);
@@ -2612,7 +2633,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
-			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(offerTx, "offer")? "true" : "false"));
+			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(acceptTx, "offer")? "true" : "false"));
 			if(!theOfferAccept.txBTCId.IsNull())
 				oOfferAccept.push_back(Pair("status","check payment"));
 			else
