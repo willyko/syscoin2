@@ -1918,7 +1918,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vchPubKey = alias.vchPubKey;
 	// this is a syscoin txn
 	CWalletTx wtx;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig;
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig, scriptPubKeyAcceptOrig;
 
 	// generate offer accept identifier and hash
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
@@ -1929,7 +1929,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CScript scriptPubKey;
 	CScript scriptPubKeyEscrow, scriptPubKeyCert, scriptPubKeyAccept;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
-	scriptPubKeyAccept << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP << OP_DROP;
 	EnsureWalletIsUnlocked();
 	CTransaction acceptTx;
 	COffer theOffer;
@@ -1952,6 +1951,11 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
 			nHeight = theLinkedOfferAccept.nHeight;
+			CPubKey currentAcceptKey(tmpOffer.vchPubKey);
+			scriptPubKeyAcceptOrig = GetScriptForDestination(currentAcceptKey.GetID());
+			scriptPubKeyAccept << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchLinkOffer << OP_2DROP << OP_DROP;
+			scriptPubKeyAccept += scriptPubKeyAcceptOrig;
+		}
 		else
 			throw runtime_error("could not find an offer accept with this identifier");
 	}
@@ -2151,7 +2155,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CRecipient acceptRecipient;
 	CreateRecipient(scriptPubKeyAccept, acceptRecipient);
 	if (wtxOfferIn != NULL)
-		vecSend.push_back(wtxOfferIn);
+		vecSend.push_back(acceptRecipient);
 
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")
