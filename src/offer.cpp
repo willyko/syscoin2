@@ -2257,7 +2257,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 			if(foundEscrow)
 			{
 				vector<CEscrow> vtxEscrowPos;
-				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				pescrowdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
 				if(!vtxEscrowPos.back().vchCert.empty())
 					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
 					
@@ -2465,7 +2465,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(foundEscrow)
 			{
 				vector<CEscrow> vtxEscrowPos;
-				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				pescrowdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
 				if(!vtxEscrowPos.back().vchCert.empty())
 					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
 					
@@ -2603,7 +2603,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			if(foundEscrow)
 			{
 				vector<CEscrow> vtxEscrowPos;
-				pofferdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
+				pescrowdb->ReadEscrow(vchEscrowLink, vtxEscrowPos);
 				if(!vtxEscrowPos.back().vchCert.empty())
 					theOffer.linkWhitelist.GetLinkEntryByHash(vtxEscrowPos.back().vchCert, entry);	
 					
