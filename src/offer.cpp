@@ -480,6 +480,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	COfferLinkWhitelistEntry entry;
 	vector<unsigned char> vchCert;
 	vector<COffer> vtxPos;
+	bool linkAccept = false
+	bool escrowAccept = false;
 	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
 	if(fJustCheck)
 	{
@@ -640,7 +642,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				COffer rootOffer;
 				COfferAccept theLinkedOfferAccept;
 				if(GetTxOfOfferAccept(*pofferdb, vvchPrevArgs[0], theOfferAccept.vchLinkOfferAccept, rootOffer, theLinkedOfferAccept, acceptTx))
+				{
 					heightToCheckAgainst = theLinkedOfferAccept.nHeight;
+					linkAccept = true;
+				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
 			}
@@ -654,8 +659,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						// we want the initial funding escrow transaction height as when to calculate this offer accept price
 						CEscrow fundingEscrow = escrowVtxPos.front();
 						// override height if funding escrow was before the accept that the buyer did, to index into sysrates
-						if(heightToCheckAgainst > fundingEscrow.nHeight)
+						if(heightToCheckAgainst > fundingEscrow.nHeight || !linkAccept){
+							escrowAccept = true;
 							heightToCheckAgainst = fundingEscrow.nHeight;
+						}
 						// if a certificate is attached to the escrow, meaning the buyer has a cert that may be in the seller's whitelist, get the cert guid here
 						if(!escrowVtxPos.back().vchCert.empty())
 							vchCert = escrowVtxPos.back().vchCert;
@@ -663,6 +670,18 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					}
 				}
 			}
+			// the height really shouldnt change cause we set it correctly in offeraccept
+			if(heightToCheckAgainst != theOfferAccept.nHeight)
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height");
+			// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
+			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
+			if(!linkAccept && !escrowAccept)
+			{
+				if(abs(heightToCheckAgainst - nHeight) > 10)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: accept height and current block height differ by too much heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
+
+			}
+
 			// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 			{
