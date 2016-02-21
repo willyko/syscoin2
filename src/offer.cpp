@@ -480,7 +480,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	COfferLinkWhitelistEntry entry;
 	vector<unsigned char> vchCert;
 	vector<COffer> vtxPos;
-	bool linkAccept = false
+	bool linkAccept = false;
 	bool escrowAccept = false;
 	// just check is for the memory pool inclusion, here we can stop bad transactions from entering before we get to include them in a block	
 	if(fJustCheck)
