@@ -855,7 +855,7 @@ std::string FormatStateMessage(const CValidationState &state)
         state.GetRejectCode());
 }
 // SYSCOIN
-bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs, const int nHeight=0)
+bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs, int nHeight=0)
 {
 	vector<vector<unsigned char> > vvchArgs;
 	int op;
