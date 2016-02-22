@@ -20,7 +20,7 @@ class ResellOfferDialog : public QDialog
 public:
     explicit ResellOfferDialog(QModelIndex *idx, QWidget *parent = 0);
     ~ResellOfferDialog();
-
+	void loadAliases();
 public Q_SLOTS:
     void accept();
 
