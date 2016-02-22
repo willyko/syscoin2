@@ -510,11 +510,14 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		
 			if(!theOffer.vchLinkOffer.empty())
 			{
+
 				vector<COffer> myVtxPos;
 				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
 					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
 					{
 						COffer myParentOffer = myVtxPos.back();
+						if(myParentOffer.bOnlyAcceptBTC)
+							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that only accepts Bitcoins as payment");
 						if (!IsCertOp(prevCertOp) && myParentOffer.linkWhitelist.bExclusiveResell)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish to link to");			
 						if (IsCertOp(prevCertOp) && !myParentOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
@@ -1303,7 +1306,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	// unserialize offer from txn, serialize back
 	// build offer
 	COffer newOffer;
-
+	newOffer.vchPubKey = alias.vchPubKey;
 	newOffer.sDescription = vchDesc;
 	newOffer.SetPrice(price);
 	newOffer.nCommission = commissionInteger;
