@@ -2093,7 +2093,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 	if(theOffer.nQty != -1 && theOffer.nQty < (nQty+memPoolQty))
-		throw runtime_error("not enough remaining quantity to fulfill this orderaccept, qty desired %d, qty remaining %d, qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty);
+		throw runtime_error(strprintf("not enough remaining quantity to fulfill this orderaccept, qty desired %u, qty remaining %u, qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty));
 
 	int precision = 2;
 	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight, precision);
