@@ -2231,14 +2231,14 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
     uint256 txHash = vtxPos.back().txHash;
     if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
         throw runtime_error("failed to read offer transaction from disk");
-    COffer theOffer;
+    COffer theOffer = vtxPos.back();
 
 	UniValue oOffer(UniValue::VOBJ);
 	vector<unsigned char> vchValue;
 	UniValue aoOfferAccepts(UniValue::VARR);
 	for(int i=vtxPos.size()-1;i>=0;i--) {
 		COfferAccept ca = vtxPos[i].accept;
-		theOffer.nHeight = ca.nAcceptHeight;
+		theOffer.nHeight = ca.nAcceptHeight-1;
 		if(!theOffer.GetOfferFromList(vtxPos))
 			continue;
 		if(ca.IsNull())
