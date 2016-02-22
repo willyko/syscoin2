@@ -259,8 +259,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 	if(theOfferAccept.IsNull())
 		return false;
 	int nHeight = theOfferAccept.nHeight;
-	// get latest offer before accept happened
-	theOffer.nHeight = theOfferAccept.nAcceptHeight-1;
+	theOffer.nHeight = theOfferAccept.nAcceptHeight;
 	if(!theOffer.GetOfferFromList(vtxPos))
 	{
 		if(fDebug)
@@ -2093,7 +2092,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 	if(theOffer.nQty != -1 && theOffer.nQty < (nQty+memPoolQty))
-		throw runtime_error(strprintf("not enough remaining quantity to fulfill this orderaccept, qty desired %u, qty remaining %u, qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty));
+		throw runtime_error(strprintf("not enough remaining quantity to fulfill this orderaccept, qty remaining %u, qty desired %u,  qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty));
 
 	int precision = 2;
 	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight, precision);
@@ -2238,7 +2237,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	UniValue aoOfferAccepts(UniValue::VARR);
 	for(int i=vtxPos.size()-1;i>=0;i--) {
 		COfferAccept ca = vtxPos[i].accept;
-		theOffer.nHeight = ca.nAcceptHeight-1;
+		theOffer.nHeight = ca.nAcceptHeight;
 		if(!theOffer.GetOfferFromList(vtxPos))
 			continue;
 		if(ca.IsNull())
