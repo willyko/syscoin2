@@ -260,7 +260,7 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 		return false;
 	int nHeight = theOfferAccept.nHeight;
 	theOffer.nHeight = nHeight;
-	if(!theOffer.GetOfferFromList(vtxPos) || theOffer.accept.vchAcceptRand != vchOfferAccept)
+	if(!theOffer.GetOfferFromList(vtxPos))
 	{
 		if(fDebug)
 			LogPrintf("GetTxOfOfferAccept() : cannot find offer from this offer accept position");
