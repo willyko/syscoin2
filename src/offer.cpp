@@ -475,6 +475,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	}
 	vector<CAliasIndex> vtxAliasPos;
 	COffer linkOffer;
+	COffer myPriceOffer;
 	CTransaction linkedTx;
 	uint64_t heightToCheckAgainst;
 	COfferLinkWhitelistEntry entry;
@@ -681,9 +682,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: accept height and current block height differ by too much heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
 
 			}
-
+			myPriceOffer.nHeight = heightToCheckAgainst;
+			myPriceOffer.GetOfferFromList(vtxPos);
 			// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
+			if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 			{
 	
 				// if there is no escrow being used here, vchCert should be empty so if the buyer uses a cert for a discount or a exclusive whitelist buy, then get the guid
@@ -691,18 +693,15 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					vchCert = vvchPrevCertArgs[0];
 				
 				// try to get the whitelist entry here from the sellers whitelist, apply the discount with GetPrice()
-				theOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
+				myPriceOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
 
-				COffer myPriceOffer;
-				myPriceOffer.nHeight = heightToCheckAgainst;
-				myPriceOffer.GetOfferFromList(vtxPos);
 				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
 				if((priceAtTimeOfAccept*theOfferAccept.nQty) != theOfferAccept.nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
 
 				int precision = 2;
 				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-				CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
+				CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
 				if(tx.vout[nOut].nValue != nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
 			}						
@@ -2091,8 +2090,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}
 
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
-	if(theOffer.nQty != -1 && theOffer.nQty < (nQty+memPoolQty))
-		throw runtime_error(strprintf("not enough remaining quantity to fulfill this orderaccept, qty remaining %u, qty desired %u,  qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty));
+	if(vtxPos.back().nQty != -1 && vtxPos.back().nQty < (nQty+memPoolQty))
+		throw runtime_error(strprintf("not enough remaining quantity to fulfill this orderaccept, qty remaining %u, qty desired %u,  qty waiting to be accepted by the network %d", vtxPos.back().nQty, nQty, memPoolQty));
 
 	int precision = 2;
 	CAmount nPrice = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOffer.GetPrice(foundCert), nHeight, precision);
