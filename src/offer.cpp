@@ -677,7 +677,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
 			if(!linkAccept && !escrowAccept)
 			{
-				if(abs(heightToCheckAgainst - nHeight) > 10)
+				if(nHeight < heightToCheckAgainst || (nHeight - heightToCheckAgainst) > 10)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: accept height and current block height differ by too much heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
 
 			}
