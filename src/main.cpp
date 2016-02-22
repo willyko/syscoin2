@@ -861,8 +861,8 @@ bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs, i
 	int op;
 	int nOut;	
 	bool fJustCheck = true;
-	if(nHeight == 0)
-		nHeight = chainActive.Height();
+	//if(nHeight == 0)
+		nHeight = 0;
 	if(tx.nVersion == GetSyscoinTxVersion())
 	{
 		if(tx.nVersion == SYSCOIN_TX_VERSION)
