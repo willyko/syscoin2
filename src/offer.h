@@ -30,6 +30,7 @@ public:
     std::vector<unsigned char> vchMessage;
 	uint256 txHash;
 	uint64_t nHeight;
+	uint64_t nAcceptHeight;
 	unsigned int nQty;
 	float nPrice;
 	uint256 txBTCId;
@@ -46,6 +47,7 @@ public:
         READWRITE(vchMessage);
 		READWRITE(txHash);
 		READWRITE(VARINT(nHeight));
+		READWRITE(VARINT(nAcceptHeight));
         READWRITE(VARINT(nQty));
     	READWRITE(nPrice);
 		READWRITE(vchLinkOfferAccept);
@@ -60,6 +62,7 @@ public:
         && a.vchMessage == b.vchMessage
         && a.txHash == b.txHash
         && a.nHeight == b.nHeight
+		&& a.nAcceptHeight == b.nAcceptHeight
         && a.nQty == b.nQty
         && a.nPrice == b.nPrice
 		&& a.vchLinkOfferAccept == b.vchLinkOfferAccept
@@ -73,6 +76,7 @@ public:
         vchMessage = b.vchMessage;
         txHash = b.txHash;
         nHeight = b.nHeight;
+		nAcceptHeight = b.nAcceptHeight;
         nQty = b.nQty;
         nPrice = b.nPrice;
 		vchLinkOfferAccept = b.vchLinkOfferAccept;
@@ -85,8 +89,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { vchAcceptRand.clear(); nHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); vchLinkOfferAccept.clear();}
-    bool IsNull() const { return (vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nPrice == 0 && nQty == 0 && txBTCId.IsNull() && vchBuyerKey.empty()); }
+    void SetNull() { vchAcceptRand.clear(); nHeight = nAcceptHeight = nPrice = nQty = 0; txHash.SetNull(); txBTCId.SetNull(); vchBuyerKey.clear(); vchLinkOfferAccept.clear();}
+    bool IsNull() const { return (vchAcceptRand.empty() && txHash.IsNull() && nHeight == 0 && nAcceptHeight == 0 &&nPrice == 0 && nQty == 0 && txBTCId.IsNull() && vchBuyerKey.empty()); }
 
 };
 class COfferLinkWhitelistEntry {

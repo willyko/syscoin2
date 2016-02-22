@@ -259,7 +259,8 @@ bool GetTxOfOfferAccept(COfferDB& dbOffer, const vector<unsigned char> &vchOffer
 	if(theOfferAccept.IsNull())
 		return false;
 	int nHeight = theOfferAccept.nHeight;
-	theOffer.nHeight = nHeight;
+	// get latest offer before accept happened
+	theOffer.nHeight = theOfferAccept.nAcceptHeight-1;
 	if(!theOffer.GetOfferFromList(vtxPos))
 	{
 		if(fDebug)
@@ -634,7 +635,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-			heightToCheckAgainst = theOfferAccept.nHeight;
+			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
 			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 			if (!theOfferAccept.vchLinkOfferAccept.empty())
 			{
@@ -643,7 +644,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				COfferAccept theLinkedOfferAccept;
 				if(GetTxOfOfferAccept(*pofferdb, vvchPrevArgs[0], theOfferAccept.vchLinkOfferAccept, rootOffer, theLinkedOfferAccept, acceptTx))
 				{
-					heightToCheckAgainst = theLinkedOfferAccept.nHeight;
+					heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
 					linkAccept = true;
 				}
 				else
@@ -671,7 +672,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				}
 			}
 			// the height really shouldnt change cause we set it correctly in offeraccept
-			if(heightToCheckAgainst != theOfferAccept.nHeight)
+			if(heightToCheckAgainst != theOfferAccept.nAcceptHeight)
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height");
 			// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
 			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
@@ -874,6 +875,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					}
 				}
 			}
+			theOfferAccept.nHeight = nHeight;
 			theOfferAccept.vchAcceptRand = vvchArgs[1];
 			theOfferAccept.txHash = tx.GetHash();
 			theOffer.accept = theOfferAccept;
@@ -1966,7 +1968,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			wtxOfferIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
-			nHeight = theLinkedOfferAccept.nHeight;
+			nHeight = theLinkedOfferAccept.nAcceptHeight;
 			CPubKey currentAcceptKey(tmpOffer.vchPubKey);
 			scriptPubKeyAcceptOrig = GetScriptForDestination(currentAcceptKey.GetID());
 			scriptPubKeyAccept << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchLinkOffer << OP_2DROP << OP_DROP;
@@ -2142,7 +2144,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	txAccept.vchLinkOfferAccept = vchLinkOfferAccept;
 	// if we have a linked offer accept then use height from linked accept (the one buyer makes, not the reseller). We need to do this to make sure we convert price at the time of initial buyer's accept.
 	// in checkescrowinput we override this if its from an escrow release, just like above.
-	txAccept.nHeight = nHeight>0?nHeight:chainActive.Tip()->nHeight;
+	txAccept.nAcceptHeight = nHeight;
 	txAccept.vchBuyerKey = vchPubKey;
     CAmount nTotalValue = ( nPrice * nQty );
     
@@ -2236,7 +2238,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	UniValue aoOfferAccepts(UniValue::VARR);
 	for(int i=vtxPos.size()-1;i>=0;i--) {
 		COfferAccept ca = vtxPos[i].accept;
-		theOffer.nHeight = ca.nHeight;
+		theOffer.nHeight = ca.nAcceptHeight;
 		if(!theOffer.GetOfferFromList(vtxPos))
 			continue;
 		if(ca.IsNull())
