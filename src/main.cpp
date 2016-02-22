@@ -855,13 +855,14 @@ std::string FormatStateMessage(const CValidationState &state)
         state.GetRejectCode());
 }
 // SYSCOIN
-bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs)
+bool CheckSyscoinInputs(const CTransaction& tx, const CCoinsViewCache& inputs, const int nHeight=0)
 {
 	vector<vector<unsigned char> > vvchArgs;
 	int op;
 	int nOut;	
 	bool fJustCheck = true;
-	int nHeight = 0;
+	if(nHeight == 0)
+		nHeight = chainActive.Height();
 	if(tx.nVersion == GetSyscoinTxVersion())
 	{
 		if(tx.nVersion == SYSCOIN_TX_VERSION)
@@ -1578,7 +1579,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     if (halvings >= 64)
         return 0;
-	// SYSCOIN default 8.24 coins to start
+	// SYSCOIN default 8.25 coins to start
     CAmount nSubsidy = 8.25 * COIN;
     // SYSCOIN Subsidy is cut in half approximately every 7 months.
     nSubsidy >>= halvings;
@@ -2451,7 +2452,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
 			// SYSCOIN
-			if (!CheckSyscoinInputs(tx, view))
+			if (!CheckSyscoinInputs(tx, view, pindex->nHeight))
 				return error("ConnectBlock(): CheckSyscoinInputs on %s failed",tx.GetHash().ToString());			
             control.Add(vChecks);
         }
