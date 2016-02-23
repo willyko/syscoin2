@@ -238,7 +238,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 	if(!txPos.GetOfferFromList(vtxPos))
 	{
 		if(fDebug)
-			LogPrintf("GetTxOfOffer() : cannot find offer from this offer accept position");
+			LogPrintf("GetTxOfOffer() : cannot find offer from this offer position");
 		return false;
 	}
 	if (nHeight + GetOfferExpirationDepth()
@@ -837,6 +837,11 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		}
 		else if (op == OP_OFFER_ACCEPT) {	
 			theOfferAccept = serializedOffer.accept;
+			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty)) {
+				if(fDebug)
+					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+				return true;
+			}
 			if(theOfferAccept.nQty <= 0)
 				theOfferAccept.nQty = 1;
 			if(theOffer.vchLinkOffer.empty())
@@ -866,11 +871,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					}
 				}
 			}			
-			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty)) {
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-				return true;
-			}
 			// only if we are the root offer owner do we even consider xfering a cert					
 			// purchased a cert so xfer it
 			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
