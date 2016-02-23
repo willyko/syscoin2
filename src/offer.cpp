@@ -368,7 +368,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	bool foundOffer = false;
 	bool foundCert = false;
 	bool foundEscrow = false;
-	bool foundAlias = false;
 	const COutPoint *prevOutput = NULL;
 	CCoins prevCoins;
 	int prevOp, prevCertOp, prevEscrowOp;
@@ -516,13 +515,15 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
 					{
 						COffer myParentOffer = myVtxPos.back();
-						if(myParentOffer.bOnlyAcceptBTC)
+						if (myParentOffer.bOnlyAcceptBTC)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that only accepts Bitcoins as payment");
 						if (!IsCertOp(prevCertOp) && myParentOffer.linkWhitelist.bExclusiveResell)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: you must own a cert you wish to link to");			
 						if (IsCertOp(prevCertOp) && !myParentOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this certificate in the parent offer whitelist");
-						
+						if (!myParentOffer.vchLinkOffer.empty())
+							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that is already linked to another offer");
+								
 					}
 					else
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");	
@@ -1252,7 +1253,6 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 		// go through the whitelist and see if you own any of the certs to apply to this offer for a discount
 		for(unsigned int i=0;i<linkOffer.linkWhitelist.entries.size();i++) {
 			CTransaction txCert;
-			const CWalletTx *wtxCertIn;
 			CCert theCert;
 			COfferLinkWhitelistEntry& entry = linkOffer.linkWhitelist.entries[i];
 			// make sure this cert is still valid
@@ -2026,7 +2026,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if (pofferdb->ExistsOffer(vchOffer)) {
 		if (!pofferdb->ReadOffer(vchOffer, vtxPos))
 			return error(
-					"CheckOfferInputs() : failed to read from offer DB");
+					"failed to read from offer DB");
 	}
 	// get offer price at the time of accept from buyer
 	theOffer.nHeight = nHeight;
