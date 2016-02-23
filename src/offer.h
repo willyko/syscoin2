@@ -291,18 +291,15 @@ public:
 
     bool GetOfferFromList(const std::vector<COffer> &offerList) {
         if(offerList.size() == 0) return false;
-		COffer myOffer = offerList.front();
+		COffer &myOffer = offerList.front();
 		// find the closest offer without going over in height, assuming offerList orders entries by nHeight ascending
-        for(unsigned int i=0;i<offerList.size();i++) {
-            COffer o = offerList[i];
-			// skip if this is an offeraccept
-			if(!o.accept.IsNull())
+        for(std::vector<COffer>::reverse_iterator it = offerList.rbegin(); it != offerList.rend(); ++it) {
+            const COffer &o = *it;
+			// skip if this is an offeraccept or height is greater than our offer height
+			if(!o.accept.IsNull() || o.nHeight > nHeight)
 				continue;
-            if(o.nHeight <= nHeight) {
-                myOffer = offerList[i];
-            }
-			else
-				break;
+            myOffer = o;
+			break;
         }
         *this = myOffer;
         return true;
