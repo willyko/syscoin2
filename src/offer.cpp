@@ -799,7 +799,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						COffer myParentOffer = myVtxPos.back();
 						// if creating a linked offer we set some mandatory fields to the parent
 						theOffer.nQty = myParentOffer.nQty;
-						theOffer.vchPubKey = myParentOffer.vchPubKey;
 						theOffer.sCategory = myParentOffer.sCategory;
 						theOffer.sTitle = myParentOffer.sTitle;
 						theOffer.linkWhitelist.bExclusiveResell = true;
