@@ -730,7 +730,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				CTxDestination dest;
 				ExtractDestination(scriptPubKey, dest);
 				CSyscoinAddress payaddress(dest);
-				CPubKey SellerPubKey(arbiteralias.vchPubKey);
+				CPubKey SellerPubKey(myPriceOffer.vchPubKey);
 				CSyscoinAddress selleraddress(SellerPubKey.GetID());
 				if(payaddress.ToString() != selleraddress.ToString())
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: the payment for this offer was not made to the correct address");
