@@ -732,7 +732,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				CSyscoinAddress payaddress(dest);
 				CPubKey SellerPubKey(arbiteralias.vchPubKey);
 				CSyscoinAddress selleraddress(SellerPubKey.GetID());
-				if(payaddress != selleraddress)
+				if(payaddress.ToString() != selleraddress.ToString())
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: the payment for this offer was not made to the correct address");
 				if(tx.vout[nOut].nValue != nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
