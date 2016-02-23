@@ -82,7 +82,7 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 
 }
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
-string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAcceptLink, const COffer& theOffer, const vector<unsigned char> &vchPrevOffer)
+string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchLinkOffer, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAcceptLink, const COffer& theOffer)
 {
 	string strError;
 	string strMethod = string("offeraccept");
@@ -90,7 +90,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 
 	CPubKey newDefaultKey;
 	
-	if(foundOfferLinkInWallet(vchOffer, vchOfferAcceptLink))
+	if(foundOfferLinkInWallet(vchLinkOffer, vchOfferAcceptLink))
 	{
 		if(fDebug)
 			LogPrintf("makeOfferLinkAcceptTX() offer linked transaction already exists\n");
@@ -112,11 +112,11 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 		return "";
 	}
 	params.push_back(address.aliasName);
-	params.push_back(stringFromVch(vchOffer));
+	params.push_back(stringFromVch(vchLinkOffer));
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << theOfferAccept.nQty) )->str());
 	params.push_back(stringFromVch(theOfferAccept.vchMessage));
 	params.push_back("");
-	params.push_back(stringFromVch(vchPrevOffer));
+	params.push_back(stringFromVch(vchOffer));
 	params.push_back(stringFromVch(vchOfferAcceptLink));
 	params.push_back("");
 	
@@ -742,6 +742,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			{
 				if(!GetTxOfOffer(*pofferdb, myPriceOffer.vchLinkOffer, linkOffer, linkedTx))
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
+				// make sure that linked offer exists in root offerlinks (offers that are linked to the root offer)
+				if(linkOffer.offerLinks.find(myPriceOffer.vchLinkOffer) == linkOffer.offerLinks.end())
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer does not exist in the root offerLinks table, are you sure you are allowed to link to the offer and take payments?");
 			}
 			if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
@@ -871,7 +874,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						}
 					}
 				}
-			}			
+			}		
 			// only if we are the root offer owner do we even consider xfering a cert					
 			// purchased a cert so xfer it
 			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
@@ -887,9 +890,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// theOffer.vchLinkOffer is the linked offer guid
 				// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
 				// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
-				// we are now accepting the linked	 offer, up the link offer stack.
-
-				string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[1], theOffer, vvchPrevArgs[0]);
+				string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[0], vvchArgs[1], theOffer);
 				if(strError != "")
 				{
 					if(fDebug)
@@ -1986,10 +1987,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}	
 	if (!vchLinkOfferAccept.empty())
 	{
-		COffer tmpOffer;
-		if(theOffer.vchLinkOffer.empty())
-			throw runtime_error("trying to do an offer accept link to an offer that is not linked");
-		if(GetTxOfOfferAccept(*pofferdb, vchLinkOffer, vchLinkOfferAccept, tmpOffer, theLinkedOfferAccept, acceptTx)){
+		COffer theLinkedOffer;
+		if(GetTxOfOfferAccept(*pofferdb, vchLinkOffer, vchLinkOfferAccept, theLinkedOffer, theLinkedOfferAccept, acceptTx)){
+			if(theLinkedOffer.vchLinkOffer.empty())
+				throw runtime_error("trying to do an offer accept link to an offer that is not linked");			
 			wtxOfferIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
