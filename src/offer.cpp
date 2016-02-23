@@ -233,7 +233,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 	vector<COffer> vtxPos;
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		return false;
-	int nHeight = vtxPos.back();
+	int nHeight = vtxPos.back().nHeight;
 	txPos.nHeight = nHeight;
 	if(!txPos.GetOfferFromList(vtxPos))
 	{
