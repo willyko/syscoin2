@@ -289,7 +289,7 @@ public:
         offerList.push_back(*this);
     }
 
-    bool GetOfferFromList(const std::vector<COffer> &offerList) {
+    bool GetOfferFromList(std::vector<COffer> &offerList) {
         if(offerList.size() == 0) return false;
 		COffer myOffer = offerList.front();
 		// find the closest offer without going over in height, assuming offerList orders entries by nHeight ascending
