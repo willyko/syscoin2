@@ -837,13 +837,14 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		}
 		else if (op == OP_OFFER_ACCEPT) {	
 			theOfferAccept = serializedOffer.accept;
+			if(theOfferAccept.nQty <= 0)
+				theOfferAccept.nQty = 1;
 			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty)) {
 				if(fDebug)
 					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
 				return true;
 			}
-			if(theOfferAccept.nQty <= 0)
-				theOfferAccept.nQty = 1;
+
 			if(theOffer.vchLinkOffer.empty())
 			{
 				if(theOffer.nQty != -1)
