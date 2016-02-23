@@ -233,8 +233,14 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 	vector<COffer> vtxPos;
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		return false;
-	txPos = vtxPos.back();
-	int nHeight = txPos.nHeight;
+	int nHeight = vtxPos.back();
+	txPos.nHeight = nHeight;
+	if(!txPos.GetOfferFromList(vtxPos))
+	{
+		if(fDebug)
+			LogPrintf("GetTxOfOffer() : cannot find offer from this offer accept position");
+		return false;
+	}
 	if (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight) {
 		string offer = stringFromVch(vchOffer);
@@ -535,7 +541,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			break;
 		case OP_OFFER_UPDATE:
 			if (!IsOfferOp(prevOp) )
-				return error("CheckOfferInputs() :offerupdate previous op is invalid");		
+				return error("CheckOfferInputs() :offerupdate previous op is invalid");	
+			if(prevOp == OP_OFFER_ACCEPT)
+				return error("CheckOfferInputs(): cannot use offeraccept as input to an update");
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
 			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
@@ -716,6 +724,16 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				int precision = 2;
 				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
 				CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
+				// get address of payment, make sure it matches the seller's address
+				CScript scriptPubKey;
+				RemoveSyscoinScript(tx.vout[nOut].scriptPubKey, scriptPubKey);
+				CTxDestination dest;
+				ExtractDestination(scriptPubKey, dest);
+				CSyscoinAddress payaddress(dest);
+				CPubKey SellerPubKey(arbiteralias.vchPubKey);
+				CSyscoinAddress selleraddress(SellerPubKey.GetID());
+				if(payaddress != selleraddress)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: the payment for this offer was not made to the correct address");
 				if(tx.vout[nOut].nValue != nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
 			}						
@@ -1951,8 +1969,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vchPubKey = alias.vchPubKey;
 	// this is a syscoin txn
 	CWalletTx wtx;
-	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig, scriptPubKeyAcceptOrig;
-
+	CScript scriptPubKeyOrig, scriptPubKeyCertOrig, scriptPubKeyEscrowOrig;
 	// generate offer accept identifier and hash
 	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
 	vector<unsigned char> vchAcceptRand = CScriptNum(rand).getvch();
@@ -1960,7 +1977,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	// create OFFERACCEPT txn keys
 	CScript scriptPubKey;
-	CScript scriptPubKeyEscrow, scriptPubKeyCert, scriptPubKeyAccept;
+	CScript scriptPubKeyEscrow, scriptPubKeyCert;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_ACCEPT) << vchOffer << vchAccept << OP_2DROP << OP_DROP;
 	EnsureWalletIsUnlocked();
 	CTransaction acceptTx;
@@ -1983,10 +2000,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
 			nHeight = theLinkedOfferAccept.nAcceptHeight;
-			CPubKey currentAcceptKey(tmpOffer.vchPubKey);
-			scriptPubKeyAcceptOrig = GetScriptForDestination(currentAcceptKey.GetID());
-			scriptPubKeyAccept << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchLinkOffer << OP_2DROP << OP_DROP;
-			scriptPubKeyAccept += scriptPubKeyAcceptOrig;
 		}
 		else
 			throw runtime_error("could not find an offer accept with this identifier");
@@ -2183,11 +2196,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// if not accepting an escrow accept, if we use a cert as input to this offer tx, we need another utxo for further cert transactions on this cert, so we create one here
 	else if(wtxCertIn != NULL)
 		vecSend.push_back(certRecipient);
-
-	CRecipient acceptRecipient;
-	CreateRecipient(scriptPubKeyAccept, acceptRecipient);
-	if (wtxOfferIn != NULL)
-		vecSend.push_back(acceptRecipient);
 
 	// check for Bitcoin payment on the bitcoin network, otherwise pay in syscoin
 	if(!vchBTCTxId.empty() && stringFromVch(theOffer.sCurrencyCode) == "BTC")

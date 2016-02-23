@@ -261,21 +261,18 @@ public:
 		float price = nPrice;
 		if(price==0 && !accept.IsNull())
 			return accept.nPrice;
-		float fCommission = nCommission;
-		if(!entry.IsNull())
-		{
-			float fDiscount = entry.nDiscountPct;
-			if(entry.nDiscountPct < -99 || entry.nDiscountPct > 99)
-				fDiscount = 0;
-			fDiscount = price*(fDiscount / 100);
-			price = price - fDiscount;
-
-		}
-		// add commission
-		fCommission = price*(fCommission / 100);
-		price = price + fCommission;
+		float fDiscount = entry.nDiscountPct;
+		if(entry.nDiscountPct < -99 || entry.nDiscountPct > 99)
+			fDiscount = 0;
+		// fMarkup is a percentage, commission minus discount
+		float fMarkup = nCommission - fDiscount;
+		
+		// add commission , subtract discount
+		fMarkup = price*(fMarkup / 100);
+		price = price + fMarkup;
 		return price;
 	}
+
 	void SetPrice(float price){
 		nPrice = price;
 	}
@@ -296,6 +293,9 @@ public:
 		// find the closest offer without going over in height, assuming offerList orders entries by nHeight ascending
         for(unsigned int i=0;i<offerList.size();i++) {
             COffer o = offerList[i];
+			// skip if this is an offeraccept
+			if(!o.accept.IsNull())
+				continue;
             if(o.nHeight <= nHeight) {
                 myOffer = offerList[i];
             }
