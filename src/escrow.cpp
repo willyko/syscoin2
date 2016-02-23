@@ -356,9 +356,9 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 	{
 		return error("escrow message tx too long");
 	}
-	if(theEscrow.vchOfferAcceptLink.size() > MAX_STANDARD_TX_SIZE)
+	if(theEscrow.vchOfferAcceptLink.size() > 0)
 	{
-		return error("escrow offeraccept guid too long");
+		return error("escrow offeraccept guid not allowed");
 	}		
 	if(fJustCheck)
 	{

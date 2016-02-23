@@ -232,6 +232,8 @@ public:
 		sDescription.clear();
 		vchLinkOffer.clear();
 		sCurrencyCode.clear();
+		vchLinkOffer.clear();
+		vchCert.clear();
 	}
 
  	ADD_SERIALIZE_METHODS;

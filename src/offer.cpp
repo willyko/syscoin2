@@ -544,10 +544,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				return error("CheckOfferInputs() :offerupdate previous op is invalid");	
 			if(prevOp == OP_OFFER_ACCEPT)
 				return error("CheckOfferInputs(): cannot use offeraccept as input to an update");
-			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
-				return error("CheckOfferInputs() : you must own the cert offer you wish to update");
-			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
-				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.size() > 0 && !theOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevCertArgs[0], entry))
 				return error("CheckOfferInputs() : cannot find this certificate in the offer's whitelist");
 			if (!IsOfferOp(prevOp) && !IsCertOp(prevCertOp) )
@@ -574,6 +570,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// make sure this cert is still valid
 				if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 				{
+					if (IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
+						return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+					if (!IsCertOp(prevCertOp) && theOffer.linkWhitelist.entries.empty())
+						return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
 					if(theCert.vchPubKey != theOffer.vchPubKey)
 						return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
 				}
@@ -629,6 +629,13 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: invalid escrow guid");	
 			}
+			// load the offer data from the DB
+			if (pofferdb->ExistsOffer(vvchArgs[0])) {
+				if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
+					return error(
+							"CheckOfferInputs() : failed to read from offer DB");
+			}
+			theOffer = vtxPos.back();
 			// trying to purchase a cert
 			if(!theOffer.vchCert.empty())
 			{
@@ -647,13 +654,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
 			}
-			// load the offer data from the DB
-			if (pofferdb->ExistsOffer(vvchArgs[0])) {
-				if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
-					return error(
-							"CheckOfferInputs() : failed to read from offer DB");
-			}
-			theOffer = vtxPos.back();
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
@@ -738,9 +738,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
 			}						
 		
-			if(!theOffer.vchLinkOffer.empty())
+			if(!myPriceOffer.vchLinkOffer.empty())
 			{
-				if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
+				if(!GetTxOfOffer(*pofferdb, myPriceOffer.vchLinkOffer, linkOffer, linkedTx))
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
 			}
 			if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
@@ -837,29 +837,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		}
 		else if (op == OP_OFFER_ACCEPT) {	
 			theOfferAccept = serializedOffer.accept;
-			if(!theOffer.vchLinkOffer.empty())
-			{
-				if(!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkOffer, linkedTx))
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
-			}
 			if(theOfferAccept.nQty <= 0)
 				theOfferAccept.nQty = 1;
-			
-			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (linkOffer.nQty != -1 && !linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty)) {
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
-				return true;
-			}
-			// only if we are the root offer owner do we even consider xfering a cert					
-			// purchased a cert so xfer it
-			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
-			{
-				string strError = makeTransferCertTX(theOffer, theOfferAccept);
-				if(strError != "")
-					LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
-				
-			}
-		
 			if(theOffer.vchLinkOffer.empty())
 			{
 				if(theOffer.nQty != -1)
@@ -886,8 +865,22 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						}
 					}
 				}
+			}			
+			if((theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty)) {
+				if(fDebug)
+					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
+				return true;
 			}
-			if (!fRescan && pwalletMain && !linkOffer.IsNull() && IsSyscoinTxMine(tx, "offer"))
+			// only if we are the root offer owner do we even consider xfering a cert					
+			// purchased a cert so xfer it
+			if(!fRescan && pwalletMain && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
+			{
+				string strError = makeTransferCertTX(theOffer, theOfferAccept);
+				if(strError != "")
+					LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());						
+				
+			}
+			if (!fRescan && pwalletMain && !theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer"))
 			{	
 				// vchPubKey is for when transfering cert after an offer accept, the pubkey is the transfer-to address and encryption key for cert data
 				// theOffer.vchLinkOffer is the linked offer guid

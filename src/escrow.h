@@ -51,6 +51,7 @@ public:
 		vchOffer.clear();
 		vchPaymentMessage.clear();
 		vchCert.clear();
+		vchOfferAcceptLink.clear();
 	}
     CEscrow() {
         SetNull();
