@@ -847,15 +847,14 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);
 				return true;
 			}
-
+			if(theOffer.nQty != -1)
+			{
+				theOffer.nQty -= theOfferAccept.nQty;
+				if(theOffer.nQty < 0)
+					theOffer.nQty = 0;
+			}
 			if(theOffer.vchLinkOffer.empty())
 			{
-				if(theOffer.nQty != -1)
-				{
-					theOffer.nQty -= theOfferAccept.nQty;
-					if(theOffer.nQty < 0)
-						theOffer.nQty = 0;
-				}
 				// go through the linked offers, if any, and update the linked offer qty based on the this qty
 				for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
 					vector<COffer> myVtxPos;
@@ -1990,7 +1989,9 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		COffer theLinkedOffer;
 		if(GetTxOfOfferAccept(*pofferdb, vchLinkOffer, vchLinkOfferAccept, theLinkedOffer, theLinkedOfferAccept, acceptTx)){
 			if(theLinkedOffer.vchLinkOffer.empty())
-				throw runtime_error("trying to do an offer accept link to an offer that is not linked");			
+				throw runtime_error("trying to do an offer accept link to an offer that is not linked");
+			if(vchLinkOfferAccept != theLinkedOfferAccept.vchAcceptRand)
+				throw runtime_error("link offer accept doesn't match with parameter passed into GetTxOfOfferAccept");
 			wtxOfferIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
