@@ -3116,11 +3116,12 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
 		return false;
-    for(int i=offerList.size()-1;i>=0;i--) {
-		if(offerList[i].accept.IsNull())
+	for(std::vector<T>::reverse_iterator it = offerList.rbegin(); it != offerList.rend(); ++it) {
+		const COffer& myoffer = *it;
+		if(myoffer.accept.IsNull())
 			continue;
-        if(offerList[i].accept.vchAcceptRand == ca.vchAcceptRand) {
-            ca = offerList[i].accept;
+        if(myoffer.accept.vchAcceptRand == ca.vchAcceptRand) {
+            ca = myoffer.accept;
 			return true;
         }
     }
