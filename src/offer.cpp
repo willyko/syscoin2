@@ -249,7 +249,7 @@ bool GetTxOfOffer(COfferDB& dbOffer, const vector<unsigned char> &vchOffer,
 		return false;
 	}
 
-	if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
+	if (!GetSyscoinTransaction(txPos.nHeight, txPos.txHash, tx, Params().GetConsensus()))
 		return false;
 
 	return true;
