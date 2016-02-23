@@ -1065,6 +1065,12 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
+	// remove old pubkeys when transferring
+	 if (params.size() >= 4) {
+		CWalletDB walletdb(pwalletMain->strWalletFile);
+		walletdb.Erase(std::make_pair(std::string("key"), vchPubKey));
+		walletdb.Erase(std::make_pair(std::string("wkey"), vchPubKey));
+	 }
 	return res;
 }
 
