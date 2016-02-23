@@ -551,13 +551,23 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			// also only do this if whitelist isn't being modified, because if it is, update just falls through and offer is stored as whats in the db, plus any whitelist changes
 			if(!theOffer.vchCert.empty() && theOffer.linkWhitelist.entries.empty())
 			{
+				// load the offer data from the DB
+				if (pofferdb->ExistsOffer(vvchArgs[0])) {
+					if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
+						return error(
+								"CheckOfferInputs() : failed to read from offer DB");
+				}
+				COffer myOffer = vtxPos.back();
+				if(!myOffer.vchLinkOffer.empty())
+					return error("cannot sell a cert as a linked offer");
+				
 				CTransaction txCert;
 				CCert theCert;
 				// make sure this cert is still valid
 				if (GetTxOfCert(*pcertdb, theOffer.vchCert, theCert, txCert))
 				{
 					if(theCert.vchPubKey != theOffer.vchPubKey)
-						return error("CheckOfferInputs() : offerupdate cert and offer pubkey mismatch");
+						return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
@@ -1792,6 +1802,10 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 
 		CPubKey currentCertKey(theCert.vchPubKey);
 		scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
+		if(!theOffer.vchLinkOffer.empty())
+		{
+			throw runtime_error("cannot sell a cert as a linked offer");
+		}
 	}
 
 
