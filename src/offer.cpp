@@ -743,7 +743,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				if(!GetTxOfOffer(*pofferdb, myPriceOffer.vchLinkOffer, linkOffer, linkedTx))
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
 				// make sure that linked offer exists in root offerlinks (offers that are linked to the root offer)
-				if(std::find(linkOffer.offerLinks.begin(), linkOffer.offerLinks.end(), myPriceOffer.vchLinkOffer) == linkOffer.offerLinks.end())
+				if(std::find(linkOffer.offerLinks.begin(), linkOffer.offerLinks.end(), vvchArgs[0]) == linkOffer.offerLinks.end())
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer does not exist in the root offerLinks table, are you sure you are allowed to link to the offer and take payments?");
 			}
 			if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
