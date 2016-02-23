@@ -390,7 +390,7 @@ public:
 
     bool ReconstructOfferIndex(CBlockIndex *pindexRescan);
 };
-bool GetAcceptByHash(const std::vector<COffer> &offerList,  COfferAccept &ca);
+bool GetAcceptByHash(std::vector<COffer> &offerList,  COfferAccept &ca);
 bool GetTxOfOfferAccept(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COffer &theOffer, COfferAccept &theOfferAccept, CTransaction& tx);
 bool GetTxOfOffer(COfferDB& dbOffer, const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx);

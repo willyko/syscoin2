@@ -3113,7 +3113,7 @@ UniValue offerscan(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
-bool GetAcceptByHash(const std::vector<COffer> &offerList, COfferAccept &ca) {
+bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca) {
 	if(offerList.empty())
 		return false;
 	for(std::vector<COffer>::reverse_iterator it = offerList.rbegin(); it != offerList.rend(); ++it) {
