@@ -1991,7 +1991,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			if(theLinkedOffer.vchLinkOffer.empty())
 				throw runtime_error("trying to do an offer accept link to an offer that is not linked");
 			if(vchLinkOfferAccept != theLinkedOfferAccept.vchAcceptRand)
-				throw runtime_error("link offer accept doesn't match with parameter passed into GetTxOfOfferAccept");
+				throw runtime_error(strprintf("link offer accept doesn't match with parameter passed into GetTxOfOfferAccept, vchLinkOfferAccept %s, theLinkedOfferAccept.vchAcceptRand %s", stringFromVch(vchLinkOfferAccept), stringFromVch(theLinkedOfferAccept.vchAcceptRand)));
 			wtxOfferIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
 			if (wtxOfferIn == NULL)
 				throw runtime_error("this offer accept is not in your wallet");
