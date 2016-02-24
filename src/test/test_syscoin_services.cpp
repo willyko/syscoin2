@@ -593,12 +593,15 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 }
 void EscrowRelease(const string& node, const string& guid)
 {
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
+	UniValue r;
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
 }
 void EscrowRefund(const string& node, const string& guid)
 {
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
+	UniValue r;
+	CallRPC(node, "escrowrefund " + guid);
+	//BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowrefund " + guid));
 	GenerateBlocks(10, node);
 }
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid)
@@ -643,7 +646,7 @@ const UniValue FindOfferLinkedAccept(const string& node, const string& offerguid
 void EscrowClaimRelease(const string& node, const string& guid)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
@@ -682,7 +685,7 @@ float GetPriceOfOffer(const float nPrice, const int nDiscountPct, const int nCom
 void EscrowClaimReleaseLink(const string& node, const string& guid, const string& resellernode)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrelease " + guid));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowclaimrelease " + guid));
 	GenerateBlocks(100, "node1");
 	GenerateBlocks(100, "node2");
 	GenerateBlocks(100, "node3");
