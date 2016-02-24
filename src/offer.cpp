@@ -728,7 +728,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				myPriceOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
 
 				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
-				if((priceAtTimeOfAccept*theOfferAccept.nQty) != theOfferAccept.nPrice)
+				if((priceAtTimeOfAccept) != theOfferAccept.nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
 
 				int precision = 2;
