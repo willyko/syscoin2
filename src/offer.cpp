@@ -1995,6 +1995,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		wtxOfferIn = pwalletMain->GetWalletTx(linkTxHash);
 		if (wtxOfferIn == NULL)
 			throw runtime_error("this offer accept is not in your wallet");	
+		COffer linkOffer(*wtxOfferIn);
+		if(linkOffer.accept.IsNull())
+			throw runtime_error("offer accept passed into the function is not actually an offer accept");	
+		nHeight = linkOffer.accept.nAcceptHeight;
 	}
 	const CWalletTx *wtxEscrowIn = NULL;
 	CEscrow escrow;
