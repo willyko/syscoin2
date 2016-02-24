@@ -2132,9 +2132,18 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// encryption should only happen once even when not a resell or not an escrow accept. It is already encrypted in both cases.
 	if(vchLinkOfferAccept.empty() && vchEscrowTxHash.empty())
 	{
-		// encrypt to offer owner
-		if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
-			throw runtime_error("could not encrypt message to seller");
+		if(theOffer.vchLinkOffer)
+		{
+			// encrypt to root offer owner if this is a linked offer you are accepting
+			if(!EncryptMessage(linkedOffer.vchPubKey, vchMessage, strCipherText))
+				throw runtime_error("could not encrypt message to seller");
+		}
+		else
+		{
+			// encrypt to offer owner
+			if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
+				throw runtime_error("could not encrypt message to seller");
+		}
 	}
 	if(!vchLinkOfferAccept.empty() && !vchBTCTxId.empty())
 		throw runtime_error("Cannot accept a linked offer by paying in Bitcoins");

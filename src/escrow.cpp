@@ -517,11 +517,24 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if (wtxAliasIn == NULL)
 		throw runtime_error("this alias is not in your wallet");
 
-	COffer theOffer;
+	COffer theOffer, linkedOffer;
 	CTransaction txOffer;
+	vector<unsigned char> vchSellerPubKey;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, txOffer))
 		throw runtime_error("could not find an offer with this identifier");
-
+	vchSellerPubKey = theOffer.vchPubKey;
+	if(!theOffer.vchLinkOffer.empty())
+	{
+		if(pofferdb->ExistsOffer(theOffer.vchLinkOffer))
+		{
+			CTransaction tmpTx;
+			if (!GetTxOfOffer(*pofferdb, theOffer.vchLinkOffer, linkedOffer, tmpTx))
+				throw runtime_error("Trying to accept a linked offer but could not find parent offer, perhaps it is expired");
+			if (linkedOffer.bOnlyAcceptBTC)
+				throw runtime_error("Linked offer only accepts Bitcoins, linked offers currently only work with Syscoin payments");
+			vchSellerPubKey = linkedOffer.vchPubKey;
+		}
+	}
 	COfferLinkWhitelistEntry foundCert;
 	const CWalletTx *wtxCertIn = NULL;
 	vector<unsigned char> vchCert;
@@ -572,7 +585,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 
 	string strCipherText = "";
 	// encrypt to offer owner
-	if(!EncryptMessage(theOffer.vchPubKey, vchMessage, strCipherText))
+	if(!EncryptMessage(vchSellerPubKey, vchMessage, strCipherText))
 		throw runtime_error("could not encrypt message to seller");
 	
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
@@ -584,7 +597,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if(!arbiteraddy.IsValid() || !arbiteraddy.isAlias)
 		throw runtime_error("Invalid arbiter alias or address");
 
-	CPubKey SellerPubKey(theOffer.vchPubKey);
+	CPubKey SellerPubKey(vchSellerPubKey);
 	CSyscoinAddress selleraddy(SellerPubKey.GetID());
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
 	if(!selleraddy.IsValid() || !selleraddy.isAlias)
@@ -607,7 +620,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	// standard 2 of 3 multisig
 	arrayParams.push_back(2);
 	arrayOfKeys.push_back(HexStr(arbiteralias.vchPubKey));
-	arrayOfKeys.push_back(HexStr(theOffer.vchPubKey));
+	arrayOfKeys.push_back(HexStr(vchSellerPubKey));
 	arrayOfKeys.push_back(HexStr(buyeralias.vchPubKey));
 	arrayParams.push_back(arrayOfKeys);
 	UniValue resCreate;
@@ -657,7 +670,7 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	newEscrow.vchCert = vchCert;
 	newEscrow.vchRedeemScript = redeemScript;
 	newEscrow.vchOffer = vchOffer;
-	newEscrow.vchSellerKey = theOffer.vchPubKey;
+	newEscrow.vchSellerKey = vchSellerPubKey;
 	newEscrow.vchPaymentMessage = vchFromString(strCipherText);
 	newEscrow.nQty = nQty;
 	newEscrow.escrowInputTxHash = escrowWtx.GetHash();
