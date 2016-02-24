@@ -545,7 +545,7 @@ const string OfferNew(const string& node, const string& aliasname, const string&
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "false");
 	return guid;
 }
-const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias)
+const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias, const string& selleralias)
 {
 	string otherNode1 = "node2";
 	string otherNode2 = "node3";
@@ -566,7 +566,6 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
 	CAmount offerprice = AmountFromValue(find_value(r.get_obj(), "sysprice"));
-	const string &selleralias = find_value(r.get_obj(), "alias").get_str();
 	int nQty = atoi(qty.c_str());
 	CAmount nTotal = offerprice*nQty;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));

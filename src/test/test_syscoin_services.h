@@ -22,7 +22,7 @@ void CreateSysRatesIfNotExist();
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid);
 const string OfferNew(const string& node, const string& aliasname, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency, const string& certguid="", const bool exclusiveResell=true);
 const string OfferLink(const string& node, const string& alias, const string& guid, const string& commission, const string& newdescription);
-const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias);
+const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias, const string& selleralias);
 void EscrowRelease(const string& node, const string& guid);
 void EscrowClaimRelease(const string& node, const string& guid);
 void EscrowClaimReleaseLink(const string& node, const string& guid, const string& sellernode);

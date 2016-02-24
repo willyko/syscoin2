@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_release)
 	string qty = "3";
 	string message = "paymentmessage";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.05", "description", "USD");
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias", "selleralias");
 	EscrowRelease("node1", guid);	
 	EscrowClaimRelease("node2", guid);
 }
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_big)
 	string offerguid = OfferNew("node2", goodname2, "category", "title", "100", "0.05", "description", "USD");
 	// payment message too long
 	BOOST_CHECK_THROW(r = CallRPC("node1", "escrownew " + goodname1 + " " + offerguid + " " + qty + " " + baddata + " " + goodname3), runtime_error);
-	string guid = EscrowNew("node1", goodname1, offerguid, qty, gooddata, goodname3);
+	string guid = EscrowNew("node1", goodname1, offerguid, qty, gooddata, goodname3, "node2");
 	EscrowRelease("node1", guid);	
 	EscrowClaimRelease("node2", guid);
 }
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_seller)
 	string qty = "4";
 	string message = "paymentmessage";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.22", "description", "CAD");
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias", "selleralias");
 	EscrowRefund("node2", guid);
 	EscrowRefund("node1", guid);
 }
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 	string qty = "5";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.25", "description", "EUR");
 	string message = "paymentmessage";
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias", "node2");
 	EscrowRefund("node3", guid);
 	EscrowRefund("node1", guid);
 }
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_invalid)
 {
 	string qty = "2";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.45", "description", "EUR");
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias", "selleralias");
 	// try to claim refund even if not refunded
 	BOOST_CHECK_THROW(CallRPC("node2", "escrowclaimrefund " + guid), runtime_error);
 	// buyer cant refund to himself
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_invalid)
 {
 	string qty = "4";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.45", "description", "SYS");
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias", "selleralias");
 	// try to claim release even if not released
 	BOOST_CHECK_THROW(CallRPC("node2", "escrowclaimrelease " + guid), runtime_error);
 	// seller cant release buyers funds
@@ -106,10 +106,13 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_invalid)
 }
 BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 {
+	GenerateBlocks(200);
+	GenerateBlocks(200, "node2");
+	GenerateBlocks(200, "node3");
 	UniValue r;
 	string qty = "1";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.05", "description", "GBP");
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, "message", "arbiteralias", "selleralias");
 	EscrowRelease("node3", guid);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "escrowinfo " + guid));
 	CAmount escrowfee = AmountFromValue(find_value(r.get_obj(), "sysfee"));
@@ -126,9 +129,10 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	// 10 mined block subsidy
 	balanceBefore += 10*8.25*COIN;
 	CAmount balanceAfter = AmountFromValue(find_value(r.get_obj(), "balance"));
-	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
 	// get arbiter balance after release
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
+	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
+	
 	// 10 mined block subsidy + escrow fee
 	balanceBeforeArbiter += 10*8.25*COIN + escrowfee;
 	CAmount balanceAfterArbiter = AmountFromValue(find_value(r.get_obj(), "balance"));
@@ -150,7 +154,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 	BOOST_CHECK_THROW(CallRPC("node3", "offerlink arbiteralias " + offerguid + " " + commission + " " + description), runtime_error);
 	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.04", "description", "EUR", "", false);
 	string offerlinkguid = OfferLink("node3", "arbiteralias", offerguid, commission, description);
-	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias", "selleralias");
 	EscrowRelease("node1", guid);
 	// reseller cant claim escrow, seller must claim it
 	BOOST_CHECK_THROW(CallRPC("node3", "escrowclaimrelease " + guid), runtime_error);
@@ -167,7 +171,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release_with_peg_update)
 	string commission = "3";
 	string description = "newdescription";
 	string offerlinkguid = OfferLink("node3", "arbiteralias", offerguid, commission, description);
-	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias");
+	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias", "selleralias");
 	EscrowRelease("node1", guid);
 	// update the EUR peg twice before claiming escrow
 	string data = "{QuratesQu:[{QucurrencyQu:QuUSDQu,QurateQu:2690.1,QuprecisionQu:2},{QucurrencyQu:QuEURQu,QurateQu:269.2,QuprecisionQu:2},{QucurrencyQu:QuGBPQu,QurateQu:2697.3,QuprecisionQu:2},{QucurrencyQu:QuCADQu,QurateQu:2698.0,QuprecisionQu:2},{QucurrencyQu:QuBTCQu,QurateQu:100000.0,QuprecisionQu:8},{QucurrencyQu:QuSYSQu,QurateQu:1.0,QuprecisionQu:2}]}";
