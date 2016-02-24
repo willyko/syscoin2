@@ -594,7 +594,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				if(!theOfferAccept.txBTCId.IsNull())
 					return error("OP_OFFER_ACCEPT can't accept a linked offer with btc");
 				if(theOfferAccept.vchLinkOfferAccept != vvchPrevArgs[1])
-					return error("OP_OFFER_ACCEPT linked offer accept guid mismatch with input offer accept guid");
+					return error("OP_OFFER_ACCEPT linked offer accept guid mismatch with input offer accept guid theOfferAccept.vchLinkOfferAccept %s vs vvchPrevArgs[1] %s", stringFromVch(theOfferAccept.vchLinkOfferAccept), stringFromVch(vvchPrevArgs[1]));
 			}
 			// check for existence of offeraccept in txn offer obj
 			theOfferAccept = theOffer.accept;
