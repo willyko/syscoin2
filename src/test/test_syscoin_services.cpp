@@ -643,7 +643,7 @@ const UniValue FindOfferLinkedAccept(const string& node, const string& offerguid
 void EscrowClaimRelease(const string& node, const string& guid)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrelease " + guid));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
@@ -734,7 +734,7 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 void EscrowClaimRefund(const string& node, const string& guid, bool arbiter)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrefund " + guid));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
 
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
