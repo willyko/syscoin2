@@ -2560,7 +2560,8 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 			int precision = 2;
 			CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nHeight, precision);
 			oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
-			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOfferAccept.nPrice ))); 
+			
+			oOfferAccept.push_back(Pair("price", strprintf("%.*f", precision, theOffer.GetPrice() ))); 
 			oOfferAccept.push_back(Pair("total", strprintf("%.*f", precision, theOfferAccept.nPrice * theOfferAccept.nQty ))); 
 			// this accept is for me(something ive sold) if this offer is mine
 			oOfferAccept.push_back(Pair("ismine", IsSyscoinTxMine(acceptTx, "offer")? "true" : "false"));
