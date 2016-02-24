@@ -418,7 +418,7 @@ const string MessageNew(const string& fromnode, const string& tonode, const stri
 	BOOST_CHECK(find_value(r.get_obj(), "subject").get_str() == title);
 	return guid;
 }
-const string OfferLink(const string& node, const string& guid, const string& commission, const string& newdescription)
+const string OfferLink(const string& node, const string& alias, const string& guid, const string& commission, const string& newdescription)
 {
 	UniValue r;
 	string otherNode1 = "node2";
@@ -435,7 +435,7 @@ const string OfferLink(const string& node, const string& guid, const string& com
 	}
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + guid));
 	const string &olddescription = find_value(r.get_obj(), "description").get_str();
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerlink " + guid + " " + commission + " " + newdescription));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerlink " + alias + " " + guid + " " + commission + " " + newdescription));
 	const UniValue &arr = r.get_array();
 	string linkedguid = arr[1].get_str();
 	GenerateBlocks(10, node);

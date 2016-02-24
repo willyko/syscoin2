@@ -138,9 +138,9 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 	string commission = "10";
 	string description = "newdescription";
 	// offer should be set to exclusive mode by default so linking isn't allowed
-	BOOST_CHECK_THROW(CallRPC("node3", "offerlink " + offerguid + " " + commission + " " + description), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node3", "offerlink arbiteralias " + offerguid + " " + commission + " " + description), runtime_error);
 	offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.04", "description", "EUR", "", false);
-	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
+	string offerlinkguid = OfferLink("node3", "arbiteralias", offerguid, commission, description);
 	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias");
 	EscrowRelease("node1", guid);
 	// reseller cant claim escrow, seller must claim it
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release_with_peg_update)
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.05", "description", "EUR", "", false);
 	string commission = "3";
 	string description = "newdescription";
-	string offerlinkguid = OfferLink("node3", offerguid, commission, description);
+	string offerlinkguid = OfferLink("node3", "arbiteralias", offerguid, commission, description);
 	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias");
 	EscrowRelease("node1", guid);
 	// update the EUR peg twice before claiming escrow
