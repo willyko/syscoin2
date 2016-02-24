@@ -116,7 +116,9 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	// get buyer balance (ensure he gets no fees back, since arbiter stepped in and released)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
 	CAmount balanceBefore = AmountFromValue(find_value(r.get_obj(), "balance"));
-
+	// get arbiter balance (ensure he gets escrow fees, since he stepped in and released)
+	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
+	CAmount balanceBeforeArbiter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	EscrowClaimRelease("node2", guid);
 
 	// get buyer balance after release
@@ -125,6 +127,13 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	balanceBefore += 10*8.25*COIN;
 	CAmount balanceAfter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
+	// get buyer balance after release
+	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
+	// 10 mined block subsidy
+	balanceBeforeArbiter += 10*8.25*COIN + escrowfee;
+	CAmount balanceAfterArbiter = AmountFromValue(find_value(r.get_obj(), "balance"));
+	BOOST_CHECK_EQUAL(balanceBeforeArbiter, balanceBeforeArbiter);
+
 
 }
 BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
