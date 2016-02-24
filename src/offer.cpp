@@ -1984,7 +1984,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
-	if((vchLinkOfferAccept.empty() && !vchLinkOfferTxHash.empty()) || (vchLinkOfferTxHash.empty() && !vchLinkOfferAccept.empty()))
+	if((vchLinkOfferAccept.empty() && !vchLinkOfferAcceptTxHash.empty()) || (vchLinkOfferAcceptTxHash.empty() && !vchLinkOfferAccept.empty()))
 		throw runtime_error("If you are accepting a linked offer you must provide the offer accept guid AND the offer accept tx hash");
 
 	if (!vchLinkOfferAccept.empty())
