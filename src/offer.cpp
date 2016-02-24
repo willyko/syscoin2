@@ -728,22 +728,12 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				myPriceOffer.linkWhitelist.GetLinkEntryByHash(vchCert, entry);	
 
 				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
-				if((priceAtTimeOfAccept) != theOfferAccept.nPrice)
+				if(priceAtTimeOfAccept != theOfferAccept.nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
 
 				int precision = 2;
 				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
 				CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
-				// get address of payment, make sure it matches the seller's address
-				CScript scriptPubKey;
-				RemoveSyscoinScript(tx.vout[nOut].scriptPubKey, scriptPubKey);
-				CTxDestination dest;
-				ExtractDestination(scriptPubKey, dest);
-				CSyscoinAddress payaddress(dest);
-				CPubKey SellerPubKey(myPriceOffer.vchPubKey);
-				CSyscoinAddress selleraddress(SellerPubKey.GetID());
-				if(payaddress.ToString() != selleraddress.ToString())
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: the payment for this offer was not made to the correct address");
 				if(tx.vout[nOut].nValue != nPrice)
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue);											
 			}						
