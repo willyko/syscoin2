@@ -376,6 +376,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	bool foundEscrow = false;
 	const COutPoint *prevOutput = NULL;
 	CCoins prevCoins;
+	uint256 prevOfferHash;
 	int prevOp, prevCertOp, prevEscrowOp;
 	prevOp = prevCertOp = prevEscrowOp = 0;
 	vector<vector<unsigned char> > vvchPrevArgs, vvchPrevCertArgs, vvchPrevEscrowArgs;
@@ -402,6 +403,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				foundOffer = true; 
 				prevOp = op;
 				vvchPrevArgs = vvch;
+				prevOfferHash = prevOutput->hash;
 			}
 			else if (!foundCert && IsCertOp(op))
 			{
@@ -661,18 +663,22 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
 			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
+			// we assume previous tx still in mempool because it calls offeraccept within the eheckinputs stage (not entering a block yet)
 			if (!theOfferAccept.vchLinkOfferAccept.empty())
 			{
 				CTransaction acceptTx;
-				COffer rootOffer;
-				COfferAccept theLinkedOfferAccept;
-				if(GetTxOfOfferAccept(*pofferdb, vvchPrevArgs[0], theOfferAccept.vchLinkOfferAccept, rootOffer, theLinkedOfferAccept, acceptTx))
+				COffer theLinkedOfferAccept;
+				uint256 hashBlock;
+				if(GetTransaction(prevOfferHash, acceptTx, Params().GetConsensus(), hashBlock, true))
 				{
+					COffer theLinkedOfferAccept(acceptTx);
+					if(theLinkedOfferAccept.accept.IsNull())
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
 					heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
 					linkAccept = true;
 				}
 				else
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");
 			}
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
 			if(IsEscrowOp(prevEscrowOp))
