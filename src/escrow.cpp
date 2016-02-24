@@ -1610,7 +1610,11 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error(find_value(objError, "message").get_str());
 	}
-	return "Success";
+	if (!returnRes.isStr())
+		throw runtime_error("Could not send escrow transaction: Invalid response from sendrawtransaction!");
+
+	printf("escrowrefund complete!\n");
+	return returnRes;
 }
 
 UniValue escrowinfo(const UniValue& params, bool fHelp) {
