@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_big)
 	string offerguid = OfferNew("node2", goodname2, "category", "title", "100", "0.05", "description", "USD");
 	// payment message too long
 	BOOST_CHECK_THROW(r = CallRPC("node1", "escrownew " + goodname1 + " " + offerguid + " " + qty + " " + baddata + " " + goodname3), runtime_error);
-	string guid = EscrowNew("node1", goodname1, offerguid, qty, gooddata, goodname3, "node2");
+	string guid = EscrowNew("node1", goodname1, offerguid, qty, gooddata, goodname3, goodname2);
 	EscrowRelease("node1", guid);	
 	EscrowClaimRelease("node2", guid);
 }
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 	string qty = "5";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.25", "description", "EUR");
 	string message = "paymentmessage";
-	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias", "node2");
+	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias", "selleralias");
 	EscrowRefund("node3", guid);
 	EscrowRefund("node1", guid);
 }
@@ -116,23 +116,13 @@ BOOST_AUTO_TEST_CASE (generate_escrowrelease_arbiter)
 	EscrowRelease("node3", guid);
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "escrowinfo " + guid));
 	CAmount escrowfee = AmountFromValue(find_value(r.get_obj(), "sysfee"));
-	// get buyer balance (ensure he gets no fees back, since arbiter stepped in and released)
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
 	CAmount balanceBefore = AmountFromValue(find_value(r.get_obj(), "balance"));
 	// get arbiter balance (ensure he gets escrow fees, since he stepped in and released)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
 	CAmount balanceBeforeArbiter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	EscrowClaimRelease("node2", guid);
-
-	// get buyer balance after release
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "getinfo"));
-	// 10 mined block subsidy
-	balanceBefore += 10*8.25*COIN;
-	CAmount balanceAfter = AmountFromValue(find_value(r.get_obj(), "balance"));
 	// get arbiter balance after release
 	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "getinfo"));
-	BOOST_CHECK_EQUAL(balanceBefore, balanceAfter);
-	
 	// 10 mined block subsidy + escrow fee
 	balanceBeforeArbiter += 10*8.25*COIN + escrowfee;
 	CAmount balanceAfterArbiter = AmountFromValue(find_value(r.get_obj(), "balance"));

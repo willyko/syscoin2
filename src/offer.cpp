@@ -2563,7 +2563,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 
 			
 			string strMessage = string("");
-			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
+			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage) && !DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
 
@@ -2694,7 +2694,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				oOfferAccept.push_back(Pair("status","paid"));
 
 			string strMessage = string("");
-			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage))
+			if(!DecryptMessage(theOffer.vchPubKey, theOfferAccept.vchMessage, strMessage) && !DecryptMessage(theOfferAccept.vchBuyerKey, theOfferAccept.vchMessage, strMessage))
 				strMessage = string("Encrypted for owner of offer");
 			oOfferAccept.push_back(Pair("pay_message", strMessage));
 			oRes.push_back(oOfferAccept);	

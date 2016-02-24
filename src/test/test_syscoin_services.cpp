@@ -574,8 +574,7 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
-	// you can't see this message, its meant for the seller
-	BOOST_CHECK(find_value(r.get_obj(), "pay_message").get_str() == string("Encrypted for owner of offer"));
+	BOOST_CHECK(find_value(r.get_obj(), "pay_message").get_str() == message);
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
