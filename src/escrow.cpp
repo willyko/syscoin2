@@ -1673,7 +1673,7 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
     oEscrow.push_back(Pair("txid", ca.txHash.GetHex()));
     oEscrow.push_back(Pair("height", sHeight));
 	string strMessage = string("");
-	if(!DecryptMessage(ca.vchSellerKey, ca.vchPaymentMessage, strMessage) && !DecryptMessage(ca.vchBuyerKey, ca.vchPaymentMessage, strMessage))
+	if(!DecryptMessage(ca.vchSellerKey, ca.vchPaymentMessage, strMessage))
 		strMessage = string("Encrypted for owner of offer");
 	oEscrow.push_back(Pair("pay_message", strMessage));
 
