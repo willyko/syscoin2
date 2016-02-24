@@ -1451,16 +1451,18 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
     // look for a transaction with this key
     CTransaction tx;
 	CEscrow escrow;
+	LogPrintf("1\n");
     if (!GetTxOfEscrow(*pescrowdb, vchEscrow, 
 		escrow, tx))
         throw runtime_error("could not find a escrow with this key");
+	LogPrintf("2\n");
 	vector<CEscrow> vtxPos;
 	if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
 		  throw runtime_error("failed to read from escrow DB");
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to find escrow transaction");
-
+LogPrintf("3\n");
  	int nOutMultiSig = 0;
 	// 0.5% escrow fee
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
@@ -1485,7 +1487,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	// check that right amount is going to be sent to buyer
 	bool foundBuyerPayment = false;
 	UniValue arrayDecodeParams(UniValue::VARR);
-
+LogPrintf("4\n");
 	arrayDecodeParams.push_back(HexStr(escrow.rawTx));
 	UniValue decodeRes;
 	try
@@ -1538,7 +1540,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 			}
 		}
 	}
-
+LogPrintf("5\n");
 	// get buyer's private key for signing
 	CKeyID keyID;
 	CPubKey buyerKey(escrow.vchBuyerKey);
@@ -1558,6 +1560,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
+	LogPrintf("6\n");
     // Seller signs it
 	UniValue arraySignParams(UniValue::VARR);
 	UniValue arraySignInputs(UniValue::VARR);
@@ -1597,7 +1600,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 
 	if(!bComplete)
 		throw runtime_error("Could not sign escrow transaction. It is showing as incomplete, you may not allowed to complete this request at this time.");
-
+LogPrintf("7\n");
 	// broadcast the payment transaction
 	UniValue arraySendParams(UniValue::VARR);
 	arraySendParams.push_back(hex_str);
@@ -1610,6 +1613,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error(find_value(objError, "message").get_str());
 	}
+	LogPrintf("8\n");
 	return returnRes;
 }
 
