@@ -1610,7 +1610,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error(find_value(objError, "message").get_str());
 	}
-	return returnRes;
+	return "Success";
 }
 
 UniValue escrowinfo(const UniValue& params, bool fHelp) {
