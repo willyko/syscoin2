@@ -2132,7 +2132,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// encryption should only happen once even when not a resell or not an escrow accept. It is already encrypted in both cases.
 	if(vchLinkOfferAccept.empty() && vchEscrowTxHash.empty())
 	{
-		if(theOffer.vchLinkOffer)
+		if(!theOffer.vchLinkOffer.empty())
 		{
 			// encrypt to root offer owner if this is a linked offer you are accepting
 			if(!EncryptMessage(linkedOffer.vchPubKey, vchMessage, strCipherText))
