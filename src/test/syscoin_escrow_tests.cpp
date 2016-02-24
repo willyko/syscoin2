@@ -50,8 +50,12 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_seller)
 	string message = "paymentmessage";
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.22", "description", "CAD");
 	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
+	LogPrintf("generate_escrowrefund_seller\n");
+	LogPrintf("node2\n");
 	EscrowRefund("node2", guid);
+	LogPrintf("node1\n");
 	EscrowRefund("node1", guid);
+	LogPrintf("done\n");
 }
 BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 {
@@ -59,8 +63,12 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "0.25", "description", "EUR");
 	string message = "paymentmessage";
 	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
+	LogPrintf("generate_escrowrefund_arbiter\n");
+	LogPrintf("node3\n");
 	EscrowRefund("node3", guid);
+	LogPrintf("node1\n");
 	EscrowRefund("node1", guid);
+	LogPrintf("done\n");
 }
 BOOST_AUTO_TEST_CASE (generate_escrowrefund_invalid)
 {
