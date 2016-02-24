@@ -676,6 +676,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
 					heightToCheckAgainst = theLinkedOfferAccept.accept.nAcceptHeight;
 					linkAccept = true;
+					if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.accept.vchBuyerKey)
+						return error("CheckOfferInputs() OP_OFFER_ACCEPT: buyer public key of linked accept does not match the public key of the buyer of the linked offer");
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");
@@ -1986,7 +1988,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	COffer theOffer;
 	const CWalletTx *wtxOfferIn = NULL;
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
-	COfferAccept theLinkedOfferAccept;
 	CTransaction tx;
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
 	{
@@ -2004,6 +2005,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		COffer linkOffer(*wtxOfferIn);
 		if(linkOffer.accept.IsNull())
 			throw runtime_error("offer accept passed into the function is not actually an offer accept");	
+		vchPubKey = linkOffer.accept.vchBuyerKey;
 		nHeight = linkOffer.accept.nAcceptHeight;
 	}
 	const CWalletTx *wtxEscrowIn = NULL;

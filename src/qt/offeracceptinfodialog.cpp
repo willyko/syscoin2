@@ -103,7 +103,7 @@ bool OfferAcceptInfoDialog::lookup()
 					}
 				}
 				ui->currencyEdit->setText(currencyStr);
-				ui->priceEdit->setText(QString::fromStdString(find_value(acceptObj, "price").get_str()));
+				
 				ui->totalEdit->setText(QString::fromStdString(find_value(acceptObj, "total").get_str()));
 				ui->discountEdit->setText(QString::fromStdString(find_value(acceptObj, "offer_discount_percentage").get_str()));
 				ui->paidEdit->setText(QString::fromStdString(find_value(acceptObj, "paid").get_str()));
@@ -119,6 +119,7 @@ bool OfferAcceptInfoDialog::lookup()
 			}
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
+			ui->priceEdit->setText(QString::fromStdString(find_value(result.get_obj(), "price").get_str()));
 			QString certStr = QString::fromStdString(find_value(result.get_obj(), "cert").get_str());
 			if(certStr != "")
 			{
