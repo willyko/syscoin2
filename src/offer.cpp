@@ -583,6 +583,10 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			
 			break;
 		case OP_OFFER_ACCEPT:
+			// check for existence of offeraccept in txn offer obj
+			theOfferAccept = theOffer.accept;
+			if (theOfferAccept.IsNull())
+				return error("OP_OFFER_ACCEPT null accept object");
 			if (IsEscrowOp(prevEscrowOp) && IsCertOp(prevCertOp))
 				return error("OP_OFFER_ACCEPT Cannot have both certificate and escrow inputs to an accept");
 			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.txBTCId.IsNull())
@@ -596,10 +600,8 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				if(theOfferAccept.vchLinkOfferAccept != vvchPrevArgs[1])
 					return error("OP_OFFER_ACCEPT linked offer accept guid mismatch with input offer accept guid theOfferAccept.vchLinkOfferAccept %s vs vvchPrevArgs[1] %s", stringFromVch(theOfferAccept.vchLinkOfferAccept), stringFromVch(vvchPrevArgs[1]));
 			}
-			// check for existence of offeraccept in txn offer obj
-			theOfferAccept = theOffer.accept;
-			if (theOfferAccept.IsNull())
-				return error("OP_OFFER_ACCEPT null accept object");
+
+
 			if (theOfferAccept.vchAcceptRand != vvchArgs[1])
 				return error("OP_OFFER_ACCEPT could not read accept from offer txn");
 			if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
