@@ -27,7 +27,7 @@ void EscrowRelease(const string& node, const string& guid);
 void EscrowClaimRelease(const string& node, const string& guid);
 void EscrowClaimReleaseLink(const string& node, const string& guid, const string& sellernode);
 void EscrowRefund(const string& node, const string& guid);
-void EscrowClaimRefund(const string& node, const string& guid, bool arbiter);
+void EscrowClaimRefund(const string& node, const string& guid);
 // SYSCOIN testing setup
 struct SyscoinTestingSetup {
     SyscoinTestingSetup();

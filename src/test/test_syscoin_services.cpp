@@ -731,19 +731,6 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 	BOOST_CHECK(find_value(acceptSellerValue, "ismine").get_str() == "true");
 	BOOST_CHECK(find_value(acceptSellerValue, "pay_message").get_str() == pay_message);
 }
-void EscrowClaimRefund(const string& node, const string& guid, bool arbiter)
-{
-	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
-
-	GenerateBlocks(10, node);
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
-	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
-	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
-	CAmount escrowtotal = AmountFromValue(find_value(r.get_obj(), "systotal"));
-	CAmount escrowfee = AmountFromValue(find_value(r.get_obj(), "sysfee"));
-
-}
 BasicSyscoinTestingSetup::BasicSyscoinTestingSetup()
 {
 }

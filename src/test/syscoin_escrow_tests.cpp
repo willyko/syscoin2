@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_seller)
 	string offerguid = OfferNew("node2", "selleralias", "category", "title", "100", "1.22", "description", "CAD");
 	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
 	EscrowRefund("node2", guid);
-	EscrowClaimRefund("node1", guid, false);
+	EscrowRefund("node1", guid);
 }
 BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 {
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_arbiter)
 	string message = "paymentmessage";
 	string guid = EscrowNew("node1", "buyeralias", offerguid, qty, message, "arbiteralias");
 	EscrowRefund("node3", guid);
-	EscrowClaimRefund("node1", guid, true);
+	EscrowRefund("node1", guid);
 }
 BOOST_AUTO_TEST_CASE (generate_escrowrefund_invalid)
 {
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowrefund_invalid)
 	// noone other than buyer can claim release
 	BOOST_CHECK_THROW(CallRPC("node3", "escrowclaimrefund " + guid), runtime_error);
 	BOOST_CHECK_THROW(CallRPC("node2", "escrowclaimrefund " + guid), runtime_error);
-	EscrowClaimRefund("node1", guid, false);
+	EscrowRefund("node1", guid);
 	// cant inititate another refund after claimed already
 	BOOST_CHECK_THROW(CallRPC("node1", "escrowrefund " + guid), runtime_error);
 }
