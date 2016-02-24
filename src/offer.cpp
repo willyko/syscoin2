@@ -82,7 +82,7 @@ string makeTransferCertTX(const COffer& theOffer, const COfferAccept& theOfferAc
 
 }
 // refund an offer accept by creating a transaction to send coins to offer accepter, and an offer accept back to the offer owner. 2 Step process in order to use the coins that were sent during initial accept.
-string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchLinkOffer, const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAcceptLink, const COffer& theOffer)
+string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<unsigned char> &vchLinkOffer, const string &offerAcceptLinkTxHash, const vector<unsigned char> &vchOfferAcceptLink, const COffer& theOffer)
 {
 	string strError;
 	string strMethod = string("offeraccept");
@@ -116,7 +116,7 @@ string makeOfferLinkAcceptTX(const COfferAccept& theOfferAccept, const vector<un
 	params.push_back(static_cast<ostringstream*>( &(ostringstream() << theOfferAccept.nQty) )->str());
 	params.push_back(stringFromVch(theOfferAccept.vchMessage));
 	params.push_back("");
-	params.push_back(stringFromVch(vchOffer));
+	params.push_back(offerAcceptLinkTxHash);
 	params.push_back(stringFromVch(vchOfferAcceptLink));
 	params.push_back("");
 	
@@ -889,7 +889,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// theOffer.vchLinkOffer is the linked offer guid
 				// vvchArgs[1] is this offer accept rand used to walk back up and refund offers in the linked chain
 				// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
-				string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, vvchArgs[0], vvchArgs[1], theOffer);
+				string strError = makeOfferLinkAcceptTX(theOfferAccept, theOffer.vchLinkOffer, tx.GetHash().GetHex(), vvchArgs[1], theOffer);
 				if(strError != "")
 				{
 					if(fDebug)
@@ -1917,7 +1917,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchOffer = vchFromValue(params[1]);
 	vector<unsigned char> vchPubKey;
 	vector<unsigned char> vchBTCTxId = vchFromValue(params.size()>=5?params[4]:"");
-	vector<unsigned char> vchLinkOffer = vchFromValue(params.size()>= 6? params[5]:"");
+	vector<unsigned char> vchLinkOfferAcceptTxHash = vchFromValue(params.size()>= 6? params[5]:"");
 	vector<unsigned char> vchLinkOfferAccept = vchFromValue(params.size()>= 7? params[6]:"");
 	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
 	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=8?params[7]:"");
@@ -1983,22 +1983,16 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if (!GetTxOfOffer(*pofferdb, vchOffer, theOffer, tx))
 	{
 		throw runtime_error("could not find an offer with this identifier");
-	}	
+	}
+	if((vchLinkOfferAccept.empty() && !vchLinkOfferTxHash.empty()) || (vchLinkOfferTxHash.empty() && !vchLinkOfferAccept.empty()))
+		throw runtime_error("If you are accepting a linked offer you must provide the offer accept guid AND the offer accept tx hash");
+
 	if (!vchLinkOfferAccept.empty())
 	{
-		COffer theLinkedOffer;
-		if(GetTxOfOfferAccept(*pofferdb, vchLinkOffer, vchLinkOfferAccept, theLinkedOffer, theLinkedOfferAccept, acceptTx)){
-			if(theLinkedOffer.vchLinkOffer.empty())
-				throw runtime_error("trying to do an offer accept link to an offer that is not linked");
-			if(vchLinkOfferAccept != theLinkedOfferAccept.vchAcceptRand)
-				throw runtime_error(strprintf("link offer accept doesn't match with parameter passed into GetTxOfOfferAccept, vchLinkOfferAccept %s, theLinkedOfferAccept.vchAcceptRand %s", stringFromVch(vchLinkOfferAccept), stringFromVch(theLinkedOfferAccept.vchAcceptRand)));
-			wtxOfferIn = pwalletMain->GetWalletTx(acceptTx.GetHash());
-			if (wtxOfferIn == NULL)
-				throw runtime_error("this offer accept is not in your wallet");
-			nHeight = theLinkedOfferAccept.nAcceptHeight;
-		}
-		else
-			throw runtime_error("could not find an offer accept with this identifier");
+		uint256 linkTxHash(uint256S(stringFromVch(vchLinkOfferAcceptTxHash)));
+		wtxOfferIn = pwalletMain->GetWalletTx(linkTxHash);
+		if (wtxOfferIn == NULL)
+			throw runtime_error("this offer accept is not in your wallet");	
 	}
 	const CWalletTx *wtxEscrowIn = NULL;
 	CEscrow escrow;
@@ -2133,9 +2127,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
 		throw runtime_error("offeraccept message length cannot exceed 1023 bytes!");
-
-	if((vchLinkOfferAccept.empty() && !vchLinkOffer.empty()) || (vchLinkOffer.empty() && !vchLinkOfferAccept.empty()))
-		throw runtime_error("If you are accepting a linked offer you must provide the offer guid AND the offer accept guid");
 
 	if(!theOffer.vchCert.empty())
 	{
