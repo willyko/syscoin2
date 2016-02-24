@@ -697,7 +697,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			}
 			// the height really shouldnt change cause we set it correctly in offeraccept
 			if(heightToCheckAgainst != theOfferAccept.nAcceptHeight)
-				return error("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height");
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height heightToCheckAgainst %s vs theOfferAccept.nAcceptHeight %s", heightToCheckAgainst, theOfferAccept.nAcceptHeight);
 			// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
 			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
 			if(!linkAccept && !escrowAccept)
