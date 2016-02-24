@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE (generate_escrow_linked_release)
 	string guid = EscrowNew("node1", "buyeralias", offerlinkguid, qty, message, "arbiteralias");
 	EscrowRelease("node1", guid);
 	// reseller cant claim escrow, seller must claim it
-	BOOST_CHECK_THROW(CallRPC("node3", "escrowclaimrelease " + guid), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node3", "escrowrelease " + guid), runtime_error);
 	EscrowClaimReleaseLink("node2", guid, "node3");
 }
 BOOST_AUTO_TEST_CASE (generate_escrow_linked_release_with_peg_update)

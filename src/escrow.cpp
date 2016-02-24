@@ -1601,6 +1601,7 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	// broadcast the payment transaction
 	UniValue arraySendParams(UniValue::VARR);
 	arraySendParams.push_back(hex_str);
+	UniValue ret(UniValue::VARR);
 	UniValue returnRes;
 	try
 	{
@@ -1613,8 +1614,8 @@ UniValue escrowclaimrefund(const UniValue& params, bool fHelp) {
 	if (!returnRes.isStr())
 		throw runtime_error("Could not send escrow transaction: Invalid response from sendrawtransaction!");
 
-	printf("escrowrefund complete!\n");
-	return returnRes;
+	ret.push_back(returnRes.get_str());
+	return ret;
 }
 
 UniValue escrowinfo(const UniValue& params, bool fHelp) {

@@ -682,7 +682,7 @@ float GetPriceOfOffer(const float nPrice, const int nDiscountPct, const int nCom
 void EscrowClaimReleaseLink(const string& node, const string& guid, const string& resellernode)
 {
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrelease " + guid));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(100, "node1");
 	GenerateBlocks(100, "node2");
 	GenerateBlocks(100, "node3");
