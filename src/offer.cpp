@@ -674,7 +674,7 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					COffer theLinkedOfferAccept(acceptTx);
 					if(theLinkedOfferAccept.accept.IsNull())
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
-					heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
+					heightToCheckAgainst = theLinkedOfferAccept.accept.nAcceptHeight;
 					linkAccept = true;
 				}
 				else
