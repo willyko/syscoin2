@@ -660,20 +660,15 @@ void EscrowClaimRelease(const string& node, const string& guid)
 }
 float GetPriceOfOffer(const float nPrice, const int nDiscountPct, const int nCommission){
 	float price = nPrice;
-	float fCommission = nCommission;
-	if(nDiscountPct > 0)
-	{
-		float fDiscount = nDiscountPct;
-		if(nDiscountPct < -99 || nDiscountPct > 99)
-			fDiscount = 0;
-		fDiscount = price*(fDiscount / 100);
-		price = price + fDiscount;
-
-	}
-	// add commission
-	fCommission = price*(fCommission / 100);
-	price = price + fCommission;
-	return price;
+	float fDiscount = nDiscountPct;
+	if(nDiscountPct < -99 || nDiscountPct > 99)
+		fDiscount = 0;
+	// fMarkup is a percentage, commission minus discount
+	float fMarkup = nCommission - fDiscount;
+	
+	// add commission , subtract discount
+	fMarkup = price*(fMarkup / 100);
+	price = price + fMarkup;
 	return price;
 }
 // not that this is for escrow dealing with linked offers
