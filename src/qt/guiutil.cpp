@@ -132,7 +132,7 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
     widget->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 }
 
-// Open CSS when configured
+// SYSCOIN Open CSS when configured
 QString loadStyleSheet()
 {
     QString styleSheet;

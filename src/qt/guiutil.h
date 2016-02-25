@@ -56,6 +56,7 @@ namespace GUIUtil
     QString HtmlEscape(const QString& str, bool fMultiLine=false);
     QString HtmlEscape(const std::string& str, bool fMultiLine=false);
 
+	// SYSCOIN
     /** Load global CSS theme */
     QString loadStyleSheet();
 

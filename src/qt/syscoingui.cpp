@@ -113,8 +113,8 @@ SyscoinGUI::SyscoinGUI(const PlatformStyle *platformStyle, const NetworkStyle *n
     spinnerFrame(0),
     platformStyle(platformStyle)
 {
+	// SYSCOIN
     GUIUtil::restoreWindowGeometry("nWindow", QSize(600, 400), this);
-
     /* Open CSS when configured */
     this->setStyleSheet(GUIUtil::loadStyleSheet());
 
