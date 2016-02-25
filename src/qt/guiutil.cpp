@@ -132,6 +132,30 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
     widget->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 }
 
+// Open CSS when configured
+QString loadStyleSheet()
+{
+    QString styleSheet;
+    QSettings settings;
+    QString cssName;
+    QString theme = settings.value("theme", "").toString();
+
+    if(!theme.isEmpty()){
+        cssName = QString(":/css/") + theme;
+    }
+    else {
+        cssName = QString(":/css/sys-1");
+        settings.setValue("theme", "sys-1");
+    }
+
+    QFile qFile(cssName);
+    if (qFile.open(QFile::ReadOnly)) {
+        styleSheet = QLatin1String(qFile.readAll());
+    }
+
+    return styleSheet;
+}
+
 bool parseSyscoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no syscoin: URI

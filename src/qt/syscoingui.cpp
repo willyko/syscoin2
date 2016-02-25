@@ -113,7 +113,10 @@ SyscoinGUI::SyscoinGUI(const PlatformStyle *platformStyle, const NetworkStyle *n
     spinnerFrame(0),
     platformStyle(platformStyle)
 {
-    GUIUtil::restoreWindowGeometry("nWindow", QSize(850, 550), this);
+    GUIUtil::restoreWindowGeometry("nWindow", QSize(600, 400), this);
+
+    /* Open CSS when configured */
+    this->setStyleSheet(GUIUtil::loadStyleSheet());
 
     QString windowTitle = tr("Syscoin Core") + " - ";
 #ifdef ENABLE_WALLET
