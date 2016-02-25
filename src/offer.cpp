@@ -770,10 +770,15 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 			theOffer = vtxPos.back();				
 
 		// If update, we make the serialized offer the master
-		// but first we assign the offerLinks/whitelists from the DB since
+		// but first we assign fields from the DB since
 		// they are not shipped in an update txn to keep size down
 		if(op == OP_OFFER_UPDATE) {
 			serializedOffer.offerLinks = theOffer.offerLinks;
+			serializedOffer.vchLinkOffer = theOffer.vchLinkOffer;
+			// btc setting cannot change on update
+			serializedOffer.bOnlyAcceptBTC = theOffer.bOnlyAcceptBTC;
+			// currency cannot change after creation
+			serializedOffer.sCurrencyCode = theOffer.sCurrencyCode;
 			serializedOffer.accept.SetNull();
 			theOffer = serializedOffer;
 			if(!vtxPos.empty())
@@ -786,10 +791,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				{
 					// whitelist must be preserved in serialOffer and db offer must have the latest in the db for whitelists
 					theOffer.linkWhitelist.entries = dbOffer.linkWhitelist.entries;
-					// btc setting cannot change on update
-					theOffer.bOnlyAcceptBTC = dbOffer.bOnlyAcceptBTC;
-					// currency cannot change after creation
-					theOffer.sCurrencyCode = dbOffer.sCurrencyCode;
 					// some fields are only updated if they are not empty to limit txn size, rpc sends em as empty if we arent changing them
 					if(serializedOffer.sCategory.empty())
 						theOffer.sCategory = dbOffer.sCategory;
@@ -936,7 +937,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						{
 							COffer myLinkOffer = myVtxPos.back();
 							theOffer.nQty = myLinkOffer.nQty;	
-							theOffer.nHeight = myLinkOffer.nHeight;
 							theOffer.SetPrice(myLinkOffer.nPrice);
 							
 						}
@@ -2253,7 +2253,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
     uint256 txHash = vtxPos.back().txHash;
     if (!GetSyscoinTransaction(vtxPos.back().nHeight, txHash, tx, Params().GetConsensus()))
         throw runtime_error("failed to read offer transaction from disk");
-    COffer theOffer = vtxPos.back();
+    COffer theOffer;
 
 	UniValue oOffer(UniValue::VOBJ);
 	vector<unsigned char> vchValue;
@@ -2372,6 +2372,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 	expired = 0;	
 	expires_in = 0;
 	expired_block = 0;
+	theOffer = vtxPos.back();
     nHeight = theOffer.nHeight;
 	vector<unsigned char> vchCert;
 	if(!theOffer.vchCert.empty())
