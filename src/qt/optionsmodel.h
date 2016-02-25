@@ -39,6 +39,8 @@ public:
         ProxyPortTor,           // int
         DisplayUnit,            // SyscoinUnits::Unit
         ThirdPartyTxUrls,       // QString
+		// SYSCOIN
+		Theme,                  // QString  
         Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
