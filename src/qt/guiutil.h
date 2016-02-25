@@ -56,6 +56,9 @@ namespace GUIUtil
     QString HtmlEscape(const QString& str, bool fMultiLine=false);
     QString HtmlEscape(const std::string& str, bool fMultiLine=false);
 
+    /** Load global CSS theme */
+    QString loadStyleSheet();
+
     /** Copy a field of the currently selected entry of a view to the clipboard. Does nothing if nothing
         is selected.
        @param[in] column  Data column to extract from the model
