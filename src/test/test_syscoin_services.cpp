@@ -702,7 +702,7 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 	CAmount nTotal = AmountFromValue(find_value(acceptValue, "systotal"));
 	BOOST_CHECK(nTotal == escrowtotal);
 	BOOST_CHECK(find_value(acceptValue, "ismine").get_str() == "false");
-	BOOST_CHECK(find_value(acceptValue, "pay_message").get_str() == pay_message);
+	BOOST_CHECK(find_value(acceptValue, "pay_message").get_str() == string("Encrypted for owner of offer"));
 	// now get the accept from the resellernode
 	const UniValue &acceptReSellerValue = FindOfferAccept(resellernode, offerguid, acceptguid);
 	BOOST_CHECK(find_value(acceptReSellerValue, "escrowlink").get_str() == guid);
