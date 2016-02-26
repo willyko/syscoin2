@@ -49,11 +49,11 @@ WalletView::WalletView(const PlatformStyle *platformStyle, QWidget *parent):
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
 	// SYSCOIN
-    aliasListPage = new QStackedWidget(platformStyle);
-	messageListPage = new QStackedWidget(platformStyle);
-	certListPage = new QStackedWidget(platformStyle);
-    escrowListPage = new QStackedWidget(platformStyle);
-	offerListPage = new QStackedWidget(platformStyle);
+    aliasListPage = new QStackedWidget();
+	messageListPage = new QStackedWidget();
+	certListPage = new QStackedWidget();
+    escrowListPage = new QStackedWidget();
+	offerListPage = new QStackedWidget();
     aliasView = new AliasView(platformStyle, aliasListPage);
 	messageView = new MessageView(platformStyle, messageListPage);
 	escrowView = new EscrowView(platformStyle, escrowListPage);
