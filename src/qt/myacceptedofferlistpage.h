@@ -27,7 +27,7 @@ class MyAcceptedOfferListPage : public QDialog
 public:
 
 
-    explicit MyAcceptedOfferListPage(QWidget *parent = 0);
+    explicit MyAcceptedOfferListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~MyAcceptedOfferListPage();
 
     void setModel(WalletModel*, OfferAcceptTableModel *model);
