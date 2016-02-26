@@ -45,7 +45,6 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 
     QString font            = QApplication::font().toString();
 
-	// SYSCOIN
 	pixmap     = networkStyle->getSplashImage();
 
 #if QT_VERSION > 0x050100
@@ -55,13 +54,6 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 
     QPainter pixPaint(&pixmap);
     pixPaint.setPen(QColor(100,100,100));
-
-    // draw a slightly radial gradient
-    QRadialGradient gradient(QPoint(0,0), splashSize.width()/devicePixelRatio);
-    gradient.setColorAt(0, Qt::white);
-    gradient.setColorAt(1, QColor(247,247,247));
-    QRect rGradient(QPoint(0,0), splashSize);
-    pixPaint.fillRect(rGradient, gradient);
 
     // draw the syscoin icon, expected size of PNG: 1024x1024
     QRect rectIcon(QPoint(-150,-122), QSize(430,430));
