@@ -21,18 +21,18 @@
 #endif
 #include <QPushButton>
 
-CertView::CertView(QStackedWidget *parent):
+CertView::CertView(const PlatformStyle *platformStyle, QStackedWidget *parent):
     clientModel(0),
     walletModel(0)
 {
 	tabWidget = new QTabWidget();
     certListPage = new CertListPage();
     myCertListPage = new MyCertListPage();
-	
+	QString theme = GUIUtil::getThemeName();
 	tabWidget->addTab(myCertListPage, tr("&My Certificates"));
 	tabWidget->addTab(certListPage, tr("&Search"));
-	tabWidget->setTabIcon(0, QIcon(":/icons/cert"));
-	tabWidget->setTabIcon(1, QIcon(":/icons/search"));
+	tabWidget->setTabIcon(0, platformStyle->SingleColorIcon(":/icons/" + theme + "/cert"));
+	tabWidget->setTabIcon(1, platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
 	parent->addWidget(tabWidget);
 
 }

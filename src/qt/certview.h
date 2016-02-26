@@ -32,7 +32,7 @@ class CertView: public QObject
      Q_OBJECT
 
 public:
-    explicit CertView(QStackedWidget *parent);
+    explicit CertView(const PlatformStyle *platformStyle, QStackedWidget *parent);
     ~CertView();
 
     void setSyscoinGUI(SyscoinGUI *gui);
