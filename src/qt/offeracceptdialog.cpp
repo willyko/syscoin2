@@ -35,7 +35,7 @@ OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString
 		ui->acceptBtcButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
 		ui->cancelButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/quit"));
 	}
-	ui->aboutShade->setPixmap(QPixmap(QString::fromUtf8(strprintf(":/icons/" + theme.toStdString() + "/about"))));
+	ui->aboutShade->setPixmap(QPixmap(":/icons/" + theme + "/about"));
 	int precision;
 	double dblPrice = qstrPrice.toDouble();
 	string strCurrencyCode = currencyCode.toStdString();
