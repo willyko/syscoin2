@@ -38,7 +38,7 @@ NetworkStyle::NetworkStyle(const QString &appName, const int iconColorHueShift, 
     {
         // generate QImage from QPixmap
         QImage img = pixmap.toImage();
-
+		QImage splashImageImg = splashImagePixmap.toImage();
         int h,s,l,a;
 
         // traverse though lines
