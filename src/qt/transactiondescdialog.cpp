@@ -8,7 +8,8 @@
 #include "transactiontablemodel.h"
 
 #include <QModelIndex>
-
+// SYSCOIN
+#include "guiutil.h"
 TransactionDescDialog::TransactionDescDialog(const QModelIndex &idx, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::TransactionDescDialog)
