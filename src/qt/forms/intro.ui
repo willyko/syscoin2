@@ -216,16 +216,6 @@
      </property>
     </spacer>
    </item>
-   <item>
-    <widget class="QLabel" name="label">
-      <property name="pixmap">
-        <pixmap resource="../syscoin.qrc">:/icons/aboutshade</pixmap>
-      </property>
-      <property name="scaledContents">
-        <bool>true</bool>
-      </property>
-    </widget>
-  </item>
   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">

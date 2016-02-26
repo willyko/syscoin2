@@ -2,7 +2,7 @@
 #define OUTMESSAGELISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MessageListPage;
 }
@@ -27,7 +27,7 @@ class OutMessageListPage : public QDialog
 public:
    
 
-    explicit OutMessageListPage(QWidget *parent = 0);
+    explicit OutMessageListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~OutMessageListPage();
 
 

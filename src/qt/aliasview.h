@@ -11,7 +11,7 @@ class ClientModel;
 class WalletModel;
 class MyAliasListPage;
 class AliasListPage;
-
+class PlatformStyle;
 
 QT_BEGIN_NAMESPACE
 class QObject;
@@ -32,7 +32,7 @@ class AliasView: public QObject
      Q_OBJECT
 
 public:
-    explicit AliasView(QStackedWidget *parent);
+    explicit AliasView(const PlatformStyle *platformStyle, QStackedWidget *parent);
     ~AliasView();
 
     void setSyscoinGUI(SyscoinGUI *gui);

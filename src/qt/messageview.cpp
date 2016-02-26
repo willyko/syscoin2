@@ -21,17 +21,18 @@
 #endif
 #include <QPushButton>
 
-MessageView::MessageView(QStackedWidget *parent):
+MessageView::MessageView(const PlatformStyle *platformStyle, QStackedWidget *parent):
     clientModel(0),
     walletModel(0)
 {
 	tabWidget = new QTabWidget();
-    inMessageListPage = new InMessageListPage();
-	outMessageListPage = new OutMessageListPage();
+    inMessageListPage = new InMessageListPage(platformStyle);
+	outMessageListPage = new OutMessageListPage(platformStyle);
+	QString theme = GUIUtil::getThemeName();
 	tabWidget->addTab(inMessageListPage, tr("&Inbox"));
-	tabWidget->setTabIcon(0, QIcon(":/icons/inmail"));
+	tabWidget->setTabIcon(0, platformStyle->SingleColorIcon(":/icons/" + theme + "/inmail"));
 	tabWidget->addTab(outMessageListPage, tr("&Outbox"));
-	tabWidget->setTabIcon(1, QIcon(":/icons/outmail"));
+	tabWidget->setTabIcon(1, platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
 	parent->addWidget(tabWidget);
 
 }

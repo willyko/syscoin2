@@ -2,7 +2,7 @@
 #define MYCERTLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MyCertListPage;
 }
@@ -27,7 +27,7 @@ class MyCertListPage : public QDialog
 public:
 
 
-    explicit MyCertListPage(QWidget *parent = 0);
+    explicit MyCertListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~MyCertListPage();
 
     void setModel(WalletModel*, CertTableModel *model);

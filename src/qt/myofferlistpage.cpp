@@ -18,22 +18,34 @@
 #include <QClipboard>
 #include <QMessageBox>
 #include <QMenu>
-MyOfferListPage::MyOfferListPage(QWidget *parent) :
+MyOfferListPage::MyOfferListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MyOfferListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->newOffer->setIcon(QIcon());
+		ui->whitelistButton->setIcon(QIcon());
+		ui->editButton->setIcon(QIcon());
+		ui->copyOffer->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->newOffer->setIcon(QIcon());
-    ui->copyOffer->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->refreshButton->setIcon(QIcon());
-	ui->whitelistButton->setIcon(QIcon());
-	ui->editButton->setIcon(QIcon());
-#endif
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->newOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/add"));
+		ui->whitelistButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/address-book"));
+		ui->editButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editsys"));
+		ui->copyOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		
+	}
 
 	ui->buttonBox->setVisible(false);
 

@@ -17,14 +17,30 @@
 #include <QClipboard>
 #include <QMessageBox>
 #include <QMenu>
-AcceptedOfferListPage::AcceptedOfferListPage(QWidget *parent) :
+AcceptedOfferListPage::AcceptedOfferListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AcceptedOfferListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
-
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->messageButton->setIcon(QIcon());
+		ui->detailButton->setIcon(QIcon());
+		ui->copyOffer->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->messageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->detailButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/details"));
+		ui->copyOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+	}
 #ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
     ui->copyOffer->setIcon(QIcon());
     ui->exportButton->setIcon(QIcon());

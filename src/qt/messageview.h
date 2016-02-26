@@ -11,6 +11,7 @@ class ClientModel;
 class WalletModel;
 class InMessageListPage;
 class OutMessageListPage;
+class PlatformStyle;
 
 QT_BEGIN_NAMESPACE
 class QObject;
@@ -31,7 +32,7 @@ class MessageView: public QObject
      Q_OBJECT
 
 public:
-    explicit MessageView(QStackedWidget *parent);
+    explicit MessageView(const PlatformStyle *platformStyle, QStackedWidget *parent);
     ~MessageView();
 
     void setSyscoinGUI(SyscoinGUI *gui);

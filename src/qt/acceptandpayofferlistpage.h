@@ -2,6 +2,7 @@
 #define ACCEPTANDPAYOFFERLISTPAGE_H
 
 #include <QDialog>
+class PlatformStyle;
 #if QT_VERSION >= 0x050000
 #include <QUrlQuery>
 #else
@@ -37,7 +38,7 @@ class AcceptandPayOfferListPage : public QDialog
 public:
 
 
-    explicit AcceptandPayOfferListPage(QWidget *parent = 0);
+    explicit AcceptandPayOfferListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~AcceptandPayOfferListPage();
 
     const QString &getReturnValue() const { return returnValue; }

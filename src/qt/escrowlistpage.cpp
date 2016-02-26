@@ -24,19 +24,26 @@ using namespace std;
 extern const CRPCTable tableRPC;
 
 extern int GetEscrowExpirationDepth();
-EscrowListPage::EscrowListPage(QWidget *parent) :
+EscrowListPage::EscrowListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::EscrowListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
-
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->copyEscrow->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-#endif
-
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->copyEscrow->setIcon(QIcon());
+		ui->searchEscrow->setIcon(QIcon());
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->copyEscrow->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->searchEscrow->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
+	}
     ui->labelExplanation->setText(tr("Search for Syscoin Escrows. Select the number of results desired from the dropdown box and click Search."));
 	
     // Context menu actions

@@ -48,9 +48,6 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="pixmap">
-         <pixmap resource="../syscoin.qrc">:/icons/aboutshade1</pixmap>
-       </property>
        <property name="scaledContents">
         <bool>true</bool>
        </property>

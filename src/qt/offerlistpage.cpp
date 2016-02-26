@@ -25,7 +25,7 @@ using namespace std;
 extern const CRPCTable tableRPC;
 
 extern int GetOfferExpirationDepth();
-OfferListPage::OfferListPage(OfferView *parent) :
+OfferListPage::OfferListPage(const PlatformStyle *platformStyle, OfferView *parent) :
     QDialog(0),
     ui(new Ui::OfferListPage),
     model(0),
@@ -33,14 +33,26 @@ OfferListPage::OfferListPage(OfferView *parent) :
 	offerView(parent)
 {
     ui->setupUi(this);
-
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->copyOffer->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->resellButton->setIcon(QIcon());
-	ui->purchaseButton->setIcon(QIcon());
-	ui->messageButton->setIcon(QIcon());
-#endif
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->copyOffer->setIcon(QIcon());
+		ui->exportButton->setIcon(QIcon());
+		ui->resellButton->setIcon(QIcon());
+		ui->purchaseButton->setIcon(QIcon());
+		ui->messageButton->setIcon(QIcon());
+		ui->searchButton->setIcon(QIcon());
+	}
+	else
+	{
+		ui->copyOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->resellButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/cart"));
+		ui->purchaseButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
+		ui->messageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->searchOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
+	}
+	
 
     ui->labelExplanation->setText(tr("Search for Syscoin Offers (double click on one to purchase). Select the number of results desired from the dropdown box and click Search."));
 	

@@ -11,7 +11,7 @@ class ClientModel;
 class WalletModel;
 class MyCertListPage;
 class CertListPage;
-
+class PlatformStyle;
 
 QT_BEGIN_NAMESPACE
 class QObject;

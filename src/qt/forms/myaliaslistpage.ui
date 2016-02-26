@@ -65,10 +65,6 @@
        <property name="text">
         <string>&amp;Refresh</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/refresh</normaloff>:/icons/refresh</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -79,10 +75,6 @@
        <property name="text">
         <string>&amp;Copy Alias ID</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -90,20 +82,12 @@
        <property name="text">
         <string>Edit</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editsys</normaloff>:/icons/editsys</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="transferButton">
        <property name="text">
         <string>Transfer</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/alias</normaloff>:/icons/alias</iconset>
        </property>
       </widget>
      </item>
@@ -114,10 +98,6 @@
        </property>
        <property name="text">
         <string>&amp;New Alias</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
        </property>
       </widget>
      </item>
@@ -141,10 +121,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

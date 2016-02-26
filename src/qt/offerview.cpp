@@ -25,7 +25,7 @@
 #endif
 #include <QPushButton>
 
-OfferView::OfferView(QStackedWidget *parent):
+OfferView::OfferView(const PlatformStyle *platformStyle, QStackedWidget *parent):
     clientModel(0),
     walletModel(0)
 {
@@ -33,20 +33,20 @@ OfferView::OfferView(QStackedWidget *parent):
 	tabWidget = new QTabWidget();
     offerListPage = new OfferListPage(this);
     myOfferListPage = new MyOfferListPage();
-	acceptandPayOfferListPage = new AcceptandPayOfferListPage();
-	myAcceptedOfferListPage = new MyAcceptedOfferListPage();
-	acceptedOfferListPage = new AcceptedOfferListPage();
-
+	acceptandPayOfferListPage = new AcceptandPayOfferListPage(platformStyle);
+	myAcceptedOfferListPage = new MyAcceptedOfferListPage(platformStyle);
+	acceptedOfferListPage = new AcceptedOfferListPage(platformStyle);
+	QString theme = GUIUtil::getThemeName();
 	tabWidget->addTab(myOfferListPage, tr("&Selling"));
 	tabWidget->addTab(myAcceptedOfferListPage, tr("S&old"));
 	tabWidget->addTab(acceptedOfferListPage, tr("&My Purchases"));
 	tabWidget->addTab(offerListPage, tr("Search"));
 	tabWidget->addTab(acceptandPayOfferListPage, tr("&Buy"));
-	tabWidget->setTabIcon(0, QIcon(":/icons/cart"));
-	tabWidget->setTabIcon(1, QIcon(":/icons/cart"));
-	tabWidget->setTabIcon(2, QIcon(":/icons/cart"));
-	tabWidget->setTabIcon(3, QIcon(":/icons/search"));
-	tabWidget->setTabIcon(4, QIcon(":/icons/send"));
+	tabWidget->setTabIcon(0, QIcon(":/icons/" + theme + "/cart"));
+	tabWidget->setTabIcon(1, QIcon(":/icons/" + theme + "/cart"));
+	tabWidget->setTabIcon(2, QIcon(":/icons/" + theme + "/cart"));
+	tabWidget->setTabIcon(3, QIcon(":/icons/" + theme + "/search"));
+	tabWidget->setTabIcon(4, QIcon(":/icons/" + theme + "/send"));
 	parent->addWidget(tabWidget);
 }
 

@@ -2,7 +2,7 @@
 #define ALIASLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class AliasListPage;
 }
@@ -27,7 +27,7 @@ class AliasListPage : public QDialog
 public:
    
 
-    explicit AliasListPage(QWidget *parent = 0);
+    explicit AliasListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~AliasListPage();
 
 

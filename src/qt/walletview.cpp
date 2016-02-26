@@ -49,22 +49,24 @@ WalletView::WalletView(const PlatformStyle *platformStyle, QWidget *parent):
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
 	// SYSCOIN
-    aliasListPage = new QStackedWidget();
-	messageListPage = new QStackedWidget();
-	certListPage = new QStackedWidget();
-    escrowListPage = new QStackedWidget();
-	offerListPage = new QStackedWidget();
-    aliasView = new AliasView(aliasListPage);
-	messageView = new MessageView(messageListPage);
-	escrowView = new EscrowView(escrowListPage);
-	certView = new CertView(certListPage);
-	offerView = new OfferView(offerListPage);
+    aliasListPage = new QStackedWidget(platformStyle);
+	messageListPage = new QStackedWidget(platformStyle);
+	certListPage = new QStackedWidget(platformStyle);
+    escrowListPage = new QStackedWidget(platformStyle);
+	offerListPage = new QStackedWidget(platformStyle);
+    aliasView = new AliasView(platformStyle, aliasListPage);
+	messageView = new MessageView(platformStyle, messageListPage);
+	escrowView = new EscrowView(platformStyle, escrowListPage);
+	certView = new CertView(platformStyle, certListPage);
+	offerView = new OfferView(platformStyle, offerListPage);
 
     vbox->addWidget(transactionView);
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
     if (platformStyle->getImagesOnButtons()) {
-        exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
+		// SYSCOIN
+		QString theme = GUIUtil::getThemeName();
+        exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
     }
     hbox_buttons->addStretch();
     hbox_buttons->addWidget(exportButton);

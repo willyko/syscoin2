@@ -2,6 +2,7 @@
 #define OFFERESCROWDIALOG_H
 
 #include <QDialog>
+class PlatformStyle;
 namespace Ui {
     class OfferEscrowDialog;
 }
@@ -15,7 +16,7 @@ class OfferEscrowDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferEscrowDialog(QString title, QString quantity, QString price, QWidget *parent = 0);
+    explicit OfferEscrowDialog(const PlatformStyle *platformStyle, QString title, QString quantity, QString price, QWidget *parent = 0);
     ~OfferEscrowDialog();
 
 

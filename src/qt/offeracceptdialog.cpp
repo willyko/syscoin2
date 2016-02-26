@@ -16,11 +16,26 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-OfferAcceptDialog::OfferAcceptDialog(QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
+OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::OfferAcceptDialog), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->acceptButton->setIcon(QIcon());
+		ui->acceptBtcButton->setIcon(QIcon());
+		ui->cancelButton->setIcon(QIcon());
+
+	}
+	else
+	{
+		ui->acceptButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
+		ui->acceptBtcButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
+		ui->cancelButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/quit"));
+	}
+	ui->aboutShade->setPixmap(QPixmap(QString::fromUtf8(":/icons/" + theme + "/about")));
 	int precision;
 	double dblPrice = qstrPrice.toDouble();
 	string strCurrencyCode = currencyCode.toStdString();
@@ -84,7 +99,7 @@ void OfferAcceptDialog::onEscrowCheckBoxChanged(bool toggled)
 }
 void OfferAcceptDialog::acceptBTCPayment()
 {
-	OfferAcceptDialogBTC dlg(this->alias, this->offer, this->quantity, this->notes, this->title, this->currency, this->fprice, this->seller, this->address, this);
+	OfferAcceptDialogBTC dlg(platformStyle, platformStyle, this->alias, this->offer, this->quantity, this->notes, this->title, this->currency, this->fprice, this->seller, this->address, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();

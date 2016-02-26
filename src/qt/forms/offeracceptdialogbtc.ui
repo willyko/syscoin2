@@ -21,10 +21,6 @@
        <property name="text">
         <string>Cancel</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/quit</normaloff>:/icons/quit</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -32,20 +28,12 @@
        <property name="text">
         <string>Open BTC Wallet</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/send</normaloff>:/icons/send</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="confirmButton">
        <property name="text">
         <string>&amp;Confirm Payment</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/transaction_confirmed</normaloff>:/icons/transaction_confirmed</iconset>
        </property>
       </widget>
      </item>
@@ -101,12 +89,9 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QLabel" name="label_3">
+    <widget class="QLabel" name="aboutShadeBTC">
      <property name="text">
       <string/>
-     </property>
-     <property name="pixmap">
-      <pixmap resource="../syscoin.qrc">:/icons/aboutshadebtc</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

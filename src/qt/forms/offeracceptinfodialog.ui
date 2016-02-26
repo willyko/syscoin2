@@ -251,10 +251,6 @@
      <property name="text">
       <string>&amp;OK</string>
      </property>
-     <property name="icon">
-      <iconset resource="../syscoin.qrc">
-       <normaloff>:/icons/synced</normaloff>:/icons/synced</iconset>
-     </property>
     </widget>
    </item>
   </layout>

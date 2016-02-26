@@ -12,6 +12,7 @@ class AcceptedOfferListPage;
 class OfferListPage;
 class AcceptandPayOfferListPage;
 class SendCoinsRecipient;
+class PlatformStyle;
 
 QT_BEGIN_NAMESPACE
 class QObject;
@@ -32,7 +33,7 @@ class OfferView: public QObject
      Q_OBJECT
 
 public:
-    explicit OfferView(QStackedWidget *parent);
+    explicit OfferView(const PlatformStyle *platformStyle, QStackedWidget *parent);
     ~OfferView();
 
     void setSyscoinGUI(SyscoinGUI *gui);

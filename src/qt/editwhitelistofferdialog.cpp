@@ -27,21 +27,32 @@ using namespace std;
 
 
 extern const CRPCTable tableRPC;
-EditWhitelistOfferDialog::EditWhitelistOfferDialog(QModelIndex *idx, QWidget *parent) :
+EditWhitelistOfferDialog::EditWhitelistOfferDialog(const PlatformStyle *platformStyle, QModelIndex *idx, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::EditWhitelistOfferDialog),
     model(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->exclusiveButton->setIcon(QIcon());
+		ui->removeAllButton->setIcon(QIcon());
+		ui->removeButton->setIcon(QIcon());
+		ui->newEntry->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->exclusiveButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/key"));
+		ui->removeAllButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/remove"));
+		ui->removeButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/remove"));
+		ui->newEntry->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/add"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+	}
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->newEntry->setIcon(QIcon());
-	ui->refreshButton->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->exclusiveButton->setIcon(QIcon());
-	ui->removeButton->setIcon(QIcon());
-	ui->removeAllButton->setIcon(QIcon());
-#endif
 	offerGUID = idx->data(OfferTableModel::NameRole).toString();
 	exclusiveWhitelist = idx->data(OfferTableModel::ExclusiveWhitelistRole).toString();
 	offerCategory = idx->data(OfferTableModel::CategoryRole).toString();

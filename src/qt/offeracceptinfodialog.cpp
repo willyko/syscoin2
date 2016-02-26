@@ -14,7 +14,7 @@ using namespace std;
 
 extern const CRPCTable tableRPC;
 
-OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *parent) :
+OfferAcceptInfoDialog::OfferAcceptInfoDialog(const PlatformStyle *platformStyle, const QModelIndex &idx, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::OfferAcceptInfoDialog)
 {
@@ -34,6 +34,22 @@ OfferAcceptInfoDialog::OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *pa
 	ui->certLabel->setVisible(false);
 	ui->escrowEdit->setVisible(false);
 	ui->escrowLabel->setVisible(false);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->okButton->setIcon(QIcon());
+		ui->confirmButton->setIcon(QIcon());
+		ui->openBtcWalletButton->setIcon(QIcon());
+		ui->cancelButton->setIcon(QIcon());
+
+	}
+	else
+	{
+		ui->okButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/synced"));
+		ui->confirmButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/transaction_confirmed"));
+		ui->openBtcWalletButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
+		ui->cancelButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/quit"));
+	}
 	lookup();
 }
 

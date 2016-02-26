@@ -21,21 +21,32 @@ extern const CRPCTable tableRPC;
 #include <QClipboard>
 #include <QMessageBox>
 #include <QMenu>
-MyAcceptedOfferListPage::MyAcceptedOfferListPage(QWidget *parent) :
+MyAcceptedOfferListPage::MyAcceptedOfferListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MyAcceptedOfferListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->messageButton->setIcon(QIcon());
+		ui->detailButton->setIcon(QIcon());
+		ui->copyOffer->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-	ui->refreshButton->setIcon(QIcon());
-    ui->copyOffer->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->messageButton->setIcon(QIcon());
-	ui->detailButton->setIcon(QIcon());
-#endif
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->messageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->detailButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/details"));
+		ui->copyOffer->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		
+	}
 
 	ui->buttonBox->setVisible(false);
 

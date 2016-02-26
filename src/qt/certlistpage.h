@@ -2,7 +2,7 @@
 #define CERTLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class CertListPage;
 }
@@ -27,7 +27,7 @@ class CertListPage : public QDialog
 public:
    
 
-    explicit CertListPage(QWidget *parent = 0);
+    explicit CertListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~CertListPage();
 
 

@@ -42,6 +42,8 @@ CoinControlDialog::CoinControlDialog(const PlatformStyle *platformStyle, QWidget
     platformStyle(platformStyle)
 {
     ui->setupUi(this);
+    // SYSCOIN Open CSS when configured
+    this->setStyleSheet(GUIUtil::loadStyleSheet());
 
     // context menu actions
     QAction *copyAddressAction = new QAction(tr("Copy address"), this);
@@ -275,13 +277,15 @@ void CoinControlDialog::copyTransactionHash()
 // context menu action: lock coin
 void CoinControlDialog::lockCoin()
 {
+	// SYSCOIN
+	QString theme = GUIUtil::getThemeName();
     if (contextMenuItem->checkState(COLUMN_CHECKBOX) == Qt::Checked)
         contextMenuItem->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
 
     COutPoint outpt(uint256S(contextMenuItem->text(COLUMN_TXHASH).toStdString()), contextMenuItem->text(COLUMN_VOUT_INDEX).toUInt());
     model->lockCoin(outpt);
     contextMenuItem->setDisabled(true);
-    contextMenuItem->setIcon(COLUMN_CHECKBOX, platformStyle->SingleColorIcon(":/icons/lock_closed"));
+    contextMenuItem->setIcon(COLUMN_CHECKBOX, platformStyle->SingleColorIcon(":/icons/" + theme + "/lock_closed"));
     updateLabelLocked();
 }
 
@@ -679,7 +683,10 @@ void CoinControlDialog::updateView()
     if (!model || !model->getOptionsModel() || !model->getAddressTableModel())
         return;
 
+
     bool treeMode = ui->radioTreeMode->isChecked();
+	// SYSCOIN
+	QString theme = GUIUtil::getThemeName();
 
     ui->treeWidget->clear();
     ui->treeWidget->setEnabled(false); // performance, otherwise updateLabels would be called for every checked checkbox
@@ -794,7 +801,7 @@ void CoinControlDialog::updateView()
                 COutPoint outpt(txhash, out.i);
                 coinControl->UnSelect(outpt); // just to be sure
                 itemOutput->setDisabled(true);
-                itemOutput->setIcon(COLUMN_CHECKBOX, platformStyle->SingleColorIcon(":/icons/lock_closed"));
+                itemOutput->setIcon(COLUMN_CHECKBOX, platformStyle->SingleColorIcon(":/icons/" + theme + "/lock_closed"));
             }
 
             // set checkbox

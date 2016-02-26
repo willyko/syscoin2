@@ -2,7 +2,7 @@
 #define MYALIASLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MyAliasListPage;
 }
@@ -27,7 +27,7 @@ class MyAliasListPage : public QDialog
 public:
 
 
-    explicit MyAliasListPage(QWidget *parent = 0);
+    explicit MyAliasListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~MyAliasListPage();
 
     void setModel(WalletModel*, AliasTableModel *model);

@@ -74,10 +74,6 @@
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>:/images/imageplaceholder</normaloff>:/images/imageplaceholder</iconset>
-       </property>
        <property name="iconSize">
         <size>
          <width>300</width>
@@ -124,10 +120,6 @@
         <widget class="QPushButton" name="lookupButton">
          <property name="text">
           <string>&amp;Lookup Offer</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../syscoin.qrc">
-           <normaloff>:/icons/search</normaloff>:/icons/search</iconset>
          </property>
         </widget>
        </item>
@@ -365,10 +357,6 @@
     <widget class="QPushButton" name="acceptButton">
      <property name="text">
       <string>&amp;Accept Offer</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../syscoin.qrc">
-       <normaloff>:/icons/cart</normaloff>:/icons/cart</iconset>
      </property>
     </widget>
    </item>

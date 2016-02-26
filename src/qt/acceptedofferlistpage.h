@@ -2,7 +2,7 @@
 #define ACCEPTEDOFFERLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class AcceptedOfferListPage;
 }
@@ -27,7 +27,7 @@ class AcceptedOfferListPage : public QDialog
 public:
 
 
-    explicit AcceptedOfferListPage(QWidget *parent = 0);
+    explicit AcceptedOfferListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~AcceptedOfferListPage();
 
     void setModel(WalletModel*, OfferAcceptTableModel *model);

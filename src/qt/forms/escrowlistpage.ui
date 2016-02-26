@@ -59,10 +59,6 @@
        <property name="text">
         <string>Search</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/search</normaloff>:/icons/search</iconset>
-       </property>
       </widget>
      </item>
     </layout>
@@ -103,11 +99,7 @@
         <string>Copy the currently selected alias to the system clipboard</string>
        </property>
        <property name="text">
-        <string>&amp;Copy Escrow  ID</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
+        <string>&amp;Copy Escrow ID</string>
        </property>
       </widget>
      </item>
@@ -131,10 +123,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

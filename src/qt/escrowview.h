@@ -11,6 +11,7 @@ class ClientModel;
 class WalletModel;
 class EscrowListPage;
 class MyEscrowListPage;
+class PlatformStyle;
 
 QT_BEGIN_NAMESPACE
 class QObject;
@@ -31,7 +32,7 @@ class EscrowView: public QObject
      Q_OBJECT
 
 public:
-    explicit EscrowView(QStackedWidget *parent);
+    explicit EscrowView(const PlatformStyle *platformStyle, QStackedWidget *parent);
     ~EscrowView();
 
     void setSyscoinGUI(SyscoinGUI *gui);

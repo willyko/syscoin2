@@ -2,7 +2,7 @@
 #define MYACCEPTEDOFFERLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MyAcceptedOfferListPage;
 }

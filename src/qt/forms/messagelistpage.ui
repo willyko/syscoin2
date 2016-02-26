@@ -38,10 +38,6 @@
        <property name="text">
         <string>&amp;Refresh</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/refresh</normaloff>:/icons/refresh</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -52,20 +48,12 @@
        <property name="text">
         <string>&amp;Copy Message ID</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="detailButton">
        <property name="text">
         <string>Details</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/details</normaloff>:/icons/details</iconset>
        </property>
       </widget>
      </item>
@@ -79,10 +67,6 @@
        </property>
        <property name="text">
         <string>New Message</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
        </property>
       </widget>
      </item>
@@ -106,10 +90,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

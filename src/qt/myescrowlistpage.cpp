@@ -20,24 +20,38 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-MyEscrowListPage::MyEscrowListPage(QWidget *parent) :
+MyEscrowListPage::MyEscrowListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MyEscrowListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->arbiterMessageButton->setIcon(QIcon());
+		ui->sellerMessageButton->setIcon(QIcon());
+		ui->buyerMessageButton->setIcon(QIcon());
+		ui->refundButton->setIcon(QIcon());
+		ui->releaseButton->setIcon(QIcon());
+		ui->copyEscrow->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->copyEscrow->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->refreshButton->setIcon(QIcon());
-	ui->releaseButton->setIcon(QIcon());
-	ui->refundButton->setIcon(QIcon());
-	ui->buyerMessageButton->setIcon(QIcon());
-	ui->sellerMessageButton->setIcon(QIcon());
-	ui->arbiterMessageButton->setIcon(QIcon());
-#endif
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->arbiterMessageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->sellerMessageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->buyerMessageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->refundButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/escrow1"));
+		ui->releaseButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/escrow1"));
+		ui->copyEscrow->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		
+	}
 
 	ui->buttonBox->setVisible(false);
 

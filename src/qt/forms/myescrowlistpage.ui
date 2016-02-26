@@ -65,10 +65,6 @@
        <property name="text">
         <string>&amp;Refresh</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/refresh</normaloff>:/icons/refresh</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -79,20 +75,12 @@
        <property name="text">
         <string>&amp;Copy Escrow ID</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="releaseButton">
        <property name="text">
         <string>Release Escrow</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/escrow1</normaloff>:/icons/escrow1</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -107,20 +95,12 @@
        <property name="text">
         <string>Refund Escrow</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/escrow1</normaloff>:/icons/escrow1</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="buyerMessageButton">
        <property name="text">
         <string>Send Message To Buyer</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/outmail</normaloff>:/icons/outmail</iconset>
        </property>
       </widget>
      </item>
@@ -129,20 +109,12 @@
        <property name="text">
         <string>Send Message To Seller</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/outmail</normaloff>:/icons/outmail</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="arbiterMessageButton">
        <property name="text">
         <string>Send Message To Arbiter</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/outmail</normaloff>:/icons/outmail</iconset>
        </property>
       </widget>
      </item>
@@ -166,10 +138,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

@@ -2,7 +2,7 @@
 #define MYOFFERLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MyOfferListPage;
 }
@@ -28,7 +28,7 @@ class MyOfferListPage : public QDialog
 public:
 
 
-    explicit MyOfferListPage(QWidget *parent = 0);
+    explicit MyOfferListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~MyOfferListPage();
 
     void setModel(WalletModel*, OfferTableModel *model);

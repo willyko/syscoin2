@@ -30,13 +30,26 @@ using namespace std;
 
 extern const CRPCTable tableRPC;
 
-AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
+AcceptandPayOfferListPage::AcceptandPayOfferListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AcceptandPayOfferListPage)
 {	
 	sAddress = "";
 	bOnlyAcceptBTC = false;
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->lookupButton->setIcon(QIcon());
+		ui->acceptButton->setIcon(QIcon());
+		ui->imageButton->setIcon(QIcon());
+	}
+	else
+	{
+		ui->lookupButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
+		ui->acceptButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/cart"));
+	}
+	ui->imageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/imageplaceholder"));
 	this->offerPaid = false;
 	this->URIHandled = false;	
     ui->labelExplanation->setText(tr("Purchase an offer, Syscoin will be used from your balance to complete the transaction"));
@@ -46,7 +59,8 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(QWidget *parent) :
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
 	ui->aliasDisclaimer->setText(tr("<font color='red'>Please select an alias you own</font>"));
 	m_netwManager = new QNetworkAccessManager(this);
-	m_placeholderImage.load(":/icons/imageplaceholder");
+	QString theme = GUIUtil::getThemeName();  
+	m_placeholderImage.load(":/icons/" + theme + "/imageplaceholder");
 
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
 	ui->infoCert->setVisible(false);
@@ -169,7 +183,7 @@ void AcceptandPayOfferListPage::updateCaption()
 }
 void AcceptandPayOfferListPage::OpenPayDialog()
 {
-	OfferAcceptDialog dlg(ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialog dlg(platformStyle, ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();
@@ -183,7 +197,7 @@ void AcceptandPayOfferListPage::OpenPayDialog()
 }
 void AcceptandPayOfferListPage::OpenBTCPayDialog()
 {
-	OfferAcceptDialogBTC dlg(ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
+	OfferAcceptDialogBTC dlg(platformStyle, ui->aliasEdit->currentText(), ui->offeridEdit->text(), ui->qtyEdit->text(), ui->notesEdit->toPlainText(), ui->infoTitle->text(), ui->infoCurrency->text(), ui->infoPrice->text(), ui->sellerEdit->text(), sAddress, this);
 	if(dlg.exec())
 	{
 		this->offerPaid = dlg.getPaymentStatus();

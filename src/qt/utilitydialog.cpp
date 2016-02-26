@@ -63,6 +63,9 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
         ui->aboutMessage->setText(version + "<br><br>" + licenseInfoHTML);
         ui->aboutMessage->setWordWrap(true);
         ui->helpMessage->setVisible(false);
+		// SYSCOIN
+		QString theme = GUIUtil::getThemeName();
+		ui->aboutLogo->setPixmap(QPixmap(QString::fromUtf8(":/icons/" + theme + "/about_horizontol")));
     } else {
         setWindowTitle(tr("Command-line options"));
         QString header = tr("Usage:") + "\n" +

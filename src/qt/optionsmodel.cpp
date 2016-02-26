@@ -72,6 +72,9 @@ void OptionsModel::Init(bool resetSettings)
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
+	// SYSCOIN
+    if (!settings.contains("theme"))
+        settings.setValue("theme", "");
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.
     //

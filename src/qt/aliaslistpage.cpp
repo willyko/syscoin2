@@ -26,19 +26,28 @@ using namespace std;
 extern const CRPCTable tableRPC;
 
 extern int GetAliasExpirationDepth();
-AliasListPage::AliasListPage(QWidget *parent) :
+AliasListPage::AliasListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AliasListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
-
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->copyAlias->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->messageButton->setIcon(QIcon());
-#endif
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->messageButton->setIcon(QIcon());
+		ui->copyAlias->setIcon(QIcon());
+		ui->searchAlias->setIcon(QIcon());
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->messageButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/outmail"));
+		ui->copyAlias->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->searchAlias->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
+	}
 
     ui->labelExplanation->setText(tr("Search for Syscoin Aliases. Select the number of results desired from the dropdown box and click Search."));
 	

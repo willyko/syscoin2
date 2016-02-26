@@ -2,7 +2,7 @@
 #define INMESSAGELISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MessageListPage;
 }
@@ -27,7 +27,7 @@ class InMessageListPage : public QDialog
 public:
    
 
-    explicit InMessageListPage(QWidget *parent = 0);
+    explicit InMessageListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~InMessageListPage();
 
 

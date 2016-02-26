@@ -2,6 +2,7 @@
 #define OFFERPAYDIALOG_H
 
 #include <QDialog>
+class PlatformStyle;
 namespace Ui {
     class OfferPayDialog;
 }
@@ -15,7 +16,7 @@ class OfferPayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferPayDialog(QString title, QString quantity, QString price, QString currency, QWidget *parent = 0);
+    explicit OfferPayDialog(const PlatformStyle *platformStyle, QString title, QString quantity, QString price, QString currency, QWidget *parent = 0);
     ~OfferPayDialog();
 
 

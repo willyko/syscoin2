@@ -15,20 +15,32 @@
 #include <QMenu>
 using namespace std;
 
-InMessageListPage::InMessageListPage(QWidget *parent) :
+InMessageListPage::InMessageListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MessageListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->newMessage->setIcon(QIcon());
+		ui->detailButton->setIcon(QIcon());
+		ui->copyMessage->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-	ui->newMessage->setIcon(QIcon());
-    ui->copyMessage->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->detailButton->setIcon(QIcon());
-#endif
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->newMessage->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/add"));
+		ui->detailButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/details"));
+		ui->copyMessage->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		
+	}
 
     ui->labelExplanation->setText(tr("These are Syscoin messages sent to you."));
 	

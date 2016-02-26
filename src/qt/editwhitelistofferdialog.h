@@ -2,7 +2,8 @@
 #define EDITWHITELISTOFFERDIALOG_H
 
 #include <QDialog>
-
+#include <QDialog>
+class PlatformStyle;
 namespace Ui {
     class EditWhitelistOfferDialog;
 }
@@ -25,7 +26,7 @@ class EditWhitelistOfferDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EditWhitelistOfferDialog(QModelIndex *idx,QWidget *parent = 0);
+    explicit EditWhitelistOfferDialog(const PlatformStyle *platformStyle, QModelIndex *idx,QWidget *parent = 0);
     ~EditWhitelistOfferDialog();
 
     void setModel(WalletModel*,OfferWhitelistTableModel *model);

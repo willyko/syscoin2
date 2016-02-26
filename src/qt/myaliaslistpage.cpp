@@ -16,22 +16,34 @@
 #include <QClipboard>
 #include <QMessageBox>
 #include <QMenu>
-MyAliasListPage::MyAliasListPage(QWidget *parent) :
+MyAliasListPage::MyAliasListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MyAliasListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->newAlias->setIcon(QIcon());
+		ui->transferButton->setIcon(QIcon());
+		ui->editButton->setIcon(QIcon());
+		ui->copyAlias->setIcon(QIcon());
+		ui->refreshButton->setIcon(QIcon());
 
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->newAlias->setIcon(QIcon());
-    ui->copyAlias->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-	ui->refreshButton->setIcon(QIcon());
-	ui->transferButton->setIcon(QIcon());
-	ui->editButton->setIcon(QIcon());
-#endif
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->newAlias->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/add"));
+		ui->transferButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/alias"));
+		ui->editButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editsys"));
+		ui->copyAlias->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		
+	}
 
 	ui->buttonBox->setVisible(false);
 

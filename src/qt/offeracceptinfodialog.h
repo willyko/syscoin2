@@ -1,6 +1,7 @@
 #ifndef OFFERACCEPTINFODIALOG_H
 #define OFFERACCEPTINFODIALOG_H
 #include <QDialog>
+class PlatformStyle;
 class QDataWidgetMapper;
 namespace Ui {
     class OfferAcceptInfoDialog;
@@ -15,7 +16,7 @@ class OfferAcceptInfoDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferAcceptInfoDialog(const QModelIndex &idx, QWidget *parent=0);
+    explicit OfferAcceptInfoDialog(const PlatformStyle *platformStyle, const QModelIndex &idx, QWidget *parent=0);
     ~OfferAcceptInfoDialog();
 private:
 	bool lookup();

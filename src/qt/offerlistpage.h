@@ -10,6 +10,7 @@ class OfferTableModel;
 class OfferView;
 class OptionsModel;
 class WalletModel;
+class PlatformStyle;
 QT_BEGIN_NAMESPACE
 class QTableView;
 class QItemSelection;
@@ -28,7 +29,7 @@ class OfferListPage : public QDialog
 public:
    
 
-    explicit OfferListPage(OfferView *parent);
+    explicit OfferListPage(const PlatformStyle *platformStyle, OfferView *parent);
     ~OfferListPage();
 
 

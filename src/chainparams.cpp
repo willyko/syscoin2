@@ -113,7 +113,8 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        consensus.nSubsidyHalvingInterval = 314159; // every ~7 months
+        consensus.nSubsidyHalvingInitialInterval = 157080; // every ~3.5 months
+		consensus.nSubsidyHalvingAnnualInterval = 525600;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
@@ -202,7 +203,8 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 314159;
+        consensus.nSubsidyHalvingInitialInterval = 157080; // every ~3.5 months
+		consensus.nSubsidyHalvingAnnualInterval = 525600;
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 100;
@@ -273,7 +275,8 @@ class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        consensus.nSubsidyHalvingInterval = 15000;
+        consensus.nSubsidyHalvingInitialInterval = 314159/2; // every ~3.5 months
+		consensus.nSubsidyHalvingAnnualInterval = 525600;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;

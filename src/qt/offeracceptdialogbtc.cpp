@@ -19,6 +19,8 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString alias, QString offer, QString
     ui(new Ui::OfferAcceptDialogBTC), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), sellerAlias(sellerAlias), address(address)
 {
     ui->setupUi(this);
+	QString theme = GUIUtil::getThemeName();  
+	ui->aboutShadeBTC->setPixmap(QPixmap(QString::fromUtf8(":/icons/" + theme + "/about_btc")));
 	double dblPrice = qstrPrice.toDouble()*quantity.toUInt();
 	string strfPrice = strprintf("%f", dblPrice);
 	QString fprice = QString::fromStdString(strfPrice);

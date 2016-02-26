@@ -59,14 +59,28 @@
         <file alias="outmail">res/icons/mailout.png</file>
         <file alias="message">res/icons/message.png</file>
         <file alias="search">res/icons/search.png</file>
-        <file alias="aboutshade">res/icons/about-shade.png</file>
-        <file alias="aboutshadebtc">res/icons/about-shadebtc.png</file>
-        <file alias="aboutshade1">res/icons/about-shade1.png</file>
-        <file alias="overviewshade">res/icons/shade-overview.png</file>
-        <file alias="splashshade">res/icons/shade-splash.png</file>
-        <file alias="imageplaceholder">res/icons/imageplaceholder.png</file>
         <file alias="refresh">res/icons/refresh.png</file>
     </qresource>
+  <qresource prefix="/css">
+    <file alias="shade">res/css/shade.css</file>
+  </qresource>
+  <qresource prefix="/images/shade">
+    <file alias="about">res/images/shade/shade_about.png</file>
+    <file alias="about_horizontol">res/images/shade/shade_logo_horizontal.png</file>
+    <file alias="about_btc">res/images/shade/shade_aboutbtc.png</file>
+    <file alias="overview">res/images/shade/shade_overview.png</file>
+    <file alias="splash">res/images/shade/shade_splash.png</file>
+    <file alias="shade_logo_horizontal">res/images/shade/shade_logo_horizontal.png</file>
+    <file alias="shade_downArrow">res/images/shade/shade_downArrow.png</file>
+    <file alias="shade_downArrow_small">res/images/shade/shade_downArrow_small.png</file>
+    <file alias="shade_upArrow_small">res/images/shade/shade_upArrow_small.png</file>
+    <file alias="shade_leftArrow_small">res/images/shade/shade_leftArrow_small.png</file>
+    <file alias="shade_rightArrow_small">res/images/shade/shade_rightArrow_small.png</file>
+    <file alias="shade_qtreeview_selected">res/images/shade/shade_qtreeview_selected.png</file>
+    <file alias="shade_walletFrame_bg">res/images/shade/shade_walletFrame_bg.png</file>
+    <file alias="shade_walletFrame">res/images/shade/shade_walletFrame.png</file>
+    <file alias="imageplaceholder">res/images/shade/shade_imageplaceholder.png</file>
+  </qresource> 
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>
         <file alias="spinner-001">res/movies/spinner-001.png</file>

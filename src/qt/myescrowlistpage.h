@@ -2,7 +2,7 @@
 #define MYESCROWLISTPAGE_H
 
 #include <QDialog>
-
+class PlatformStyle;
 namespace Ui {
     class MyEscrowListPage;
 }
@@ -27,7 +27,7 @@ class MyEscrowListPage : public QDialog
 public:
 
 
-    explicit MyEscrowListPage(QWidget *parent = 0);
+    explicit MyEscrowListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~MyEscrowListPage();
 
     void setModel(WalletModel*, EscrowTableModel *model);

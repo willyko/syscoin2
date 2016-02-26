@@ -133,6 +133,19 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
 }
 
 // SYSCOIN Open CSS when configured
+// Return name of current UI-theme or default theme if no theme was found
+QString getThemeName()
+{
+    QSettings settings;
+    QString theme = settings.value("theme", "").toString();
+
+    if(!theme.isEmpty()){
+        return theme;
+    }
+    return QString("sysblue");  
+}
+
+// Open CSS when configured
 QString loadStyleSheet()
 {
     QString styleSheet;
@@ -141,21 +154,20 @@ QString loadStyleSheet()
     QString theme = settings.value("theme", "").toString();
 
     if(!theme.isEmpty()){
-        cssName = QString(":/css/") + theme;
+        cssName = QString(":/css/") + theme; 
     }
     else {
-        cssName = QString(":/css/sys-1");
-        settings.setValue("theme", "sys-1");
+        cssName = QString(":/css/sysblue");  
+        settings.setValue("theme", "sysblue");
     }
-
-    QFile qFile(cssName);
+    
+    QFile qFile(cssName);      
     if (qFile.open(QFile::ReadOnly)) {
         styleSheet = QLatin1String(qFile.readAll());
     }
-
+        
     return styleSheet;
 }
-
 bool parseSyscoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no syscoin: URI

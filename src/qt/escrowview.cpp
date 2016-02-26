@@ -21,18 +21,19 @@
 #endif
 #include <QPushButton>
 
-EscrowView::EscrowView(QStackedWidget *parent):
+EscrowView::EscrowView(const PlatformStyle *platformStyle, QStackedWidget *parent):
     clientModel(0),
     walletModel(0)
 {
 	tabWidget = new QTabWidget();
-    escrowListPage = new EscrowListPage();
-    myEscrowListPage = new MyEscrowListPage();
-	
+    escrowListPage = new EscrowListPage(platformStyle);
+    myEscrowListPage = new MyEscrowListPage(platformStyle);
+	QString theme = GUIUtil::getThemeName();
+
 	tabWidget->addTab(myEscrowListPage, tr("&My Escrows"));
 	tabWidget->addTab(escrowListPage, tr("&Search"));
-	tabWidget->setTabIcon(0, QIcon(":/icons/escrow"));
-	tabWidget->setTabIcon(1, QIcon(":/icons/search"));
+	tabWidget->setTabIcon(0, QIcon(":/icons/" + theme + "/escrow"));
+	tabWidget->setTabIcon(1, QIcon(":/icons/" + theme + "/search"));
 
 	parent->addWidget(tabWidget);
 

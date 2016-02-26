@@ -22,19 +22,26 @@ using namespace std;
 
 
 extern int GetCertExpirationDepth();
-CertListPage::CertListPage(QWidget *parent) :
+CertListPage::CertListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CertListPage),
     model(0),
     optionsModel(0)
 {
     ui->setupUi(this);
-
-#ifdef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
-    ui->copyCert->setIcon(QIcon());
-    ui->exportButton->setIcon(QIcon());
-#endif
-
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->exportButton->setIcon(QIcon());
+		ui->copyCert->setIcon(QIcon());
+		ui->searchCert->setIcon(QIcon());
+	}
+	else
+	{
+		ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/export"));
+		ui->copyCert->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
+		ui->searchCert->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
+	}
     ui->labelExplanation->setText(tr("Search for Syscoin Certificates. Select the number of results desired from the dropdown box and click Search."));
 	
     // Context menu actions

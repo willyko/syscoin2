@@ -21,18 +21,18 @@
 #endif
 #include <QPushButton>
 
-AliasView::AliasView(QStackedWidget *parent):
+AliasView::AliasView(const PlatformStyle *platformStyle, QStackedWidget *parent):
     clientModel(0),
     walletModel(0)
 {
 	tabWidget = new QTabWidget();
-    aliasListPage = new AliasListPage();
-    myAliasListPage = new MyAliasListPage();
-	
+    aliasListPage = new AliasListPage(platformStyle);
+    myAliasListPage = new MyAliasListPage(platformStyle);
+	QString theme = GUIUtil::getThemeName();
 	tabWidget->addTab(myAliasListPage, tr("&My Aliases"));
 	tabWidget->addTab(aliasListPage, tr("&Search"));
-	tabWidget->setTabIcon(0, QIcon(":/icons/alias"));
-	tabWidget->setTabIcon(1, QIcon(":/icons/search"));
+	tabWidget->setTabIcon(0, platformStyle->SingleColorIcon(":/icons/" + theme + "/alias"));
+	tabWidget->setTabIcon(1, platformStyle->SingleColorIcon(":/icons/" + theme + "/search"));
 	parent->addWidget(tabWidget);
 
 }

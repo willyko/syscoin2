@@ -2,7 +2,8 @@
 #define ESCROWLISTPAGE_H
 
 #include <QDialog>
-
+#include <QDialog>
+class PlatformStyle;
 namespace Ui {
     class EscrowListPage;
 }
@@ -27,7 +28,7 @@ class EscrowListPage : public QDialog
 public:
    
 
-    explicit EscrowListPage(QWidget *parent = 0);
+    explicit EscrowListPage(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~EscrowListPage();
 
 

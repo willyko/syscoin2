@@ -59,10 +59,6 @@
        <property name="text">
         <string>Search</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/search</normaloff>:/icons/search</iconset>
-       </property>
       </widget>
      </item>
     </layout>
@@ -105,20 +101,12 @@
        <property name="text">
         <string>&amp;Copy Alias ID</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="messageButton">
        <property name="text">
         <string>Send Message</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/outmail</normaloff>:/icons/outmail</iconset>
        </property>
       </widget>
      </item>
@@ -142,10 +130,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

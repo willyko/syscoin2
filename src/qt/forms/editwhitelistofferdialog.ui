@@ -65,10 +65,6 @@
        <property name="text">
         <string>&amp;Refresh</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/refresh</normaloff>:/icons/refresh</iconset>
-       </property>
       </widget>
      </item>
      <item>
@@ -79,20 +75,12 @@
        <property name="text">
         <string>&amp;Add</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/add</normaloff>:/icons/add</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="removeButton">
        <property name="text">
         <string>Remove</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
        </property>
       </widget>
      </item>
@@ -101,20 +89,12 @@
        <property name="text">
         <string>Remove All</string>
        </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
-       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="exclusiveButton">
        <property name="text">
         <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/key</normaloff>:/icons/key</iconset>
        </property>
       </widget>
      </item>
@@ -138,10 +118,6 @@
        </property>
        <property name="text">
         <string>&amp;Export</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../syscoin.qrc">
-         <normaloff>:/icons/export</normaloff>:/icons/export</iconset>
        </property>
       </widget>
      </item>

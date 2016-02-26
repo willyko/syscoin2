@@ -60,6 +60,9 @@ namespace GUIUtil
     /** Load global CSS theme */
     QString loadStyleSheet();
 
+    /** Return name of current CSS theme */
+    QString getThemeName();
+
     /** Copy a field of the currently selected entry of a view to the clipboard. Does nothing if nothing
         is selected.
        @param[in] column  Data column to extract from the model
