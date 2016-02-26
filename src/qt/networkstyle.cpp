@@ -5,7 +5,8 @@
 #include "networkstyle.h"
 
 #include "guiconstants.h"
-
+// SYSCOIN 
+#include "guiutil.h"
 #include <QApplication>
 
 static const struct {
