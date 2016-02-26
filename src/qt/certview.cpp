@@ -4,7 +4,7 @@
 #include "certview.h"
 #include "syscoingui.h"
 
-#include "guiutil.h"
+#include "platformstyle.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"
