@@ -4,7 +4,7 @@
 #include "offerview.h"
 #include "syscoingui.h"
 
-
+#include "guiutil.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"
