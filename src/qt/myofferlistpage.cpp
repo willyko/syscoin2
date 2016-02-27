@@ -23,7 +23,8 @@ MyOfferListPage::MyOfferListPage(const PlatformStyle *platformStyle, QWidget *pa
     QDialog(parent),
     ui(new Ui::MyOfferListPage),
     model(0),
-    optionsModel(0)
+    optionsModel(0),
+	platformStyle(platformStyle)
 {
     ui->setupUi(this);
 	QString theme = GUIUtil::getThemeName();  
