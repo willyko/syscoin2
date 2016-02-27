@@ -200,7 +200,7 @@ void MyOfferListPage::on_whitelistButton_clicked()
     if(indexes.isEmpty())
         return;
 	QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
-    EditWhitelistOfferDialog dlg(&origIndex);
+    EditWhitelistOfferDialog dlg(platformStyle, &origIndex);
 	dlg.setModel(walletModel, offerWhitelistTableModel);
     dlg.exec();
 }
@@ -212,7 +212,7 @@ void MyOfferListPage::onEditWhitelistAction()
     if(indexes.isEmpty())
         return;
 	QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
-    EditWhitelistOfferDialog dlg(&origIndex);
+    EditWhitelistOfferDialog dlg(platformStyle, &origIndex);
 	dlg.setModel(walletModel, offerWhitelistTableModel);
     dlg.exec();
 }
