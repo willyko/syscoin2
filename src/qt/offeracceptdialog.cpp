@@ -8,6 +8,7 @@
 #include "offerescrowdialog.h"
 #include "offer.h"
 #include "alias.h"
+#include "guiutil.h"
 #include "syscoingui.h"
 #include <QMessageBox>
 #include "rpcserver.h"
