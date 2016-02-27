@@ -2,6 +2,7 @@
 #define OFFERACCEPTDIALOGBTC_H
 
 #include <QDialog>
+class PlatformStyle;
 namespace Ui {
     class OfferAcceptDialogBTC;
 }
@@ -10,7 +11,7 @@ class OfferAcceptDialogBTC : public QDialog
     Q_OBJECT
 
 public:
-    explicit OfferAcceptDialogBTC(QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QString sellerAlias, QString address, QWidget *parent=0);
+    explicit OfferAcceptDialogBTC(const PlatformStyle *platformStyle, QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString strPrice, QString sellerAlias, QString address, QWidget *parent=0);
     ~OfferAcceptDialogBTC();
 
     bool getPaymentStatus();

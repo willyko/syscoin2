@@ -3,6 +3,8 @@
 #include "init.h"
 #include "util.h"
 #include "offerpaydialog.h"
+#include "guiutil.h"
+#include "platformstyle.h"
 #include "syscoingui.h"
 #include <QMessageBox>
 #include "rpcserver.h"
@@ -14,7 +16,7 @@
 using namespace std;
 
 extern const CRPCTable tableRPC;
-OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
+OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::OfferAcceptDialogBTC), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), sellerAlias(sellerAlias), address(address)
 {
@@ -29,7 +31,20 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(QString alias, QString offer, QString
 	ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? To complete your purchase please pay %4 BTC using your Bitcoin wallet.").arg(quantity).arg(title).arg(sellerAlias).arg(fprice));
 	string strPrice = strprintf("%f", dblPrice);
 	price = QString::fromStdString(strPrice);
-	
+	QString theme = GUIUtil::getThemeName();  
+	if (!platformStyle->getImagesOnButtons())
+	{
+		ui->confirmButton->setIcon(QIcon());
+		ui->openBtcWalletButton->setIcon(QIcon());
+		ui->cancelButton->setIcon(QIcon());
+
+	}
+	else
+	{
+		ui->confirmButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/transaction_confirmed"));
+		ui->openBtcWalletButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/send"));
+		ui->cancelButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/quit"));
+	}	
 	this->offerPaid = false;
 	connect(ui->confirmButton, SIGNAL(clicked()), this, SLOT(acceptPayment()));
 	connect(ui->openBtcWalletButton, SIGNAL(clicked()), this, SLOT(openBTCWallet()));
