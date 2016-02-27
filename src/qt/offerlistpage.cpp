@@ -42,7 +42,7 @@ OfferListPage::OfferListPage(const PlatformStyle *platformStyle, OfferView *pare
 		ui->resellButton->setIcon(QIcon());
 		ui->purchaseButton->setIcon(QIcon());
 		ui->messageButton->setIcon(QIcon());
-		ui->searchButton->setIcon(QIcon());
+		ui->searchOffer->setIcon(QIcon());
 	}
 	else
 	{
