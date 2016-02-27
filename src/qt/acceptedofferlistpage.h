@@ -38,7 +38,7 @@ public Q_SLOTS:
     void done(int retval);
 
 private:
-	onst PlatformStyle *platformStyle;
+	const PlatformStyle *platformStyle;
 	ClientModel* clientModel;
 	WalletModel *walletModel;
     Ui::AcceptedOfferListPage *ui;
