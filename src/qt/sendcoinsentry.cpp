@@ -24,6 +24,7 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *platformStyle, QWidget *pare
     ui->setupUi(this);
 	// SYSCOIN
 	QString theme = GUIUtil::getThemeName();
+	LogPrintf("theme %s\n", theme.toStdString())
 
     ui->addressBookButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/address-book"));
     ui->pasteButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editpaste"));
