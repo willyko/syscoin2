@@ -78,7 +78,7 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
 
     /* Display elements init */
     // SYSCOIN Theme selector
-     ui->theme->addItem(QString(tr("shade") + "(" + tr("default") + QString(")"), QVariant(""));
+     ui->theme->addItem(tr("Shade") + QString("(") + tr("default") + QString(")"), QVariant(""));
 
      
     QDir translations(":translations");
