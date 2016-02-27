@@ -31,7 +31,7 @@ using namespace std;
 extern const CRPCTable tableRPC;
 
 AcceptandPayOfferListPage::AcceptandPayOfferListPage(const PlatformStyle *platformStyle, QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent), platformStyle(platformStyle),
     ui(new Ui::AcceptandPayOfferListPage)
 {	
 	sAddress = "";
@@ -59,7 +59,6 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(const PlatformStyle *platfo
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
 	ui->aliasDisclaimer->setText(tr("<font color='red'>Please select an alias you own</font>"));
 	m_netwManager = new QNetworkAccessManager(this);
-	QString theme = GUIUtil::getThemeName();  
 	m_placeholderImage.load(":/icons/" + theme + "/imageplaceholder");
 
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
