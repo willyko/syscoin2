@@ -19,7 +19,7 @@ using namespace std;
 extern const CRPCTable tableRPC;
 OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString alias, QString offer, QString quantity, QString notes, QString title, QString currencyCode, QString qstrPrice, QString sellerAlias, QString address, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::OfferAcceptDialog), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
+    ui(new Ui::OfferAcceptDialog), platformStyle(platformStyle), alias(alias), offer(offer), notes(notes), quantity(quantity), title(title), currency(currencyCode), seller(sellerAlias), address(address)
 {
     ui->setupUi(this);
 	QString theme = GUIUtil::getThemeName();  
@@ -153,7 +153,7 @@ void OfferAcceptDialog::acceptOffer()
 				QString offerAcceptTXID = QString::fromStdString(strResult);
 				if(offerAcceptTXID != QString(""))
 				{
-					OfferPayDialog dlg(this->title, this->quantity, this->price, "SYS", this);
+					OfferPayDialog dlg(platformStyle, this->title, this->quantity, this->price, "SYS", this);
 					dlg.exec();
 					this->offerPaid = true;
 					OfferAcceptDialog::accept();

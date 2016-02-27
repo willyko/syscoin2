@@ -17,6 +17,7 @@ public:
     bool getPaymentStatus();
 
 private:
+	const PlatformStyle *platformStyle;
 	void setupEscrowCheckboxState();
     Ui::OfferAcceptDialog *ui;
 	QString quantity;

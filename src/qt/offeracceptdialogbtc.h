@@ -17,7 +17,7 @@ public:
     bool getPaymentStatus();
 
 private:
-
+	const PlatformStyle *platformStyle;
     Ui::OfferAcceptDialogBTC *ui;
 	QString quantity;
 	QString notes;
