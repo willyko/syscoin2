@@ -216,7 +216,7 @@ void OfferAcceptDialog::acceptEscrow()
 				QString escrowTXID = QString::fromStdString(strResult);
 				if(escrowTXID != QString(""))
 				{
-					OfferEscrowDialog dlg(this->title, this->quantity, this->price, this);
+					OfferEscrowDialog dlg(platformStyle, this->title, this->quantity, this->price, this);
 					dlg.exec();
 					this->offerPaid = true;
 					OfferAcceptDialog::accept();
