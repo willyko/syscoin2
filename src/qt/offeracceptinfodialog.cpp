@@ -3,6 +3,7 @@
 #include "init.h"
 #include "util.h"
 #include "offer.h"
+#include "guiutil.h"
 #include "syscoingui.h"
 #include "offeraccepttablemodel.h"
 #include "platformstyle.h"
