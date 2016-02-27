@@ -26,7 +26,8 @@ MyAcceptedOfferListPage::MyAcceptedOfferListPage(const PlatformStyle *platformSt
     QDialog(parent),
     ui(new Ui::MyAcceptedOfferListPage),
     model(0),
-    optionsModel(0)
+    optionsModel(0),
+	platformStyle(platformStyle)
 {
     ui->setupUi(this);
 	QString theme = GUIUtil::getThemeName();  
@@ -107,7 +108,7 @@ void MyAcceptedOfferListPage::on_detailButton_clicked()
     QModelIndexList selection = ui->tableView->selectionModel()->selectedRows();
     if(!selection.isEmpty())
     {
-        OfferAcceptInfoDialog dlg(selection.at(0));
+        OfferAcceptInfoDialog dlg(platformStyle, selection.at(0));
         dlg.exec();
     }
 }
