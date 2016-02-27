@@ -142,7 +142,7 @@ QString getThemeName()
     if(!theme.isEmpty()){
         return theme;
     }
-    return QString("sysblue");  
+    return QString("shade");  
 }
 
 // Open CSS when configured
@@ -157,8 +157,8 @@ QString loadStyleSheet()
         cssName = QString(":/css/") + theme; 
     }
     else {
-        cssName = QString(":/css/sysblue");  
-        settings.setValue("theme", "sysblue");
+        cssName = QString(":/css/shade");  
+        settings.setValue("theme", "shade");
     }
     
     QFile qFile(cssName);      
