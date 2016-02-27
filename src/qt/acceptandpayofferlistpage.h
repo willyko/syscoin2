@@ -56,6 +56,7 @@ public Q_SLOTS:
 	void netwManagerFinished();
 	void on_imageButton_clicked();
 private:
+	const PlatformStyle *platformStyle;
     Ui::AcceptandPayOfferListPage *ui;
 	bool URIHandled;
     QString returnValue;
