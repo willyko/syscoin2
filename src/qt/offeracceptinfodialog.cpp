@@ -4,7 +4,7 @@
 #include "util.h"
 #include "offer.h"
 #include "syscoingui.h"
-#include "offeraccepttablemode.h"
+#include "offeraccepttablemodel.h"
 #include "platformstyle.h"
 #include <QMessageBox>
 #include <QModelIndex>
