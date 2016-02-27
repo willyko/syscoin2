@@ -9,7 +9,7 @@
 #include "syscoingui.h"
 #include "csvmodelwriter.h"
 #include "guiutil.h"
-#include "ui_interface.h
+#include "ui_interface.h"
 #include "platformstyle.h"
 #include <QSortFilterProxyModel>
 #include <QClipboard>
