@@ -5,7 +5,7 @@
 #include "offer.h"
 #include "syscoingui.h"
 #include "offeraccepttablemode
-#include "platformstyle.h"l.h"
+#include "platformstyle.h"
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QDateTime>
