@@ -19,7 +19,7 @@ OfferPayDialog::OfferPayDialog(const PlatformStyle *platformStyle, QString title
 		ui->finishButton->setIcon(QIcon());
 	else
 		ui->finishButton->setIcon(icon);
-
+}
 OfferPayDialog::~OfferPayDialog()
 {
     delete ui;
