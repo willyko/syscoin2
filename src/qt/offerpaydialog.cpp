@@ -1,5 +1,7 @@
 #include "init.h"
 #include "util.h"
+#include "platformstyle.h"
+#include "guiutil.h"
 #include "offerpaydialog.h"
 #include "ui_offerpaydialog.h"
 OfferPayDialog::OfferPayDialog(const PlatformStyle *platformStyle, QString title, QString quantity, QString price, QString currency,QWidget *parent) :
