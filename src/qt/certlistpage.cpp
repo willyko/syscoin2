@@ -1,6 +1,6 @@
 #include "certlistpage.h"
 #include "ui_certlistpage.h"
-
+#include "platformstyle.h"
 #include "certtablemodel.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"

@@ -8,6 +8,7 @@
 #include "offerwhitelisttablemodel.h"
 #include "walletmodel.h"
 #include "syscoingui.h"
+#include "platformstyle.h"
 #include "newwhitelistdialog.h"
 #include "csvmodelwriter.h"
 #include "guiutil.h"

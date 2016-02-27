@@ -4,6 +4,7 @@
 #include "messagetablemodel.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"
+#include "platformstyle.h"
 #include "newmessagedialog.h"
 #include "messageinfodialog.h"
 #include "csvmodelwriter.h"

@@ -1,5 +1,6 @@
 #include "init.h"
 #include "util.h"
+#include "platformstyle.h"
 #include "offerescrowdialog.h"
 #include "ui_offerescrowdialog.h"
 OfferEscrowDialog::OfferEscrowDialog(const PlatformStyle *platformStyle, QString title, QString quantity, QString price, QWidget *parent) :

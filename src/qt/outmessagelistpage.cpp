@@ -5,6 +5,7 @@
 #include "optionsmodel.h"
 #include "walletmodel.h"
 #include "newmessagedialog.h"
+#include "platformstyle.h"
 #include "messageinfodialog.h"
 #include "csvmodelwriter.h"
 #include "ui_interface.h"

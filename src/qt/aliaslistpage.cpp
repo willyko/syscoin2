@@ -3,7 +3,7 @@
 
 #include "aliaslistpage.h"
 #include "ui_aliaslistpage.h"
-
+#include "platformstyle.h"
 #include "aliastablemodel.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"

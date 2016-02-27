@@ -6,6 +6,7 @@
 #include "escrowtablemodel.h"
 #include "newmessagedialog.h"
 #include "clientmodel.h"
+#include "platformstyle.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"
 #include "syscoingui.h"

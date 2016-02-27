@@ -6,6 +6,7 @@
 #include "aliastablemodel.h"
 #include "clientmodel.h"
 #include "optionsmodel.h"
+#include "platformstyle.h"
 #include "walletmodel.h"
 #include "syscoingui.h"
 #include "editaliasdialog.h"

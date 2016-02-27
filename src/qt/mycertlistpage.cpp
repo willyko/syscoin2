@@ -7,6 +7,7 @@
 #include "clientmodel.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"
+#include "platformstyle.h"
 #include "syscoingui.h"
 #include "editcertdialog.h"
 #include "editofferdialog.h"

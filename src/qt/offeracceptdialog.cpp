@@ -3,6 +3,7 @@
 #include "init.h"
 #include "util.h"
 #include "offerpaydialog.h"
+#include "platformstyle.h"
 #include "offeracceptdialogbtc.h"
 #include "offerescrowdialog.h"
 #include "offer.h"

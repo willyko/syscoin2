@@ -2,10 +2,11 @@
 
 #include "escrowlistpage.h"
 #include "ui_escrowlistpage.h"
-
+#include "platformstyle.h"
 #include "escrowtablemodel.h"
 #include "optionsmodel.h"
 #include "walletmodel.h"
+#include "platformstyle.h"
 #include "syscoingui.h"
 #include "csvmodelwriter.h"
 #include "guiutil.h"

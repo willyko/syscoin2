@@ -9,7 +9,7 @@
 #include "syscoingui.h"
 
 #include "guiutil.h"
-
+#include "platformstyle.h"
 #include <QSortFilterProxyModel>
 #include <QClipboard>
 #include <QMessageBox>
