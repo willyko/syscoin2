@@ -31,7 +31,7 @@ OfferView::OfferView(const PlatformStyle *platformStyle, QStackedWidget *parent)
 {
 
 	tabWidget = new QTabWidget();
-    offerListPage = new OfferListPage(this);
+    offerListPage = new OfferListPage(platformStyle, this);
     myOfferListPage = new MyOfferListPage(platformStyle);
 	acceptandPayOfferListPage = new AcceptandPayOfferListPage(platformStyle);
 	myAcceptedOfferListPage = new MyAcceptedOfferListPage(platformStyle);
