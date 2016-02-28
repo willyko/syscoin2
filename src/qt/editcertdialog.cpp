@@ -159,9 +159,9 @@ void EditCertDialog::loadRow(int row, const QString &privatecert)
 		}
 	}
 	if(privatecert == tr("Yes"))
-		ui->privateBox->setCurrentIndex(1);
-	else
 		ui->privateBox->setCurrentIndex(0);
+	else
+		ui->privateBox->setCurrentIndex(1);
 
 }
 
