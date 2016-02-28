@@ -183,8 +183,9 @@ BOOST_AUTO_TEST_CASE(rpc_parse_monetary_values)
     BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("0.89898989")), 89898989LL);
     BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("1.00000000")), 100000000LL);
 	// SYSCOIN max money
-    BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("6684504.30795000")), 668450430795000LL);
-	BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("6685000.00000000")),		668500000000000LL);
+	BOOST_CHECK_THROW(AmountFromValue(ValueFromString("6680001")), UniValue); //should fail
+    BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("6654504.30795000")), 665450430795000LL);
+	BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("6680000.00000000")),  666800000000000LL);
 
     BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("1e-8")), COIN/100000000);
     BOOST_CHECK_EQUAL(AmountFromValue(ValueFromString("0.1e-7")), COIN/100000000);
