@@ -28,8 +28,8 @@ EditCertDialog::EditCertDialog(Mode mode, QWidget *parent) :
 	ui->privateBox->setVisible(true);
 	ui->transferLabel->setVisible(false);
 	ui->transferEdit->setVisible(false);
-	ui->privateBox->addItem(tr("No"));
 	ui->privateBox->addItem(tr("Yes"));
+	ui->privateBox->addItem(tr("No"));
 	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this certificate</font>"));	
 	ui->transferDisclaimer->setText(tr("<font color='red'>Enter the alias of the recipient of this certificate</font>"));
     ui->transferDisclaimer->setVisible(false);
