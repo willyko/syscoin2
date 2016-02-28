@@ -1,13 +1,11 @@
 #!/bin/bash
 #TODO: make this an actual script
 
-offernew <alias> <category> <title> <quantity> <price> <description> <currency> [cert. guid] [exclusive resell=1] [accept btc only=0]
+#offernew <alias> <category> <title> <quantity> <price> <description> <currency> [cert. guid] [exclusive resell=1] [accept btc only=0]
 
 offernew "danosphere" "Produce" "Lettuce, Romaine" 10 10 "Lettuce(Romaine), the secret ingedient in \"Salad\"!\n\n1 head of lettuce shipping included.\n\nhttp://www.vegkitchen.com/wp-content/uploads/2011/07/Romaine-lettuce.jpg\n\n" "SYS" 
 
 offernew "danosphere" "Drugs" "Pyrimethamine (Daraprim)" 500 700 "Pyrimethamine A.K.A (Daraprim). 1 Pill.\n\nhttp://lybio.net/wp-content/uploads/Shocking-Unedited-Footage-Of-Martin-Shkreli.jpg" "USD"
-
-#offernew "danosphere" "Toys" "\"Shade\" Garfield Beanie Baby (Continental US Only)" 30 5 "\"Shade\" Garfield Beanie Baby\n\nShipping included (Continental US Only)\n\nhttp://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/SYMAAOSwCypWnlVn/$_35.JPG\n\n" "USD"
 
 offernew "danosphere" "Consoles" "Xbox One Deluxe Bundle" 10 500 "Xbox One Deluxe Bundle includes:\nYour choice of Xbox One console\nMicrosoft Complete Extended Service Plan for Xbox One\n12 months Xbox Live Gold\n2 of the following: $60 Xbox gift card, additional controller, or game\n\nhttp://dri2.img.digitalrivercontent.net/Storefront/Company/msintl/images/English/en-INTL-Prod-Mod-XboxOne-Kinect-Live-Complete-GiftCard-Bundle1/en-INTL-L-Prod-Mod-XboxOne-Kinect-Live-Complete-GiftCard-Bundle1-mnco.jpg" "USD"
 
