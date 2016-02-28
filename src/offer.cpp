@@ -511,8 +511,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					if(theCert.vchPubKey != theOffer.vchPubKey)
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
 				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: certificate does not exist or may be expired");
 			}	
 		
 			if(!theOffer.vchLinkOffer.empty())
@@ -579,8 +577,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					if(theCert.vchPubKey != theOffer.vchPubKey)
 						return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
 				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_UPDATE: certificate does not exist or may be expired");
 			}
 			
 			break;
@@ -655,8 +651,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 						return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
 					theOfferAccept.nQty = 1;
 				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: certificate does not exist or may be expired");
 			}
 			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
