@@ -237,6 +237,7 @@ qproperty-alignment:center;
 background-color:qlineargradient(x1: 0, y1: 0, x2: 0, y2: 0.25, stop: 0 #4c97bf, stop: 1 #56ABD8);
 color:#fff;
 min-height:25px;
+min-width: 25px;
 font-weight:bold;
 font-size:11px;
 outline:0;

@@ -112,42 +112,29 @@ void MyEscrowListPage::setModel(WalletModel *walletModel, EscrowTableModel *mode
     proxyModel->setDynamicSortFilter(true);
     proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
     proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-
   
 	// Receive filter
 	proxyModel->setFilterRole(EscrowTableModel::TypeRole);
-
-   
 
 	ui->tableView->setModel(proxyModel);
 	ui->tableView->sortByColumn(0, Qt::AscendingOrder);
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-     // Set column widths
-#if QT_VERSION < 0x050000
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Escrow, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Time, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Arbiter, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Seller, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Offer, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::OfferAccept, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Total, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(EscrowTableModel::Status, QHeaderView::ResizeToContents);
-#else
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Escrow, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Time, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Arbiter, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Seller, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Offer, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::OfferAccept, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Total, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(EscrowTableModel::Status, QHeaderView::ResizeToContents);
-#endif
 
+    // Set column widths
+    ui->tableView->setColumnWidth(0, 110); //escrow id
+    ui->tableView->setColumnWidth(1, 70); //time
+    ui->tableView->setColumnWidth(2, 150); //arbiter
+    ui->tableView->setColumnWidth(3, 150); //seller
+    ui->tableView->setColumnWidth(4, 110); //offer
+    ui->tableView->setColumnWidth(5, 110); //offeraccept
+    ui->tableView->setColumnWidth(6, 80); //total
+    ui->tableView->setColumnWidth(7, 110); //status
+
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
 
     // Select row for newly created escrow
     connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(selectNewEscrow(QModelIndex,int,int)));
-
 }
 
 void MyEscrowListPage::setOptionsModel(ClientModel* clientmodel, OptionsModel *optionsModel)
