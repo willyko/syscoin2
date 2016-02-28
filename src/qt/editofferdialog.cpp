@@ -31,6 +31,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 				QMessageBox::Ok, QMessageBox::Ok);
 	}
 	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this offer</font>"));
+	ui->privateDisclaimer->setText(tr("<font color='red'>All offers are first listed as private. If you would like your offer to be public, please edit it after it is created.</font>"));
 	ui->offerLabel->setVisible(true);
 	ui->offerEdit->setVisible(true);
 	ui->offerEdit->setEnabled(false);
