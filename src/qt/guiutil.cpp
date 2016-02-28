@@ -151,16 +151,9 @@ QString loadStyleSheet()
     QString styleSheet;
     QSettings settings;
     QString cssName;
-    QString theme = settings.value("theme", "").toString();
-
-    if(!theme.isEmpty()){
-        cssName = QString(":/css/") + theme; 
-    }
-    else {
-        cssName = QString(":/css/shade");  
-        settings.setValue("theme", "shade");
-    }
-    
+    QString theme = getThemeName();
+    cssName = QString(":/css/") + theme; 
+   
     QFile qFile(cssName);      
     if (qFile.open(QFile::ReadOnly)) {
         styleSheet = QLatin1String(qFile.readAll());
