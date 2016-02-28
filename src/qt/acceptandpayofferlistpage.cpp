@@ -59,7 +59,7 @@ AcceptandPayOfferListPage::AcceptandPayOfferListPage(const PlatformStyle *platfo
 	ui->notesEdit->setStyleSheet("color: rgb(0, 0, 0); background-color: rgb(255, 255, 255)");
 	ui->aliasDisclaimer->setText(tr("<font color='red'>Please select an alias you own</font>"));
 	m_netwManager = new QNetworkAccessManager(this);
-	m_placeholderImage.load(":/icons/" + theme + "/imageplaceholder");
+	m_placeholderImage.load(":/images/" + theme + "/imageplaceholder");
 
 	ui->imageButton->setToolTip(tr("Click to open image in browser..."));
 	ui->infoCert->setVisible(false);

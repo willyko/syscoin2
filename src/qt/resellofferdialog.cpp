@@ -19,7 +19,7 @@ ResellOfferDialog::ResellOfferDialog(QModelIndex *idx, QWidget *parent) :
 	QString offerGUID = idx->data(OfferTableModel::NameRole).toString();
 	ui->descriptionEdit->setPlainText(idx->data(OfferTableModel::DescriptionRole).toString());
 	ui->offerGUIDLabel->setText(offerGUID);
-	ui->commissionDisclaimer->setText(tr("<font color='red'>The payment of <b>commission</b> for an offer sale. Payments will be calculated on the basis of a percentage of the offer value. Enter your desired percentage.</font>"));
+	ui->commissionDisclaimer->setText(tr("<font color='red'>Enter the <b>percentage</b>  amount(without the % sign) that you would like to mark-up the price to.</font>"));
 	loadAliases();
 }
 

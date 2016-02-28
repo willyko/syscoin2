@@ -22,7 +22,7 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
 {
     ui->setupUi(this);
 	QString theme = GUIUtil::getThemeName();  
-	ui->aboutShadeBTC->setPixmap(QPixmap(":/icons/" + theme + "/about_btc"));
+	ui->aboutShadeBTC->setPixmap(QPixmap(":/images/" + theme + "/about_btc"));
 	double dblPrice = qstrPrice.toDouble()*quantity.toUInt();
 	string strfPrice = strprintf("%f", dblPrice);
 	QString fprice = QString::fromStdString(strfPrice);

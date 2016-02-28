@@ -65,7 +65,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
         ui->helpMessage->setVisible(false);
 		// SYSCOIN
 		QString theme = GUIUtil::getThemeName();
-		ui->aboutLogo->setPixmap(QPixmap(":/icons/" + theme + "/about_horizontal"));
+		ui->aboutLogo->setPixmap(QPixmap(":/images/" + theme + "/about"));
     } else {
         setWindowTitle(tr("Command-line options"));
         QString header = tr("Usage:") + "\n" +

@@ -66,7 +66,7 @@
   </qresource>
   <qresource prefix="/images/shade">
     <file alias="about">res/images/shade/shade_about.png</file>
-    <file alias="about_horizontol">res/images/shade/shade_logo_horizontal.png</file>
+    <file alias="about_horizontal">res/images/shade/shade_logo_horizontal.png</file>
     <file alias="about_btc">res/images/shade/shade_aboutbtc.png</file>
     <file alias="overview">res/images/shade/shade_overview.png</file>
     <file alias="splash">res/images/shade/shade_splash.png</file>
