@@ -115,3 +115,4 @@ share/SyscoindComparisonTool.jar
 
 libsyscoinconsensus.pc
 contrib/syscoin-qt.pro.user
+contrib/syscoin-qt-local.pro
