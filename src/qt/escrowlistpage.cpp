@@ -92,14 +92,14 @@ void EscrowListPage::setModel(WalletModel* walletModel, EscrowTableModel *model)
     ui->tableView->sortByColumn(1, Qt::DescendingOrder);
 
     // Set column widths
-    ui->tableView->setColumnWidth(0, 110); //escrow id
-    ui->tableView->setColumnWidth(1, 70); //time
-    ui->tableView->setColumnWidth(2, 150); //arbiter
-    ui->tableView->setColumnWidth(3, 150); //seller
-    ui->tableView->setColumnWidth(4, 110); //offer
-    ui->tableView->setColumnWidth(5, 110); //offeraccept
-    ui->tableView->setColumnWidth(6, 80); //total
-    ui->tableView->setColumnWidth(7, 110); //status
+    ui->tableView->setColumnWidth(0, 50); //escrow id
+    ui->tableView->setColumnWidth(1, 50); //time
+    ui->tableView->setColumnWidth(2, 250); //seller
+    ui->tableView->setColumnWidth(3, 250); //arbiter
+    ui->tableView->setColumnWidth(4, 250); //buyer
+    ui->tableView->setColumnWidth(5, 80); //offer
+    ui->tableView->setColumnWidth(6, 80); //offeraccept
+    ui->tableView->setColumnWidth(7, 0); //status
 
     ui->tableView->horizontalHeader()->setStretchLastSection(true);
 

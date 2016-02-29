@@ -113,22 +113,14 @@ void OutMessageListPage::setModel(WalletModel* walletModel, MessageTableModel *m
     ui->tableView->sortByColumn(1, Qt::DescendingOrder);
 
     // Set column widths
-#if QT_VERSION < 0x050000
-    ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::GUID, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::Time, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::From, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::To, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::Subject, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setResizeMode(MessageTableModel::Message, QHeaderView::Stretch);
-#else
-    ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::GUID, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::Time, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::From, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::To, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::Subject, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(MessageTableModel::Message, QHeaderView::Stretch);
-#endif
+    ui->tableView->setColumnWidth(0, 75); //guid
+    ui->tableView->setColumnWidth(1, 75); //time
+    ui->tableView->setColumnWidth(2, 100); //from
+    ui->tableView->setColumnWidth(3, 100); //to
+    ui->tableView->setColumnWidth(4, 300); //subject
+    ui->tableView->setColumnWidth(5, 300); //message
 
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(selectionChanged()));

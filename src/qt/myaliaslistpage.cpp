@@ -104,29 +104,23 @@ void MyAliasListPage::setModel(WalletModel *walletModel, AliasTableModel *model)
     proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
 
   
-		// Receive filter
-		proxyModel->setFilterRole(AliasTableModel::TypeRole);
-		proxyModel->setFilterFixedString(AliasTableModel::Alias);
-       
-    
-		ui->tableView->setModel(proxyModel);
-		ui->tableView->sortByColumn(0, Qt::AscendingOrder);
-        ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+    // Receive filter
+    proxyModel->setFilterRole(AliasTableModel::TypeRole);
+    proxyModel->setFilterFixedString(AliasTableModel::Alias);
+
+    ui->tableView->setModel(proxyModel);
+    ui->tableView->sortByColumn(0, Qt::AscendingOrder);
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+
     // Set column widths
-#if QT_VERSION < 0x050000
-    ui->tableView->horizontalHeader()->setResizeMode(AliasTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(AliasTableModel::Value, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setResizeMode(AliasTableModel::ExpiresOn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(AliasTableModel::ExpiresIn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(AliasTableModel::Expired, QHeaderView::ResizeToContents);
-#else
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AliasTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AliasTableModel::Value, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AliasTableModel::ExpiresOn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AliasTableModel::ExpiresIn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AliasTableModel::Expired, QHeaderView::ResizeToContents);
-#endif
+    ui->tableView->setColumnWidth(0, 500); //alias name
+    ui->tableView->setColumnWidth(1, 500); //alias value
+    ui->tableView->setColumnWidth(2, 75); //expires on
+    ui->tableView->setColumnWidth(3, 75); //expires in
+    ui->tableView->setColumnWidth(4, 75); //expired status
+
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(selectionChanged()));

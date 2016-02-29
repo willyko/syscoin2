@@ -144,30 +144,22 @@ void MyAcceptedOfferListPage::setModel(WalletModel *walletModel, OfferAcceptTabl
 		ui->tableView->sortByColumn(0, Qt::AscendingOrder);
         ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-    // Set column widths
-#if QT_VERSION < 0x050000
-    ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::GUID, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Title, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Height, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Price, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Currency, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Qty, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Total, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Alias, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(OfferAcceptTableModel::Status, QHeaderView::ResizeToContents);
-#else
-    ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::GUID, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Title, QHeaderView::Stretch);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Height, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Price, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Currency, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Qty, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Total, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Alias, QHeaderView::ResizeToContents);
-	 ui->tableView->horizontalHeader()->setSectionResizeMode(OfferAcceptTableModel::Status, QHeaderView::ResizeToContents);
-#endif
+
+        // Set column widths
+        ui->tableView->setColumnWidth(0, 50); //offer
+        ui->tableView->setColumnWidth(1, 50); //accept
+        ui->tableView->setColumnWidth(2, 500); //title
+        ui->tableView->setColumnWidth(3, 50); //height
+        ui->tableView->setColumnWidth(4, 50); //price
+        ui->tableView->setColumnWidth(5, 75); //currency
+        ui->tableView->setColumnWidth(6, 75); //qty
+        ui->tableView->setColumnWidth(7, 50); //total
+        ui->tableView->setColumnWidth(8, 150); //seller alias
+        ui->tableView->setColumnWidth(9, 150); //buyer
+        ui->tableView->setColumnWidth(10, 40); //private
+        ui->tableView->setColumnWidth(11, 0); //status
+
+        ui->tableView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(selectionChanged()));
