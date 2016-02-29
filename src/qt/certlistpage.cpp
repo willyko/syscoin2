@@ -96,26 +96,16 @@ void CertListPage::setModel(WalletModel* walletModel, CertTableModel *model)
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
-#if QT_VERSION < 0x050000
-    ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Title, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Data, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Private, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::ExpiresOn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::ExpiresIn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Expired, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setResizeMode(CertTableModel::Alias, QHeaderView::ResizeToContents);
-#else
-    ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Name, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Title, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Data, QHeaderView::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Private, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::ExpiresOn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::ExpiresIn, QHeaderView::ResizeToContents);
-    ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Expired, QHeaderView::ResizeToContents);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(CertTableModel::Alias, QHeaderView::ResizeToContents);
-#endif
+    ui->tableView->setColumnWidth(0, 75); //cert
+    ui->tableView->setColumnWidth(1, 300); //title
+    ui->tableView->setColumnWidth(2, 300); //data
+    ui->tableView->setColumnWidth(3, 75); //private
+    ui->tableView->setColumnWidth(4, 75); //expires on
+    ui->tableView->setColumnWidth(5, 75); //expires in
+    ui->tableView->setColumnWidth(6, 100); //cert state
+    ui->tableView->setColumnWidth(7, 0); //owner
 
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(selectionChanged()));
