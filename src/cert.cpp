@@ -815,11 +815,12 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 
     vector<unsigned char> vchValue;
     uint64_t nHeight;
-
+	int pending = 0;
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
 		const CWalletTx &wtx = item.second;
 		int expired = 0;
+		pending = 0;
 		int expires_in = 0;
 		int expired_block = 0;
 		// get txn hash, read txn index
@@ -842,9 +843,23 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 			continue;
 			
 		vector<CCert> vtxPos;
-		if (!pcertdb->ReadCert(vchName, vtxPos) || vtxPos.empty())
+		CCert cert;
+		if (!pcertdb->ReadCert(vchName, vtxPos))
+		{
+			pending = 1;
+			cert = CCert(wtx);
+		}
+		if (vtxPos.size() < 1)
+		{
+			pending = 1;
+			cert = CCert(wtx);
+		}	
+		if(pending != 1)
+		{
+			cert = vtxPos.back();
+		}
+		if(!IsSyscoinTxMine(wtx, "cert"))
 			continue;
-		CCert cert = vtxPos.back();
 		nHeight = cert.nHeight;
 		// get last active name only
 		if (vNamesI.find(vchName) != vNamesI.end() && (nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
@@ -873,17 +888,18 @@ UniValue certlist(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("address", address.ToString()));
 		oName.push_back(Pair("alias", address.aliasName));
 		expired_block = nHeight + GetCertExpirationDepth();
-		if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+        if(pending == 0 && (nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight <= 0))
 		{
 			expired = 1;
 		}  
-		if(expired == 0)
+		if(pending == 0 && expired == 0)
 		{
 			expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
 		}
 		oName.push_back(Pair("expires_in", expires_in));
 		oName.push_back(Pair("expires_on", expired_block));
 		oName.push_back(Pair("expired", expired));
+		oName.push_back(Pair("pending", pending));
  
 		vNamesI[vchName] = nHeight;
 		vNamesO[vchName] = oName;	

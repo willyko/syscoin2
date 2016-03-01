@@ -2762,23 +2762,22 @@ UniValue offerlist(const UniValue& params, bool fHelp) {
 			if (!pofferdb->ReadOffer(vchName, vtxPos))
 			{
 				pending = 1;
-				theOfferA = COffer(tx);
+				theOfferA = COffer(wtx);
 			}
 			if (vtxPos.size() < 1)
 			{
 				pending = 1;
-				theOfferA = COffer(tx);
+				theOfferA = COffer(wtx);
 			}	
 			if(pending != 1)
 			{
 				theOfferA = vtxPos.back();
 			}
+			if(!IsSyscoinTxMine(wtx, "offer"))
+				continue;
 			// get last active name only
 			if (vNamesI.find(vchName) != vNamesI.end() && (theOfferA.nHeight < vNamesI[vchName] || vNamesI[vchName] < 0))
 				continue;	
-			uint256 blockHash;
-			if (!GetSyscoinTransaction(theOfferA.nHeight, theOfferA.txHash, tx, Params().GetConsensus()))
-				continue;
 			nHeight = theOfferA.nHeight;
             // build the output UniValue
             UniValue oName(UniValue::VOBJ);

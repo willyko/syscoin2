@@ -1089,9 +1089,10 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 	{
 		uint256 hash;
 		CTransaction tx;
-	
+		int pending = 0;
 		uint64_t nHeight;
 		BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet) {
+			pending = 0;
 			// get txn hash, read txn index
 			hash = item.second.GetHash();
 			const CWalletTx &wtx = item.second;
@@ -1112,15 +1113,23 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 			// skip this alias if it doesn't match the given filter value
 			if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 				continue;
-
-
 			vector<CAliasIndex> vtxPos;
-			if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
-				continue;
-			CAliasIndex alias = vtxPos.back();	
-			if (!GetSyscoinTransaction(alias.nHeight, alias.txHash, tx, Params().GetConsensus()))
-				continue;
-			if(!IsSyscoinTxMine(tx, "alias"))
+			CAliasIndex alias;
+			if (!paliasdb->ReadAlias(vchName, vtxPos))
+			{
+				pending = 1;
+				alias = CAliasIndex(wtx);
+			}
+			if (vtxPos.size() < 1)
+			{
+				pending = 1;
+				alias = CAliasIndex(wtx);
+			}	
+			if(pending != 1)
+			{
+				alias = vtxPos.back();
+			}
+			if(!IsSyscoinTxMine(wtx, "alias"))
 				continue;
 			nHeight = alias.nHeight;
 			// get last active name only
@@ -1141,17 +1150,18 @@ UniValue aliaslist(const UniValue& params, bool fHelp) {
 				strPrivateValue = strDecrypted;		
 			oName.push_back(Pair("privatevalue", strPrivateValue));
 			expired_block = nHeight + GetAliasExpirationDepth();
-			if(nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+			if(pending == 0 && (nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight <= 0))
 			{
 				expired = 1;
 			}  
-			if(expired == 0)
+			if(pending == 0 && expired == 0)
 			{
 				expires_in = nHeight + GetAliasExpirationDepth() - chainActive.Tip()->nHeight;
 			}
 			oName.push_back(Pair("expires_in", expires_in));
 			oName.push_back(Pair("expires_on", expired_block));
 			oName.push_back(Pair("expired", expired));
+			oName.push_back(Pair("pending", pending));
 			vNamesI[vchName] = nHeight;
 			vNamesO[vchName] = oName;					
 

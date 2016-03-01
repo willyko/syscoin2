@@ -141,7 +141,16 @@ public:
 						const UniValue& expired_value = find_value(o, "expired");
 						if (expired_value.type() == UniValue::VNUM)
 							expired = expired_value.get_int();
-						if(expired == 1)
+						const UniValue& pending_value = find_value(o, "pending");
+						int pending = 0;
+						if (pending_value.type() == UniValue::VNUM)
+							pending = pending_value.get_int();
+
+						if(pending == 1)
+						{
+							expired_str = "Pending";
+						}
+						else if(expired == 1)
 						{
 							expired_str = "Expired";
 						}

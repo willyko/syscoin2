@@ -1702,10 +1702,11 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
     vector<unsigned char> vchValue;
     uint64_t nHeight;
-
+	int pending = 0;
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, pwalletMain->mapWallet)
     {
 		int expired = 0;
+		pending = 0;
         // get txn hash, read txn index
         hash = item.second.GetHash();
 		const CWalletTx &wtx = item.second;        // skip non-syscoin txns
@@ -1717,15 +1718,24 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		if (!DecodeEscrowTx(wtx, op, nOut, vvch) || !IsEscrowOp(op))
 			continue;
 		vchName = vvch[0];
-
+		vector<CEscrow> vtxPos;
 		CEscrow escrow;
-		if (!GetTxOfEscrow(*pescrowdb, vchName, 
-			escrow, tx))
-			continue;
-
-		if (!DecodeEscrowTx(tx, op, nOut, vvch) || !IsEscrowOp(op))
-			continue;
-
+		if (!pescrowdb->ReadEscrow(vchName, vtxPos))
+		{
+			pending = 1;
+			escrow = CEscrow(wtx);
+		}
+		if (vtxPos.size() < 1)
+		{
+			pending = 1;
+			escrow = CEscrow(wtx);
+		}	
+		if(pending != 1)
+		{
+			escrow = vtxPos.back();
+		}
+		if(!IsSyscoinTxMine(wtx, "escrow"))
+			continue;	
 		// skip this escrow if it doesn't match the given filter value
 		if (vchNameUniq.size() > 0 && vchNameUniq != vchName)
 			continue;
@@ -1763,19 +1773,26 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		string sTotal = strprintf("%llu SYS", (escrow.nPricePerUnit/COIN)*escrow.nQty);
 		oName.push_back(Pair("total", sTotal));
-		if(nHeight + GetEscrowExpirationDepth() - chainActive.Tip()->nHeight <= 0)
+		if(pending == 0 && (nHeight + (() - chainActive.Tip()->nHeight <= 0))
 		{
 			expired = 1;
 		}  
+	
 		string status = "unknown";
-		if(op == OP_ESCROW_ACTIVATE)
-			status = "in-escrow";
-		else if(op == OP_ESCROW_RELEASE)
-			status = "escrow released";
-		else if(op == OP_ESCROW_REFUND)
-			status = "escrow refunded";
-		else if(op == OP_ESCROW_COMPLETE)
-			status = "complete";
+		if(pending == 0)
+		{
+			if(op == OP_ESCROW_ACTIVATE)
+				status = "in-escrow";
+			else if(op == OP_ESCROW_RELEASE)
+				status = "escrow released";
+			else if(op == OP_ESCROW_REFUND)
+				status = "escrow refunded";
+			else if(op == OP_ESCROW_COMPLETE)
+				status = "complete";
+		}
+		else
+			status = "pending";
+
 		oName.push_back(Pair("status", status));
 
 		oName.push_back(Pair("expired", expired));

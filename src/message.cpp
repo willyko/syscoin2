@@ -583,13 +583,8 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
+		CMessage message = CMessage(wtx);
 
-		vector<CMessage> vtxPos;
-		if (!pmessagedb->ReadMessage(vchName, vtxPos))
-			continue;
-		CMessage message = vtxPos.back();
-		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
-			continue;
 		if(!IsSyscoinTxMine(tx, "message"))
 			continue;
         // build the output
@@ -663,14 +658,9 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
+		CMessage message = CMessage(wtx);
 
-		vector<CMessage> vtxPos;
-		if (!pmessagedb->ReadMessage(vchName, vtxPos) || vtxPos.empty())
-			continue;
-		CMessage message = vtxPos.back();
-		if (!GetSyscoinTransaction(message.nHeight, message.txHash, tx, Params().GetConsensus()))
-			continue;
-		if(IsSyscoinTxMine(tx, "message"))
+		if(IsSyscoinTxMine(wtx, "message"))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
