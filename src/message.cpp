@@ -227,8 +227,6 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
 
-	if(fJustCheck)
-	{
 		
     // Make sure message outputs are not spent by a regular transaction, or the message would be lost
     if (tx.nVersion != SYSCOIN_TX_VERSION) {
@@ -271,10 +269,6 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 	{
 		if(op != OP_MESSAGE_ACTIVATE)
 			return error( "CheckMessageInputs() : message transaction has unknown op");
-		
-		
-	
-			
 	}
 	// save serialized message for later use
 	CMessage serializedMessage = theMessage;
