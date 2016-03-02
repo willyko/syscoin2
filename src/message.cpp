@@ -567,7 +567,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 			message = vtxPos.back();
 		}
 		CSyscoinAddress addressOfTx;
-		if(!IsSyscoinTxMine(wtx, "message", &addressOfTx))
+		if(!IsSyscoinTxMine(wtx, "message", addressOfTx))
 			continue;
         // build the output
         UniValue oName(UniValue::VOBJ);
@@ -660,7 +660,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 			message = vtxPos.back();
 		}
 		CSyscoinAddress addressOfTx;
-		if(!IsSyscoinTxMine(wtx, "message", &addressOfTx))
+		if(!IsSyscoinTxMine(wtx, "message", addressOfTx))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);

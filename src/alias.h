@@ -14,6 +14,7 @@ class CReserveKey;
 class CCoinsViewCache;
 class CCoins;
 struct CRecipient;
+class CSyscoinAddress;
 static const unsigned int MAX_NAME_LENGTH = 255;
 static const unsigned int MAX_VALUE_LENGTH = 1023;
 static const unsigned int MAX_ID_LENGTH = 20;
@@ -123,7 +124,8 @@ const int SYSCOIN_TX_VERSION = 0x7400;
 bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan = false);
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);
 void CreateFeeRecipient(const CScript& scriptPubKey, const std::vector<unsigned char>& data, CRecipient& recipient);
-bool IsSyscoinTxMine(const CTransaction& tx,const std::string &type, CSyscoinAddress* address=NULL);
+bool IsSyscoinTxMine(const CTransaction& tx,const std::string &type, CSyscoinAddress& address);
+bool IsSyscoinTxMine(const CTransaction& tx,const std::string &type);
 bool IsAliasOp(int op);
 
 

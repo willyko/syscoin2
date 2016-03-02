@@ -388,7 +388,7 @@ int GetSyscoinTxVersion()
  * @param  type [the type of syscoin service you expect in this transaction]
  * @return    [if syscoin transaction is yours based on type passed in]
  */
-bool IsSyscoinTxMine(const CTransaction& tx, const string &typ, CSyscoinAddress* myAddress) {
+bool IsSyscoinTxMine(const CTransaction& tx, const string &typ) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return false;
 	int op, nOut, myNout;
@@ -411,11 +411,34 @@ bool IsSyscoinTxMine(const CTransaction& tx, const string &typ, CSyscoinAddress*
 	CTxDestination dest;
 	ExtractDestination(scriptPubKey, dest);
 	CSyscoinAddress address(dest);
-	if(myAddress != NULL)
-		myAddress[0] = address;
 	return IsMine(*pwalletMain, address.Get());
 }
+bool IsSyscoinTxMine(const CTransaction& tx, const string &typ, CSyscoinAddress& myAddress) {
+	if (tx.nVersion != SYSCOIN_TX_VERSION)
+		return false;
+	int op, nOut, myNout;
+	vector<vector<unsigned char> > vvch;
+	if ((type == "alias" || type == "any") && DecodeAliasTx(tx, op, nOut, vvch))
+		myNout = nOut;
+	else if ((type == "offer" || type == "any") && DecodeOfferTx(tx, op, nOut, vvch))
+		myNout = nOut;
+	else if ((type == "cert" || type == "any") && DecodeCertTx(tx, op, nOut, vvch))
+		myNout = nOut;
+	else if ((type == "message" || type == "any") && DecodeMessageTx(tx, op, nOut, vvch))
+		myNout = nOut;
+	else if ((type == "escrow" || type == "any") && DecodeEscrowTx(tx, op, nOut, vvch))
+		myNout = nOut;
+	else
+		return false;
 
+	CScript scriptPubKey;
+	RemoveSyscoinScript(tx.vout[myNout].scriptPubKey, scriptPubKey);
+	CTxDestination dest;
+	ExtractDestination(scriptPubKey, dest);
+	CSyscoinAddress address(dest);
+	myAddress = address;
+	return IsMine(*pwalletMain, address.Get());
+}
 bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan) {
 	
 	if (tx.IsCoinBase())
