@@ -1773,7 +1773,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 
 		string sTotal = strprintf("%llu SYS", (escrow.nPricePerUnit/COIN)*escrow.nQty);
 		oName.push_back(Pair("total", sTotal));
-		if(pending == 0 && (nHeight + (() - chainActive.Tip()->nHeight <= 0))
+		if(pending == 0 && (nHeight + (GetEscrowExpirationDepth() - chainActive.Tip()->nHeight <= 0)))
 		{
 			expired = 1;
 		}  
