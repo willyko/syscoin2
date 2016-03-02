@@ -388,7 +388,7 @@ int GetSyscoinTxVersion()
  * @param  type [the type of syscoin service you expect in this transaction]
  * @return    [if syscoin transaction is yours based on type passed in]
  */
-bool IsSyscoinTxMine(const CTransaction& tx, const string &type) {
+bool IsSyscoinTxMine(const CTransaction& tx, const string &typ, CSyscoinAddress* myAddress) {
 	if (tx.nVersion != SYSCOIN_TX_VERSION)
 		return false;
 	int op, nOut, myNout;
@@ -411,6 +411,8 @@ bool IsSyscoinTxMine(const CTransaction& tx, const string &type) {
 	CTxDestination dest;
 	ExtractDestination(scriptPubKey, dest);
 	CSyscoinAddress address(dest);
+	if(myAddress != NULL)
+		myAddress[0] = address;
 	return IsMine(*pwalletMain, address.Get());
 }
 

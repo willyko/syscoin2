@@ -123,7 +123,7 @@ const int SYSCOIN_TX_VERSION = 0x7400;
 bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bool fJustCheck, int nHeight, bool fRescan = false);
 void CreateRecipient(const CScript& scriptPubKey, CRecipient& recipient);
 void CreateFeeRecipient(const CScript& scriptPubKey, const std::vector<unsigned char>& data, CRecipient& recipient);
-bool IsSyscoinTxMine(const CTransaction& tx,const std::string &type);
+bool IsSyscoinTxMine(const CTransaction& tx,const std::string &type, CSyscoinAddress* address=NULL);
 bool IsAliasOp(int op);
 
 
