@@ -775,8 +775,8 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 
 			oMessage.push_back(Pair("message", strData));
             oRes.push_back(oMessage);
-        }
-    }
+		}
+
     return oRes;
 }
 
