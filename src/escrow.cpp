@@ -431,8 +431,6 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
 		theEscrow.txHash = tx.GetHash();
 		theEscrow.nHeight = nHeight;
 		PutToEscrowList(vtxPos, theEscrow);
-		{
-		TRY_LOCK(cs_main, cs_trymain);
         // write escrow  
         if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
             return error( "CheckEscrowInputs() : failed to write to escrow DB");
@@ -445,7 +443,6 @@ bool CheckEscrowInputs(const CTransaction &tx, const CCoinsViewCache &inputs, bo
                 stringFromVch(vvchArgs[0]).c_str(),
                 tx.GetHash().ToString().c_str(),
                 nHeight);
-		}
 	}
     return true;
 }

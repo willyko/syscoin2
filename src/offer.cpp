@@ -822,12 +822,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 
 						myParentOffer.offerLinks.push_back(vvchArgs[0]);							
 						myParentOffer.PutToOfferList(myVtxPos);
-						{
-						TRY_LOCK(cs_main, cs_trymain);
 						// write parent offer
 						if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
 							return error( "CheckOfferInputs() : failed to write to offer link to DB");
-						}
 					}
 				}
 				
@@ -859,12 +856,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 							COffer myLinkOffer = myVtxPos.back();
 							myLinkOffer.nQty = theOffer.nQty;	
 							myLinkOffer.PutToOfferList(myVtxPos);
-							{
-							TRY_LOCK(cs_main, cs_trymain);
 							// write offer
 							if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
 								return error( "CheckOfferInputs() : failed to write to offer link to DB");
-							}
 						}
 					}
 				}
@@ -949,12 +943,9 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 								myLinkOffer.nQty = theOffer.nQty;	
 								myLinkOffer.SetPrice(theOffer.nPrice);
 								myLinkOffer.PutToOfferList(myVtxPos);
-								{
-								TRY_LOCK(cs_main, cs_trymain);
 								// write offer
 								if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
 									return error( "CheckOfferInputs() : failed to write to offer link to DB");
-								}
 							}
 						}
 					}
@@ -965,8 +956,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		theOffer.nHeight = nHeight;
 		theOffer.txHash = tx.GetHash();
 		theOffer.PutToOfferList(vtxPos);
-		{
-		TRY_LOCK(cs_main, cs_trymain);
 		// write offer
 		if (!pofferdb->WriteOffer(vvchArgs[0], vtxPos))
 			return error( "CheckOfferInputs() : failed to write to offer DB");
@@ -981,7 +970,6 @@ bool CheckOfferInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				theOffer.nQty,
 				tx.GetHash().ToString().c_str(), 
 				nHeight);
-		}
 	}
 	return true;
 }

@@ -547,8 +547,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 		theAlias.txHash = tx.GetHash();
 
 		PutToAliasList(vtxPos, theAlias);
-		{
-		TRY_LOCK(cs_main, cs_trymain);
 		CPubKey PubKey(theAlias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
 		if (!paliasdb->WriteAlias(vvchArgs[0], vchFromString(address.ToString()), vtxPos))
@@ -559,7 +557,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				stringFromVch(vvchArgs[0]).c_str(),
 				aliasFromOp(op).c_str(),
 				tx.GetHash().ToString().c_str(), nHeight);
-		}
 	}
 
 	return true;

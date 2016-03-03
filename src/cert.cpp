@@ -374,8 +374,6 @@ bool CheckCertInputs(const CTransaction &tx,
 		theCert.nHeight = nHeight;
 		theCert.txHash = tx.GetHash();
 		PutToCertList(vtxPos, theCert);
-		{
-		TRY_LOCK(cs_main, cs_trymain);
         // write cert  
         if (!pcertdb->WriteCert(vvchArgs[0], vtxPos))
             return error( "CheckCertInputs() : failed to write to cert DB");
@@ -389,7 +387,6 @@ bool CheckCertInputs(const CTransaction &tx,
                 stringFromVch(theCert.vchTitle).c_str(),
                 tx.GetHash().ToString().c_str(),
                 nHeight);
-		}
     }
     return true;
 }

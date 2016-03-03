@@ -285,12 +285,10 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 		theMessage.txHash = tx.GetHash();
 		theMessage.nHeight = nHeight;
 		PutToMessageList(vtxPos, theMessage);
-		{
-		TRY_LOCK(cs_main, cs_trymain);
         // write message  
         if (!pmessagedb->WriteMessage(vvchArgs[0], vtxPos))
             return error( "CheckMessageInputs() : failed to write to message DB");
-
+		
       			
         // debug
 		if(fDebug)
@@ -299,9 +297,7 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
                 stringFromVch(vvchArgs[0]).c_str(),
                 tx.GetHash().ToString().c_str(),
                 nHeight);
-		}
-    }
- 
+	}
     return true;
 }
 
@@ -448,8 +444,8 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	const CWalletTx * wtxAliasIn=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
+	const CWalletTx * wtxInAlias=NULL;
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -543,10 +539,10 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
-		int pending = 0;
+		vector<CMessage> vtxPos;
 		CMessage message;
 		int pending = 0;
-		if (!pmessagedb->ReadMessage(vchMessage, vtxPos))
+		if (!pmessagedb->ReadMessage(vchName, vtxPos))
 		{
 			pending = 1;
 			message = CMessage(wtx);
@@ -636,10 +632,10 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
-		int pending = 0;
+		vector<CMessage> vtxPos;
 		CMessage message;
 		int pending = 0;
-		if (!pmessagedb->ReadMessage(vchMessage, vtxPos))
+		if (!pmessagedb->ReadMessage(vchName, vtxPos))
 		{
 			pending = 1;
 			message = CMessage(wtx);
@@ -770,7 +766,7 @@ UniValue messagehistory(const UniValue& params, bool fHelp) {
 			oMessage.push_back(Pair("message", strData));
             oRes.push_back(oMessage);
 		}
-
+	}
     return oRes;
 }
 
