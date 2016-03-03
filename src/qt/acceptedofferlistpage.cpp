@@ -97,6 +97,7 @@ void AcceptedOfferListPage::on_detailButton_clicked()
 }
 void AcceptedOfferListPage::showEvent ( QShowEvent * event )
 {
+	on_refreshButton_clicked();
     if(!walletModel) return;
 }
 void AcceptedOfferListPage::setModel(WalletModel *walletModel, OfferAcceptTableModel *model)

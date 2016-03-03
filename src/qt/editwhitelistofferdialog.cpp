@@ -131,12 +131,14 @@ void EditWhitelistOfferDialog::setModel(WalletModel *walletModel, OfferWhitelist
     connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(selectNewEntry(QModelIndex,int,int)));
     selectionChanged();
 	model->clear();
-	on_refreshButton_clicked();
 
 }
 
 
-
+void EditWhitelistOfferDialog::showEvent ( QShowEvent * event )
+{
+	on_refreshButton_clicked();
+}
 void EditWhitelistOfferDialog::on_copy()
 {
     GUIUtil::copyEntryData(ui->tableView, OfferWhitelistTableModel::Cert);

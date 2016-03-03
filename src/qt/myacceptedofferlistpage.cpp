@@ -114,6 +114,7 @@ void MyAcceptedOfferListPage::on_detailButton_clicked()
 }
 void MyAcceptedOfferListPage::showEvent ( QShowEvent * event )
 {
+	on_refreshButton_clicked();
     if(!walletModel) return;
     /*if(walletModel->getEncryptionStatus() == WalletModel::Locked)
 	{

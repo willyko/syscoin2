@@ -31,7 +31,8 @@ public:
 
     void setModel(WalletModel*,OfferWhitelistTableModel *model);
 
-
+protected:
+	 void showEvent(QShowEvent *e);
 private:
     Ui::EditWhitelistOfferDialog *ui;
     QSortFilterProxyModel *proxyModel;
