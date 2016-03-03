@@ -30,8 +30,8 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 			tr("Warning: SYS_RATES alias not found. No currency information available!"),
 				QMessageBox::Ok, QMessageBox::Ok);
 	}
-	ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this offer</font>"));
-	ui->privateDisclaimer->setText(tr("<font color='red'>All offers are first listed as private. If you would like your offer to be public, please edit it after it is created.</font>"));
+	ui->aliasDisclaimer->setText(tr("<font color='blue'>Select an alias to own this offer</font>"));
+	ui->privateDisclaimer->setText(tr("<font color='blue'>All offers are first listed as private. If you would like your offer to be public, please edit it after it is created.</font>"));
 	ui->offerLabel->setVisible(true);
 	ui->offerEdit->setVisible(true);
 	ui->offerEdit->setEnabled(false);
@@ -45,7 +45,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 	ui->acceptBTCOnlyEdit->clear();
 	ui->acceptBTCOnlyEdit->addItem(QString("No"));
 	ui->acceptBTCOnlyEdit->addItem(QString("Yes"));
-	ui->btcOnlyDisclaimer->setText(tr("<font color='red'>You will receive payment in Bitcoin if you have selected <b>Yes</b> to this option and <b>BTC</b> as the currency for the offer.</font>"));
+	ui->btcOnlyDisclaimer->setText(tr("<font color='blue'>You will receive payment in Bitcoin if you have selected <b>Yes</b> to this option and <b>BTC</b> as the currency for the offer.</font>"));
 	for(int i =0;i<rateList.size();i++)
 	{
 		ui->currencyEdit->addItem(QString::fromStdString(rateList[i]));
@@ -66,7 +66,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 		ui->privateEdit->setCurrentIndex(ui->privateEdit->findText("Yes"));
 		ui->privateEdit->setEnabled(false);
         setWindowTitle(tr("New Offer"));
-		ui->currencyDisclaimer->setText(tr("<font color='red'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
+		ui->currencyDisclaimer->setText(tr("<font color='blue'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
         break;
     case EditOffer:
 		ui->currencyEdit->setEnabled(false);
@@ -83,7 +83,7 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 		ui->qtyEdit->setText("1");
 		ui->qtyEdit->setEnabled(false);
 		
-		ui->currencyDisclaimer->setText(tr("<font color='red'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
+		ui->currencyDisclaimer->setText(tr("<font color='blue'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
         break;
 	}
     mapper = new QDataWidgetMapper(this);
@@ -96,11 +96,11 @@ void EditOfferDialog::certChanged(int index)
 		ui->qtyEdit->setText("1");
 		ui->qtyEdit->setEnabled(false);
 		ui->aliasEdit->setEnabled(false);
-		ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
+		ui->aliasDisclaimer->setText(tr("<font color='blue'>This will automatically use the alias which owns the certificate you are selling</font>"));
 	}
 	else if(index == 0)
 	{
-		ui->aliasDisclaimer->setText(tr("<font color='red'>Select an alias to own this offer</font>"));
+		ui->aliasDisclaimer->setText(tr("<font color='blue'>Select an alias to own this offer</font>"));
 		ui->aliasEdit->setEnabled(true);
 		ui->qtyEdit->setEnabled(true);
 	}
@@ -166,14 +166,14 @@ void EditOfferDialog::loadCerts()
 						{
 						    ui->certEdit->setCurrentIndex(index);
 							ui->aliasEdit->setEnabled(false);
-							ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
+							ui->aliasDisclaimer->setText(tr("<font color='blue'>This will automatically use the alias which owns the certificate you are selling</font>"));
 						}
 						index = ui->aliasEdit->findData(alias);
 						if ( index != -1 ) 
 						{
 						    ui->aliasEdit->setCurrentIndex(index);
 							ui->aliasEdit->setEnabled(false);
-							ui->aliasDisclaimer->setText(tr("<font color='red'>This will automatically use the alias which owns the certificate you are selling</font>"));
+							ui->aliasDisclaimer->setText(tr("<font color='blue'>This will automatically use the alias which owns the certificate you are selling</font>"));
 						}
 					}
 				}

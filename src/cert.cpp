@@ -260,7 +260,6 @@ bool CheckCertInputs(const CTransaction &tx,
     CCoins prevCoins;
 
     int prevOp = 0;
-	int prevAliasOp = 0;
 	
     vector<vector<unsigned char> > vvchPrevArgs, vvchPrevAliasArgs;
 	if(fJustCheck)

@@ -20,7 +20,7 @@ NewWhitelistDialog::NewWhitelistDialog(const QString &offerGUID, QWidget *parent
 {
     ui->setupUi(this);
 	ui->offerGUIDLabel->setText(offerGUID);
-	ui->discountDisclaimer->setText(tr("<font color='red'>This is a percentage of price for your offer you want to allow your reseller to purchase your offer for. Typically given to wholesalers or for special arrangements with a reseller.</font>"));
+	ui->discountDisclaimer->setText(tr("<font color='blue'>This is a percentage of price for your offer you want to allow your reseller to purchase your offer for. Typically given to wholesalers or for special arrangements with a reseller.</font>"));
 	ui->certEdit->clear();
 	ui->certEdit->addItem(tr("Select Certificate"));
 	loadCerts();

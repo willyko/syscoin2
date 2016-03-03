@@ -27,7 +27,7 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
 	string strfPrice = strprintf("%f", dblPrice);
 	QString fprice = QString::fromStdString(strfPrice);
 	string strCurrencyCode = currencyCode.toStdString();
-	ui->escrowDisclaimer->setText(tr("<font color='red'>Please note escrow is not available since you are paying in BTC, only SYS payments can be escrowed. </font>"));
+	ui->escrowDisclaimer->setText(tr("<font color='blue'>Please note escrow is not available since you are paying in BTC, only SYS payments can be escrowed. </font>"));
 	ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? To complete your purchase please pay %4 BTC using your Bitcoin wallet.").arg(quantity).arg(title).arg(sellerAlias).arg(fprice));
 	string strPrice = strprintf("%f", dblPrice);
 	price = QString::fromStdString(strPrice);

@@ -29,7 +29,7 @@ NewMessageDialog::NewMessageDialog(Mode mode, const QString &to, QWidget *parent
         setWindowTitle(tr("New Message"));   
 		ui->replyEdit->setVisible(false);
 		ui->replyLabel->setVisible(false);
-		ui->fromDisclaimer->setText(tr("<font color='red'>Enter an alias you own</font>"));
+		ui->fromDisclaimer->setText(tr("<font color='blue'>Enter an alias you own</font>"));
         break;
     case ReplyMessage:
         setWindowTitle(tr("Reply Message"));

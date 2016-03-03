@@ -53,12 +53,12 @@ OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString
 		fprice = QString::fromStdString(strfPrice);
 		ui->acceptBtcButton->setEnabled(true);
 		ui->acceptBtcButton->setVisible(true);
-		ui->escrowDisclaimer->setText(tr("<font color='red'>Select an arbiter that is mutally trusted between yourself and the merchant. Note that escrow is not available if you pay with BTC</font>"));
+		ui->escrowDisclaimer->setText(tr("<font color='blue'>Select an arbiter that is mutally trusted between yourself and the merchant. Note that escrow is not available if you pay with BTC</font>"));
 		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS (%5 BTC)").arg(quantity).arg(title).arg(sellerAlias).arg(price).arg(fprice));
 	}
 	else
 	{
-		ui->escrowDisclaimer->setText(tr("<font color='red'>Select an arbiter that is mutally trusted between yourself and the merchant.</font>"));
+		ui->escrowDisclaimer->setText(tr("<font color='blue'>Select an arbiter that is mutally trusted between yourself and the merchant.</font>"));
 		ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? You will be charged %4 SYS").arg(quantity).arg(title).arg(sellerAlias).arg(price));
 	}
 		
