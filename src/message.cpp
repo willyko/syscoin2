@@ -226,8 +226,34 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 	LogPrintf("*** %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
+    const COutPoint *prevOutput = NULL;
+    CCoins prevCoins;
 
-		
+	int prevAliasOp = 0;
+	
+    vector<vector<unsigned char> > vvchPrevAliasArgs;
+	if(fJustCheck)
+	{
+		// Strict check - bug disallowed
+		for (unsigned int i = 0; i < tx.vin.size(); i++) {
+			vector<vector<unsigned char> > vvch;
+			int op;
+			prevOutput = &tx.vin[i].prevout;
+			if(!prevOutput)
+				continue;
+			// ensure inputs are unspent when doing consensus check to add to block
+			if(!inputs.GetCoins(prevOutput->hash, prevCoins))
+				continue;
+			if(!IsSyscoinScript(prevCoins.vout[prevOutput->n].scriptPubKey, op, vvch))
+				continue;
+			if (IsAliasOp(op))
+			{
+				prevAliasOp = op;
+				vvchPrevAliasArgs = vvch;
+				break;
+			}
+		}	
+	}
     // Make sure message outputs are not spent by a regular transaction, or the message would be lost
     if (tx.nVersion != SYSCOIN_TX_VERSION) {
 		LogPrintf("CheckMessageInputs() : non-syscoin transaction\n");
@@ -267,7 +293,22 @@ bool CheckMessageInputs(const CTransaction &tx, const CCoinsViewCache &inputs, b
 	}
 	if(fJustCheck)
 	{
-		if(op != OP_MESSAGE_ACTIVATE)
+
+	if(op == OP_MESSAGE_ACTIVATE)
+		{
+			if(!IsAliasOp(prevAliasOp))
+				return error("CheckMessageInputs(): alias not provided as input");
+			
+			vector<CAliasIndex> vtxPos;
+			if (!paliasdb->ReadAlias(vvchPrevAliasArgs[0], vtxPos))
+				return error("CheckMessageInputs(): failed to read alias from alias DB");
+			if (vtxPos.size() < 1)
+				return error("CheckMessageInputs(): no alias result returned");
+			if(vtxPos.back().vchPubKey != theMessage.vchPubKeyFrom)
+				return error("CheckMessageInputs() OP_MESSAGE_ACTIVATE: alias and message from pubkey's must match");
+		
+		}
+		else
 			return error( "CheckMessageInputs() : message transaction has unknown op");
 	}
 	// save serialized message for later use
@@ -444,8 +485,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 	const CWalletTx * wtxInOffer=NULL;
 	const CWalletTx * wtxInEscrow=NULL;
 	const CWalletTx * wtxInCert=NULL;
-	const CWalletTx * wtxInAlias=NULL;
-	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxInAlias, wtxInEscrow);
+	SendMoneySyscoin(vecSend, recipient.nAmount+fee.nAmount, false, wtx, wtxInOffer, wtxInCert, wtxAliasIn, wtxInEscrow);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(HexStr(vchRand));
@@ -464,6 +504,7 @@ UniValue messageinfo(const UniValue& params, bool fHelp) {
     CTransaction tx;
 
 	vector<CMessage> vtxPos;
+
     UniValue oMessage(UniValue::VOBJ);
     vector<unsigned char> vchValue;
 
@@ -556,8 +597,7 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		{
 			message = vtxPos.back();
 		}
-		CSyscoinAddress addressOfTx;
-		if(!IsSyscoinTxMine(wtx, "message", addressOfTx))
+		if(!IsSyscoinTxMine(wtx, "message"))
 			continue;
         // build the output
         UniValue oName(UniValue::VOBJ);
@@ -570,11 +610,9 @@ UniValue messagelist(const UniValue& params, bool fHelp) {
 		}
         string strAddress = "";
 		oName.push_back(Pair("time", sTime));
+
 		CPubKey FromPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
-		if(fromaddress.ToString() != addressOfTx.ToString())
-			continue;
-
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
 			oName.push_back(Pair("from", fromaddress.aliasName));
@@ -632,6 +670,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		if (!DecodeMessageTx(wtx, op, nOut, vvch) || !IsMessageOp(op))
 			continue;
 		vchName = vvch[0];
+
 		vector<CMessage> vtxPos;
 		CMessage message;
 		int pending = 0;
@@ -649,8 +688,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		{
 			message = vtxPos.back();
 		}
-		CSyscoinAddress addressOfTx;
-		if(!IsSyscoinTxMine(wtx, "message", addressOfTx))
+		if(!IsSyscoinTxMine(wtx, "message",))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
@@ -665,9 +703,6 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		oName.push_back(Pair("time", sTime));
 		CPubKey FromPubKey(message.vchPubKeyFrom);
 		CSyscoinAddress fromaddress(FromPubKey.GetID());
-
-		if(fromaddress.ToString() != addressOfTx.ToString())
-			continue;
 		fromaddress = CSyscoinAddress(fromaddress.ToString());
 		if(fromaddress.isAlias)
 			oName.push_back(Pair("from", fromaddress.aliasName));
