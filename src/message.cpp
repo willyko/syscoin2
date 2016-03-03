@@ -688,7 +688,7 @@ UniValue messagesentlist(const UniValue& params, bool fHelp) {
 		{
 			message = vtxPos.back();
 		}
-		if(!IsSyscoinTxMine(wtx, "message",))
+		if(!IsSyscoinTxMine(wtx, "message"))
 			continue;
         // build the output UniValue
         UniValue oName(UniValue::VOBJ);
