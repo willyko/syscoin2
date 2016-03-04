@@ -1060,17 +1060,10 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		vchPubKeyByte = theAlias.vchPubKey;
 	if(vchPrivateValue.size() > 0)
 	{
-		string strData = "";
-		string strDecryptedData = "";
 		string strCipherText;
 		
-		// decrypt using old key
-		if(DecryptMessage(theAlias.vchPubKey, vchPrivateValue, strData))
-			strDecryptedData = strData;
-		else
-			throw runtime_error("Could not decrypt alias private data!");
 		// encrypt using new key
-		if(!EncryptMessage(vchPubKeyByte, vchFromString(strDecryptedData), strCipherText))
+		if(!EncryptMessage(vchPubKeyByte, vchPrivateValue, strCipherText))
 		{
 			throw runtime_error("Could not encrypt alias private data!");
 		}
