@@ -1031,7 +1031,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		if(!xferKey.IsValid())
 			throw runtime_error("Invalid public key");
 		CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
-		if (!paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
+		if (paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
 			throw runtime_error("You must transfer to a public key that's not associated with any other alias");
 	}
 
