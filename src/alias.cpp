@@ -531,7 +531,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					CPubKey xferKey  = CPubKey(vchPubKeyByte);	
 					CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
 					// make sure xfer to pubkey doesn't point to an alias already 
-					if (paliasdb->ExistsAddress(vchToString(myAddress.ToString()))
+					if (paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
 						return error("CheckAliasInputs() : Cannot transfer an alias that points to another alias");
 				}
 				break;
@@ -1029,14 +1029,10 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
 		CPubKey xferKey  = CPubKey(vchPubKeyByte);
 		if(!xferKey.IsValid())
-		{
 			throw runtime_error("Invalid public key");
-		}
 		CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
-		if (!paliasdb->ExistsAddress(vchToString(myAddress.ToString()))
-		{
+		if (!paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
 			throw runtime_error("You must transfer to a public key that's not associated with any other alias");
-		}
 	}
 
 	EnsureWalletIsUnlocked();
