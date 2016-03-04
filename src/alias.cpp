@@ -526,9 +526,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// if transfer
 				if(vtxPos.back().vchPubKey != theAlias.vchPubKey)
 				{
-					vector<unsigned char> vchPubKeyByte;
-					boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchPubKeyByte));
-					CPubKey xferKey  = CPubKey(vchPubKeyByte);	
+					CPubKey xferKey  = CPubKey(theAlias.vchPubKey);	
 					CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
 					// make sure xfer to pubkey doesn't point to an alias already 
 					if (paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
