@@ -38,14 +38,14 @@ OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString
 		ui->cancelButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/quit"));
 	}
 	ui->aboutShade->setPixmap(QPixmap(":/images/" + theme + "/about_horizontal"));
-	int precision;
+	int precision, sysprecision;
 	double dblPrice = qstrPrice.toDouble();
 	string strCurrencyCode = currencyCode.toStdString();
 	ui->acceptBtcButton->setEnabled(false);
 	ui->acceptBtcButton->setVisible(false);
+	convertCurrencyCodeToSyscoin("SYS", 0, chainActive.Tip()->nHeight, sysprecision);
 	CAmount iPrice = convertCurrencyCodeToSyscoin(vchFromString(strCurrencyCode), dblPrice, chainActive.Tip()->nHeight, precision);
-	iPrice = ValueFromAmount(iPrice).get_real()*quantity.toUInt();
-	string strPrice = strprintf("%llu", iPrice);
+	string strPrice = strprintf("%.*f", sysprecision, ValueFromAmount(iPrice).get_real()*quantity.toUInt() );
 	price = QString::fromStdString(strPrice);
 	if(strCurrencyCode == "BTC")
 	{
