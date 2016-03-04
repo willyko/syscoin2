@@ -2958,7 +2958,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 	BOOST_FOREACH(pairScan, offerScan) {
 		const COffer &txOffer = pairScan.second;
 		const string &offer = stringFromVch(pairScan.first);
-		const string &title = stringFromVch(txOffer.sTitle);
+		string title = stringFromVch(txOffer.sTitle);
 		boost::algorithm::to_lower(title);
 		CPubKey SellerPubKey(txOffer.vchPubKey);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
