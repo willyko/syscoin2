@@ -237,7 +237,7 @@ void AliasTransfer(const string& node, const string& aliasname, const string& to
 		if (pkr.type() != UniValue::VARR)
 			throw runtime_error("Could not parse rpc results");
 
-		const UniValue &resultArray = result.get_array();
+		const UniValue &resultArray = pkr.get_array();
 		pubkey = resultArray[0].get_str();		
 	}
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasupdate " + aliasname + " " + pubdata + " " + privdata + " " + pubkey));
@@ -275,7 +275,7 @@ void AliasUpdate(const string& node, const string& aliasname, const string& pubd
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == pubdata);
 	BOOST_CHECK(find_value(r.get_obj(), "privatevalue").get_str() == privdata);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "aliasinfo " + aliasname));
