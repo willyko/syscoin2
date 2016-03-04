@@ -213,22 +213,22 @@ void AcceptandPayOfferListPage::acceptOffer()
 {
 	if(ui->qtyEdit->text().toUInt() <= 0)
 	{
-		QMessageBox::critical(this, windowTitle(),
+		QMessageBox::information(this, windowTitle(),
 			tr("Invalid quantity when trying to accept this offer!"),
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}
 	if(ui->notesEdit->toPlainText().size() <= 0 && ui->infoCert->text().size() <= 0)
 	{
-		QMessageBox::critical(this, windowTitle(),
+		QMessageBox::information(this, windowTitle(),
 			tr("Please enter pertinent information required to the offer in the <b>Notes</b> field (address, e-mail address, shipping notes, etc)."),
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}
 	if(ui->aliasEdit->currentText().size() <= 0)
 	{
-		QMessageBox::critical(this, windowTitle(),
-			tr("Please choose an alias that you own before purchasing this offer."),
+		QMessageBox::information(this, windowTitle(),
+			tr("Please choose an alias before purchasing this offer."),
 			QMessageBox::Ok, QMessageBox::Ok);
 		return;
 	}

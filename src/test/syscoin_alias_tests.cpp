@@ -62,48 +62,26 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 {
 	GenerateBlocks(200, "node2");
 	GenerateBlocks(200, "node3");
-	// shouldnt update data, just uses prev data because it hasnt changed
-	AliasNew("node1", "jagnode1", "changeddata1");
-	AliasNew("node2", "jagnode2", "changeddata2");
-	AliasNew("node3", "jagnode3", "changeddata3");
-	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate jagnode1 changeddata1 pvtdata jagnode2"));
-	GenerateBlocks(1);
-	// check its not mine anymore
-	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
-	// it got xferred to right person
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
+
+	string strPubKey1 = AliasNew("node1", "jagnode1", "changeddata1");
+	string strPubKey2 = AliasNew("node2", "jagnode2", "changeddata2");
+
+	BOOST_CHECK_NO_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"));
 
 	// xfer an alias that isn't yours
-	BOOST_CHECK_THROW(CallRPC("node1", "aliasupdate jagnode1 changeddata1 pvtdata jagnode2"), runtime_error);
-	GenerateBlocks(1);
+	BOOST_CHECK_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"));
 
 	// trasnfer alias and update it at the same time
-	BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate jagnode2 changeddata4 pvtdata jagnode3"));
-	GenerateBlocks(1, "node2");
-	// check its not mine anymore
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode2"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata4"));
-	// check xferred right person and data changed
-	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo jagnode2"));
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata4"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
+	BOOST_CHECK_NO_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata4", "pvtdata"));
 
 	// update xferred alias
-	BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate jagnode1 changeddata5 pvtdata"));
-	GenerateBlocks(1, "node2");
-	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata5"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
+	AliasUpdate("node2", "jagnode1", "changeddata5", "pvtdata1");
 
 	// retransfer alias
-	BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate jagnode1 changeddata5 pvtdata jagnode3"));
-	GenerateBlocks(1, "node2");
-	BOOST_CHECK_NO_THROW(r = CallRPC("node3", "aliasinfo jagnode1"));
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == string("changeddata5"));
-	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
+	BOOST_CHECK_NO_THROW(AliasTransfer("node2", "jagnode1", "node3", "changeddata5", "pvtdata2"));
+
+	// xfer an alias to another alias is prohibited
+	BOOST_CHECK_THROW(AliasTransfer("node2", "jagnode2", "node1", "changeddata1", "pvtdata", strPubKey1));
+	
 }
 BOOST_AUTO_TEST_SUITE_END ()

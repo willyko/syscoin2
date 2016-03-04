@@ -55,15 +55,12 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="refreshButton">
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>48</height>
-        </size>
+      <widget class="QPushButton" name="newAlias">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a new alias&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>&amp;Refresh</string>
+        <string>&amp;New Alias</string>
        </property>
       </widget>
      </item>
@@ -92,12 +89,22 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="newAlias">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a new alias&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <widget class="QPushButton" name="refreshButton">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>48</height>
+        </size>
        </property>
        <property name="text">
-        <string>&amp;New Alias</string>
+        <string>&amp;Refresh</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="newPubKey">
+       <property name="text">
+        <string>Generate Public Key</string>
        </property>
       </widget>
      </item>

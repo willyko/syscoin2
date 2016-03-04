@@ -17,6 +17,9 @@
 #include <QClipboard>
 #include <QMessageBox>
 #include <QMenu>
+#include "rpcserver.h"
+using namespace std;
+extern const CRPCTable tableRPC;
 MyAliasListPage::MyAliasListPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MyAliasListPage),
@@ -33,6 +36,7 @@ MyAliasListPage::MyAliasListPage(const PlatformStyle *platformStyle, QWidget *pa
 		ui->editButton->setIcon(QIcon());
 		ui->copyAlias->setIcon(QIcon());
 		ui->refreshButton->setIcon(QIcon());
+		ui->newPubKey->setIcon(QIcon());
 
 	}
 	else
@@ -43,6 +47,7 @@ MyAliasListPage::MyAliasListPage(const PlatformStyle *platformStyle, QWidget *pa
 		ui->editButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editsys"));
 		ui->copyAlias->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/editcopy"));
 		ui->refreshButton->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/refresh"));
+		ui->newPubKey->setIcon(platformStyle->SingleColorIcon(":/icons/" + theme + "/add"));
 		
 	}
 
@@ -194,6 +199,23 @@ void MyAliasListPage::on_newAlias_clicked()
     {
         newAliasToSelect = dlg.getAlias();
     }
+}
+void MyAliasListPage::on_newPubKey_clicked()
+{
+	Array params;
+	UniValue result = tableRPC.execute("generatepublickey", params);
+	if (result.type() == UniValue::VARR)
+	{
+		Array resultArray = result.get_array();
+		QMessageBox::information(this, tr("New Public Key For Alias Transfer"),
+			tr(resultArray[0].get_str()),
+			QMessageBox::Ok, QMessageBox::Ok);
+	}
+	else
+	 	QMessageBox::critical(this, tr("New Public Key For Alias Transfer"),
+			tr("Could not generate a new public key!"),
+			QMessageBox::Ok, QMessageBox::Ok);
+				
 }
 void MyAliasListPage::selectionChanged()
 {

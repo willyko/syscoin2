@@ -539,6 +539,18 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 				if(theAlias.vchPrivateValue.empty())
 					theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
+				// if transfer happened
+				if(dbAlias.vchPubKey != theAlias.vchPubKey)
+				{
+					vector<unsigned char> vchPubKeyByte;
+					boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchPubKeyByte));
+					CPubKey xferKey  = CPubKey(vchPubKeyByte);	
+					CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
+					// make sure xfer to pubkey doesn't point to an alias already 
+					// if it exists kind of cancel the transfer, any services won't use the new pubkey or pay the new pubkey					
+					if (paliasdb->ExistsAddress(myAddress.ToString())
+						theAlias.vchPubKey = dbAlias.vchPubKey;
+				}
 			}
 		}
 	
@@ -974,12 +986,12 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if (fHelp || 2 > params.size() || 4 < params.size())
 		throw runtime_error(
-		"aliasupdate <aliasname> <public value> [private value] [<toalias>]\n"
+		"aliasupdate <aliasname> <public value> [private value] [<toalias_pubkey>]\n"
 						"Update and possibly transfer an alias.\n"
 						"<aliasname> alias name.\n"
 						"<public value> alias public profile data, 1023 chars max.\n"
 						"<private value> alias private profile data, 1023 chars max. Will be private and readable by owner only.\n"
-						"<toalias> receiver syscoin alias, if transferring alias.\n"
+						"<toalias_pubkey> receiver syscoin alias pub key, if transferring alias.\n"
 						+ HelpRequiringPassphrase());
 
 	vector<unsigned char> vchName = vchFromString(params[0].get_str());
@@ -1003,21 +1015,19 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	CScript scriptPubKeyOrig;
 	string strPubKey;
     if (params.size() >= 4) {
-		string strAddress = params[3].get_str();
-		CSyscoinAddress myAddress = CSyscoinAddress(strAddress);
-		if (!myAddress.IsValid())
-			throw runtime_error("Invalid syscoin address");
-		if (!myAddress.isAlias)
-			throw runtime_error("You must transfer an alias to another alias");
-
-		// check for alias existence in DB
-		vector<CAliasIndex> vtxPos;
-		if (!paliasdb->ReadAlias(vchFromString(myAddress.aliasName), vtxPos))
-			throw runtime_error("failed to read transfer to alias from alias DB");
-		if (vtxPos.size() < 1)
-			throw runtime_error("no result returned");
-		CAliasIndex xferAlias = vtxPos.back();
-		vchPubKey = xferAlias.vchPubKey;
+		vector<unsigned char> vchPubKeyByte;
+		vchPubKey = vchFromString(params[3].get_str());
+		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
+		CPubKey xferKey  = CPubKey(vchPubKeyByte);
+		if(!xferKey.IsValid())
+		{
+			throw runtime_error("Invalid public key");
+		}
+		CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
+		if (!paliasdb->ExistsAddress(myAddress.ToString())
+		{
+			throw runtime_error("You must transfer to a public key that's not associated with any other alias");
+		}
 	}
 
 	EnsureWalletIsUnlocked();
@@ -1340,7 +1350,15 @@ UniValue aliashistory(const UniValue& params, bool fHelp) {
 	}
 	return oRes;
 }
-
+UniValue generatepublickey(const UniValue& params, bool fHelp) {
+	if(!pwalletMain)
+		throw runtime_error("No wallet defined!");
+	CPubKey PubKey = pwalletMain->GenerateNewKey();
+	std::vector<unsigned char> vchPubKey(PubKey.begin(), PubKey.end());
+	UniValue res(UniValue::VARR);
+	res.push_back(HexStr(vchPubKey));
+	return res;
+}
 /**
  * [aliasfilter description]
  * @param  params [description]

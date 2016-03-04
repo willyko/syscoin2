@@ -34,9 +34,15 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="refreshButton">
+      <widget class="QPushButton" name="newMessage">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>48</height>
+        </size>
+       </property>
        <property name="text">
-        <string>&amp;Refresh</string>
+        <string>New Message</string>
        </property>
       </widget>
      </item>
@@ -58,15 +64,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="newMessage">
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>48</height>
-        </size>
-       </property>
+      <widget class="QPushButton" name="refreshButton">
        <property name="text">
-        <string>New Message</string>
+        <string>&amp;Refresh</string>
        </property>
       </widget>
      </item>
