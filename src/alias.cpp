@@ -23,7 +23,7 @@
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
-
+#include <boost/algorithm/hex.hpp>
 using namespace std;
 CAliasDB *paliasdb = NULL;
 COfferDB *pofferdb = NULL;
@@ -513,6 +513,27 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				// Check name
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckAliasInputs() : aliasupdate alias mismatch");
+				// get the alias from the DB
+				vector<CAliasIndex> vtxPos;
+				if (paliasdb->ExistsAlias(vvchArgs[0])) {
+					if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
+						return error(
+								"CheckAliasInputs() : failed to read from alias DB");
+				}
+				if(vtxPos.empty())
+					return error("CheckAliasInputs() : No alias found to update");
+				const CAliasIndex& dbAlias = vtxPos.back();
+				// if transfer
+				if(dbAlias.vchPubKey != theAlias.vchPubKey)
+				{
+					vector<unsigned char> vchPubKeyByte;
+					boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchPubKeyByte));
+					CPubKey xferKey  = CPubKey(vchPubKeyByte);	
+					CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
+					// make sure xfer to pubkey doesn't point to an alias already 
+					if (paliasdb->ExistsAddress(vchToString(myAddress.ToString()))
+						return error("CheckAliasInputs() : Cannot transfer an alias that points to another alias");
+				}
 				break;
 		default:
 			return error(
@@ -539,18 +560,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 					theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 				if(theAlias.vchPrivateValue.empty())
 					theAlias.vchPrivateValue = dbAlias.vchPrivateValue;	
-				// if transfer happened
-				if(dbAlias.vchPubKey != theAlias.vchPubKey)
-				{
-					vector<unsigned char> vchPubKeyByte;
-					boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchPubKeyByte));
-					CPubKey xferKey  = CPubKey(vchPubKeyByte);	
-					CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
-					// make sure xfer to pubkey doesn't point to an alias already 
-					// if it exists kind of cancel the transfer, any services won't use the new pubkey or pay the new pubkey					
-					if (paliasdb->ExistsAddress(myAddress.ToString())
-						theAlias.vchPubKey = dbAlias.vchPubKey;
-				}
 			}
 		}
 	
@@ -1024,7 +1033,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 			throw runtime_error("Invalid public key");
 		}
 		CSyscoinAddress myAddress = CSyscoinAddress(xferKey.GetID());
-		if (!paliasdb->ExistsAddress(myAddress.ToString())
+		if (!paliasdb->ExistsAddress(vchToString(myAddress.ToString()))
 		{
 			throw runtime_error("You must transfer to a public key that's not associated with any other alias");
 		}
