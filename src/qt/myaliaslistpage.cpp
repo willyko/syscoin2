@@ -202,13 +202,13 @@ void MyAliasListPage::on_newAlias_clicked()
 }
 void MyAliasListPage::on_newPubKey_clicked()
 {
-	Array params;
+	UniValue params;
 	UniValue result = tableRPC.execute("generatepublickey", params);
 	if (result.type() == UniValue::VARR)
 	{
 		const UniValue &resultArray = result.get_array();
 		QMessageBox::information(this, tr("New Public Key For Alias Transfer"),
-			tr(resultArray[0].get_str()),
+			QString::fromStdString(resultArray[0].get_str()),
 			QMessageBox::Ok, QMessageBox::Ok);
 	}
 	else
