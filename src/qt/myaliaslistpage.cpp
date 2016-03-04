@@ -207,9 +207,11 @@ void MyAliasListPage::on_newPubKey_clicked()
 	if (result.type() == UniValue::VARR)
 	{
 		const UniValue &resultArray = result.get_array();
+		setClipboard(resultArray[0].get_str());
 		QMessageBox::information(this, tr("New Public Key For Alias Transfer"),
-			QString::fromStdString(resultArray[0].get_str()),
+			QString::fromStdString(resultArray[0].get_str()) + tr(" has been copied to your clipboard!"),
 			QMessageBox::Ok, QMessageBox::Ok);
+		
 	}
 	else
 	 	QMessageBox::critical(this, tr("New Public Key For Alias Transfer"),
