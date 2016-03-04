@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 	BOOST_CHECK_NO_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"));
 
 	// xfer an alias that isn't yours
-	BOOST_CHECK_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"));
+	BOOST_CHECK_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"), runtime_error);
 
 	// trasnfer alias and update it at the same time
 	BOOST_CHECK_NO_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata4", "pvtdata"));
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 	BOOST_CHECK_NO_THROW(AliasTransfer("node2", "jagnode1", "node3", "changeddata5", "pvtdata2"));
 
 	// xfer an alias to another alias is prohibited
-	BOOST_CHECK_THROW(AliasTransfer("node2", "jagnode2", "node1", "changeddata1", "pvtdata", strPubKey1));
+	BOOST_CHECK_THROW(AliasTransfer("node2", "jagnode2", "node1", "changeddata1", "pvtdata", strPubKey1), runtime_error);
 	
 }
 BOOST_AUTO_TEST_SUITE_END ()
