@@ -1016,7 +1016,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("alias public value cannot exceed 1023 bytes!");
 	if (vchPrivateValue.size() > MAX_VALUE_LENGTH)
 		throw runtime_error("alias public value cannot exceed 1023 bytes!");
-	vector<unsigned char> vchPubKey;
+	vector<unsigned char> vchPubKeyByte;
 
 	CWalletTx wtx;
 	CAliasIndex updateAlias;
@@ -1024,7 +1024,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	CScript scriptPubKeyOrig;
 	string strPubKey;
     if (params.size() >= 4) {
-		vector<unsigned char> vchPubKeyByte;
+		vector<unsigned char> vchPubKey;
 		vchPubKey = vchFromString(params[3].get_str());
 		boost::algorithm::unhex(vchPubKey.begin(), vchPubKey.end(), std::back_inserter(vchPubKeyByte));
 		CPubKey xferKey  = CPubKey(vchPubKeyByte);
@@ -1056,17 +1056,26 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
     if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
         throw runtime_error("could not read alias from DB");
     theAlias = vtxPos.back();
-	if(vchPubKey.empty())
-		vchPubKey = theAlias.vchPubKey;
+	if(vchPubKeyByte.empty())
+		vchPubKeyByte = theAlias.vchPubKey;
 	if(vchPrivateValue.size() > 0)
 	{
+		string strData = "";
+		string strDecryptedData = "";
 		string strCipherText;
-		if(!EncryptMessage(vchPubKey, vchPrivateValue, strCipherText))
+		
+		// decrypt using old key
+		if(DecryptMessage(theAlias.vchPubKey, vchPrivateValue, strData))
+			strDecryptedData = strData;
+		else
+			throw runtime_error("Could not decrypt alias private data!");
+		// encrypt using new key
+		if(!EncryptMessage(vchPubKeyByte, vchFromString(strDecryptedData), strCipherText))
 		{
-			throw runtime_error("Could not encrypt private alias value!");
+			throw runtime_error("Could not encrypt alias private data!");
 		}
 		if (strCipherText.size() > MAX_ENCRYPTED_VALUE_LENGTH)
-			throw runtime_error("private data length cannot exceed 1023 bytes!");
+			throw runtime_error("data length cannot exceed 1023 bytes!");
 		vchPrivateValue = vchFromString(strCipherText);
 	}
 
@@ -1079,8 +1088,8 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	if(copyAlias.vchPrivateValue != vchPrivateValue)
 		theAlias.vchPrivateValue = vchPrivateValue;
 
-	theAlias.vchPubKey = vchPubKey;
-	CPubKey currentKey(vchPubKey);
+	theAlias.vchPubKey = vchPubKeyByte;
+	CPubKey currentKey(vchPubKeyByte);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	CScript scriptPubKey;
 	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
