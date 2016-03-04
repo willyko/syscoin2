@@ -210,7 +210,7 @@ string AliasNew(const string& node, const string& aliasname, const string& alias
 	UniValue r;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasnew " + aliasname + " " + aliasdata));
 	string pubkey;
-	const Array &resultArray = r.get_array();
+	const UniValue &resultArray = r.get_array();
 	pubkey = resultArray[1].get_str();
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
@@ -237,7 +237,7 @@ void AliasTransfer(const string& node, const string& aliasname, const string& to
 		if (pkr.type() != UniValue::VARR)
 			throw runtime_error("Could not parse rpc results");
 
-		const Array &resultArray = result.get_array();
+		const UniValue &resultArray = result.get_array();
 		pubkey = resultArray[0].get_str();		
 	}
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasupdate " + aliasname + " " + pubdata + " " + privdata + " " + pubkey));
@@ -280,12 +280,12 @@ void AliasUpdate(const string& node, const string& aliasname, const string& pubd
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == true);
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == pubdata);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
 	BOOST_CHECK(find_value(r.get_obj(), "privatevalue").get_str() == "Encrypted for alias owner");
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
-	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
+	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == pubdata);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
 	BOOST_CHECK(find_value(r.get_obj(), "privatevalue").get_str() == "Encrypted for alias owner");
 }
