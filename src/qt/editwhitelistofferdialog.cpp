@@ -137,7 +137,6 @@ void EditWhitelistOfferDialog::setModel(WalletModel *walletModel, OfferWhitelist
 
 void EditWhitelistOfferDialog::showEvent ( QShowEvent * event )
 {
-	on_refreshButton_clicked();
 }
 void EditWhitelistOfferDialog::on_copy()
 {

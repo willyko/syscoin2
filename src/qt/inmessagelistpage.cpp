@@ -119,7 +119,6 @@ void InMessageListPage::on_refreshButton_clicked()
 }
 void InMessageListPage::showEvent ( QShowEvent * event )
 {
-	on_refreshButton_clicked();
     if(!walletModel) return;
 }
 void InMessageListPage::setModel(WalletModel* walletModel, MessageTableModel *model)

@@ -99,7 +99,6 @@ MyEscrowListPage::~MyEscrowListPage()
 }
 void MyEscrowListPage::showEvent ( QShowEvent * event )
 {
-	on_refreshButton_clicked();
     if(!walletModel) return;
 
 }
