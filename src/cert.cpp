@@ -1036,7 +1036,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 		const CCert &txCert = pairScan.second;
 		const string &cert = stringFromVch(pairScan.first);
 	
-		string &title = stringFromVch(txCert.vchTitle);
+		string title = stringFromVch(txCert.vchTitle);
 		boost::algorithm::to_lower(title);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;
