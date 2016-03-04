@@ -43,7 +43,7 @@ OfferAcceptDialog::OfferAcceptDialog(const PlatformStyle *platformStyle, QString
 	string strCurrencyCode = currencyCode.toStdString();
 	ui->acceptBtcButton->setEnabled(false);
 	ui->acceptBtcButton->setVisible(false);
-	convertCurrencyCodeToSyscoin("SYS", 0, chainActive.Tip()->nHeight, sysprecision);
+	convertCurrencyCodeToSyscoin(vchFromString("SYS"), 0, chainActive.Tip()->nHeight, sysprecision);
 	CAmount iPrice = convertCurrencyCodeToSyscoin(vchFromString(strCurrencyCode), dblPrice, chainActive.Tip()->nHeight, precision);
 	string strPrice = strprintf("%.*f", sysprecision, ValueFromAmount(iPrice).get_real()*quantity.toUInt() );
 	price = QString::fromStdString(strPrice);
