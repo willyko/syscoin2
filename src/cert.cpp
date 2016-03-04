@@ -1034,7 +1034,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
 		const CCert &txCert = pairScan.second;
-		const string &cert = stringFromVch(pairScan.first);
+		string cert = stringFromVch(pairScan.first);
 		boost::algorithm::to_lower(cert);
 	
 		const string &title = stringFromVch(txCert.vchTitle);
