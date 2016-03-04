@@ -988,6 +988,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	SendMoneySyscoin(vecSend, recipient.nAmount + fee.nAmount, false, wtx);
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
+	res.push_back(HexStr(vchPubKey));
 	return res;
 }
 UniValue aliasupdate(const UniValue& params, bool fHelp) {

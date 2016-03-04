@@ -193,7 +193,7 @@ void CreateSysRatesIfNotExist()
 	}
 	GenerateBlocks(10);
 }
-void AliasNew(const string& node, const string& aliasname, const string& aliasdata)
+string AliasNew(const string& node, const string& aliasname, const string& aliasdata)
 {
 	string otherNode1 = "node2";
 	string otherNode2 = "node3";
@@ -209,6 +209,9 @@ void AliasNew(const string& node, const string& aliasname, const string& aliasda
 	}
 	UniValue r;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasnew " + aliasname + " " + aliasdata));
+	string pubkey;
+	const Array &resultArray = r.get_array();
+	pubkey = resultArray[1].get_str();
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasinfo " + aliasname));
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
@@ -222,6 +225,7 @@ void AliasNew(const string& node, const string& aliasname, const string& aliasda
 	BOOST_CHECK(find_value(r.get_obj(), "name").get_str() == aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "value").get_str() == aliasdata);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
+	return pubkey;
 }
 void AliasTransfer(const string& node, const string& aliasname, const string& tonode, const string& pubdata, const string& privdata, string pubkey)
 {
