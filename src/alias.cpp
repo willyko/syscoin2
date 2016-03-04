@@ -1415,14 +1415,17 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 	// regexp
 	using namespace boost::xpressive;
 	smatch nameparts;
-	sregex cregex = sregex::compile(strRegexp.toLowerCase());
+	string strRegexpLower = strRegexp;
+	boost::algorithm::to_lower(strRegexpLower);
+	sregex cregex = sregex::compile(strRegexpLower);
 	pair<vector<unsigned char>, CAliasIndex> pairScan;
 	BOOST_FOREACH(pairScan, nameScan) {
 		const CAliasIndex &alias = pairScan.second;
 		CPubKey PubKey(alias.vchPubKey);
 		CSyscoinAddress address(PubKey.GetID());
-		const string &name = stringFromVch(pairScan.first);
-		if (strRegexp != "" && !regex_search(name.toLowerCase(), nameparts, cregex) && strRegexp != address.ToString())
+		string name = stringFromVch(pairScan.first);
+		boost::algorithm::to_lower(name);
+		if (strRegexp != "" && !regex_search(name, nameparts, cregex) && strRegexp != address.ToString())
 			continue;
 
 		CAliasIndex txName = pairScan.second;

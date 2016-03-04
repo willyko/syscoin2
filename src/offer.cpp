@@ -2950,7 +2950,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
     // regexp
     using namespace boost::xpressive;
     smatch offerparts;
-    strRegexp = strRegexp.toLowerCase();
+	boost::algorithm::to_lower(strRegexp);
 	sregex cregex = sregex::compile(strRegexp);
 	
 	pair<vector<unsigned char>, COffer> pairScan;
@@ -2958,13 +2958,14 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 		const COffer &txOffer = pairScan.second;
 		const string &offer = stringFromVch(pairScan.first);
 		const string &title = stringFromVch(txOffer.sTitle);
-		title = title.toLowerCase();
+		boost::algorithm::to_lower(title);
 		CPubKey SellerPubKey(txOffer.vchPubKey);
 		CSyscoinAddress selleraddy(SellerPubKey.GetID());
 		selleraddy = CSyscoinAddress(selleraddy.ToString());
 		if(!selleraddy.IsValid() || !selleraddy.isAlias)
 			continue;
-		const string &alias = selleraddy.aliasName.toLowerCase();
+		string alias = selleraddy.aliasName;
+		boost::algorithm::to_lower(alias);
         if (strRegexp != "" && !regex_search(title, offerparts, cregex) && strRegexp != offer && strRegexp != alias)
             continue;
 
