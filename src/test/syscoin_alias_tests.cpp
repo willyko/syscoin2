@@ -72,10 +72,10 @@ BOOST_AUTO_TEST_CASE (generate_aliastransfer)
 	BOOST_CHECK_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata1", "pvtdata"), runtime_error);
 
 	// trasnfer alias and update it at the same time
-	BOOST_CHECK_NO_THROW(AliasTransfer("node1", "jagnode1", "node2", "changeddata4", "pvtdata"));
+	BOOST_CHECK_NO_THROW(AliasTransfer("node2", "jagnode2", "node3", "changeddata4", "pvtdata"));
 
 	// update xferred alias
-	AliasUpdate("node2", "jagnode1", "changeddata5", "pvtdata1");
+	BOOST_CHECK_NO_THROW(AliasUpdate("node2", "jagnode1", "changeddata5", "pvtdata1"));
 
 	// retransfer alias
 	BOOST_CHECK_NO_THROW(AliasTransfer("node2", "jagnode1", "node3", "changeddata5", "pvtdata2"));
