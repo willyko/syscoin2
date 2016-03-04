@@ -64,8 +64,8 @@ private Q_SLOTS:
     /** transfer the alias to a syscoin address  */
     void on_transferButton_clicked();
 	void on_refreshButton_clicked();
-	void on_newAlias_clicked();
-    /** Set button states based on selected tab and selection */
+	void on_newPubKey_clicked();
+    /** Set button states based onf selected tab and selection */
     void selectionChanged();
     /** Spawn contextual menu (right mouse menu) for alias book entry */
     void contextualMenu(const QPoint &point);
