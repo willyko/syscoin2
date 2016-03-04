@@ -1028,12 +1028,15 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     // regexp
     using namespace boost::xpressive;
     smatch certparts;
+	strRegexp = strRegexp.toLowerCase();
     sregex cregex = sregex::compile(strRegexp);
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
 		const CCert &txCert = pairScan.second;
 		const string &cert = stringFromVch(pairScan.first);
+		cert = cert.toLowerCase();
 		const string &title = stringFromVch(txCert.vchTitle);
+		title = title.toLowerCase();
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;
 
