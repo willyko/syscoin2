@@ -241,6 +241,8 @@ void AliasTransfer(const string& node, const string& aliasname, const string& to
 		pubkey = resultArray[0].get_str();		
 	}
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "aliasupdate " + aliasname + " " + pubdata + " " + privdata + " " + pubkey));
+	GenerateBlocks(10, tonode);
+	GenerateBlocks(10, node);	
 	// check its not mine anymore
 	r = CallRPC(node, "aliasinfo " + aliasname);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_bool() == false);
