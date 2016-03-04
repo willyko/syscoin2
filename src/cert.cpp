@@ -1034,10 +1034,9 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
     pair<vector<unsigned char>, CCert> pairScan;
 	BOOST_FOREACH(pairScan, certScan) {
 		const CCert &txCert = pairScan.second;
-		string cert = stringFromVch(pairScan.first);
-		boost::algorithm::to_lower(cert);
+		const string &cert = stringFromVch(pairScan.first);
 	
-		const string &title = stringFromVch(txCert.vchTitle);
+		string &title = stringFromVch(txCert.vchTitle);
 		boost::algorithm::to_lower(title);
         if (strRegexp != "" && !regex_search(title, certparts, cregex) && strRegexp != cert)
             continue;

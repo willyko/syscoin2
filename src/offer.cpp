@@ -2951,8 +2951,10 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
     // regexp
     using namespace boost::xpressive;
     smatch offerparts;
-	boost::algorithm::to_lower(strRegexp);
-	sregex cregex = sregex::compile(strRegexp);
+	smatch nameparts;
+	string strRegexpLower = strRegexp;
+	boost::algorithm::to_lower(strRegexpLower);
+	sregex cregex = sregex::compile(strRegexpLower);
 	
 	pair<vector<unsigned char>, COffer> pairScan;
 	BOOST_FOREACH(pairScan, offerScan) {
@@ -2967,7 +2969,7 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 			continue;
 		string alias = selleraddy.aliasName;
 		boost::algorithm::to_lower(alias);
-        if (strRegexp != "" && !regex_search(title, offerparts, cregex) && strRegexp != offer && strRegexp != alias)
+        if (strRegexp != "" && !regex_search(title, offerparts, cregex) && strRegexp != offer && strRegexpLower != alias)
             continue;
 
 		int expired = 0;
