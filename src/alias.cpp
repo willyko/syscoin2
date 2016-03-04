@@ -502,6 +502,8 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	}
 	if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 		return error("alias hex guid too long");
+	vector<CAliasIndex> vtxPos;
+	const CAliasIndex& dbAlias;
 	if(fJustCheck)
 	{
 		switch (op) {
@@ -514,7 +516,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckAliasInputs() : aliasupdate alias mismatch");
 				// get the alias from the DB
-				vector<CAliasIndex> vtxPos;
 				if (paliasdb->ExistsAlias(vvchArgs[0])) {
 					if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
 						return error(
@@ -522,7 +523,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				}
 				if(vtxPos.empty())
 					return error("CheckAliasInputs() : No alias found to update");
-				const CAliasIndex& dbAlias = vtxPos.back();
+				dbAlias = vtxPos.back();
 				// if transfer
 				if(dbAlias.vchPubKey != theAlias.vchPubKey)
 				{
@@ -543,7 +544,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	
 	if (!fJustCheck ) {
 		// get the alias from the DB
-		vector<CAliasIndex> vtxPos;
 		if (paliasdb->ExistsAlias(vvchArgs[0])) {
 			if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
 				return error(
@@ -555,7 +555,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				theAlias = vtxPos.back();
 			else
 			{
-				const CAliasIndex& dbAlias = vtxPos.back();
+				dbAlias = vtxPos.back();
 				if(theAlias.vchPublicValue.empty())
 					theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 				if(theAlias.vchPrivateValue.empty())
