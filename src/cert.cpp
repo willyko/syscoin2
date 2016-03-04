@@ -11,6 +11,7 @@
 #include "chainparams.h"
 #include "messagecrypter.h"
 #include <boost/algorithm/hex.hpp>
+#include <boost/algorithm/string/case_conv.hpp> // for to_lower()
 #include <boost/xpressive/xpressive_dynamic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
