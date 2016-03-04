@@ -503,7 +503,6 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 	if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 		return error("alias hex guid too long");
 	vector<CAliasIndex> vtxPos;
-	const CAliasIndex& dbAlias;
 	if(fJustCheck)
 	{
 		switch (op) {
@@ -523,9 +522,8 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				}
 				if(vtxPos.empty())
 					return error("CheckAliasInputs() : No alias found to update");
-				dbAlias = vtxPos.back();
 				// if transfer
-				if(dbAlias.vchPubKey != theAlias.vchPubKey)
+				if(vtxPos.back().vchPubKey != theAlias.vchPubKey)
 				{
 					vector<unsigned char> vchPubKeyByte;
 					boost::algorithm::unhex(theAlias.vchPubKey.begin(), theAlias.vchPubKey.end(), std::back_inserter(vchPubKeyByte));
@@ -555,7 +553,7 @@ bool CheckAliasInputs(const CTransaction &tx, const CCoinsViewCache &inputs, boo
 				theAlias = vtxPos.back();
 			else
 			{
-				dbAlias = vtxPos.back();
+				const CAliasIndex& dbAlias = vtxPos.back();
 				if(theAlias.vchPublicValue.empty())
 					theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 				if(theAlias.vchPrivateValue.empty())
