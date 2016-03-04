@@ -206,7 +206,7 @@ void MyAliasListPage::on_newPubKey_clicked()
 	UniValue result = tableRPC.execute("generatepublickey", params);
 	if (result.type() == UniValue::VARR)
 	{
-		Array resultArray = result.get_array();
+		const Array &resultArray = result.get_array();
 		QMessageBox::information(this, tr("New Public Key For Alias Transfer"),
 			tr(resultArray[0].get_str()),
 			QMessageBox::Ok, QMessageBox::Ok);
