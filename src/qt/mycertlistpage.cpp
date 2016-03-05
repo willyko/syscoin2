@@ -76,7 +76,7 @@ MyCertListPage::MyCertListPage(const PlatformStyle *platformStyle, QWidget *pare
     connect(editAction, SIGNAL(triggered()), this, SLOT(on_editButton_clicked()));
     connect(transferCertAction, SIGNAL(triggered()), this, SLOT(on_transferButton_clicked()));
 	connect(sellCertAction, SIGNAL(triggered()), this, SLOT(on_sellCertButton_clicked()));
-
+	connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(on_editButton_clicked()));
     connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextualMenu(QPoint)));
 
     // Pass through accept action from button box

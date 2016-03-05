@@ -75,7 +75,7 @@ MyOfferListPage::MyOfferListPage(const PlatformStyle *platformStyle, QWidget *pa
 	connect(copyOfferDescriptionAction, SIGNAL(triggered()), this, SLOT(onCopyOfferDescriptionAction()));
     connect(editAction, SIGNAL(triggered()), this, SLOT(on_editButton_clicked()));
 	connect(editWhitelistAction, SIGNAL(triggered()), this, SLOT(onEditWhitelistAction()));
-
+	connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(on_editButton_clicked()));
     connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextualMenu(QPoint)));
 
     // Pass through accept action from button box

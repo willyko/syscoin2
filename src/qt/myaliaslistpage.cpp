@@ -76,6 +76,7 @@ MyAliasListPage::MyAliasListPage(const PlatformStyle *platformStyle, QWidget *pa
     connect(editAction, SIGNAL(triggered()), this, SLOT(on_editButton_clicked()));
     connect(transferAliasAction, SIGNAL(triggered()), this, SLOT(on_transferButton_clicked()));
 
+	connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(on_editButton_clicked()));
     connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextualMenu(QPoint)));
 
     // Pass through accept action from button box
