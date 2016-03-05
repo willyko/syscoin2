@@ -1446,7 +1446,7 @@ UniValue aliasfilter(const UniValue& params, bool fHelp) {
 		int expires_in = 0;
 		int expired_block = 0;
 		UniValue oName(UniValue::VOBJ);
-		oName.push_back(Pair("name", name));
+		oName.push_back(Pair("name", stringFromVch(pairScan.first)));
 		CTransaction tx;
 		uint256 txHash = txName.txHash;
 		if (!GetSyscoinTransaction(txName.nHeight, txHash, tx, Params().GetConsensus()))
