@@ -3,6 +3,7 @@
 #include "init.h"
 #include "util.h"
 #include "offerpaydialog.h"
+#include "guiconstants.h"
 #include "guiutil.h"
 #include "platformstyle.h"
 #include "syscoingui.h"
@@ -12,7 +13,19 @@
 #include "wallet/wallet.h"
 #include "main.h"
 #include <QDesktopServices>
+#if QT_VERSION < 0x050000
 #include <QUrl>
+#else
+#include <QUrlQuery>
+#endif
+#include <QPixmap>
+#if defined(HAVE_CONFIG_H)
+#include "config/syscoin-config.h" /* for USE_QRCODE */
+#endif
+
+#ifdef USE_QRCODE
+#include <qrencode.h>
+#endif
 using namespace std;
 
 extern const CRPCTable tableRPC;
@@ -28,9 +41,16 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
 	QString fprice = QString::fromStdString(strfPrice);
 	string strCurrencyCode = currencyCode.toStdString();
 	ui->escrowDisclaimer->setText(tr("<font color='blue'>Please note escrow is not available since you are paying in BTC, only SYS payments can be escrowed. </font>"));
+	ui->bitcoinInstructionLabel->setText(tr("After paying for this item, please enter the Bitcoin Transaction ID and click on the confirm button below. You may use the QR Code to the left to scan the payment request into your wallet or click on the Open BTC Wallet if you are on the desktop and have Bitcoin Core installed."));
 	ui->acceptMessage->setText(tr("Are you sure you want to purchase %1 of '%2' from merchant: '%3'? To complete your purchase please pay %4 BTC using your Bitcoin wallet.").arg(quantity).arg(title).arg(sellerAlias).arg(fprice));
 	string strPrice = strprintf("%f", dblPrice);
 	price = QString::fromStdString(strPrice);
+
+	QString message = "Payment for offer ID " + this->offer + " on Syscoin Decentralized Marketplace";
+	info.message = GUIUtil::HtmlEscape(message);
+	info.address = this->address;
+	info.label = this->sellerAlias;
+	info.amount = price;
 	if (!platformStyle->getImagesOnButtons())
 	{
 		ui->confirmButton->setIcon(QIcon());
@@ -47,7 +67,38 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
 	this->offerPaid = false;
 	connect(ui->confirmButton, SIGNAL(clicked()), this, SLOT(acceptPayment()));
 	connect(ui->openBtcWalletButton, SIGNAL(clicked()), this, SLOT(openBTCWallet()));
-
+	QString uri = GUIUtil::formatSyscoinURI(info);
+#ifdef USE_QRCODE
+	ui->lblQRCode->setText("");
+    if(!uri.isEmpty())
+    {
+        // limit URI length
+        if (uri.length() > MAX_URI_LENGTH)
+        {
+            ui->lblQRCode->setText(tr("Resulting URI too long, try to reduce the text for label / message."));
+        } else {
+            QRcode *code = QRcode_encodeString(uri.toUtf8().constData(), 0, QR_ECLEVEL_L, QR_MODE_8, 1);
+            if (!code)
+            {
+                ui->lblQRCode->setText(tr("Error encoding URI into QR Code."));
+                return;
+            }
+            QImage myImage = QImage(code->width + 8, code->width + 8, QImage::Format_RGB32);
+            myImage.fill(0xffffff);
+            unsigned char *p = code->data;
+            for (int y = 0; y < code->width; y++)
+            {
+                for (int x = 0; x < code->width; x++)
+                {
+                    myImage.setPixel(x + 4, y + 4, ((*p & 1) ? 0x0 : 0xffffff));
+                    p++;
+                }
+            }
+            QRcode_free(code);
+            ui->lblQRCode->setPixmap(QPixmap::fromImage(myImage).scaled(100, 100));
+        }
+    }
+#endif
 }
 void OfferAcceptDialogBTC::on_cancelButton_clicked()
 {
@@ -135,9 +186,8 @@ void OfferAcceptDialogBTC::acceptOffer()
 }
 void OfferAcceptDialogBTC::openBTCWallet()
 {
-	QString message = "Payment for offer ID " + this->offer + " on Syscoin Decentralized Marketplace";
-	QString qURI = "bitcoin:" + this->address + "?amount=" + price + "&label=" + this->sellerAlias + "&message=" + QUrl::toPercentEncoding(message);
-	QDesktopServices::openUrl(QUrl(qURI, QUrl::TolerantMode));
+	QString uri = GUIUtil::formatSyscoinURI(info);
+	QDesktopServices::openUrl(QUrl(uri, QUrl::TolerantMode));
 }
 bool OfferAcceptDialogBTC::getPaymentStatus()
 {

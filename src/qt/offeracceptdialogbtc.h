@@ -1,7 +1,9 @@
 #ifndef OFFERACCEPTDIALOGBTC_H
 #define OFFERACCEPTDIALOGBTC_H
-
+#include "walletmodel.h"
 #include <QDialog>
+#include <QImage>
+#include <QLabel>
 class PlatformStyle;
 namespace Ui {
     class OfferAcceptDialogBTC;
@@ -19,6 +21,7 @@ public:
 private:
 	const PlatformStyle *platformStyle;
     Ui::OfferAcceptDialogBTC *ui;
+	SendCoinsRecipient info;
 	QString quantity;
 	QString notes;
 	QString price;
