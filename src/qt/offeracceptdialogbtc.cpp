@@ -50,7 +50,7 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
 	info.message = GUIUtil::HtmlEscape(message);
 	info.address = this->address;
 	info.label = this->sellerAlias;
-	info.amount = price.get_real();
+	info.amount = AmountFromValue(ValueFromString(price.toStdString()));
 	if (!platformStyle->getImagesOnButtons())
 	{
 		ui->confirmButton->setIcon(QIcon());
