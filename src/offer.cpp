@@ -1648,6 +1648,9 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 			oList.push_back(Pair("alias", address.aliasName));
 			int expires_in = 0;
 			uint64_t nHeight = theCert.nHeight;
+			if (!GetSyscoinTransaction(nHeight, txCert.GetHash(), txCert, Params().GetConsensus()))
+				continue;
+			
             if(nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight > 0)
 			{
 				expires_in = nHeight + GetCertExpirationDepth() - chainActive.Tip()->nHeight;
