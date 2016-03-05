@@ -35,7 +35,7 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>The value associated with this certificate.</string>
+        <string>The value associated with this message.</string>
        </property>
       </widget>
      </item>
@@ -72,7 +72,7 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>The certificate name.</string>
+        <string>The message name.</string>
        </property>
       </widget>
      </item>

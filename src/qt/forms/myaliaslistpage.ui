@@ -57,7 +57,7 @@
      <item>
       <widget class="QPushButton" name="newAlias">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a new alias&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>Create a new alias</string>
        </property>
        <property name="text">
         <string>&amp;New Alias</string>

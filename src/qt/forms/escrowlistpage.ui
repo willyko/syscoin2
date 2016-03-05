@@ -96,7 +96,7 @@
      <item>
       <widget class="QPushButton" name="copyEscrow">
        <property name="toolTip">
-        <string>Copy the currently selected alias to the system clipboard</string>
+        <string>Copy the currently selected escrow to the system clipboard</string>
        </property>
        <property name="text">
         <string>&amp;Copy Escrow ID</string>

@@ -70,7 +70,7 @@
      <item>
       <widget class="QPushButton" name="newEntry">
        <property name="toolTip">
-        <string>Copy the currently selected alias to the system clipboard</string>
+        <string>Copy the currently selected cert to the system clipboard</string>
        </property>
        <property name="text">
         <string>&amp;Add</string>

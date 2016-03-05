@@ -57,7 +57,7 @@
      <item>
       <widget class="QPushButton" name="newCert">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a new alias&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>Create a new cert</string>
        </property>
        <property name="text">
         <string>&amp;New Certificate</string>
@@ -67,7 +67,7 @@
      <item>
       <widget class="QPushButton" name="copyCert">
        <property name="toolTip">
-        <string>Copy the currently selected alias to the system clipboard</string>
+        <string>Copy the currently selected cert to the system clipboard</string>
        </property>
        <property name="text">
         <string>&amp;Copy Certificate ID</string>
