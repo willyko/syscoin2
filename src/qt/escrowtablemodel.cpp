@@ -299,23 +299,6 @@ QVariant EscrowTableModel::data(const QModelIndex &index, int role) const
             return rec->buyer;
         }
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-        if(index.column() == Arbiter)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        else if(index.column() == Seller)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        else if(index.column() == Buyer)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     else if (role == EscrowRole)
     {
         return rec->escrow;

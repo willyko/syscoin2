@@ -319,19 +319,6 @@ QVariant OfferAcceptTableModel::data(const QModelIndex &index, int role) const
     {
         return rec->alias;
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-		if(index.column() == Alias)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        else if(index.column() == Buyer)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     return QVariant();
 }
 

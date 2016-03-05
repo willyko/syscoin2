@@ -166,15 +166,6 @@ QVariant OfferWhitelistTableModel::data(const QModelIndex &index, int role) cons
             return rec->expires;
         }
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-        if(index.column() == Alias)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     else if (role == CertRole)
     {
         return rec->cert;

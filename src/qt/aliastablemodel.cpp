@@ -287,15 +287,6 @@ QVariant AliasTableModel::data(const QModelIndex &index, int role) const
             return rec->expired;
         }
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-        if(index.column() == Value)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     else if (role == TypeRole)
     {
         switch(rec->type)

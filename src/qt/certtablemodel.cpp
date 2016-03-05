@@ -311,15 +311,6 @@ QVariant CertTableModel::data(const QModelIndex &index, int role) const
             return rec->alias;
         }
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-        if(index.column() == Name)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     else if (role == NameRole)
     {
         return rec->cert;

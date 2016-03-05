@@ -271,15 +271,6 @@ QVariant MessageTableModel::data(const QModelIndex &index, int role) const
             return rec->message;
         }
     }
-    else if (role == Qt::FontRole)
-    {
-        QFont font;
-        if(index.column() == From)
-        {
-            font = GUIUtil::fixedPitchFont();
-        }
-        return font;
-    }
     else if (role == ToRole)
     {
         return rec->to;
