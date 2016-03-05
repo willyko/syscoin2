@@ -97,7 +97,7 @@ OfferAcceptDialogBTC::OfferAcceptDialogBTC(const PlatformStyle *platformStyle, Q
                 }
             }
             QRcode_free(code);
-            ui->lblQRCode->setPixmap(QPixmap::fromImage(myImage).scaled(100, 100));
+            ui->lblQRCode->setPixmap(QPixmap::fromImage(myImage).scaled(128, 128));
         }
     }
 #endif
