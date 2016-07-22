@@ -563,8 +563,8 @@ BOOST_AUTO_TEST_CASE (generate_offersafesearch)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "offerinfo " + offerguidnotsafe));
 
 	// reverse the rolls
-	OfferUpdate("node2", "selleralias15", offerguidsafe, "category", "titlenew", "90", "0.15", "descriptionnew", false, "nocert", false, "location", "No");
-	OfferUpdate("node2", "selleralias15", offerguidnotsafe, "category", "titlenew", "90", "0.15", "descriptionnew", false, "nocert", false, "location", "Yes");
+	OfferUpdate("node2", "selleralias15", offerguidsafe, "category", "titlenew", "90", "0.15", "descriptionnew", "USD", false, "nocert", false, "location", "No");
+	OfferUpdate("node2", "selleralias15", offerguidnotsafe, "category", "titlenew", "90", "0.15", "descriptionnew", "USD", false, "nocert", false, "location", "Yes");
 
 
 	// should include result in both safe search mode on and off

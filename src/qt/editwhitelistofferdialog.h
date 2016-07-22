@@ -47,6 +47,7 @@ private:
 	QString offerQty;
 	QString offerPrice;
 	QString offerDescription;
+	QString offerCurrency;
 	QString offerPrivate;
 
 private Q_SLOTS:

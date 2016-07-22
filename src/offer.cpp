@@ -753,9 +753,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				myOffer = vtxPos.back();
 			}
 			// check for valid alias peg
-			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, myOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
 			{
-				return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(myOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg));
+				return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg));
 			}
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			// also only do this if whitelist isn't being modified, because if it is, update just falls through and offer is stored as whats in the db, plus any whitelist changes
@@ -886,9 +886,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: purchasing a cert that doesn't exist");
-			}
-			if(stringFromVch(theOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");								
+			}							
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
 			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
@@ -946,6 +944,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 			myPriceOffer.nHeight = heightToCheckAgainst;
 			myPriceOffer.GetOfferFromList(vtxPos);
+			if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
+				return error("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");	
 			// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 			if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 			{
@@ -959,7 +959,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 
 				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
 				if(priceAtTimeOfAccept != theOfferAccept.nPrice)
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(theOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(theOffer.sCurrencyCode).c_str());
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str());
 
 				int precision = 2;
 				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
@@ -972,7 +972,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst-1, precision)*theOfferAccept.nQty;
 						if(!FindOfferAcceptPayment(tx, nPrice))
 						{
-							return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld, height %d\n", nPrice, stringFromVch(theOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue, heightToCheckAgainst-1);	
+							return error("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld, height %d\n", nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue, heightToCheckAgainst-1);	
 						}
 					}
 				}												
@@ -2319,9 +2319,9 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 }
 
 UniValue offerupdate(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() < 5 || params.size() > 13)
+	if (fHelp || params.size() < 7 || params.size() > 14)
 		throw runtime_error(
-		"offerupdate <aliaspeg> <alias> <guid> <category> <title> <quantity> <price> [description] [private='0'] [cert. guid=''] [exclusive resell='1'] [geolocation=''] [safesearch=Yes]\n"
+		"offerupdate <aliaspeg> <alias> <guid> <category> <title> <quantity> <price> [description] [currency] [private='0'] [cert. guid=''] [exclusive resell='1'] [geolocation=''] [safesearch=Yes]\n"
 						"Perform an update on an offer you control.\n"
 						+ HelpRequiringPassphrase());
 	// gather & validate inputs
@@ -2336,19 +2336,21 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchDesc;
 	vector<unsigned char> vchCert;
 	vector<unsigned char> vchGeoLocation;
+	vector<unsigned char> sCurrencyCode;
 	bool bExclusiveResell = true;
 	int bPrivate = false;
 	int nQty;
 	double price;
 	if (params.size() >= 8) vchDesc = vchFromValue(params[7]);
-	if (params.size() >= 9) bPrivate = atoi(params[8].get_str().c_str()) == 1? true: false;
-	if (params.size() >= 10) vchCert = vchFromValue(params[9]);
-	if (params.size() >= 11) bExclusiveResell = atoi(params[10].get_str().c_str()) == 1? true: false;
-	if (params.size() >= 12) vchGeoLocation = vchFromValue(params[11]);
+	if (params.size() >= 9) sCurrencyCode = vchFromValue(params[8]);
+	if (params.size() >= 10) bPrivate = atoi(params[9].get_str().c_str()) == 1? true: false;
+	if (params.size() >= 11) vchCert = vchFromValue(params[10]);
+	if (params.size() >= 12) bExclusiveResell = atoi(params[11].get_str().c_str()) == 1? true: false;
+	if (params.size() >= 13) vchGeoLocation = vchFromValue(params[12]);
 	string strSafeSearch = "Yes";
-	if(params.size() >= 13)
+	if(params.size() >= 14)
 	{
-		strSafeSearch = params[12].get_str();
+		strSafeSearch = params[13].get_str();
 	}
 	try {
 		nQty = atoi(params[5].get_str());
@@ -2359,7 +2361,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	}
 	if(nQty < -1)
 		throw runtime_error("qty must be greater than or equal to -1");
-	if (params.size() >= 8) vchDesc = vchFromValue(params[7]);
 	if(price <= 0)
 	{
 		throw runtime_error("offer price must be greater than 0!");
@@ -2478,9 +2479,9 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
-	if(getCurrencyToSYSFromAlias(vchAliasPeg, offerCopy.sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
+	if(getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
 	{
-		string err = strprintf("Could not find currency %s in the %s alias!\n", stringFromVch(offerCopy.sCurrencyCode), stringFromVch(vchAliasPeg));
+		string err = strprintf("Could not find currency %s in the %s alias!\n", stringFromVch(sCurrencyCode), stringFromVch(vchAliasPeg));
 		throw runtime_error(err.c_str());
 	}
 
@@ -2498,6 +2499,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		theOffer.sDescription = vchDesc;
 	if(offerCopy.vchGeoLocation != vchGeoLocation)
 		theOffer.vchGeoLocation = vchGeoLocation;
+	if(offerCopy.sCategory != sCurrencyCode)
+		theOffer.sCategory = sCurrencyCode;
 	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
 	if(wtxCertIn != NULL)
 	{
@@ -2557,33 +2560,38 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	res.push_back(wtx.GetHash().GetHex());
 	return res;
 }
-
 UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() < 5 || params.size() > 11)
+	if (fHelp || params.size() < 7 || params.size() > 14)
 		throw runtime_error(
-		"offerupdate_nocheck <aliaspeg> <alias> <guid> <category> <title> <quantity> <price> [description] [private=0] [cert. guid] [exclusive resell=1]\n"
+		"offerupdate_nocheck <aliaspeg> <alias> <guid> <category> <title> <quantity> <price> [description] [currency] [private='0'] [cert. guid=''] [exclusive resell='1'] [geolocation=''] [safesearch=Yes]\n"
 						"Perform an update on an offer you control.\n"
 						+ HelpRequiringPassphrase());
 	// gather & validate inputs
 	vector<unsigned char> vchAliasPeg = vchFromValue(params[0]);
 	CSyscoinAddress aliasPegAddress = CSyscoinAddress(stringFromVch(vchAliasPeg));
-	if (vchAliasPeg.size() > 0 && (!aliasPegAddress.IsValid() || !aliasPegAddress.isAlias))
-		throw runtime_error("Invalid alias peg");
 	vector<unsigned char> vchAlias = vchFromValue(params[1]);
 	vector<unsigned char> vchOffer = vchFromValue(params[2]);
 	vector<unsigned char> vchCat = vchFromValue(params[3]);
 	vector<unsigned char> vchTitle = vchFromValue(params[4]);
 	vector<unsigned char> vchDesc;
 	vector<unsigned char> vchCert;
+	vector<unsigned char> vchGeoLocation;
+	vector<unsigned char> sCurrencyCode;
 	bool bExclusiveResell = true;
 	int bPrivate = false;
 	int nQty;
 	double price;
 	if (params.size() >= 8) vchDesc = vchFromValue(params[7]);
-	if (params.size() >= 9) bPrivate = atoi(params[8].get_str().c_str()) == 1? true: false;
-	if (params.size() >= 10) vchCert = vchFromValue(params[9]);
-	if(params.size() >= 11) bExclusiveResell = atoi(params[10].get_str().c_str()) == 1? true: false;
-
+	if (params.size() >= 9) sCurrencyCode = vchFromValue(params[8]);
+	if (params.size() >= 10) bPrivate = atoi(params[9].get_str().c_str()) == 1? true: false;
+	if (params.size() >= 11) vchCert = vchFromValue(params[10]);
+	if (params.size() >= 12) bExclusiveResell = atoi(params[11].get_str().c_str()) == 1? true: false;
+	if (params.size() >= 13) vchGeoLocation = vchFromValue(params[12]);
+	string strSafeSearch = "Yes";
+	if(params.size() >= 14)
+	{
+		strSafeSearch = params[13].get_str();
+	}
 	try {
 		nQty = atoi(params[5].get_str());
 		price = atof(params[6].get_str().c_str());
@@ -2591,15 +2599,15 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	} catch (std::exception &e) {
 		throw runtime_error("invalid price and/or quantity values. Quantity must be less than 4294967296 and greater than or equal to -1.");
 	}
-	if (params.size() >= 8) vchDesc = vchFromValue(params[7]);
+	
 	CAliasIndex alias;
 	const CWalletTx *wtxAliasIn = NULL;
 	if(!vchAlias.empty())
 	{
 		CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
+
 		CTransaction aliastx;
 		GetTxOfAlias(vchAlias, alias, aliastx);
-		IsSyscoinTxMine(aliastx, "alias");
 		wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
 	}
 
@@ -2613,7 +2621,9 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	// look for a transaction with this key
 	CTransaction tx, linktx;
 	COffer theOffer, linkOffer;
-	GetTxOfOffer( vchOffer, theOffer, tx, true);
+	GetTxOfOffer( vchOffer, theOffer, tx);
+		
+
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 
@@ -2623,30 +2633,36 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	scriptPubKey += scriptPubKeyOrig;
 
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL)
-		throw runtime_error("this offer is not in your wallet");
-	
+
 	// unserialize offer UniValue from txn
 	theOffer.UnserializeFromTx(tx);
+	
+
 	// get the offer from DB
 	vector<COffer> vtxPos;
 	pofferdb->ReadOffer(vchOffer, vtxPos);
+
 	CCert theCert;
 	CTransaction txCert;
 	const CWalletTx *wtxCertIn = NULL;
+
 	// make sure this cert is still valid
-	if (GetTxOfCert( vchCert, theCert, txCert), true)
+	if (GetTxOfCert( vchCert, theCert, txCert))
 	{
+	
 		vector<vector<unsigned char> > vvch;
 		wtxCertIn = pwalletMain->GetWalletTx(txCert.GetHash());
+
 		int op, nOut;
 		if(DecodeCertTx(txCert, op, nOut, vvch))
 			vchCert = vvch[0];
 
 		CPubKey currentCertKey(theCert.vchPubKey);
 		scriptPubKeyCertOrig = GetScriptForDestination(currentCertKey.GetID());
-		
+
 	}
+	
+	
 
 
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
@@ -2654,7 +2670,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 
 	theOffer = vtxPos.back();
 	COffer offerCopy = theOffer;
-	theOffer.ClearOffer();	
+	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	CAmount nRate;
 	vector<string> rateList;
@@ -2662,7 +2678,9 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
-	getCurrencyToSYSFromAlias(vchAliasPeg, offerCopy.sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision);
+	getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision);
+
+
 	double minPrice = pow(10.0,-precision);
 	if(price < minPrice)
 		price = minPrice;
@@ -2675,6 +2693,10 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 		theOffer.sTitle = vchTitle;
 	if(offerCopy.sDescription != vchDesc)
 		theOffer.sDescription = vchDesc;
+	if(offerCopy.vchGeoLocation != vchGeoLocation)
+		theOffer.vchGeoLocation = vchGeoLocation;
+	if(offerCopy.sCategory != sCurrencyCode)
+		theOffer.sCategory = sCurrencyCode;
 	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
 	if(wtxCertIn != NULL)
 	{
@@ -2688,6 +2710,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 			theOffer.vchPubKey = alias.vchPubKey;
 		theOffer.vchCert.clear();
 	}
+	theOffer.safeSearch = strSafeSearch == "Yes"? true: false;
 	// ensure pubkey points to an alias
 
 	CPubKey SellerPubKey(theOffer.vchPubKey);
@@ -2701,7 +2724,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
-	if(params.size() >= 11)
+	if(params.size() >= 11 && params[10].get_str().size() > 0)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 
 

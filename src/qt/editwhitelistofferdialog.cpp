@@ -62,6 +62,7 @@ EditWhitelistOfferDialog::EditWhitelistOfferDialog(const PlatformStyle *platform
 	offerPrice = idx->data(OfferTableModel::PriceRole).toString();
 	offerDescription = idx->data(OfferTableModel::DescriptionRole).toString();
 	offerPrivate = idx->data(OfferTableModel::PrivateRole).toString();
+	offerCurrency = idx->data(OfferTableModel::CurrencyRole).toString();
 	
 	ui->buttonBox->setVisible(false);
 	ui->removeAllButton->setEnabled(false);
@@ -161,6 +162,7 @@ void EditWhitelistOfferDialog::on_exclusiveButton_clicked()
 		params.push_back(offerQty.toStdString());
 		params.push_back(offerPrice.toStdString());
 		params.push_back(offerDescription.toStdString());
+		params.push_back(offerCurrency.toStdString());
 		// keep it the same as what's in the database
 		params.push_back(offerPrivate.toStdString());
 		params.push_back("");

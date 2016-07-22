@@ -73,8 +73,6 @@ EditOfferDialog::EditOfferDialog(Mode mode, const QString &strCert, QWidget *par
 		ui->currencyDisclaimer->setText(tr("<font color='blue'>You will receive payment in Syscoin equivalent to the Market-value of the currency you have selected.</font>"));
         break;
     case EditOffer:
-		ui->currencyEdit->setEnabled(false);
-		ui->currencyDisclaimer->setVisible(false);
 		ui->aliasEdit->setEnabled(false);
 		ui->aliasDisclaimer->setVisible(false);
         setWindowTitle(tr("Edit Offer"));
@@ -648,6 +646,7 @@ bool EditOfferDialog::saveCurrentRow()
 			params.push_back(ui->qtyEdit->text().toStdString());
 			params.push_back(ui->priceEdit->text().toStdString());
 			params.push_back(ui->descriptionEdit->toPlainText().toStdString());
+			params.push_back(ui->currencyEdit->toPlainText().toStdString());
 			params.push_back(ui->privateEdit->currentText() == QString("Yes")? "1": "0");
 			if(ui->certEdit->currentIndex() > 0)
 			{
