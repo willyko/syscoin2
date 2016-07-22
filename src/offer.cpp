@@ -2720,13 +2720,13 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	selleraddy = CSyscoinAddress(selleraddy.ToString());
 
 	theOffer.nQty = nQty;
-	if (params.size() >= 9)
+	if (params.size() >= 10)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
-	if(params.size() >= 11 && params[10].get_str().size() > 0)
+	if(params.size() >= 12 && params[11].get_str().size() > 0)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 
 
