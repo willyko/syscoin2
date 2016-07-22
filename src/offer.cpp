@@ -2479,6 +2479,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
+	if(sCurrencyCode.empty())
+		sCurrencyCode = offerCopy.sCurrencyCode;
 	if(getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
 	{
 		string err = strprintf("Could not find currency %s in the %s alias!\n", stringFromVch(sCurrencyCode), stringFromVch(vchAliasPeg));
@@ -2678,6 +2680,8 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
+	if(sCurrencyCode.empty())
+		sCurrencyCode = offerCopy.sCurrencyCode;
 	getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision);
 
 
