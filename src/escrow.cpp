@@ -439,6 +439,22 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				{
 					return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: escrow already exists");
 				}
+				vector<COffer> myVtxPos;
+				if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
+					if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
+					{
+						COffer &dbOffer = myVtxPos.back();
+						if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
+							return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE trying to create escrow on an expired offer");
+						if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
+							return error("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
+					}
+					else
+						return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
+				}
+				else
+					return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE offer does not exist");	
+
 				break;
 			case OP_ESCROW_RELEASE:
 				if(prevOp != OP_ESCROW_ACTIVATE)
