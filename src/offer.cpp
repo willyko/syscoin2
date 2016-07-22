@@ -1030,8 +1030,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			serializedOffer.vchLinkOffer = theOffer.vchLinkOffer;
 			// btc setting cannot change on update
 			serializedOffer.bOnlyAcceptBTC = theOffer.bOnlyAcceptBTC;
-			// currency cannot change after creation
-			serializedOffer.sCurrencyCode = theOffer.sCurrencyCode;
 			// cannot edit safety level
 			serializedOffer.safetyLevel = theOffer.safetyLevel;
 			// can't edit the payment address of this offer
@@ -2501,8 +2499,8 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		theOffer.sDescription = vchDesc;
 	if(offerCopy.vchGeoLocation != vchGeoLocation)
 		theOffer.vchGeoLocation = vchGeoLocation;
-	if(offerCopy.sCategory != sCurrencyCode)
-		theOffer.sCategory = sCurrencyCode;
+	if(offerCopy.sCurrencyCode != sCurrencyCode)
+		theOffer.sCurrencyCode = sCurrencyCode;
 	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
 	if(wtxCertIn != NULL)
 	{
@@ -2526,14 +2524,14 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 		throw runtime_error("Could not detect alias from provided pub key. Check to make sure you are not trying to sell a transferred certificate.");
 	
 	theOffer.nQty = nQty;
-	if (params.size() >= 9)
+	if (params.size() >= 10)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
 	if(nQty != -1 && (nQty-memPoolQty) < 0)
 		throw runtime_error("not enough remaining quantity to fulfill this offerupdate");
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
-	if(params.size() >= 11 && params[10].get_str().size() > 0)
+	if(params.size() >= 12 && params[11].get_str().size() > 0)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
 
 
@@ -2699,8 +2697,8 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 		theOffer.sDescription = vchDesc;
 	if(offerCopy.vchGeoLocation != vchGeoLocation)
 		theOffer.vchGeoLocation = vchGeoLocation;
-	if(offerCopy.sCategory != sCurrencyCode)
-		theOffer.sCategory = sCurrencyCode;
+	if(offerCopy.sCurrencyCode != sCurrencyCode)
+		theOffer.sCurrencyCode = sCurrencyCode;
 	// update pubkey to new cert if we change the cert we are selling for this offer or remove it
 	if(wtxCertIn != NULL)
 	{
