@@ -753,8 +753,7 @@ void OfferUpdate(const string& node, const string& aliasname, const string& offe
 	UniValue r;
 	string exclusivereselltmp = exclusiveResell? "1": "0";
 	string privatetmp = isPrivate ? "1" : "0";
-	string currencytmp = currency != "NONE"? currency: "";
-	string offerupdatestr = "offerupdate SYS_RATES " + aliasname + " " + offerguid + " " + category + " " + title + " " + qty + " " + price + " " + description + " " + currencytmp + " " + privatetmp + " " + certguid + " " + exclusivereselltmp + " " + geolocation + " " + safesearch;
+	string offerupdatestr = "offerupdate SYS_RATES " + aliasname + " " + offerguid + " " + category + " " + title + " " + qty + " " + price + " " + description + " " + currency + " " + privatetmp + " " + certguid + " " + exclusivereselltmp + " " + geolocation + " " + safesearch;
 	
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, offerupdatestr));

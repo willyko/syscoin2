@@ -2477,7 +2477,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
-	if(sCurrencyCode.empty())
+	if(sCurrencyCode.empty() || sCurrencyCode == vchFromString("NONE"))
 		sCurrencyCode = offerCopy.sCurrencyCode;
 	if(getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision) != "")
 	{
@@ -2677,7 +2677,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	int precision = 2;
 	if(vchAliasPeg.size() == 0)
 		vchAliasPeg = offerCopy.vchAliasPeg;
-	if(sCurrencyCode.empty())
+	if(sCurrencyCode.empty() || sCurrencyCode == vchFromString("NONE"))
 		sCurrencyCode = offerCopy.sCurrencyCode;
 	getCurrencyToSYSFromAlias(vchAliasPeg, sCurrencyCode, nRate, chainActive.Tip()->nHeight, rateList,precision);
 
