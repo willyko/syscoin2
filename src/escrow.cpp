@@ -977,6 +977,8 @@ UniValue escrownew(const UniValue& params, bool fHelp) {
 	if(theOffer.nQty != -1 && theOffer.nQty < (nQty+memPoolQty))
 		throw runtime_error(strprintf("not enough remaining quantity to fulfill this escrow, qty remaining %u, qty desired %u,  qty waiting to be accepted by the network %d", theOffer.nQty, nQty, memPoolQty));
 
+	if(theOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(theOffer.sCategory), "wanted"))
+		throw runtime_error("Cannot purchase a wanted offer");
 
 	vchSellerPubKey = theOffer.vchPubKey;
 	if(!theOffer.vchLinkOffer.empty())
