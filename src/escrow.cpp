@@ -16,6 +16,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 using namespace std;
 extern void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew);
 extern void SendMoneySyscoin(const vector<CRecipient> &vecSend, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew, const CWalletTx* wtxInOffer=NULL, const CWalletTx* wtxInCert=NULL, const CWalletTx* wtxInAlias=NULL, const CWalletTx* wtxInEscrow=NULL, bool syscoinTx=true);
@@ -350,6 +351,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 
     // unserialize escrow UniValue from txn, check for valid
     CEscrow theEscrow;
+	vector<COffer> myVtxPos;
     theEscrow.UnserializeFromTx(tx);
     COffer theOffer;
 	string retError = "";
@@ -439,7 +441,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				{
 					return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: escrow already exists");
 				}
-				vector<COffer> myVtxPos;
+				
 				if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 					if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
 					{
@@ -564,7 +566,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
-					vector<COffer> myVtxPos;
 					if (vvchArgs.size() > 2 && pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 						if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
 						{
