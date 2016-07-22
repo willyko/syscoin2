@@ -62,7 +62,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
         ui->aboutMessage->setTextFormat(Qt::RichText);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         text = version + "\n" + licenseInfo;
-        ui->aboutMessage->setText(version + "<br><br>" + licenseInfoHTML);
+        ui->aboutMessage->setText(version + "<br>" + sysversion + "<br><br>" + licenseInfoHTML);
         ui->aboutMessage->setWordWrap(true);
         ui->helpMessage->setVisible(false);
 		// SYSCOIN
@@ -74,6 +74,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
             "  syscoin-qt [" + tr("command-line options") + "]                     " + "\n";
         QTextCursor cursor(ui->helpMessage->document());
         cursor.insertText(version);
+		 cursor.insertBlock();
 		cursor.insertText(sysversion);
         cursor.insertBlock();
         cursor.insertText(header);
