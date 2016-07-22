@@ -646,7 +646,7 @@ bool EditOfferDialog::saveCurrentRow()
 			params.push_back(ui->qtyEdit->text().toStdString());
 			params.push_back(ui->priceEdit->text().toStdString());
 			params.push_back(ui->descriptionEdit->toPlainText().toStdString());
-			params.push_back(ui->currencyEdit->toPlainText().toStdString());
+			params.push_back(ui->currencyEdit->currentText().toStdString());
 			params.push_back(ui->privateEdit->currentText() == QString("Yes")? "1": "0");
 			if(ui->certEdit->currentIndex() > 0)
 			{
