@@ -477,7 +477,7 @@ void AcceptandPayOfferListPage::RefreshImage()
 {
 	QIcon ButtonIcon(m_placeholderImage);
 	ui->imageButton->setIcon(ButtonIcon);
-	
+	m_url.clear();
 	if(m_imageList.size() > 0 && m_imageList.at(0) != QString(""))
 	{
 		QString parsedURL = m_imageList.at(0).simplified();
