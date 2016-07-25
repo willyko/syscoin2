@@ -2604,10 +2604,21 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	if(!vchAlias.empty())
 	{
 		CSyscoinAddress aliasAddress = CSyscoinAddress(stringFromVch(vchAlias));
+		if (!aliasAddress.IsValid())
+			throw runtime_error("Invalid syscoin address");
+		if (!aliasAddress.isAlias)
+			throw runtime_error("Offer must be owned by a valid alias");
 
 		CTransaction aliastx;
-		GetTxOfAlias(vchAlias, alias, aliastx);
+		if (!GetTxOfAlias(vchAlias, alias, aliastx))
+			throw runtime_error("could not find an alias with this name");
+
+		if(!IsSyscoinTxMine(aliastx, "alias")) {
+			throw runtime_error("This alias is not yours.");
+		}
 		wtxAliasIn = pwalletMain->GetWalletTx(aliastx.GetHash());
+		if (wtxAliasIn == NULL)
+			throw runtime_error("this alias is not in your wallet");
 	}
 
 	// this is a syscoind txn
