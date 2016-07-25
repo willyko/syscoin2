@@ -774,7 +774,8 @@ void OfferUpdate(const string& node, const string& aliasname, const string& offe
 	BOOST_CHECK(find_value(r.get_obj(), "category").get_str() == category);
 	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(find_value(r.get_obj(), "description").get_str() == description);
-	BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
+	if(currency != "NONE")
+		BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
 	BOOST_CHECK(find_value(r.get_obj(), "price").get_str() == price);
 	BOOST_CHECK(find_value(r.get_obj(), "geolocation").get_str() == geolocation);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");
@@ -789,7 +790,8 @@ void OfferUpdate(const string& node, const string& aliasname, const string& offe
 	BOOST_CHECK(find_value(r.get_obj(), "category").get_str() == category);
 	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(find_value(r.get_obj(), "description").get_str() == description);
-	BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
+	if(currency != "NONE")
+		BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
 	BOOST_CHECK(find_value(r.get_obj(), "price").get_str() == price);
 	BOOST_CHECK(find_value(r.get_obj(), "geolocation").get_str() == geolocation);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "false");
@@ -804,7 +806,8 @@ void OfferUpdate(const string& node, const string& aliasname, const string& offe
 	BOOST_CHECK(find_value(r.get_obj(), "category").get_str() == category);
 	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(find_value(r.get_obj(), "description").get_str() == description);
-	BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
+	if(currency != "NONE")
+		BOOST_CHECK(find_value(r.get_obj(), "currency").get_str() == currency);
 	BOOST_CHECK(find_value(r.get_obj(), "price").get_str() == price);
 	BOOST_CHECK(find_value(r.get_obj(), "geolocation").get_str() == geolocation);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "false");
