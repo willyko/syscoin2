@@ -2610,7 +2610,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 			throw runtime_error("Offer must be owned by a valid alias");
 
 		CTransaction aliastx;
-		if (!GetTxOfAlias(vchAlias, alias, aliastx))
+		if (!GetTxOfAlias(vchAlias, alias, aliastx, true))
 			throw runtime_error("could not find an alias with this name");
 
 		if(!IsSyscoinTxMine(aliastx, "alias")) {
@@ -2631,7 +2631,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	// look for a transaction with this key
 	CTransaction tx, linktx;
 	COffer theOffer, linkOffer;
-	GetTxOfOffer( vchOffer, theOffer, tx);
+	GetTxOfOffer( vchOffer, theOffer, tx, true);
 		
 
 	CPubKey currentKey(theOffer.vchPubKey);
@@ -2657,7 +2657,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxCertIn = NULL;
 
 	// make sure this cert is still valid
-	if (GetTxOfCert( vchCert, theCert, txCert))
+	if (GetTxOfCert( vchCert, theCert, txCert, true))
 	{
 	
 		vector<vector<unsigned char> > vvch;
