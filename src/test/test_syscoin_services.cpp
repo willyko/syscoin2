@@ -961,7 +961,7 @@ void EscrowRelease(const string& node, const string& guid)
 	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
 
 }
-void EscrowClaimRefund(const string& node, const string& guid)
+void EscrowRefund(const string& node, const string& guid)
 {
 	UniValue r;
 
@@ -972,15 +972,15 @@ void EscrowClaimRefund(const string& node, const string& guid)
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
 	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
 
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrefund " + guid));
 	GenerateBlocks(10, node);
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
 	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
-	// claim refund adds qty
+	// claim doesn't touch qty
 	BOOST_CHECK_EQUAL(nQtyOfferAfter, nQtyOfferBefore+nQtyEscrow);
 }
-void EscrowRefund(const string& node, const string& guid)
+void EscrowClaimRefund(const string& node, const string& guid)
 {
 	UniValue r;
 
@@ -995,7 +995,7 @@ void EscrowRefund(const string& node, const string& guid)
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
 	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
-	// refund doesn't change qty
+	// refund adds qty
 	BOOST_CHECK_EQUAL(nQtyOfferAfter, nQtyOfferBefore);
 }
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid, bool nocheck)
