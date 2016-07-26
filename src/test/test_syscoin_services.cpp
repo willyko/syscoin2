@@ -905,17 +905,23 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 		otherNode2 = "node2";
 	}
 	UniValue r;
+	int nQty = atoi(qty.c_str());
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
+	int nQtyBefore = AmountFromValue(find_value(r.get_obj(), "quantity"));
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrownew " + buyeralias + " " + offerguid + " " + qty + " " + message + " " + arbiteralias));
 	const UniValue &arr = r.get_array();
 	string guid = arr[1].get_str();
 	GenerateBlocks(10, node);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
 	CAmount offerprice = AmountFromValue(find_value(r.get_obj(), "sysprice"));
-	int nQty = atoi(qty.c_str());
+	int nQtyAfter = AmountFromValue(find_value(r.get_obj(), "quantity"));
+	// escrow should deduct qty
+	BOOST_CHECK_EQUAL(nQtyAfter, nQtyBefore-nQty);
 	CAmount nTotal = offerprice*nQty;
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
+	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
@@ -923,12 +929,14 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
+	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
+	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == qty);
 	BOOST_CHECK(AmountFromValue(find_value(r.get_obj(), "systotal")) == nTotal);
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
@@ -936,13 +944,41 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 }
 void EscrowRelease(const string& node, const string& guid)
 {
+	UniValue r;
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	string offer = find_value(r.get_obj(), "offer").get_str();
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str());
+
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str());
+	// release doesn't alter qty
+	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
+
 }
 void EscrowRefund(const string& node, const string& guid)
 {
+	UniValue r;
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	int nQtyEscrow = atoi(find_value(r.get_obj(), "quantity").get_str());
+	string offer = find_value(r.get_obj(), "offer").get_str();
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str());
+
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
 	GenerateBlocks(10, node);
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str());
+	// refund adds qty
+	BOOST_CHECK_EQUAL(nQtyOfferAfter, nQtyOfferBefore+nQtyEscrow);
 }
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid, bool nocheck)
 {
