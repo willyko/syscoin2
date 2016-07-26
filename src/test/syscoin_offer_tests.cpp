@@ -295,6 +295,7 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	GenerateBlocks(5, "node3");
 
 	AliasNew("node1", "selleraliascurrency", "changeddata1");
+	AliasNew("node2", "buyeraliascurrency", "changeddata2");
 
 	// generate a good offer
 	string offerguid = OfferNew("node1", "selleraliascurrency", "category", "title", "100", "0.05", "description", "USD");
