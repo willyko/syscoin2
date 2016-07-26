@@ -338,6 +338,8 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	// try to update currency and accept in same block, ensure payment uses old currency not new
 	BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliascurrency " + offerguid + " category title 90 0.2 desc EUR"));
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept buyeraliascurrency " + offerguid + " 10 message"));
+	const UniValue &arr = r.get_array();
+	acceptguid = arr[1].get_str();
 	GenerateBlocks(5);
 	GenerateBlocks(5, "node2");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
@@ -353,6 +355,9 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	// linked offer with root and linked offer changing currencies
 
 	// escrow offer with currency updated before release
+
+	// directbtc
+
 
 }
 BOOST_AUTO_TEST_CASE (generate_offeraccept)
