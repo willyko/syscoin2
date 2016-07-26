@@ -865,7 +865,7 @@ const string OfferAccept(const string& ownernode, const string& node, const stri
 	UniValue r;
 	
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
-	int nCurrentQty = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nCurrentQty = find_value(r.get_obj(), "quantity").get_int();
 	int nQtyToAccept = atoi(qty.c_str());
 	string sTargetQty = boost::to_string(nCurrentQty - nQtyToAccept);
 
@@ -950,13 +950,13 @@ void EscrowRelease(const string& node, const string& guid)
 	string offer = find_value(r.get_obj(), "offer").get_str();
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
-	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nQtyOfferBefore = find_value(r.get_obj(), "quantity").get_int();
 
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
-	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nQtyOfferAfter = find_value(r.get_obj(), "quantity").get_int();
 	// release doesn't alter qty
 	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
 
@@ -966,17 +966,17 @@ void EscrowRefund(const string& node, const string& guid)
 	UniValue r;
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
-	int nQtyEscrow = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nQtyEscrow = find_value(r.get_obj(), "quantity").get_int();
 	string offer = find_value(r.get_obj(), "offer").get_str();
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
-	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nQtyOfferBefore = find_value(r.get_obj(), "quantity").get_int();
 
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
 	GenerateBlocks(10, node);
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
-	int nQtyOfferAfter = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
+	int nQtyOfferAfter = find_value(r.get_obj(), "quantity").get_int();
 	// refund adds qty
 	BOOST_CHECK_EQUAL(nQtyOfferAfter, nQtyOfferBefore+nQtyEscrow);
 }
@@ -1075,8 +1075,20 @@ const UniValue FindOfferLinkedAccept(const string& node, const string& offerguid
 void EscrowClaimRelease(const string& node, const string& guid)
 {
 	UniValue r;
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	string offer = find_value(r.get_obj(), "offer").get_str();
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferBefore = find_value(r.get_obj(), "quantity").get_int();
+
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
 	GenerateBlocks(10, node);
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferAfter = find_value(r.get_obj(), "quantity").get_int();
+	// release doesn't alter qty
+	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
 	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
@@ -1109,10 +1121,21 @@ float GetPriceOfOffer(const float nPrice, const int nDiscountPct, const int nCom
 void EscrowClaimReleaseLink(const string& node, const string& guid, const string& resellernode)
 {
 	UniValue r;
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
+	string offer = find_value(r.get_obj(), "offer").get_str();
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferBefore = find_value(r.get_obj(), "quantity").get_int();
+
 	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrelease " + guid));
+
+
 	GenerateBlocks(5, "node1");
 	GenerateBlocks(5, "node2");
 	GenerateBlocks(5, "node3");
+
+
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "escrowinfo " + guid));
 	const string &acceptguid = find_value(r.get_obj(), "offeracceptlink").get_str();
 	const string &offerguid = find_value(r.get_obj(), "offer").get_str();
@@ -1145,6 +1168,12 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 	GenerateBlocks(5, "node1");
 	GenerateBlocks(5, "node2");
 	GenerateBlocks(5, "node3");
+
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
+	int nQtyOfferAfter = find_value(r.get_obj(), "quantity").get_int();
+	// claim release doesn't alter qty
+	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
+
 	const UniValue &acceptSellerValue = FindOfferLinkedAccept(node, rootofferguid, acceptguid);
 	BOOST_CHECK(find_value(acceptSellerValue, "escrowlink").get_str().empty());
 	nTotal = AmountFromValue(find_value(acceptSellerValue, "systotal"));
