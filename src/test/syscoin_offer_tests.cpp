@@ -313,7 +313,11 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
 
-	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "1", "descriptionnew", "SYS");
+	AliasUpdate("node1", "selleraliascurrency", "changeddata2", "privdata2");
+	AliasUpdate("node2", "buyeraliascurrency", "changeddata2", "privdata2");
+
+
+	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "1.00", "descriptionnew", "SYS");
 	// accept and confirm payment is accurate with sys
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "3", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
