@@ -285,6 +285,58 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate)
 	#endif
 }
 
+BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
+{
+	printf("Running generate_offerupdate_editcurrency...\n");
+	UniValue r;
+	
+	GenerateBlocks(5);
+	GenerateBlocks(5, "node2");
+	GenerateBlocks(5, "node3");
+
+	AliasNew("node1", "selleraliascurrency", "changeddata1");
+
+	// generate a good offer
+	string offerguid = OfferNew("node1", "selleraliascurrency", "category", "title", "100", "0.05", "description", "USD");
+	// accept and confirm payment is accurate with usd
+	string acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "2", "message");
+	UniValue acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
+	CAmount nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+	// 2690.1 SYS/USD
+	BOOST_CHECK_EQUAL(nTotal, 2*0.05*2690.1);
+
+	// perform a valid update
+	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.15", "descriptionnew", "CAD");
+	// accept and confirm payment is accurate with cad
+	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "3", "message");
+	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
+	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+
+	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "1", "descriptionnew", "SYS");
+	// accept and confirm payment is accurate with sys
+	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "3", "message");
+	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
+	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+
+	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.000001", "descriptionnew", "BTC");
+	// accept and confirm payment is accurate with btc
+	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "4", "message");
+	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
+	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+
+	// try to update currency and accept in same block, ensure payment uses old currency not new
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliascurrency " + offerguid + " category title 90 0.15 desc EUR"));
+	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept buyeraliascurrency " + offerguid + " 10 message"));
+	GenerateBlocks(5);
+	GenerateBlocks(5, "node2");
+	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
+	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+
+	// linked offer with root and linked offer changing currencies
+
+	// escrow offer with currency updated before release
+
+}
 BOOST_AUTO_TEST_CASE (generate_offeraccept)
 {
 	printf("Running generate_offeraccept...\n");
