@@ -3863,7 +3863,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		if(!vchOfferAcceptLink.empty())
 			linkAccept = stringFromVch(vchOfferAcceptLink);
 		oOfferAccept.push_back(Pair("linkofferaccept", linkAccept));
-		if(!FindOfferAcceptPayment(txA, ca.nPrice))
+		if(!FindOfferAcceptPayment(txA, ca.nPrice) && ca.txBTCId.IsNull())
 			continue;
 		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%%", 100.0f - 100.0f*(ca.nPrice/theOffer.GetPrice()))));			
 		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(ca.vchEscrow)));
@@ -4134,7 +4134,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				if(!vchOfferAcceptLink.empty())
 					linkAccept = stringFromVch(vchOfferAcceptLink);
 				oOfferAccept.push_back(Pair("linkofferaccept", linkAccept));
-				if(!FindOfferAcceptPayment(acceptTx, theOfferAccept.nPrice))
+				if(!FindOfferAcceptPayment(acceptTx, theOfferAccept.nPrice) && theOfferAccept.txBTCId.IsNull())
 					continue;
 				oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%%", 100.0f - 100.0f*(theOfferAccept.nPrice/theOffer.GetPrice()))));	
 				int precision = 2;
