@@ -3865,7 +3865,7 @@ UniValue offerinfo(const UniValue& params, bool fHelp) {
 		oOfferAccept.push_back(Pair("linkofferaccept", linkAccept));
 		if(!FindOfferAcceptPayment(txA, ca.nPrice))
 			continue;
-		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%", 100.0f - (ca.nPrice/theOffer.GetPrice()))));			
+		oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%%", 100.0f - (ca.nPrice/theOffer.GetPrice()))));			
 		oOfferAccept.push_back(Pair("escrowlink", stringFromVch(ca.vchEscrow)));
 		int precision = 2;
 		CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(acceptOffer.vchAliasPeg, acceptOffer.sCurrencyCode, ca.nPrice, ca.nAcceptHeight-1, precision);
@@ -4136,7 +4136,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				oOfferAccept.push_back(Pair("linkofferaccept", linkAccept));
 				if(!FindOfferAcceptPayment(acceptTx, theOfferAccept.nPrice))
 					continue;
-				oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%", 100.0f - (theOfferAccept.nPrice/theOffer.GetPrice()))));	
+				oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%%", 100.0f - (theOfferAccept.nPrice/theOffer.GetPrice()))));	
 				int precision = 2;
 				CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.vchAliasPeg, theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nAcceptHeight, precision);
 				oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
