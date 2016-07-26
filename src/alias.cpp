@@ -781,7 +781,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	if (tx.IsCoinBase())
 		return true;
 	if (fDebug)
-		LogPrintf("*** %d %d %s %s\n", nHeight, chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(), fJustCheck ? "JUSTCHECK" : "BLOCK");
+		LogPrintf("*** ALIAS %d %d %s %s\n", nHeight, chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(), fJustCheck ? "JUSTCHECK" : "BLOCK");
 	const COutPoint *prevOutput = NULL;
 	CCoins prevCoins;
 	int prevOp = 0;

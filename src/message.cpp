@@ -245,7 +245,8 @@ bool CheckMessageInputs(const CTransaction &tx, int op, int nOut, const vector<v
 	
 	if (tx.IsCoinBase())
 		return true;
-	LogPrintf("*** %d %d %s %s\n", nHeight,
+	if (fDebug)
+		LogPrintf("*** MESSAGE %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
     const COutPoint *prevOutput = NULL;

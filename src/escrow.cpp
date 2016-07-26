@@ -340,7 +340,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			}
 		}
 	}
-		LogPrintf("*** %d %d %s %s\n", nHeight,
+	if (fDebug)
+		LogPrintf("*** ESCROW %d %d %s %s\n", nHeight,
 			chainActive.Tip()->nHeight, tx.GetHash().ToString().c_str(),
 			fJustCheck ? "JUSTCHECK" : "BLOCK");
     // Make sure escrow outputs are not spent by a regular transaction, or the escrow would be lost
@@ -710,7 +711,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 						unsigned int nQty = dbOffer.nQty - theEscrow.nQty;
 						// if this is a linked offer we must update the linked offer qty aswell
 						if (pofferdb->ExistsOffer(dbOffer.vchLinkOffer)) {
-							if (pofferdb->ReadOffer(dbOffer.vchLinkOffer, myLinkVtxPos))
+							if (pofferdb->ReadOffer(dbOffer.vchLinkOffer, myLinkVtxPos) && !myLinkVtxPos.empty())
 							{
 								COffer &myLinkOffer = myLinkVtxPos.back();
 								myLinkOffer.nQty -= theEscrow.nQty;
