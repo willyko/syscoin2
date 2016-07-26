@@ -972,7 +972,7 @@ void EscrowRefund(const string& node, const string& guid)
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
 	int nQtyOfferBefore = atoi(find_value(r.get_obj(), "quantity").get_str().c_str());
 
-	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowclaimrefund " + guid));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "escrowrefund " + guid));
 	GenerateBlocks(10, node);
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offer));
