@@ -567,7 +567,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
-					if (vvchArgs.size() > 2 && pofferdb->ExistsOffer(theEscrow.vchOffer)) {
+					if (vvchArgs.size() > 1 && pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 						if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
 						{
 							COffer &dbOffer = myVtxPos.back();
@@ -696,7 +696,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 		else
 		{
 			vector<COffer> myVtxPos;
-			if (vvchArgs.size() > 2 && pofferdb->ExistsOffer(theEscrow.vchOffer)) {
+			if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 				if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
 				{
 					COffer &dbOffer = myVtxPos.back();
