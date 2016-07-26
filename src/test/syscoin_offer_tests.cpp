@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
 
-	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.000001", "descriptionnew", "BTC");
+	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.00000001", "descriptionnew", "BTC");
 	// accept and confirm payment is accurate with btc
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "4", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
