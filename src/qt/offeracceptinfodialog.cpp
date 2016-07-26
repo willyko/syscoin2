@@ -174,6 +174,7 @@ bool OfferAcceptInfoDialog::lookup()
 			}
 			const UniValue &offerAccepts = offerAcceptsValue.get_array();
 			COfferAccept myAccept;
+			QString currencyStr;
 			QDateTime timestamp;
 		    for (unsigned int idx = 0; idx < offerAccepts.size(); idx++) {
 			    const UniValue& accept = offerAccepts[idx];				
@@ -190,7 +191,7 @@ bool OfferAcceptInfoDialog::lookup()
 				ui->timeEdit->setText(timestamp.toString());
 
 				ui->quantityEdit->setText(QString::fromStdString(find_value(acceptObj, "quantity").get_str()));
-				QString currencyStr = QString::fromStdString(find_value(acceptObj, "currency").get_str());
+				currencyStr = QString::fromStdString(find_value(acceptObj, "currency").get_str());
 				if(currencyStr == "BTC")
 				{
 					QString btctxidStr = QString::fromStdString(find_value(acceptObj, "btctxid").get_str());
@@ -214,6 +215,7 @@ bool OfferAcceptInfoDialog::lookup()
 				const UniValue &sellerFeedback = find_value(acceptObj.get_obj(), "seller_feedback").get_array();
 				SetFeedbackUI(buyerFeedback, tr("Buyer"), buyerStr, sellerStr);
 				SetFeedbackUI(sellerFeedback, tr("Seller"), buyerStr, sellerStr);
+				break;
 			}
 
 			ui->titleEdit->setText(QString::fromStdString(find_value(result.get_obj(), "title").get_str()));
