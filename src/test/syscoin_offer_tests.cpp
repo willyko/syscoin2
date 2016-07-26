@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	UniValue acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	CAmount nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
 	// 2690.1 SYS/USD
-	BOOST_CHECK_EQUAL(nTotal, 2*0.05*2690.1);
+	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(2*0.05*2690.1));
 
 	// perform a valid update
 	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.15", "descriptionnew", "CAD");
