@@ -4109,8 +4109,10 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 				oOfferAccept.push_back(Pair("currency", stringFromVch(theOffer.sCurrencyCode)));
 				vector<unsigned char> vchOfferAcceptLink;
 				bool foundOffer = false;
+				for (unsigned int j = 0; j < acceptTx.vin.size(); j++) {
 					vector<vector<unsigned char> > vvchIn;
 					int opIn;
+					const COutPoint *prevOutput = &acceptTx.vin[j].prevout;
 					if(!GetPreviousInput(prevOutput, opIn, vvchIn))
 						continue;
 					if(foundOffer)
@@ -4127,10 +4129,14 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 					}
 				}
 				if(!theOfferAccept.vchEscrow.empty())
+					continue;				
 				string linkAccept = "";
 				if(!vchOfferAcceptLink.empty())
 					linkAccept = stringFromVch(vchOfferAcceptLink);
 				oOfferAccept.push_back(Pair("linkofferaccept", linkAccept));
+				if(!FindOfferAcceptPayment(acceptTx, ca.nPrice))
+					continue;
+				oOfferAccept.push_back(Pair("offer_discount_percentage", strprintf("%.2f%%", 100.0f - (ca.nPrice/theOffer.GetPrice())));	
 				int precision = 2;
 				CAmount nPricePerUnit = convertCurrencyCodeToSyscoin(theOffer.vchAliasPeg, theOffer.sCurrencyCode, theOfferAccept.nPrice, theOfferAccept.nAcceptHeight, precision);
 				oOfferAccept.push_back(Pair("systotal", ValueFromAmount(nPricePerUnit * theOfferAccept.nQty)));
