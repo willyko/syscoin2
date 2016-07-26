@@ -312,6 +312,8 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "3", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+	// 2698.0 SYS/CAD
+	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(3*0.15*2698.0));
 
 	AliasUpdate("node1", "selleraliascurrency", "changeddata2", "privdata2");
 	AliasUpdate("node2", "buyeraliascurrency", "changeddata2", "privdata2");
@@ -322,20 +324,26 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "3", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+	// 1 SYS/SYS
+	BOOST_CHECK_EQUAL((int)(nTotal/COIN), 3);
 
 	OfferUpdate("node1", "selleraliascurrency", offerguid, "category", "titlenew", "90", "0.00000001", "descriptionnew", "BTC");
 	// accept and confirm payment is accurate with btc
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "4", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+	// 100000.0 SYS/BTC
+	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(4*0.00000001*100000.0));
 
 	// try to update currency and accept in same block, ensure payment uses old currency not new
-	BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliascurrency " + offerguid + " category title 90 0.15 desc EUR"));
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliascurrency " + offerguid + " category title 90 0.2 desc EUR"));
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept buyeraliascurrency " + offerguid + " 10 message"));
 	GenerateBlocks(5);
 	GenerateBlocks(5, "node2");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
+	// 2695.2 SYS/EUR
+	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(10*0.2*2695.2));
 
 	// linked offer with root and linked offer changing currencies
 
