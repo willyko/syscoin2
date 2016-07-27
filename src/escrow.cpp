@@ -567,14 +567,14 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
-					if (vvchArgs.size() > 1 && pofferdb->ExistsOffer(theEscrow.vchOffer)) {
+					if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 						if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
 						{
 							COffer &dbOffer = myVtxPos.back();
 							if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 							{
 								if(fDebug)
-									LogPrintf("CheckEscrowInputs() : OP_ESCROW_ACTIVATE trying to refund an expired offer");	
+									LogPrintf("CheckEscrowInputs() : OP_ESCROW_REFUND trying to refund an expired offer");	
 							}
 							else if(dbOffer.nQty != -1)
 							{
@@ -601,9 +601,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 								dbOffer.PutToOfferList(myVtxPos);
 								if (!pofferdb->WriteOffer(theEscrow.vchOffer, myVtxPos))
 									return error( "CheckEscrowInputs() : failed to write to offer to DB");
-									}
-								}
-
+							}
+						}
 					}
 				}
 				if(op == OP_ESCROW_COMPLETE)
