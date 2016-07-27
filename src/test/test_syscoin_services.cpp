@@ -1014,7 +1014,7 @@ void OfferAddWhitelist(const string& node,const string& offerguid, const string&
 		{
 			const string& discountpct = discount + "%";
 			found = true;
-			BOOST_CHECK_EQUAL(find_value(r.get_obj(), "offer_discount_percentage").get_str(), discountpct);
+			BOOST_CHECK_EQUAL(find_value(arrayValue[i].get_obj(), "offer_discount_percentage").get_str(), discountpct);
 		}
 
 	}
