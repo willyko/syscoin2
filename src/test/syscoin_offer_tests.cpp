@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	// add to whitelist
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "4");
 	OfferClearWhitelist("node1", offerguid);
-	BOOST_CHECK_THROW(CallRPC("node1", "offeraddwhitelist " + offerguid), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node1", "offerclearwhitelist " + offerguid), runtime_error);
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "6");
 
