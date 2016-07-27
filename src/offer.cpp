@@ -2173,6 +2173,17 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	// create OFFERUPDATE txn keys
+	bool found = false;
+	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
+		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
+		// make sure this alias already exist
+		if (entry.aliasLinkVchRand == vchAlias)
+		{
+			found = true;
+		}
+	}
+	if(!found)
+		throw runtime_error("this alias entry was not found on affiliate list");
 
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
