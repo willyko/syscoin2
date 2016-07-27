@@ -124,7 +124,62 @@ BOOST_AUTO_TEST_CASE (generate_certoffernew)
 	#endif
 
 }
+BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
+{
+	printf("Running generate_offerwhitelists...\n");
+	UniValue r;
 
+	GenerateBlocks(5);
+	GenerateBlocks(5, "node2");
+	GenerateBlocks(5, "node3");
+
+	AliasNew("node1", "sellerwhitelistalias", "changeddata1");
+	AliasNew("node2", "selleraddwhitelistalias", "changeddata1");
+	AliasNew("node2", "selleraddwhitelistalias1", "changeddata1");
+
+	// generate a good offer
+	string offerguid = OfferNew("node1", "sellerwhitelistalias", "category", "title", "100", "10.00", "description", "USD", "nocert", false);
+	// add to whitelist
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "5");
+	BOOST_CHECK_THROW(CallRPC(node, "offeraddwhitelist " + offerguid + " selleraddwhitelistalias 5"), runtime_error);
+	// add to whitelist
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "6");
+	// remove from whitelist
+	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias");
+	BOOST_CHECK_THROW(CallRPC(node, "offerremovewhitelist " + offerguid + " selleraddwhitelistalias"), runtime_error);
+
+	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias1", "changeddata2", "privdata2");
+
+	// add to whitelist
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "4");
+	OfferClearWhitelist("node1", offerguid);
+	BOOST_CHECK_THROW(CallRPC(node, "offeraddwhitelist " + offerguid), runtime_error);
+
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "6");
+
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
+
+	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias1", "changeddata2", "privdata2");
+
+	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias";
+
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "1");
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1");
+
+	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
+	AliasUpdate("node2", "selleraddwhitelistalias1", "changeddata2", "privdata2");
+
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
+	OfferClearWhitelist("node1", offerguid);
+
+
+}
 BOOST_AUTO_TEST_CASE (generate_offernew_linkedoffer)
 {
 	printf("Running generate_offernew_linkedoffer...\n");

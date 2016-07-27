@@ -38,6 +38,10 @@ const UniValue FindOfferAcceptFeedback(const string& node, const string& offergu
 const string OfferNew(const string& node, const string& aliasname, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency, const string& certguid="nocert", const bool exclusiveResell=true, const string& acceptbtconly="0", const string& geolocation="location", const string& safesearch="Yes");
 void OfferUpdate(const string& node, const string& aliasname, const string& offerguid, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency="NONE", const bool isPrivate=false, const string& certguid="nocert", const bool exclusiveResell=true, const string& geolocation="newlocation", string safesearch="Yes");
 bool OfferFilter(const string& node, const string& regex, const string& safesearch);
+void OfferAddWhitelist(const string& node,const string& offer, const string& aliasname, const string& discount);
+void OfferRemoveWhitelist(const string& node, const string& offer, const string& aliasname);
+void OfferClearWhitelist(const string& node, const string& offer);
+
 const string OfferLink(const string& node, const string& alias, const string& guid, const string& commission, const string& newdescription);
 const string OfferAccept(const string& ownernode, const string& node, const string& aliasname, const string& offerguid, const string& qty, const string& message);
 const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias, const string& selleralias);

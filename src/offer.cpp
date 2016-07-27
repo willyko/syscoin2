@@ -2243,6 +2243,9 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read offer from DB");
 
 	theOffer = vtxPos.back();
+	if(theOffer.linkWhitelist.IsNull())
+		throw runtime_error("whitelist is already empty");
+
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	// create OFFERUPDATE txn keys

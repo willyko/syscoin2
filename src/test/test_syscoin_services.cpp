@@ -998,10 +998,55 @@ void EscrowClaimRefund(const string& node, const string& guid)
 	// claim doesn't touch qty
 	BOOST_CHECK_EQUAL(nQtyOfferAfter, nQtyOfferBefore);
 }
+void OfferAddWhitelist(const string& node,const string& offerguid, const string& aliasname, const string& discount)
+{
+	bool found = false;
+	UniValue r;
+	BOOST_CHECK_NO_THROW(CallRPC(node, "offeraddwhitelist " + offer + " " + aliasname + " " + discount));
+	GenerateBlocks(10, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	const UniValue &arrayValue = r.get_array();
+	for(int i=0;i<arrayValue.size();i++)
+	{
+		const string &aliasguid = find_value(arrayValue[i].get_obj(), "alias").get_str();
+		
+		if(aliasguid == aliasname)
+		{
+			const string& discountpct = discount + "%";
+			found = true;
+			BOOST_CHECK_EQUAL(find_value(r.get_obj(), "offer_discount_percentage").get_str(), discountpct);
+		}
+
+	}
+	BOOST_CHECK(found);
+}
+void OfferRemoveWhitelist(const string& node, const string& offer, const string& aliasname)
+{
+	UniValue r;
+	BOOST_CHECK_NO_THROW(CallRPC(node, "offerremovewhitelist " + offer + " " + aliasname));
+	GenerateBlocks(10, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	const UniValue &arrayValue = r.get_array();
+	for(int i=0;i<arrayValue.size();i++)
+	{
+		const string &aliasguid = find_value(arrayValue[i].get_obj(), "alias").get_str();
+		BOOST_CHECK(aliasguid != aliasname);
+	}
+}
+void OfferClearWhitelist(const string& node, const string& offer)
+{
+	UniValue r;
+	BOOST_CHECK_NO_THROW(CallRPC(node, "offerclearwhitelist " + offer));
+	GenerateBlocks(10, node);
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	const UniValue &arrayValue = r.get_array();
+	BOOST_CHECK(arrayValue.empty());
+
+}
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid, bool nocheck)
 {
 	UniValue r, ret;
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
+	BOOS_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));
 	const UniValue &arrayValue = find_value(r.get_obj(), "accepts").get_array();
 	const string &offervalueguid = find_value(r.get_obj(), "offer").get_str();
 	for(int i=0;i<arrayValue.size();i++)
