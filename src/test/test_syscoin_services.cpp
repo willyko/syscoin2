@@ -1004,7 +1004,7 @@ void OfferAddWhitelist(const string& node,const string& offerguid, const string&
 	UniValue r;
 	BOOST_CHECK_NO_THROW(CallRPC(node, "offeraddwhitelist " + offer + " " + aliasname + " " + discount));
 	GenerateBlocks(10, node);
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offer));
 	const UniValue &arrayValue = r.get_array();
 	for(int i=0;i<arrayValue.size();i++)
 	{
@@ -1025,7 +1025,7 @@ void OfferRemoveWhitelist(const string& node, const string& offer, const string&
 	UniValue r;
 	BOOST_CHECK_NO_THROW(CallRPC(node, "offerremovewhitelist " + offer + " " + aliasname));
 	GenerateBlocks(10, node);
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offer));
 	const UniValue &arrayValue = r.get_array();
 	for(int i=0;i<arrayValue.size();i++)
 	{
@@ -1038,7 +1038,7 @@ void OfferClearWhitelist(const string& node, const string& offer)
 	UniValue r;
 	BOOST_CHECK_NO_THROW(CallRPC(node, "offerclearwhitelist " + offer));
 	GenerateBlocks(10, node);
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offer));
 	const UniValue &arrayValue = r.get_array();
 	BOOST_CHECK(arrayValue.empty());
 
