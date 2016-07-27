@@ -873,15 +873,15 @@ const string OfferAccept(const string& ownernode, const string& node, const stri
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, offeracceptstr));
 	const UniValue &arr = r.get_array();
-	string guid = arr[1].get_str();
+	string acceptguid = arr[1].get_str();
 
 	GenerateBlocks(10, node);
-
-	BOOST_CHECK_NO_THROW(r = CallRPC(ownernode, "offerinfo " + offerguid));
+	const UniValue &acceptValue = FindOfferAccept(node, offerguid, acceptguid);
 	// if this accept is part of an escrow then we don't change qty
 	string escrowlink = find_value(r.get_obj(), "escrowlink").get_str();
 	if(!escrowlink.empty())
 		sTargetQty = boost::to_string(nCurrentQty);
+	BOOST_CHECK_NO_THROW(r = CallRPC(ownernode, "offerinfo " + offerguid));
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
 	BOOST_CHECK_EQUAL(find_value(r.get_obj(), "quantity").get_str(),sTargetQty);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");
@@ -890,8 +890,7 @@ const string OfferAccept(const string& ownernode, const string& node, const stri
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
 	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == sTargetQty);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "false");
-	FindOfferAccept(ownernode, offerguid, guid);
-	return guid;
+	return acceptguid;
 }
 
 const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias, const string& selleralias)
