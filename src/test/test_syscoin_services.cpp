@@ -878,7 +878,7 @@ const string OfferAccept(const string& ownernode, const string& node, const stri
 	GenerateBlocks(10, node);
 	const UniValue &acceptValue = FindOfferAccept(node, offerguid, acceptguid);
 	// if this accept is part of an escrow then we don't change qty
-	string escrowlink = find_value(r.get_obj(), "escrowlink").get_str();
+	string escrowlink = find_value(acceptValue.get_obj(), "escrowlink").get_str();
 	if(!escrowlink.empty())
 		sTargetQty = boost::to_string(nCurrentQty);
 	BOOST_CHECK_NO_THROW(r = CallRPC(ownernode, "offerinfo " + offerguid));
