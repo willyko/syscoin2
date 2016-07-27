@@ -41,7 +41,7 @@ ManageEscrowDialog::ManageEscrowDialog(WalletModel* model, const QString &escrow
 		ui->releaseButton->setEnabled(false);
 		ui->refundButton->setEnabled(false);
 	}
-	else if(status == "in-escrow")
+	else if(status == "in escrow")
 	{
 		if(escrowType == Buyer)
 		{

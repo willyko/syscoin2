@@ -879,7 +879,7 @@ const string OfferAccept(const string& ownernode, const string& node, const stri
 
 	BOOST_CHECK_NO_THROW(r = CallRPC(ownernode, "offerinfo " + offerguid));
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);
-	BOOST_CHECK(find_value(r.get_obj(), "quantity").get_str() == sTargetQty);
+	BOOST_CHECK_EQUAL(find_value(r.get_obj(), "quantity").get_str(),sTargetQty);
 	BOOST_CHECK(find_value(r.get_obj(), "ismine").get_str() == "true");
 	
 	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerinfo " + offerguid));

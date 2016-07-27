@@ -2648,7 +2648,7 @@ UniValue escrowlist(const UniValue& params, bool fHelp) {
 		if(pending == 0)
 		{
 			if(op == OP_ESCROW_ACTIVATE)
-				status = "in-escrow";
+				status = "in escrow";
 			else if(op == OP_ESCROW_RELEASE)
 				status = "escrow released";
 			else if(op == OP_ESCROW_REFUND && vvch.size() == 1)
@@ -2812,7 +2812,7 @@ UniValue escrowhistory(const UniValue& params, bool fHelp) {
 			string status = "unknown";
 
 			if(op == OP_ESCROW_ACTIVATE)
-				status = "in-escrow";
+				status = "in escrow";
 			else if(op == OP_ESCROW_RELEASE)
 				status = "escrow released";
 			else if(op == OP_ESCROW_REFUND && vvch.size() == 1)
@@ -2924,7 +2924,7 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 		string status = "unknown";
 
 		if(op == OP_ESCROW_ACTIVATE)
-			status = "in-escrow";
+			status = "in escrow";
 		else if(op == OP_ESCROW_RELEASE)
 			status = "escrow released";
 		else if(op == OP_ESCROW_REFUND && vvch.size() == 1)
