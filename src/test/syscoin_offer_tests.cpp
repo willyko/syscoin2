@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
 	// 100000.0 SYS/BTC
-	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(4*0.00001000*100000.0));
+	BOOST_CHECK_EQUAL((int)(nTotal), (int)(4*0.00001000*100000.0)*COIN);
 
 	// try to update currency and accept in same block, ensure payment uses old currency not new
 	BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliascurrency " + offerguid + " category title 90 0.2 desc EUR"));
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
 	// still used BTC conversion amount
-	BOOST_CHECK_EQUAL((int)(nTotal/COIN), (int)(10*0.00001000*100000.0));
+	BOOST_CHECK_EQUAL((int)(nTotal), (int)(10*0.00001000*100000.0)*COIN);
 	// 2695.2 SYS/EUR
 	acceptguid = OfferAccept("node1", "node2", "buyeraliascurrency", offerguid, "1", "message");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
