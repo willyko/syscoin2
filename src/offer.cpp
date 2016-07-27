@@ -2072,16 +2072,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
-	// unserialize offer from txn
-	if(!theOffer.UnserializeFromTx(tx))
-		throw runtime_error("cannot unserialize offer from txn");
 
-	// get the offer from DB
-	vector<COffer> vtxPos;
-	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read offer from DB");
-
-	theOffer = vtxPos.back();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
@@ -2160,16 +2151,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
-	// unserialize offer from txn
-	if(!theOffer.UnserializeFromTx(tx))
-		throw runtime_error("cannot unserialize offer from txn");
-
-	// get the offer from DB
-	vector<COffer> vtxPos;
-	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read offer from DB");
-
-	theOffer = vtxPos.back();
 	// create OFFERUPDATE txn keys
 	bool found = false;
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
@@ -2244,16 +2225,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
-	// unserialize offer UniValue from txn
-	if(!theOffer.UnserializeFromTx(tx))
-		throw runtime_error("cannot unserialize offer from txn");
 
-	// get the offer from DB
-	vector<COffer> vtxPos;
-	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read offer from DB");
-
-	theOffer = vtxPos.back();
 	if(theOffer.linkWhitelist.IsNull())
 		throw runtime_error("whitelist is already empty");
 
@@ -2435,14 +2407,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchOffer, OP_OFFER_ACTIVATE) || ExistsInMempool(vchOffer, OP_OFFER_UPDATE)) {
 		throw runtime_error("there are pending operations on that offer");
 	}
-	// unserialize offer UniValue from txn
-	if(!theOffer.UnserializeFromTx(tx))
-		throw runtime_error("cannot unserialize offer from txn");
 
-	// get the offer from DB
-	vector<COffer> vtxPos;
-	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read offer from DB");
 	CCert theCert;
 	CTransaction txCert;
 	const CWalletTx *wtxCertIn = NULL;
@@ -2477,7 +2442,6 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
 
-	theOffer = vtxPos.back();
 	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
@@ -2654,14 +2618,6 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 
 	wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
 
-	// unserialize offer UniValue from txn
-	theOffer.UnserializeFromTx(tx);
-	
-
-	// get the offer from DB
-	vector<COffer> vtxPos;
-	pofferdb->ReadOffer(vchOffer, vtxPos);
-
 	CCert theCert;
 	CTransaction txCert;
 	const CWalletTx *wtxCertIn = NULL;
@@ -2688,7 +2644,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	scriptPubKeyCert << CScript::EncodeOP_N(OP_CERT_UPDATE) << vchCert << OP_2DROP;
 	scriptPubKeyCert += scriptPubKeyCertOrig;
 
-	theOffer = vtxPos.back();
+
 	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
