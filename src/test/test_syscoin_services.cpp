@@ -1002,9 +1002,9 @@ void OfferAddWhitelist(const string& node,const string& offerguid, const string&
 {
 	bool found = false;
 	UniValue r;
-	BOOST_CHECK_NO_THROW(CallRPC(node, "offeraddwhitelist " + offer + " " + aliasname + " " + discount));
+	BOOST_CHECK_NO_THROW(CallRPC(node, "offeraddwhitelist " + offerguid + " " + aliasname + " " + discount));
 	GenerateBlocks(10, node);
-	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offer));
+	BOOST_CHECK_NO_THROW(r = CallRPC(node, "offerwhitelist " + offerguid));
 	const UniValue &arrayValue = r.get_array();
 	for(int i=0;i<arrayValue.size();i++)
 	{
