@@ -141,12 +141,12 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	string offerguid = OfferNew("node1", "sellerwhitelistalias", "category", "title", "100", "10.00", "description", "USD", "nocert", false);
 	// add to whitelist
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "5");
-	BOOST_CHECK_THROW(CallRPC(node, "offeraddwhitelist " + offerguid + " selleraddwhitelistalias 5"), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node1", "offeraddwhitelist " + offerguid + " selleraddwhitelistalias 5"), runtime_error);
 	// add to whitelist
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "6");
 	// remove from whitelist
 	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias");
-	BOOST_CHECK_THROW(CallRPC(node, "offerremovewhitelist " + offerguid + " selleraddwhitelistalias"), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node1", "offerremovewhitelist " + offerguid + " selleraddwhitelistalias"), runtime_error);
 
 	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
 	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	// add to whitelist
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "4");
 	OfferClearWhitelist("node1", offerguid);
-	BOOST_CHECK_THROW(CallRPC(node, "offeraddwhitelist " + offerguid), runtime_error);
+	BOOST_CHECK_THROW(CallRPC("node1", "offeraddwhitelist " + offerguid), runtime_error);
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "6");
 
@@ -165,11 +165,11 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
 	AliasUpdate("node2", "selleraddwhitelistalias1", "changeddata2", "privdata2");
 
-	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias";
+	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias");
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "1");
 	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
-	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1");
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "2");
 
 	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
 	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
