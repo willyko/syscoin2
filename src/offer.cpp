@@ -1102,7 +1102,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(theOfferAccept.vchEscrow.empty() && (theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 			{
 				if(fDebug)
-					LogPrintf("CheckOfferInputs(): Trying to accept an expired offer that is not a part of escrow");
+					LogPrintf("CheckOfferInputs(): Trying to accept an expired offer");
 				return true;
 			}			
 			if(vvchArgs.size() >= 5)
@@ -2880,6 +2880,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
+	// create accept
+	COfferAccept txAccept;
 	if (!vchLinkOfferAcceptTxHash.empty())
 	{
 		uint256 linkTxHash(uint256S(stringFromVch(vchLinkOfferAcceptTxHash)));
@@ -2889,6 +2891,8 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		COffer linkOffer(*wtxOfferIn);
 		if(linkOffer.accept.IsNull())
 			throw runtime_error("offer accept passed into the function is not actually an offer accept");	
+		// ensure both accepts have the escrow information
+		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;
@@ -2896,8 +2900,6 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	}
 	const CWalletTx *wtxEscrowIn = NULL;
 	CEscrow escrow;
-	// create accept
-	COfferAccept txAccept;
 	vector<vector<unsigned char> > escrowVvch;
 	vector<unsigned char> vchEscrowWhitelistAlias;
 	if(!vchEscrowTxHash.empty())
@@ -3250,6 +3252,8 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 	const CWalletTx *wtxOfferIn = NULL;
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 	CTransaction tx;
+	// create accept
+	COfferAccept txAccept;
 	GetTxOfOffer( vchOffer, theOffer, tx, true);
 	if (!vchLinkOfferAcceptTxHash.empty())
 	{
@@ -3258,6 +3262,8 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		if (wtxOfferIn == NULL)
 			throw runtime_error("this offer accept is not in your wallet");	
 		COffer linkOffer(*wtxOfferIn);
+		// ensure both accepts have the escrow information
+		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;
@@ -3397,8 +3403,6 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		GetTxOfCert( theOffer.vchCert, theCert, txCert, true);
 	}
 
-	// create accept
-	COfferAccept txAccept;
 	txAccept.vchAcceptRand = vchAccept;
 	txAccept.nQty = nQty;
 	txAccept.nPrice = theOffer.GetPrice(foundAlias);
@@ -4124,7 +4128,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 						}
 					}
 				}
-				if(!theOfferAccept.vchEscrow.empty())
+				if(!theOfferAccept.vchEscrow.empty() && vchOfferAcceptLink.empty())
 					continue;				
 				string linkAccept = "";
 				if(!vchOfferAcceptLink.empty())
