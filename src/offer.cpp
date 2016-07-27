@@ -2170,8 +2170,6 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 		throw runtime_error("could not read offer from DB");
 
 	theOffer = vtxPos.back();
-	theOffer.ClearOffer();
-	theOffer.nHeight = chainActive.Tip()->nHeight;
 	// create OFFERUPDATE txn keys
 	bool found = false;
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
@@ -2180,11 +2178,13 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 		if (entry.aliasLinkVchRand == vchAlias)
 		{
 			found = true;
+			break;
 		}
 	}
 	if(!found)
 		throw runtime_error("this alias entry was not found on affiliate list");
-
+	theOffer.ClearOffer();
+	theOffer.nHeight = chainActive.Tip()->nHeight;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
