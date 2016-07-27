@@ -1238,7 +1238,7 @@ void EscrowClaimReleaseLink(const string& node, const string& guid, const string
 	BOOST_CHECK_EQUAL(nQtyOfferBefore, nQtyOfferAfter);
 
 	const UniValue &acceptSellerValue = FindOfferLinkedAccept(node, rootofferguid, acceptguid);
-	BOOST_CHECK(find_value(acceptSellerValue, "escrowlink").get_str().empty());
+	BOOST_CHECK(find_value(acceptSellerValue, "escrowlink").get_str() == guid);
 	nTotal = AmountFromValue(find_value(acceptSellerValue, "systotal"));
 	if(commission != 0 || discount != 0)
 		BOOST_CHECK(nTotal != escrowtotal);

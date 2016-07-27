@@ -4100,7 +4100,7 @@ UniValue offeracceptlist(const UniValue& params, bool fHelp) {
 						}
 					}
 				}
-				if(!theOfferAccept.vchEscrow.empty() && !vchOfferAcceptLink.empty())
+				if(!theOfferAccept.vchEscrow.empty() && vchOfferAcceptLink.empty())
 					continue;				
 				string linkAccept = "";
 				if(!vchOfferAcceptLink.empty())
