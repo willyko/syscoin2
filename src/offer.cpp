@@ -1177,6 +1177,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 
 		if(op == OP_OFFER_UPDATE)
 		{
+			// ensure the accept is null as this should just have the offer information and no accept information
+			theOffer.accept.SetNull();
 			// if the txn whitelist entry exists (meaning we want to remove or add)
 			if(serializedOffer.linkWhitelist.entries.size() == 1)
 			{
