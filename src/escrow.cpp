@@ -455,8 +455,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					else
 						return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
 				}
-				else
-					return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE offer does not exist");	
 
 				break;
 			case OP_ESCROW_RELEASE:
