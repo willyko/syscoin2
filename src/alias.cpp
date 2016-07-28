@@ -124,9 +124,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(alias.nHeight))
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
 		{
-			nHeight = alias.nHeight + GetAliasExpirationDepth();
+			nHeight = chainActive.Tip()->nHeight + GetAliasExpirationDepth();
 			return true;
 		}
 	}
@@ -142,9 +142,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(offer.nHeight))
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
 		{
-			nHeight = offer.nHeight + GetOfferExpirationDepth();
+			nHeight = chainActive.Tip()->nHeight + GetOfferExpirationDepth();
 			return true;
 		}
 	}
@@ -160,9 +160,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(cert.nHeight))
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
 		{
-			nHeight = cert.nHeight + GetCertExpirationDepth();
+			nHeight = chainActive.Tip()->nHeight+ GetCertExpirationDepth();
 			return true;
 		}
 	}
@@ -183,12 +183,10 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(escrow.nHeight))
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
 		{
-			if(escrow.op != OP_ESCROW_COMPLETE)
-				nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
-			else
-				nHeight = escrow.nHeight + GetEscrowExpirationDepth();
+			
+			nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
 			return true;
 		}
 	}
@@ -204,9 +202,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(message.nHeight))
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
 		{
-			nHeight = message.nHeight + GetMessageExpirationDepth();
+			nHeight = chainActive.Tip()->nHeight + GetMessageExpirationDepth();
 			return true;
 		}
 	}
