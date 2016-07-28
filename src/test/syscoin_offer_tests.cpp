@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 
 	GenerateBlocks(30, "node1");
 	// some accepts won't even use whitelists because the aliases have expired
-	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message", false));
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message", false);
 
 	GenerateBlocks(100, "node1");
 
