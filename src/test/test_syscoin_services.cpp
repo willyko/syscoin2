@@ -849,7 +849,7 @@ void OfferAcceptFeedback(const string& node, const string& offerguid, const stri
 	BOOST_CHECK(find_value(r.get_obj(), "feedbackuser").get_int() == user);
 }
 // offeraccept <alias> <guid> [quantity] [message]
-const string OfferAccept(const string& ownernode, const string& node, const string& aliasname, const string& offerguid, const string& qty, const string& message, bool checkNodes) {
+const string OfferAccept(const string& ownernode, const string& node, const string& aliasname, const string& offerguid, const string& qty, const string& message) {
 
 	CreateSysRatesIfNotExist();
 
@@ -920,8 +920,6 @@ const string EscrowNew(const string& node, const string& buyeralias, const strin
 	BOOST_CHECK(find_value(r.get_obj(), "arbiter").get_str() == arbiteralias);
 	BOOST_CHECK(find_value(r.get_obj(), "seller").get_str() == selleralias);
 	BOOST_CHECK(find_value(r.get_obj(), "pay_message").get_str() == string("Encrypted for owner of offer"));
-	if(!checkNodes)
-		return acceptguid;
 	BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "escrowinfo " + guid));
 	BOOST_CHECK(find_value(r.get_obj(), "escrow").get_str() == guid);
 	BOOST_CHECK(find_value(r.get_obj(), "offer").get_str() == offerguid);

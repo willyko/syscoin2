@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "6");
 
-	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message", false);
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
 
 	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2", "Yes",false);
 	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2", "Yes",false);
@@ -168,10 +168,10 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	OfferRemoveWhitelist("node1", offerguid, "selleraddwhitelistalias");
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "1");
-	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message", false);
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "2");
 
-	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message", false);
+	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
 	OfferClearWhitelist("node1", offerguid);
 
 	/*AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 
 	GenerateBlocks(30, "node1");
 	// some accepts won't even use whitelists because the aliases have expired
-	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message", false);
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
 
 	GenerateBlocks(100, "node1");
 
