@@ -464,30 +464,33 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 					if(op == OP_CERT_TRANSFER)
 					{
 						CPubKey PubKey(dbCert.vchPubKey);
-						CSyscoinAddress alias(PubKey.GetID());
-						alias = CSyscoinAddress(alias.ToString());
-						if(!alias.IsValid() || !alias.isAlias)
+						CSyscoinAddress aliasaddress(PubKey.GetID());
+						aliasaddress = CSyscoinAddress(aliasaddress.ToString());
+						if(!aliasaddress.IsValid() || !aliasaddress.isAlias)
 						{
 							theCert.vchPubKey = dbCert.vchPubKey;
-							break;
-						}
-						CTransaction txAlias;
-						// make sure alias is still valid
-						if (GetTxOfAlias( alias.aliasName, theAlias, txAlias))
-						{
-							CAliasIndex alias(txAlias);
-							if((alias.nHeight + GetAliasExpirationDepth()) < nHeight)
-							{
-								if(fDebug)
-									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
-								theCert.vchPubKey = dbCert.vchPubKey;			
-							}
 						}
 						else
 						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Trying to transfer an expired certificate");
-							theCert.vchPubKey = dbCert.vchPubKey;		
+							CTransaction txAlias;
+							CAliasIndex alias;
+							// make sure alias is still valid
+							if (GetTxOfAlias( aliasaddress.aliasName, alias, txAlias))
+							{
+								CAliasIndex alias(txAlias);
+								if((alias.nHeight + GetAliasExpirationDepth()) < nHeight)
+								{
+									if(fDebug)
+										LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
+									theCert.vchPubKey = dbCert.vchPubKey;			
+								}
+							}
+							else
+							{
+								if(fDebug)
+									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Trying to transfer an expired certificate");
+								theCert.vchPubKey = dbCert.vchPubKey;		
+							}
 						}
 					}
 
