@@ -2075,7 +2075,6 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 		throw runtime_error("there are pending operations on that offer");
 	}
 
-	theOffer.nHeight = chainActive.Tip()->nHeight;
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		COfferLinkWhitelistEntry& entry = theOffer.linkWhitelist.entries[i];
 		// make sure this alias doesn't already exist
@@ -2093,6 +2092,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	entry.nDiscountPct = nDiscountPctInteger;
 	theOffer.ClearOffer();
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
+	theOffer.nHeight = chainActive.Tip()->nHeight;
 
 	vector<CRecipient> vecSend;
 	CRecipient recipient;
