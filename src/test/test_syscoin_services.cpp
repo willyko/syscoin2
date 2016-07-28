@@ -238,7 +238,7 @@ void GenerateBlocks(int nBlocks, const string& node)
 	  BOOST_CHECK_NO_THROW(r = CallRPC(otherNode1, "getinfo"));
 	  height = find_value(r.get_obj(), "blocks").get_int();
 	  timeoutCounter++;
-	  if(timeoutCounter > 300)
+	  if(timeoutCounter > 500)
 		  break;
   }
 }
