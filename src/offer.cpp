@@ -705,7 +705,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}	
 				vector<COffer> myVtxPos;
 				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos) && !myVtxPos.empty())
 					{
 						COffer myParentOffer = myVtxPos.back();
 						if (myParentOffer.bOnlyAcceptBTC)

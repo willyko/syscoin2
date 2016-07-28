@@ -171,12 +171,24 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "2");
 
-	AliasUpdate("node1", "sellerwhitelistalias", "changeddata2", "privdata2");
-	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
-	AliasUpdate("node2", "selleraddwhitelistalias1", "changeddata2", "privdata2");
-
 	OfferAccept("node1", "node2", "selleraddwhitelistalias1", offerguid, "1", "message");
 	OfferClearWhitelist("node1", offerguid);
+
+	AliasUpdate("node2", "selleraddwhitelistalias", "changeddata2", "privdata2");
+
+	// expire aliases and try to accept
+	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias1", "1");
+	OfferAddWhitelist("node1", offerguid, "sellerwhitelistalias", "1");
+
+	// make a few accepts with whitelists having expired aliases
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
+
+	GenerateBlocks(30, "node1");
+	// some accepts won't even use whitelists because the aliases have expired
+	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
+
 
 
 }
