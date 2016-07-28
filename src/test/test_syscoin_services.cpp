@@ -241,21 +241,6 @@ void GenerateBlocks(int nBlocks, const string& node)
 	  if(timeoutCounter > 300)
 		  break;
   }
-  BOOST_CHECK(height == newHeight);
-  height = 0;
-  timeoutCounter = 0;
-  while(height != newHeight)
-  {
-	  MilliSleep(100);
-	  BOOST_CHECK_NO_THROW(r = CallRPC(otherNode2, "getinfo"));
-	  height = find_value(r.get_obj(), "blocks").get_int();
-	  timeoutCounter++;
-	  if(timeoutCounter > 300)
-		  break;
-  }
-  BOOST_CHECK(height == newHeight);
-  height = 0;
-  timeoutCounter = 0;
 }
 void CreateSysRatesIfNotExist()
 {
