@@ -227,7 +227,6 @@ void GenerateBlocks(int nBlocks, const string& node)
   newHeight = find_value(r.get_obj(), "blocks").get_int() + nBlocks;
   const string &sBlocks = strprintf("%d",nBlocks);
   BOOST_CHECK_NO_THROW(r = CallRPC(node, "generate " + sBlocks));
-  MilliSleep(100);
   BOOST_CHECK_NO_THROW(r = CallRPC(node, "getinfo"));
   height = find_value(r.get_obj(), "blocks").get_int();
   BOOST_CHECK(height == newHeight);
