@@ -402,10 +402,6 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 			if (foundCert)
 				return error(
 						"CheckCertInputs() : certactivate tx pointing to previous syscoin tx");
-			if (pcertdb->ExistsCert(vvchArgs[0]))
-			{
-				return error("CheckCertInputs() OP_CERT_ACTIVATE: cert already exists");
-			}
 			break;
 
 		case OP_CERT_UPDATE:
@@ -422,14 +418,6 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 				return error("certtransfer previous op is invalid");
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckCertInputs() : certtransfer cert mismatch");
-
-			if (!pcertdb->ReadCert(vvchArgs[0], vtxPos) || vtxPos.empty())
-				return error("CheckCertInputs() : failed to read from cert DB");
-			if((retError = CheckForAliasExpiry(vtxPos.back().vchPubKey, nHeight)) != "")
-			{
-				retError = string("CheckCertInputs(): ") + retError;
-				return error(retError.c_str());
-			}
 			break;
 
 		default:
@@ -472,12 +460,51 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 					// user can't update safety level after creation
 					theCert.safetyLevel = dbCert.safetyLevel;
 
+					// ensure an expired tx for alias transfer doesn't actually do the transfer
+					if(op == OP_CERT_TRANSFER)
+					{
+						CPubKey PubKey(dbCert.vchPubKey);
+						CSyscoinAddress alias(PubKey.GetID());
+						alias = CSyscoinAddress(alias.ToString());
+						if(!alias.IsValid() || !alias.isAlias)
+						{
+							theCert.vchPubKey = dbCert.vchPubKey;
+							break;
+						}
+						CTransaction txAlias;
+						// make sure alias is still valid
+						if (GetTxOfAlias( alias.aliasName, theAlias, txAlias))
+						{
+							CAliasIndex alias(txAlias);
+							if((alias.nHeight + GetAliasExpirationDepth()) < nHeight)
+							{
+								if(fDebug)
+									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
+								theCert.vchPubKey = dbCert.vchPubKey;			
+							}
+						}
+						else
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Trying to transfer an expired certificate");
+							theCert.vchPubKey = dbCert.vchPubKey;		
+						}
+					}
+
 				}
 			}
 			else
 				return true;
 		}
-
+		else
+		{
+			if (pcertdb->ExistsCert(vvchArgs[0]))
+			{
+				if(fDebug)
+					LogPrintf("CheckCertInputs(): OP_CERT_ACTIVATE Certificate already exists");
+				return true;
+			}
+		}
         // set the cert's txn-dependent values
 		theCert.nHeight = nHeight;
 		theCert.txHash = tx.GetHash();

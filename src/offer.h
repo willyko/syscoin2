@@ -481,5 +481,7 @@ bool GetAcceptByHash(std::vector<COffer> &offerList,  COfferAccept &ca, bool ski
 bool GetTxOfOfferAccept(const std::vector<unsigned char> &vchOffer, const std::vector<unsigned char> &vchOfferAccept,
 		COffer &theOffer, COfferAccept &theOfferAccept, CTransaction& tx, bool skipFeedback=true);
 bool GetTxOfOffer(const std::vector<unsigned char> &vchOffer, COffer& txPos, CTransaction& tx, bool skipExpiresCheck=false);
+bool GetTxAndVtxOfOffer(const std::vector<unsigned char> &vchOffer, 
+				  COffer& txPos, CTransaction& tx, std::vector<COffer> &vtxPos, bool skipExpiresCheck=false);
 int GetNumberOfAccepts(const std::vector<COffer> &offerList);
 #endif // OFFER_H

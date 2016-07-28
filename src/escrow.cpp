@@ -438,10 +438,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				}
 				if(theEscrow.op != OP_ESCROW_ACTIVATE)
 					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");
-				if (pescrowdb->ExistsEscrow(vvchArgs[0]))
-				{
-					return error("CheckEscrowInputs() OP_ESCROW_ACTIVATE: escrow already exists");
-				}
 				
 				if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 					if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
@@ -692,6 +688,15 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 		}
 		else
 		{
+
+			if (pescrowdb->ExistsEscrow(vvchArgs[0]))
+			{
+				if(fDebug)
+					LogPrintf("CheckEscrowInputs(): OP_ESCROW_ACTIVATE Escrow already exists");
+				return true;
+			}
+		
+
 			vector<COffer> myVtxPos;
 			if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
 				if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())

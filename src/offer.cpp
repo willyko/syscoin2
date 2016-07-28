@@ -402,7 +402,31 @@ bool GetTxOfOffer(const vector<unsigned char> &vchOffer,
 
 	return true;
 }
+bool GetTxAndVtxOfOffer(const vector<unsigned char> &vchOffer, 
+				  COffer& txPos, CTransaction& tx, vector<COffer> &vtxPos, bool skipExpiresCheck) {
+	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
+		return false;
+	int nHeight = vtxPos.back().nHeight;
+	txPos.nHeight = nHeight;
+	if(!txPos.GetOfferFromList(vtxPos))
+	{
+		if(fDebug)
+			LogPrintf("GetTxOfOffer() : cannot find offer from this offer position");
+		return false;
+	}
+	if (!skipExpiresCheck && (nHeight + GetOfferExpirationDepth()
+			< chainActive.Tip()->nHeight)) {
+		string offer = stringFromVch(vchOffer);
+		if(fDebug)
+			LogPrintf("GetTxOfOffer(%s) : expired", offer.c_str());
+		return false;
+	}
 
+	if (!GetSyscoinTransaction(txPos.nHeight, txPos.txHash, tx, Params().GetConsensus()))
+		return false;
+
+	return true;
+}
 bool GetTxOfOfferAccept(const vector<unsigned char> &vchOffer, const vector<unsigned char> &vchOfferAccept,
 		COffer &theOffer, COfferAccept &theOfferAccept, CTransaction& tx, bool skipFeedback) {
 	vector<COffer> vtxPos;
@@ -686,12 +710,15 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				// make sure this cert is still valid
 				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
-					if(theCert.vchPubKey != theOffer.vchPubKey)
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) >= nHeight)
+					{
+						if(theCert.vchPubKey != theOffer.vchPubKey)
+							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
+					}
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: creating an offer with a cert that doesn't exist");
-
 			}	
 			if(!theOffer.vchLinkOffer.empty())
 			{
@@ -703,23 +730,23 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				{
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: markup must be greator than 0!");
 				}	
-				vector<COffer> myVtxPos;
-				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos) && !myVtxPos.empty())
+			
+				CTransaction txOffer;
+				if (GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer))
+				{
+					COffer offer(txOffer);
+					if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 					{
-						COffer myParentOffer = myVtxPos.back();
-						if (myParentOffer.bOnlyAcceptBTC)
+						if (linkOffer.bOnlyAcceptBTC)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that only accepts Bitcoins as payment");
-						if (!IsAliasOp(prevAliasOp) && myParentOffer.linkWhitelist.bExclusiveResell)
+						if (!IsAliasOp(prevAliasOp) && linkOffer.linkWhitelist.bExclusiveResell)
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: parent offer set to exlusive resell but no alias input given to linked offer");			
-						if (IsAliasOp(prevAliasOp) && !myParentOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevAliasArgs[0], entry))
+						if (IsAliasOp(prevAliasOp) && !linkOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevAliasArgs[0], entry))
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this alias in the parent offer affiliate list");
-						if (!myParentOffer.vchLinkOffer.empty())
+						if (!linkOffer.vchLinkOffer.empty())
 							return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that is already linked to another offer");
-								
+												
 					}
-					else
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");	
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");
@@ -764,12 +791,16 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				// make sure this cert is still valid
 				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
-					if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
-						return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-					if (!IsCertOp(prevCertOp))
-						return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
-					if(theCert.vchPubKey != theOffer.vchPubKey)
-						return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) >= nHeight)
+					{
+						if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
+							return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+						if (!IsCertOp(prevCertOp))
+							return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
+						if(theCert.vchPubKey != theOffer.vchPubKey)
+							return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
+					}
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_UPDATE: updating an offer with a cert that doesn't exist");
@@ -858,31 +889,34 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(!theOffer.vchCert.empty())
 			{
 				CTransaction txCert;
-				// make sure this cert is still valid
 				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
-					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
- 					// so in that case the escrow is attached to the accept and we skip this check
- 					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
- 					// also ensure its not a linked offer we are accepting, that check is done below
- 					if(!IsEscrowOp(prevEscrowOp))
- 					{
- 						if(theOffer.vchLinkOffer.empty())
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) >= nHeight)
+					{
+						// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
+ 						// so in that case the escrow is attached to the accept and we skip this check
+ 						// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
+ 						// also ensure its not a linked offer we are accepting, that check is done below
+ 						if(!IsEscrowOp(prevEscrowOp))
  						{
- 							if(theCert.vchPubKey != theOffer.vchPubKey)
- 								return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+ 							if(theOffer.vchLinkOffer.empty())
+ 							{
+ 								if(theCert.vchPubKey != theOffer.vchPubKey)
+ 									return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+ 							}
+ 							else
+ 							{
+ 								if(theCert.vchPubKey != linkOffer.vchPubKey)
+ 									return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this linked offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+ 							}
  						}
- 						else
- 						{
- 							if(theCert.vchPubKey != linkOffer.vchPubKey)
- 								return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this linked offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
- 						}
- 					}
-					theOfferAccept.nQty = 1;
+						theOfferAccept.nQty = 1;
+					}
 				}
 				else
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: purchasing a cert that doesn't exist");
-			}							
+			}
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
 			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
 			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
@@ -1015,6 +1049,28 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		// but first we assign fields from the DB since
 		// they are not shipped in an update txn to keep size down
 		if(op == OP_OFFER_UPDATE) {
+			// trying to update cert
+			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				{
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) < nHeight)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Transaction height for linked cert is expired");
+						theOffer.vchCert.clear();				
+					}
+				}
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Trying to update an offer with an expired certificate");
+					theOffer.vchCert.clear();	
+				}
+			}
+
 			// cannot update expired offers
 			if((theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 			{
@@ -1063,41 +1119,101 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		}
 		else if(op == OP_OFFER_ACTIVATE)
 		{
+			if (pofferdb->ExistsOffer(vvchArgs[0]))
+			{
+				if(fDebug)
+					LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Offer already exists");
+				return true;
+			}
 			// by default offers are private on new, need to update it out of privacy
 			theOffer.bPrivate = true;
 			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				{
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) < nHeight)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Transaction height for linked cert is expired");
+						theOffer.vchCert.clear();					
+					}
+				}
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Trying to create an offer with an expired certificate");
+					theOffer.vchCert.clear();
+				}
 				theOffer.nQty = 1;
+			}
+
 				
 			// if this is a linked offer activate, then add it to the parent offerLinks list
 			if(!theOffer.vchLinkOffer.empty())
 			{
+				CTransaction txOffer;
 				vector<COffer> myVtxPos;
-				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+				if (GetTxAndVtxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer, myVtxPos))
+				{
+					COffer offer(txOffer);
+					if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 					{
-						COffer myParentOffer = myVtxPos.back();
 						// if creating a linked offer we set some mandatory fields to the parent
-						theOffer.nQty = myParentOffer.nQty;
+						theOffer.nQty = linkOffer.nQty;
 						theOffer.linkWhitelist.bExclusiveResell = true;
-						theOffer.sCurrencyCode = myParentOffer.sCurrencyCode;
-						theOffer.vchCert = myParentOffer.vchCert;
-						theOffer.vchAliasPeg = myParentOffer.vchAliasPeg;
-						theOffer.sCategory = myParentOffer.sCategory;
-						theOffer.sTitle = myParentOffer.sTitle;
-						myParentOffer.offerLinks.push_back(vvchArgs[0]);							
-						myParentOffer.PutToOfferList(myVtxPos);
+						theOffer.sCurrencyCode = linkOffer.sCurrencyCode;
+						theOffer.vchCert = linkOffer.vchCert;
+						theOffer.vchAliasPeg = linkOffer.vchAliasPeg;
+						theOffer.sCategory = linkOffer.sCategory;
+						theOffer.sTitle = linkOffer.sTitle;
+						linkOffer.offerLinks.push_back(vvchArgs[0]);							
+						linkOffer.PutToOfferList(myVtxPos);
 						// write parent offer
 				
 						if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
-							return error( "CheckOfferInputs() : failed to write to offer link to DB");
-						
+							return error( "CheckOfferInputs() : failed to write to offer link to DB");					
+					}
+					else
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Transaction height for linked offer is expired");
+						theOffer.vchLinkOffer.clear();
 					}
 				}
-				
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Linked offer is expired");
+					theOffer.vchLinkOffer.clear();	
+				}
 			}
 		}
 		else if (op == OP_OFFER_ACCEPT) {
 			theOfferAccept = serializedOffer.accept;
+			// trying to purchase a cert
+			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				{
+					CCert cert(txCert);
+					if((cert.nHeight + GetCertExpirationDepth()) < nHeight)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): Transaction height for linked cert is expired");
+						theOffer.vchCert.clear();						
+					}
+				}
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): Trying to sell an expired certificate");
+					theOffer.vchCert.clear();	
+				}
+			}
+
 			// cannot accept expired offers that aren't related to escrow
 			if(theOfferAccept.vchEscrow.empty() && (theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 			{
@@ -1202,41 +1318,51 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			// if this offer is linked to a parent update it with parent information
 			if(!theOffer.vchLinkOffer.empty())
 			{
+				CTransaction txOffer;
 				vector<COffer> myVtxPos;
-				if (pofferdb->ExistsOffer(theOffer.vchLinkOffer)) {
-					if (pofferdb->ReadOffer(theOffer.vchLinkOffer, myVtxPos))
+				if (GetTxAndVtxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer, myVtxPos))
+				{
+					COffer offer(txOffer);
+					if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 					{
-						COffer myLinkOffer = myVtxPos.back();
-						theOffer.nQty = myLinkOffer.nQty;	
-						theOffer.vchAliasPeg = myLinkOffer.vchAliasPeg;	
-						theOffer.SetPrice(myLinkOffer.nPrice);
-						
+						theOffer.nQty = linkOffer.nQty;	
+						theOffer.vchAliasPeg = linkOffer.vchAliasPeg;	
+						theOffer.SetPrice(linkOffer.nPrice);				
+					}
+					else
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Transaction height for linked offer is expired");
 					}
 				}
-					
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Linked offer is expired");
+				}
 			}
 			else
 			{
 				// go through the linked offers, if any, and update the linked offer info based on the this info
 				for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
+					CTransaction txOffer;
 					vector<COffer> myVtxPos;
-					if (pofferdb->ExistsOffer(theOffer.offerLinks[i])) {
-						if (pofferdb->ReadOffer(theOffer.offerLinks[i], myVtxPos))
+					if (GetTxAndVtxOfOffer( theOffer.offerLinks[i], linkOffer, txOffer, myVtxPos))
+					{
+						COffer offer(txOffer);
+						if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 						{
-							COffer myLinkOffer = myVtxPos.back();
-							myLinkOffer.nQty = theOffer.nQty;	
-							myLinkOffer.vchAliasPeg = theOffer.vchAliasPeg;	
-							myLinkOffer.SetPrice(theOffer.nPrice);
-							myLinkOffer.PutToOfferList(myVtxPos);
+							linkOffer.nQty = theOffer.nQty;	
+							linkOffer.vchAliasPeg = theOffer.vchAliasPeg;	
+							linkOffer.SetPrice(theOffer.nPrice);
+							linkOffer.PutToOfferList(myVtxPos);
 							// write offer
 						
 							if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
-									return error( "CheckOfferInputs() : failed to write to offer link to DB");
-							
+									return error( "CheckOfferInputs() : failed to write to offer link to DB");			
 						}
 					}
-				}
-				
+				}			
 			}
 		}
 		
@@ -1254,18 +1380,19 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			{
 				// go through the linked offers, if any, and update the linked offer qty based on the this qty
 				for(unsigned int i=0;i<theOffer.offerLinks.size();i++) {
+					CTransaction txOffer;
 					vector<COffer> myVtxPos;
-					if (pofferdb->ExistsOffer(theOffer.offerLinks[i])) {
-						if (pofferdb->ReadOffer(theOffer.offerLinks[i], myVtxPos))
+					if (GetTxAndVtxOfOffer( theOffer.offerLinks[i], linkOffer, txOffer, myVtxPos))
+					{
+						COffer offer(txOffer);
+						if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 						{
-							COffer myLinkOffer = myVtxPos.back();
-							myLinkOffer.nQty = theOffer.nQty;	
-							myLinkOffer.PutToOfferList(myVtxPos);
+							linkOffer.nQty = theOffer.nQty;	
+							linkOffer.PutToOfferList(myVtxPos);
 							// write offer
-							
+						
 							if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
-									return error( "CheckOfferInputs() : failed to write to offer link to DB");
-							
+									return error( "CheckOfferInputs() : failed to write to offer link to DB");			
 						}
 					}
 				}
