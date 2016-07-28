@@ -304,7 +304,7 @@ void CertBan(const string& node, const string& cert, int severity)
 	CallRPC(node, "aliasupdate SYS_BAN " + data);
 	GenerateBlocks(5);
 }
-string AliasNew(const string& node, const string& aliasname, const string& pubdata, string privdata, string safesearch, bool checkNodes)
+string AliasNew(const string& node, const string& aliasname, const string& pubdata, string privdata, string safesearch)
 {
 	string otherNode1 = "node2";
 	string otherNode2 = "node3";
