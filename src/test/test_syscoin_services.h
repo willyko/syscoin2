@@ -19,8 +19,8 @@ string CallExternal(string &cmd);
 void AliasBan(const string& node, const string& alias, int severity);
 void OfferBan(const string& node, const string& offer, int severity);
 void CertBan(const string& node, const string& cert, int severity);
-string AliasNew(const string& node, const string& aliasname, const string& pubdata, string privdata="privdata", string safesearch="Yes");
-void AliasUpdate(const string& node, const string& aliasname, const string& pubdata, const string& privdata, string safesearch="Yes");
+string AliasNew(const string& node, const string& aliasname, const string& pubdata, string privdata="privdata", string safesearch="Yes", bool checkNodes=true);
+void AliasUpdate(const string& node, const string& aliasname, const string& pubdata, const string& privdata, string safesearch="Yes", bool checkBodes=true);
 void AliasTransfer(const string& node, const string& aliasname, const string& tonode, const string& pubdata, const string& privdata, string pubkey="");
 bool AliasFilter(const string& node, const string& regex, const string& safesearch);
 const string CertNew(const string& node, const string& alias, const string& title, const string& data, bool privateData=false, const string& safesearch="Yes");
@@ -35,7 +35,7 @@ void CreateSysCategoryIfNotExist();
 void OfferAcceptFeedback(const string& node, const string& offerguid, const string& acceptguid, const string& feedback, const string& rating, const char& user, const bool israting);
 const UniValue FindOfferAccept(const string& node, const string& offerguid, const string& acceptguid, bool nocheck=false);
 const UniValue FindOfferAcceptFeedback(const string& node, const string& offerguid, const string& acceptguid,const string& accepttxid, bool nocheck=false);
-const string OfferNew(const string& node, const string& aliasname, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency, const string& certguid="nocert", const bool exclusiveResell=true, const string& acceptbtconly="0", const string& geolocation="location", const string& safesearch="Yes");
+const string OfferNew(const string& node, const string& aliasname, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency, const string& certguid="nocert", const bool exclusiveResell=true, const string& acceptbtconly="0", const string& geolocation="location", const string& safesearch="Yes", bool checkNodes=true);
 void OfferUpdate(const string& node, const string& aliasname, const string& offerguid, const string& category, const string& title, const string& qty, const string& price, const string& description, const string& currency="NONE", const bool isPrivate=false, const string& certguid="nocert", const bool exclusiveResell=true, const string& geolocation="newlocation", string safesearch="Yes");
 bool OfferFilter(const string& node, const string& regex, const string& safesearch);
 void OfferAddWhitelist(const string& node,const string& offer, const string& aliasname, const string& discount);
@@ -43,7 +43,7 @@ void OfferRemoveWhitelist(const string& node, const string& offer, const string&
 void OfferClearWhitelist(const string& node, const string& offer);
 
 const string OfferLink(const string& node, const string& alias, const string& guid, const string& commission, const string& newdescription);
-const string OfferAccept(const string& ownernode, const string& node, const string& aliasname, const string& offerguid, const string& qty, const string& message);
+const string OfferAccept(const string& ownernode, const string& node, const string& aliasname, const string& offerguid, const string& qty, const string& message, bool checkNodes=true);
 const string EscrowNew(const string& node, const string& buyeralias, const string& offerguid, const string& qty, const string& message, const string& arbiteralias, const string& selleralias);
 void EscrowRelease(const string& node, const string& guid);
 void EscrowClaimRelease(const string& node, const string& guid);
