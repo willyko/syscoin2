@@ -475,7 +475,7 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 							CTransaction txAlias;
 							CAliasIndex alias;
 							// make sure alias is still valid
-							if (GetTxOfAlias( aliasaddress.aliasName, alias, txAlias))
+							if (GetTxOfAlias( vchFromString(aliasaddress.aliasName), alias, txAlias))
 							{
 								CAliasIndex alias(txAlias);
 								if((alias.nHeight + GetAliasExpirationDepth()) < nHeight)
