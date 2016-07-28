@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 
 	// add to whitelist
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "4");
-	OfferClearWhitelist("node1", offerguid));
+	OfferClearWhitelist("node1", offerguid);
 	BOOST_CHECK_THROW(CallRPC("node1", "offerclearwhitelist " + offerguid), runtime_error);
 
 	OfferAddWhitelist("node1", offerguid, "selleraddwhitelistalias", "6");
@@ -185,11 +185,11 @@ BOOST_AUTO_TEST_CASE (generate_offerwhitelists)
 	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");
 	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message");*/
 
-	GenerateBlocks(30, "node1"));
+	GenerateBlocks(30, "node1");
 	// some accepts won't even use whitelists because the aliases have expired
 	OfferAccept("node1", "node2", "selleraddwhitelistalias", offerguid, "1", "message", false));
 
-	GenerateBlocks(100, "node1"));
+	GenerateBlocks(100, "node1");
 
 	StartNode("node3");
 	GenerateBlocks(5, "node3");
