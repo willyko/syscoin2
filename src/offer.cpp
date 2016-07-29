@@ -715,7 +715,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					CSyscoinAddress aliasAddress(stringFromVch(vvchPrevAliasArgs[0]));
 					CPubKey OfferPubKey(theOffer.vchPubKey);
 					CSyscoinAddress offerAddress(OfferPubKey.GetID());
-					if (aliasAddress != offerAddress)
+					if (aliasAddress.ToString() != offerAddress.ToString())
 						return error("CheckOfferInputs() : alias input and offer alias mismatch");	
 				}	
 
