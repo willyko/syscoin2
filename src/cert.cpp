@@ -431,6 +431,12 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 	}
 
     if (!fJustCheck ) {
+		if((theCert.nHeight + GetCertExpirationDepth()) < nHeight)
+		{
+			if(fDebug)
+				LogPrintf("CheckCertInputs(): Trying to make a cert transaction that is expired, skipping...");
+			return true;
+		}
 		if(op != OP_CERT_ACTIVATE) 
 		{
 			// if not an certnew, load the cert data from the DB
@@ -477,13 +483,9 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 							// make sure alias is still valid
 							if (GetTxOfAlias( vchFromString(aliasaddress.aliasName), alias, txAlias))
 							{
-								CAliasIndex alias(txAlias);
-								if((alias.nHeight + GetAliasExpirationDepth()) < nHeight)
-								{
-									if(fDebug)
-										LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
-									theCert.vchPubKey = dbCert.vchPubKey;			
-								}
+								if(fDebug)
+									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
+								theCert.vchPubKey = dbCert.vchPubKey;											
 							}
 							else
 							{

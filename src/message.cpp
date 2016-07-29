@@ -348,6 +348,12 @@ bool CheckMessageInputs(const CTransaction &tx, int op, int nOut, const vector<v
 
 
     if (!fJustCheck ) {
+		if((theMessage.nHeight + GetMessageExpirationDepth()) < nHeight)
+		{
+			if(fDebug)
+				LogPrintf("CheckMessageInputs(): Trying to make a message transaction that is expired, skipping...");
+			return true;
+		}
 		vector<CMessage> vtxPos;
 		if (pmessagedb->ExistsMessage(vvchArgs[0])) {
 			if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
