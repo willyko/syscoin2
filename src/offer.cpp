@@ -1867,7 +1867,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	// if the whitelist exclusive mode is on and you dont have an alias in the whitelist, you cannot link to this offer
 	if(foundEntry.IsNull() && linkOffer.linkWhitelist.bExclusiveResell)
 	{
-		throw runtime_error("Cannot link to this offer because you don't own an alias from its affiliate list (the offer is in exclusive mode)");
+		throw runtime_error("Cannot link to this offer because the alias given is not on the offer's affiliate list (it in exclusive mode)");
 	}
 	if(linkOffer.bOnlyAcceptBTC)
 	{
