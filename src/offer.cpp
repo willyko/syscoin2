@@ -1111,7 +1111,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					CSyscoinAddress offerAddress(OfferPubKey.GetID());
 					offerAddress = CSyscoinAddress(offerAddress.ToString());
 					// if alias input is given then make sure it exists in the root offer affiliate list
-					if (!theOffer.vchLinkAlias.empty() && !linkOffer.linkWhitelist.GetLinkEntryByHash(offerAddress.aliasName, entry))
+					if (!theOffer.vchLinkAlias.empty() && !linkOffer.linkWhitelist.GetLinkEntryByHash(vchFromString(offerAddress.aliasName), entry))
 					{
 						if(fDebug)
 							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this alias in the parent offer affiliate list");
