@@ -438,9 +438,13 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				}
 				if(theEscrow.op != OP_ESCROW_ACTIVATE)
 					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");
-				
-				if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
-					if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
+				CTransaction txOffer;
+				COffer dbOffer;
+				// make sure this cert is still valid
+				if (GetTxOfOffer( theOffer.vchCert, dbOffer, txOffer))
+				{
+					COffer offer(txOffer);
+					if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 					{
 						COffer &dbOffer = myVtxPos.back();
 						if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
@@ -448,10 +452,10 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 						if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
 							return error("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
 					}
-					else
-						return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
 				}
-
+				else
+					return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
+			
 				break;
 			case OP_ESCROW_RELEASE:
 				if(prevOp != OP_ESCROW_ACTIVATE)
@@ -561,10 +565,13 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
-					if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
-						if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
+					CTransaction txOffer;
+					COffer dbOffer;
+					if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
+					{
+						COffer offer(txOffer);
+						if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 						{
-							COffer &dbOffer = myVtxPos.back();
 							if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 							{
 								if(fDebug)
@@ -595,9 +602,17 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 								dbOffer.PutToOfferList(myVtxPos);
 								if (!pofferdb->WriteOffer(theEscrow.vchOffer, myVtxPos))
 									return error( "CheckEscrowInputs() : failed to write to offer to DB");
-							}
+							}			
 						}
+						else if(fDebug)
+							LogPrintf("CheckEscrowInputs(): OP_ESCROW_REFUND Transaction height for offer is expired");
 					}
+					else
+					{
+						if(fDebug)
+							LogPrintf("CheckEscrowInputs(): OP_ESCROW_REFUND offer is expired");
+					}
+
 				}
 				if(op == OP_ESCROW_COMPLETE)
 				{
@@ -696,12 +711,15 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				return true;
 			}
 		
-
 			vector<COffer> myVtxPos;
-			if (pofferdb->ExistsOffer(theEscrow.vchOffer)) {
-				if (pofferdb->ReadOffer(theEscrow.vchOffer, myVtxPos) && !myVtxPos.empty())
+			CTransaction txOffer;
+			COffer dbOffer;
+			// make sure alias is still valid
+			if (GetTxAndVtxOfOffer( vchFromString(aliasaddress.aliasName), dbOffer, txOffer, myVtxPos))
+			{
+				COffer offer(txOffer);
+				if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
 				{
-					COffer &dbOffer = myVtxPos.back();
 					if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
 					{
 						if(fDebug)
@@ -733,11 +751,21 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 						if (!pofferdb->WriteOffer(theEscrow.vchOffer, myVtxPos))
 							return error( "CheckEscrowInputs() : failed to write to offer to DB");
 
-					}
+					}	
 				}
+				else
+				{
+					if(fDebug)
+						LogPrintf("CheckEscrowInputs(): OP_ESCROW_ACTIVATE Transaction height for offer is expired");
+
+				}
+			}
+			else
+			{
+				if(fDebug)
+					LogPrintf("CheckEscrowInputs(): OP_ESCROW_ACTIVATE Trying to create an escrow with expired offer");
 
 			}
-
 		}
         // set the escrow's txn-dependent values
 		if(op == OP_ESCROW_COMPLETE)
