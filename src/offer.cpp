@@ -712,7 +712,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				{
 					if(theOffer.vchLinkAlias != vvchPrevAliasArgs[0])
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias link and alias input mismatch");
-					CSyscoinAddress aliasAddress(vvchPrevAliasArgs[0]);
+					CSyscoinAddress aliasAddress(stringFromVch(vvchPrevAliasArgs[0]));
 					CPubKey OfferPubKey(theOffer.vchPubKey);
 					CSyscoinAddress offerAddress(OfferPubKey.GetID());
 					if (aliasAddress != offerAddress)
