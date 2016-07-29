@@ -950,9 +950,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
 			if(!linkAccept && !escrowAccept)
 			{
-				// give 4 hours of blocks for tx to get into chain from mempool
-				if(nHeight < heightToCheckAgainst || (nHeight - heightToCheckAgainst) > 240)
-					return error("CheckOfferInputs() OP_OFFER_ACCEPT: accept height and current block height differ by too much heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
+				if(nHeight < heightToCheckAgainst)
+					return error("CheckOfferInputs() OP_OFFER_ACCEPT: nHeight can't be less than  heightToCheckAgainst, heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
 
 			}
 			myPriceOffer.nHeight = heightToCheckAgainst;
