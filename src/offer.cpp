@@ -1351,44 +1351,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					theOffer.vchLinkOffer.clear();
 				}
 			}
- 			if(!theOffer.vchCert.empty())
-			{
-				CTransaction txCert;
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
-					// so in that case the escrow is attached to the accept and we skip this check
-					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
-					// also ensure its not a linked offer we are accepting, that check is done below
-					if(theOffer.vchEscrow.empty())
-					{
-						if(theOffer.vchLinkOffer.empty())
-						{
-							if(theCert.vchPubKey != theOffer.vchPubKey)
-							{
-								if (fDebug)
-									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
-								theOffer.vchCert.clear();
-							}
-						}
-						else
-						{
-							if(theCert.vchPubKey != linkOffer.vchPubKey)
-							{
-								if (fDebug)
-									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this linked offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
-								theOffer.vchCert.clear();
-							}
-						}
-					}
-					theOfferAccept.nQty = 1;					
-				}
-				else
-				{
-					if (fDebug)
-						LogPrintf"CheckOfferInputs() OP_OFFER_ACCEPT: purchasing a cert that doesn't exist");
-					theOffer.vchCert.clear();
-				}
+ 			
 			// if its my offer and its linked and its not a special feedback output for the buyer
 			if (pwalletMain && !theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer"))
 			{	
