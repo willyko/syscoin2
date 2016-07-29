@@ -820,6 +820,7 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 		throw runtime_error("Invalid cert alias public key");
 	}
 	CSyscoinAddress myAddress = CSyscoinAddress(aliasKey.GetID());
+	myAddress = CSyscoinAddress(myAddress.ToString());
 	if(!myAddress.IsValid() || !myAddress.isAlias)
 		throw runtime_error("Invalid cert alias");
 	CAliasIndex theAlias;
