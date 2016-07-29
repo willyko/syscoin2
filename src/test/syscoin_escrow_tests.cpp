@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		// leave some feedback (escrow is complete but not expired yet)
 		BOOST_CHECK_NO_THROW(CallRPC("node1",  "escrowfeedback " + guid1 + " 1 2 3 4"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 110"));
-		MilliSleep(2500);
+		MilliSleep(5000);
 		// now it should be expired, try to leave feedback it shouldn't let you
 		BOOST_CHECK_THROW(CallRPC("node2",  "escrowfeedback " + guid1 + " 1 2 3 4"), runtime_error);
 		// and it should say its expired

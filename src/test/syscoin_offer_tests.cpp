@@ -246,9 +246,9 @@ BOOST_AUTO_TEST_CASE (generate_offernew_linkedofferexmode)
 		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerlink_nocheck selleralias9 " + offerguid + " 5 newdescription"));
 		const UniValue &arr = r.get_array();
 		string linkofferguid = arr[1].get_str();
-		GenerateBlocks(5, "node3");
+		GenerateBlocks(5, "node2");
 		// ensure offer isn't linked
-		BOOST_CHECK_NO_THROW(r = CallRPC("node3", "offerinfo " + linkofferguid));
+		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerinfo " + linkofferguid));
 		BOOST_CHECK_EQUAL(find_value(r.get_obj(), "offerlink").get_str(), "false");
 	#endif
 
@@ -645,7 +645,13 @@ BOOST_AUTO_TEST_CASE (generate_certofferexpired)
 		// should fail: offer accept on offer with expired/transferred cert
 		BOOST_CHECK_THROW(r = CallRPC("node2", "offeraccept node2alias2 " + offerguid + " 1 message"), runtime_error);
 		// should fail: generate a cert offer using an expired cert
-		BOOST_CHECK_THROW(r = CallRPC("node1", "offernew_nocheck SYS_RATES node1alias2 category title 1 0.05 description USD " + certguid2), runtime_error);
+		BOOST_CHECK_NO_THROW(r = CallRPC("node1", "offernew_nocheck SYS_RATES node1alias2 category title 1 0.05 description USD " + certguid2));
+		const UniValue &arr = r.get_array();
+		string certofferguid = arr[1].get_str();
+		GenerateBlocks(5, "node1");
+		// ensure offer doesn't have cert
+		BOOST_CHECK_NO_THROW(r = CallRPC("node1", "offerinfo " + certofferguid));
+		BOOST_CHECK_EQUAL(find_value(r.get_obj(), "cert").get_str(), "");
 	#endif
 }
 
