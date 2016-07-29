@@ -441,12 +441,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				if(theEscrow.op != OP_ESCROW_ACTIVATE)
 					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");
 				// make sure this offer is still valid
-				if (GetTxOfOffer( theEscrow.vchOffer, dbOffer, txOffer))
-				{			
-					if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
-						return error("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
-				}
-				else
+				if (!GetTxOfOffer( theEscrow.vchOffer, dbOffer, txOffer))
 					return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
 			
 				break;
@@ -567,7 +562,13 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					// make sure offer is still valid and then refund qty
 					if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 					{
-						if(dbOffer.nQty != -1)
+						if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
+							theEscrow.vchOffer.clear();
+						}
+						else if(dbOffer.nQty != -1)
 						{
 							vector<COffer> myLinkVtxPos;
 							unsigned int nQty = dbOffer.nQty + theEscrow.nQty;
@@ -595,12 +596,16 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 						}			
 					}
 					else if(fDebug)
+					{
 						LogPrintf("CheckEscrowInputs(): OP_ESCROW_REFUND Transaction height for offer is expired");
+						theEscrow.vchOffer.clear();
+					}
 				}
 				else
 				{
 					if(fDebug)
 						LogPrintf("CheckEscrowInputs() : OP_ESCROW_REFUND trying to refund an expired offer");	
+					theEscrow.vchOffer.clear();
 				}
 
 				if(op == OP_ESCROW_COMPLETE)
@@ -719,7 +724,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 							nQty = myLinkOffer.nQty;
 							myLinkOffer.PutToOfferList(myLinkVtxPos);
 							if (!pofferdb->WriteOffer(dbOffer.vchLinkOffer, myLinkVtxPos))
-									return error( "CheckEscrowInputs() : failed to write to offer link to DB");
+								return error( "CheckEscrowInputs() : failed to write to offer link to DB");
 							
 						}
 					}

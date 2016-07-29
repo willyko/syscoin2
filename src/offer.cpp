@@ -702,22 +702,23 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
-				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");		
-			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
-			if(!theOffer.vchCert.empty())
-			{
-				CTransaction txCert;
-				// make sure this cert is still valid
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					if(theCert.vchPubKey != theOffer.vchPubKey)
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");				
-				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: creating an offer with a cert that doesn't exist");
-			}	
+				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");	
 			if(!theOffer.vchLinkOffer.empty())
 			{
+				if (theOffer.vchLinkAlias.empty() && IsInSys21Fork())
+					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: no link alias given to create a linked offer");
+
+				if(IsAliasOp(prevAliasOp))
+				{
+					if(theOffer.vchLinkAlias != vvchPrevAliasArgs[0])
+						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias link and alias input mismatch");
+					CSyscoinAddress aliasAddress(vvchPrevAliasArgs[0]);
+					CPubKey OfferPubKey(theOffer.vchPubKey);
+					CSyscoinAddress offerAddress(OfferPubKey.GetID());
+					if (aliasAddress != offerAddress)
+						return error("CheckOfferInputs() : alias input and offer alias mismatch");	
+				}	
+
 				if(theOffer.nCommission > 255)
 				{
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: markup must be less than 256!");
@@ -728,19 +729,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}	
 			
 				CTransaction txOffer;
-				if (GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer))
-				{
-					if (linkOffer.bOnlyAcceptBTC)
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that only accepts Bitcoins as payment");
-					if (!IsAliasOp(prevAliasOp) && linkOffer.linkWhitelist.bExclusiveResell)
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: parent offer set to exlusive resell but no alias input given to linked offer");			
-					if (IsAliasOp(prevAliasOp) && !linkOffer.linkWhitelist.GetLinkEntryByHash(vvchPrevAliasArgs[0], entry))
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this alias in the parent offer affiliate list");
-					if (!linkOffer.vchLinkOffer.empty())
-						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that is already linked to another offer");														
-				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer guid");
+				if (!GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer))
+					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: invalid linked offer");
 			}
 			else
 			{
@@ -759,38 +749,15 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs(): cannot use offeraccept as input to an update");	
 			if (vvchPrevArgs[0] != vvchArgs[0])
 				return error("CheckOfferInputs() : offerupdate offer mismatch");	
-			// load the offer data from the DB
-			if (pofferdb->ExistsOffer(vvchArgs[0])) {
-				if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos) || vtxPos.empty())
-					return error(
-							"CheckOfferInputs() : failed to read from offer DB");
-				myOffer = vtxPos.back();
-			}
+			if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
+				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
+			if (!IsCertOp(prevCertOp))
+				return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
+	
 			// check for valid alias peg
 			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
 			{
 				return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg));
-			}
-			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
-			// also only do this if whitelist isn't being modified, because if it is, update just falls through and offer is stored as whats in the db, plus any whitelist changes
-			if(!theOffer.vchCert.empty())
-			{
-				if(!myOffer.vchLinkOffer.empty())
-					return error("cannot sell a cert as a linked offer");
-				
-				CTransaction txCert;
-				// make sure this cert is still valid
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
-						return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-					if (!IsCertOp(prevCertOp))
-						return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
-					if(theCert.vchPubKey != theOffer.vchPubKey)
-						return error("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");					
-				}
-				else
-					return error("CheckOfferInputs() OP_OFFER_UPDATE: updating an offer with a cert that doesn't exist");
 			}
 			
 			break;
@@ -875,29 +842,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			// trying to purchase a cert
 			if(!theOffer.vchCert.empty())
 			{
+				theOfferAccept.nQty = 1;
 				CTransaction txCert;
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
-					// so in that case the escrow is attached to the accept and we skip this check
-					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
-					// also ensure its not a linked offer we are accepting, that check is done below
-					if(!IsEscrowOp(prevEscrowOp))
-					{
-						if(theOffer.vchLinkOffer.empty())
-						{
-							if(theCert.vchPubKey != theOffer.vchPubKey)
-								return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
-						}
-						else
-						{
-							if(theCert.vchPubKey != linkOffer.vchPubKey)
-								return error("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this linked offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
-						}
-					}
-					theOfferAccept.nQty = 1;					
-				}
-				else
+				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
 					return error("CheckOfferInputs() OP_OFFER_ACCEPT: purchasing a cert that doesn't exist");
 			}
 			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
@@ -1037,15 +984,34 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		// but first we assign fields from the DB since
 		// they are not shipped in an update txn to keep size down
 		if(op == OP_OFFER_UPDATE) {
-			// trying to update cert
+			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
 			{
-				CTransaction txCert;
-				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				if(!theOffer.vchLinkOffer.empty())
 				{
 					if(fDebug)
-						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Trying to update an offer with an expired certificate");
+						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Cannot sell a cert as a linked offer");
 					theOffer.vchCert.clear();	
+				}
+				else
+				{
+					CTransaction txCert;
+					if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+					{
+						if(theCert.vchPubKey != theOffer.vchPubKey)
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_OFFER_UPDATE: cert and offer pubkey mismatch");
+							theOffer.vchCert.clear();	
+						}
+
+					}
+					else
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Trying to update an offer with an expired certificate");
+						theOffer.vchCert.clear();	
+					}
 				}
 			}
 
@@ -1105,16 +1071,26 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 			// by default offers are private on new, need to update it out of privacy
 			theOffer.bPrivate = true;
+			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
 			{
 				CTransaction txCert;
-				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				{
+					if(theCert.vchPubKey != theOffer.vchPubKey)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: cert and offer pubkey's must match, this cert may already be linked to another offer");
+						theOffer.vchCert.clear();
+					}
+					theOffer.nQty = 1;
+				}
+				else
 				{
 					if(fDebug)
-						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Trying to create an offer with an expired certificate");
+						LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: creating an offer with a cert that doesn't exist");
 					theOffer.vchCert.clear();
-				}
-				theOffer.nQty = 1;
+				}			
 			}
 
 				
@@ -1123,22 +1099,54 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			{
 				CTransaction txOffer;
 				vector<COffer> myVtxPos;
-				if (GetTxAndVtxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer, myVtxPos))				{
-
-					// if creating a linked offer we set some mandatory fields to the parent
-					theOffer.nQty = linkOffer.nQty;
-					theOffer.linkWhitelist.bExclusiveResell = true;
-					theOffer.sCurrencyCode = linkOffer.sCurrencyCode;
-					theOffer.vchCert = linkOffer.vchCert;
-					theOffer.vchAliasPeg = linkOffer.vchAliasPeg;
-					theOffer.sCategory = linkOffer.sCategory;
-					theOffer.sTitle = linkOffer.sTitle;
-					linkOffer.offerLinks.push_back(vvchArgs[0]);							
-					linkOffer.PutToOfferList(myVtxPos);
-					// write parent offer
-			
-					if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
-						return error( "CheckOfferInputs() : failed to write to offer link to DB");					
+				if (GetTxAndVtxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer, myVtxPos))
+				{
+					if (linkOffer.bOnlyAcceptBTC)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that only accepts Bitcoins as payment");
+						theOffer.vchLinkOffer.clear();	
+					}					
+					CPubKey OfferPubKey(theOffer.vchPubKey);
+					CSyscoinAddress offerAddress(OfferPubKey.GetID());
+					offerAddress = CSyscoinAddress(offerAddress.ToString());
+					// if alias input is given then make sure it exists in the root offer affiliate list
+					if (!theOffer.vchLinkAlias.empty() && !linkOffer.linkWhitelist.GetLinkEntryByHash(offerAddress.aliasName, entry))
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this alias in the parent offer affiliate list");
+						theOffer.vchLinkOffer.clear();	
+					}						
+					if (!linkOffer.vchLinkOffer.empty())
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: cannot link to an offer that is already linked to another offer");
+						theOffer.vchLinkOffer.clear();	
+					}
+					// if alias input is not given yet root offer is in exclusive mode then we can't link this offer
+					if (theOffer.vchLinkAlias.empty() && linkOffer.linkWhitelist.bExclusiveResell)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: parent offer set to exlusive resell but no alias input given to linked offer");	
+						theOffer.vchLinkOffer.clear();	
+					}
+					if(!theOffer.vchLinkOffer.empty())
+					{
+						// if creating a linked offer we set some mandatory fields to the parent
+						theOffer.nQty = linkOffer.nQty;
+						theOffer.linkWhitelist.bExclusiveResell = true;
+						theOffer.sCurrencyCode = linkOffer.sCurrencyCode;
+						theOffer.vchCert = linkOffer.vchCert;
+						theOffer.vchAliasPeg = linkOffer.vchAliasPeg;
+						theOffer.sCategory = linkOffer.sCategory;
+						theOffer.sTitle = linkOffer.sTitle;
+						linkOffer.offerLinks.push_back(vvchArgs[0]);							
+						linkOffer.PutToOfferList(myVtxPos);
+						// write parent offer
+				
+						if (!pofferdb->WriteOffer(theOffer.vchLinkOffer, myVtxPos))
+							return error( "CheckOfferInputs() : failed to write to offer link to DB");	
+					}
 				}
 				else
 				{
@@ -1278,6 +1286,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				{
 					if(fDebug)
 						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Linked offer is expired");
+					theOffer.vchLinkOffer.clear();
 				}
 			}
 			else
@@ -1313,6 +1322,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		
 		if(op == OP_OFFER_ACCEPT)
 		{
+			COffer linkOffer;
  			if(theOffer.vchLinkOffer.empty())
 			{
 				// go through the linked offers, if any, and update the linked offer qty based on the this qty
@@ -1326,17 +1336,66 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						// write offer
 					
 						if (!pofferdb->WriteOffer(theOffer.offerLinks[i], myVtxPos))
-								return error( "CheckOfferInputs() : failed to write to offer link to DB");								
+							return error( "CheckOfferInputs() : failed to write to offer link to DB");								
 					}
 				}
-			}	
+			}
+			else
+			{
+				CTransaction txOffer;
+				vector<COffer> myVtxPos;
+				if (!GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, txOffer))
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Linked offer is expired");
+					theOffer.vchLinkOffer.clear();
+				}
+			}
+ 			if(!theOffer.vchCert.empty())
+			{
+				CTransaction txCert;
+				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
+				{
+					// if we do an offeraccept based on an escrow release, it's assumed that the cert has already been transferred manually so buyer releases funds which can invalidate this accept
+					// so in that case the escrow is attached to the accept and we skip this check
+					// if the escrow is not attached means the buyer didnt use escrow, so ensure cert didn't get transferred since vendor created the offer in that case.
+					// also ensure its not a linked offer we are accepting, that check is done below
+					if(theOffer.vchEscrow.empty())
+					{
+						if(theOffer.vchLinkOffer.empty())
+						{
+							if(theCert.vchPubKey != theOffer.vchPubKey)
+							{
+								if (fDebug)
+									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+								theOffer.vchCert.clear();
+							}
+						}
+						else
+						{
+							if(theCert.vchPubKey != linkOffer.vchPubKey)
+							{
+								if (fDebug)
+									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cannot purchase this linked offer because the certificate has been transferred since it offer was created or it is linked to another offer. Cert pubkey %s vs Offer pubkey %s", HexStr(theCert.vchPubKey).c_str(), HexStr(theOffer.vchPubKey).c_str());
+								theOffer.vchCert.clear();
+							}
+						}
+					}
+					theOfferAccept.nQty = 1;					
+				}
+				else
+				{
+					if (fDebug)
+						LogPrintf"CheckOfferInputs() OP_OFFER_ACCEPT: purchasing a cert that doesn't exist");
+					theOffer.vchCert.clear();
+				}
 			// if its my offer and its linked and its not a special feedback output for the buyer
 			if (pwalletMain && !theOffer.vchLinkOffer.empty() && IsSyscoinTxMine(tx, "offer"))
 			{	
 				// theOffer.vchLinkOffer is the linked offer guid
 				// theOffer is this reseller offer used to get pubkey to send to offeraccept as first parameter
 				string strError = makeOfferLinkAcceptTX(theOfferAccept, vvchArgs[0], vvchArgs[2], theOffer.vchLinkOffer, tx.GetHash().GetHex(), theOffer, block);
-				if(strError != "")					
+				if(strError != "" && fDebug)					
 					LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeOfferLinkAcceptTX %s\n", strError.c_str());			
 				
 			} 
@@ -1346,7 +1405,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
  			if(pwalletMain && theOfferAccept.txBTCId.IsNull() && IsSyscoinTxMine(tx, "offer") && !theOffer.vchCert.empty() && theOffer.vchLinkOffer.empty())
  			{
  				string strError = makeTransferCertTX(theOffer, theOfferAccept);
- 				if(strError != "")
+ 				if(strError != "" && fDebug)
  					LogPrintf("CheckOfferInputs() - OP_OFFER_ACCEPT - makeTransferCert %s\n", strError.c_str());									
  			}
 		}
@@ -1867,7 +1926,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	// if the whitelist exclusive mode is on and you dont have an alias in the whitelist, you cannot link to this offer
 	if(foundEntry.IsNull() && linkOffer.linkWhitelist.bExclusiveResell)
 	{
-		throw runtime_error("Cannot link to this offer because the alias given is not on the offer's affiliate list (it in exclusive mode)");
+		throw runtime_error("Cannot link to this offer because the alias given is not on the offer's affiliate list (it is in exclusive mode)");
 	}
 	if(linkOffer.bOnlyAcceptBTC)
 	{
@@ -1900,6 +1959,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	newOffer.SetPrice(price);
 	newOffer.nCommission = commissionInteger;
 	newOffer.vchLinkOffer = vchLinkOffer;
+	newOffer.vchLinkAlias = vchAlias;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
 	
 	//create offeractivate txn keys
