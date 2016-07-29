@@ -705,7 +705,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");	
 			if(!theOffer.vchLinkOffer.empty())
 			{
-				if (theOffer.vchLinkAlias.empty() && IsInSys21Fork())
+				if (theOffer.vchLinkAlias.empty() && IsSys21Fork(nHeight))
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: no link alias given to create a linked offer");
 
 				if(IsAliasOp(prevAliasOp))
