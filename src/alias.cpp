@@ -902,11 +902,14 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		{
 			if(!vtxPos.empty())
 			{
-				if((vtxPos.back().nHeight + GetAliasExpirationDepth()) < nHeight)
+				if(vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_CATEGORY"))
 				{
-					if(fDebug)
-						LogPrintf("CheckAliasInputs(): Trying to update an expired service");
-					return true;
+					if((vtxPos.back().nHeight + GetAliasExpirationDepth()) < nHeight)
+					{
+						if(fDebug)
+							LogPrintf("CheckAliasInputs(): Trying to update an expired service");
+						return true;
+					}
 				}
 				update = true;
 				if(theAlias.IsNull())
