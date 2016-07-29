@@ -885,7 +885,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	}
 	
 	if (!fJustCheck ) {
-		if((theAlias.nHeight + GetAliasExpirationDepth()) < nHeight)
+		if(!theAlias.IsNull() && (theAlias.nHeight + GetAliasExpirationDepth()) < nHeight)
 		{
 			if(fDebug)
 				LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired, skipping...");

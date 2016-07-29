@@ -431,7 +431,7 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 	}
 
     if (!fJustCheck ) {
-		if((theCert.nHeight + GetCertExpirationDepth()) < nHeight)
+		if(!theCert.IsNull() && (theCert.nHeight + GetCertExpirationDepth()) < nHeight)
 		{
 			if(fDebug)
 				LogPrintf("CheckCertInputs(): Trying to make a cert transaction that is expired, skipping...");
