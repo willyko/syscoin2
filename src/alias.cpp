@@ -885,11 +885,14 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	}
 	
 	if (!fJustCheck ) {
-		if(!theAlias.IsNull() && (theAlias.nHeight + GetAliasExpirationDepth()) < nHeight)
+		if(vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_CATEGORY"))
 		{
-			if(fDebug)
-				LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired, skipping...");
-			return true;
+			if(!theAlias.IsNull() && (theAlias.nHeight + GetAliasExpirationDepth()) < nHeight)
+			{
+				if(fDebug)
+					LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired, skipping...");
+				return true;
+			}
 		}
 		bool update = false;
 		// get the alias from the DB
