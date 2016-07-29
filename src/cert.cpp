@@ -812,14 +812,15 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
 	CCert theCert;
     if (!GetTxOfCert( vchCert, theCert, tx))
         throw runtime_error("could not find a certificate with this key");
-	aliasKey = CPubKey(theCert.vchPubKey);
+	CPubKey aliasKey = CPubKey(theCert.vchPubKey);
 	if(!aliasKey.IsValid())
 	{
 		throw runtime_error("Invalid cert alias public key");
 	}
 	CSyscoinAddress myAddress = CSyscoinAddress(aliasKey.GetID());
-	if(!myAddress.isValid || !myAddress.isAlias)
+	if(!myAddress.IsValid() || !myAddress.isAlias)
 		throw runtime_error("Invalid cert alias");
+	CAliasIndex theAlias;
     if (!GetTxOfAlias( vchFromString(myAddress.aliasName), theAlias, aliastx))
         throw runtime_error("could not find the certificate alias or it has expired");
 	// check to see if certificate in wallet
