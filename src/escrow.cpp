@@ -409,6 +409,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 	{
 		return error("guid in data output doesn't match guid in tx");
 	}
+	CTransaction txOffer;
+	COffer dbOffer;
 	if(fJustCheck)
 	{
 		switch (op) {
@@ -438,8 +440,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				}
 				if(theEscrow.op != OP_ESCROW_ACTIVATE)
 					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");
-				CTransaction txOffer;
-				COffer dbOffer;
 				// make sure this cert is still valid
 				if (GetTxOfOffer( theOffer.vchCert, dbOffer, txOffer))
 				{
@@ -565,8 +565,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
-					CTransaction txOffer;
-					COffer dbOffer;
 					if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 					{
 						COffer offer(txOffer);
@@ -712,8 +710,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			}
 		
 			vector<COffer> myVtxPos;
-			CTransaction txOffer;
-			COffer dbOffer;
 			// make sure alias is still valid
 			if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 			{
