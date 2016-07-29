@@ -595,17 +595,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 								return error( "CheckEscrowInputs() : failed to write to offer to DB");
 						}			
 					}
-					else if(fDebug)
-					{
-						LogPrintf("CheckEscrowInputs(): OP_ESCROW_REFUND Transaction height for offer is expired");
-						theEscrow.vchOffer.clear();
-					}
-				}
-				else
-				{
-					if(fDebug)
-						LogPrintf("CheckEscrowInputs() : OP_ESCROW_REFUND trying to refund an expired offer");	
-					theEscrow.vchOffer.clear();
 				}
 
 				if(op == OP_ESCROW_COMPLETE)
