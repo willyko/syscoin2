@@ -808,13 +808,20 @@ UniValue certtransfer(const UniValue& params, bool fHelp) {
     CScript scriptPubKeyOrig;
 
     EnsureWalletIsUnlocked();
+    CTransaction tx, aliastx;
 	CCert theCert;
-	// get the cert from DB
-	vector<CCert> vtxPos;
-	if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
-		throw runtime_error("could not read cert from DB");
-	theCert = vtxPos.back();
-
+    if (!GetTxOfCert( vchCert, theCert, tx))
+        throw runtime_error("could not find a certificate with this key");
+	aliasKey = CPubKey(theCert.vchPubKey);
+	if(!aliasKey.IsValid())
+	{
+		throw runtime_error("Invalid cert alias public key");
+	}
+	CSyscoinAddress myAddress = CSyscoinAddress(aliasKey.GetID());
+	if(!myAddress.isValid || !myAddress.isAlias)
+		throw runtime_error("Invalid cert alias");
+    if (!GetTxOfAlias( vchFromString(myAddress.aliasName), theAlias, aliastx))
+        throw runtime_error("could not find the certificate alias or it has expired");
 	// check to see if certificate in wallet
 	wtxIn = pwalletMain->GetWalletTx(theCert.txHash);
 	if (wtxIn == NULL || !IsSyscoinTxMine(*wtxIn, "cert"))
