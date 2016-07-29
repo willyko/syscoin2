@@ -714,8 +714,9 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			vector<COffer> myVtxPos;
 			CTransaction txOffer;
 			COffer dbOffer;
+			CSys
 			// make sure alias is still valid
-			if (GetTxAndVtxOfOffer( vchFromString(aliasaddress.aliasName), dbOffer, txOffer, myVtxPos))
+			if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 			{
 				COffer offer(txOffer);
 				if((offer.nHeight + GetOfferExpirationDepth()) >= nHeight)
