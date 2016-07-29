@@ -714,7 +714,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			vector<COffer> myVtxPos;
 			CTransaction txOffer;
 			COffer dbOffer;
-			CSys
 			// make sure alias is still valid
 			if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 			{
