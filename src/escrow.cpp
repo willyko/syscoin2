@@ -443,9 +443,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				// make sure this offer is still valid
 				if (GetTxOfOffer( theEscrow.vchOffer, dbOffer, txOffer))
 				{			
-					COffer &dbOffer = myVtxPos.back();
-					if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
-						return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE trying to create escrow on an expired offer");
 					if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
 						return error("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
 				}
@@ -567,14 +564,10 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					theEscrow.rawTx = serializedEscrow.rawTx;
 				if(op == OP_ESCROW_REFUND && vvchArgs.size() == 1)
 				{
+					// make sure offer is still valid and then refund qty
 					if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 					{
-						if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
-						{
-							if(fDebug)
-								LogPrintf("CheckEscrowInputs() : OP_ESCROW_REFUND trying to refund an expired offer");	
-						}
-						else if(dbOffer.nQty != -1)
+						if(dbOffer.nQty != -1)
 						{
 							vector<COffer> myLinkVtxPos;
 							unsigned int nQty = dbOffer.nQty + theEscrow.nQty;
@@ -607,7 +600,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				else
 				{
 					if(fDebug)
-						LogPrintf("CheckEscrowInputs(): OP_ESCROW_REFUND offer is expired");
+						LogPrintf("CheckEscrowInputs() : OP_ESCROW_REFUND trying to refund an expired offer");	
 				}
 
 				if(op == OP_ESCROW_COMPLETE)
@@ -708,15 +701,10 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			}
 		
 			vector<COffer> myVtxPos;
-			// make sure alias is still valid
+			// make sure offer is still valid and then deduct qty
 			if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 			{
-				if((dbOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
-				{
-					if(fDebug)
-						LogPrintf("CheckEscrowInputs() : OP_ESCROW_ACTIVATE trying to purchase an expired offer");	
-				}
-				else if(dbOffer.nQty != -1)
+				if(dbOffer.nQty != -1)
 				{
 					vector<COffer> myLinkVtxPos;
 					unsigned int nQty = dbOffer.nQty - theEscrow.nQty;
