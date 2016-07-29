@@ -562,13 +562,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					// make sure offer is still valid and then refund qty
 					if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 					{
-						if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
-						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
-							theEscrow.vchOffer.clear();
-						}
-						else if(dbOffer.nQty != -1)
+						if(dbOffer.nQty != -1)
 						{
 							vector<COffer> myLinkVtxPos;
 							unsigned int nQty = dbOffer.nQty + theEscrow.nQty;
@@ -698,7 +692,13 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			// make sure offer is still valid and then deduct qty
 			if (GetTxAndVtxOfOffer( theEscrow.vchOffer, dbOffer, txOffer, myVtxPos))
 			{
-				if(dbOffer.nQty != -1)
+
+				if(dbOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(dbOffer.sCategory), "wanted"))
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs() OP_ESCROW_ACTIVATE: Cannot purchase a wanted offer");
+				}
+				else if(dbOffer.nQty != -1)
 				{
 					vector<COffer> myLinkVtxPos;
 					unsigned int nQty = dbOffer.nQty - theEscrow.nQty;
