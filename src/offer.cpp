@@ -751,7 +751,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : offerupdate offer mismatch");	
 			if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
-			if (!IsCertOp(prevCertOp))
+			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
 	
 			// check for valid alias peg
