@@ -481,18 +481,13 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 							CTransaction txAlias;
 							CAliasIndex alias;
 							// make sure alias is still valid
-							if (GetTxOfAlias( vchFromString(aliasaddress.aliasName), alias, txAlias))
-							{
-								if(fDebug)
-									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Transaction height for alias is expired");
-								theCert.vchPubKey = dbCert.vchPubKey;											
-							}
-							else
+							if (!GetTxOfAlias( vchFromString(aliasaddress.aliasName), alias, txAlias))
 							{
 								if(fDebug)
 									LogPrintf("CheckOfferInputs(): OP_CERT_TRANSFER Trying to transfer an expired certificate");
 								theCert.vchPubKey = dbCert.vchPubKey;		
 							}
+							
 						}
 					}
 

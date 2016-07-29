@@ -1042,13 +1042,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(!theOffer.vchCert.empty())
 			{
 				CTransaction txCert;
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Transaction height for linked cert is expired");
-					theOffer.vchCert.clear();				
-				}
-				else
+				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
 					if(fDebug)
 						LogPrintf("CheckOfferInputs(): OP_OFFER_UPDATE Trying to update an offer with an expired certificate");
@@ -1115,13 +1109,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(!theOffer.vchCert.empty())
 			{
 				CTransaction txCert;
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Transaction height for linked cert is expired");
-					theOffer.vchCert.clear();									
-				}
-				else
+				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
 					if(fDebug)
 						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Trying to create an offer with an expired certificate");
@@ -1167,13 +1155,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(!theOffer.vchCert.empty())
 			{
 				CTransaction txCert;
-				if (GetTxOfCert( theOffer.vchCert, theCert, txCert))
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs(): Transaction height for linked cert is expired");
-					theOffer.vchCert.clear();											
-				}
-				else
+				if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
 				{
 					if(fDebug)
 						LogPrintf("CheckOfferInputs(): Trying to sell an expired certificate");
