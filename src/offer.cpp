@@ -1110,8 +1110,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					CPubKey OfferPubKey(theOffer.vchPubKey);
 					CSyscoinAddress offerAddress(OfferPubKey.GetID());
 					offerAddress = CSyscoinAddress(offerAddress.ToString());
-					// if alias input is given then make sure it exists in the root offer affiliate list
-					if (!theOffer.vchLinkAlias.empty() && !linkOffer.linkWhitelist.GetLinkEntryByHash(vchFromString(offerAddress.aliasName), entry))
+					// if alias input is given then make sure it exists in the root offer affiliate list if root offer is in exclusive mode
+					if (!theOffer.vchLinkAlias.empty() && linkOffer.linkWhitelist.bExclusiveResell && !linkOffer.linkWhitelist.GetLinkEntryByHash(vchFromString(offerAddress.aliasName), entry))
 					{
 						if(fDebug)
 							LogPrintf("CheckOfferInputs() OP_OFFER_ACTIVATE: can't find this alias in the parent offer affiliate list");
@@ -1922,6 +1922,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	newOffer.SetPrice(price);
 	newOffer.nCommission = commissionInteger;
 	newOffer.vchLinkOffer = vchLinkOffer;
+	// need this for inputs check if root offer is in exclusive mode
 	newOffer.vchLinkAlias = vchAlias;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
 	
@@ -2066,6 +2067,8 @@ UniValue offerlink_nocheck(const UniValue& params, bool fHelp) {
 	newOffer.SetPrice(price);
 	newOffer.nCommission = commissionInteger;
 	newOffer.vchLinkOffer = vchLinkOffer;
+	// need this for inputs check if root offer is in exclusive mode
+	newOffer.vchLinkAlias = vchAlias;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
 	
 	//create offeractivate txn keys
