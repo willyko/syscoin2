@@ -3139,6 +3139,18 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// make sure this cert is still valid
 		if (!GetTxOfCert( theOffer.vchCert, theCert, txCert))
 			throw runtime_error("Cannot purchase with this certificate, it may be expired!");
+
+		if(theOffer.vchLinkOffer.empty())
+		{
+			if(theCert.vchPubKey != theOffer.vchPubKey)
+				throw runtime_error("Cannot purchase this offer because the certificate has been transferred or it is linked to another offer");
+		}
+		else
+		{
+			if(theCert.vchPubKey != linkedOffer.vchPubKey)
+				throw runtime_error("Cannot purchase this linked offer because the certificate has been transferred or it is linked to another offer");
+		}
+
 	}
 	else{
 		if (vchMessage.size() <= 0)
