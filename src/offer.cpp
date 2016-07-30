@@ -3031,13 +3031,15 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 		if(pofferdb->ExistsOffer(theOffer.vchLinkOffer))
 		{
+			
 			if (!GetTxOfOffer( theOffer.vchLinkOffer, linkedOffer, tmpTx))
 				throw runtime_error("Trying to accept a linked offer but could not find parent offer, perhaps it is expired");
 			if (linkedOffer.bOnlyAcceptBTC)
 				throw runtime_error("Linked offer only accepts Bitcoins, linked offers currently only work with Syscoin payments");
 			if(linkedOffer.linkWhitelist.bExclusiveResell)
 			{
-				foundLinkedAffiliate = false;
+				bool foundLinkedAffiliate = false;
+				CAliasIndex linkedAlias;
 				// if offer is a linked offer get the root offer and ensure that the linked offer can accept the root offer (is still an affiliate of the root offer, remember affiliates can be removed by the root offer owner)
 				// go through the whitelist of root offer 
 				for(unsigned int i=0;i<linkedOffer.linkWhitelist.entries.size();i++) {
@@ -3047,10 +3049,10 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 					vector<vector<unsigned char> > vvch;
 					COfferLinkWhitelistEntry& entry = linkedOffer.linkWhitelist.entries[i];
 					// make sure this alias is still valid
-					if (GetTxOfAlias(entry.aliasLinkVchRand, theAlias, txAlias))
+					if (GetTxOfAlias(entry.aliasLinkVchRand, linkedAlias, txAlias))
 					{
 						// the alias used by the linked offer should be the same one on the root offer affiliate list
-						if (theAlias.vchPubKey == theOffer.vchPubKey) 
+						if (linkedAlias.vchPubKey == theOffer.vchPubKey) 
 						{
 							
 							foundLinkedAffiliate = true;
