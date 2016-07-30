@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		StartNode("node3");
 		MilliSleep(2500);
 		BOOST_CHECK_NO_THROW(CallRPC("node3", "generate 5"));
-		MilliSleep(2500);
+		MilliSleep(5000);
 		// node3 shouldn't find the service at all (meaning node3 doesn't sync the data)
 		BOOST_CHECK_THROW(CallRPC("node3", "escrowinfo " + guid1), runtime_error);
 	#endif
