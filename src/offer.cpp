@@ -1147,12 +1147,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");	
 					return true;
 				}	
-				if(theLinkedOfferAccept.IsNull())
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
-					return true;
-				}
+			
 				heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
 				linkAccept = true;
 				if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.vchBuyerKey)
