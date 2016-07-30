@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE (generate_offeraccept)
 		const UniValue &arr = r.get_array();
 		string acceptguid = arr[1].get_str();
 		GenerateBlocks(5, "node2");
-		r = FindOfferAcceptFeedback("node2", offerguid, acceptguid, acceptTxid, true);
+		r = FindOfferAccept("node2", offerguid, acceptguid, true);
 		// ensure this accept is not found because its over  qty
 		BOOST_CHECK(r.isNull());
 	#endif
@@ -581,8 +581,8 @@ BOOST_AUTO_TEST_CASE (generate_offerexpired)
 		// should fail: link to an expired offer
 		BOOST_CHECK_THROW(r = CallRPC("node2", "offerlink buyeralias4 " + offerguid + " 5 newdescription"), runtime_error);	
 		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerlink_nocheck buyeralias4 " + offerguid + " 5 newdescription"));	
-		const UniValue &arr = r.get_array();
-		string linkofferguid = arr[1].get_str();
+		const UniValue &arr1 = r.get_array();
+		string linkofferguid = arr1[1].get_str();
 		GenerateBlocks(5, "node2");
 		// ensure offer isn't linked
 		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerinfo " + linkofferguid));
