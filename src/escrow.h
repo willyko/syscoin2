@@ -248,7 +248,7 @@ public:
 };
 
 bool GetTxOfEscrow(const std::vector<unsigned char> &vchEscrow, CEscrow& txPos, CTransaction& tx);
-bool GetTxAndVtxOfEscrow(const std::vector<unsigned char> &vchEscrow, CEscrow& txPos, CTransaction& tx, vector<CEscrow> &vtxPos);
+bool GetTxAndVtxOfEscrow(const std::vector<unsigned char> &vchEscrow, CEscrow& txPos, CTransaction& tx, std::vector<CEscrow> &vtxPos);
 void HandleEscrowFeedback(const CEscrow& escrow);
 int FindFeedbackInEscrow(const unsigned char nFeedbackUser, const EscrowUser type, const std::vector<CEscrow> &vtxPos, int &numRatings);
 void GetFeedbackInEscrow(std::vector<CEscrowFeedback> &feedback, int &avgRating, const EscrowUser type, const std::vector<CEscrow> &vtxPos);
