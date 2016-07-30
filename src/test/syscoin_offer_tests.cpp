@@ -450,7 +450,13 @@ BOOST_AUTO_TEST_CASE (generate_offeraccept)
 	// perform an accept on more items than available
 	BOOST_CHECK_THROW(r = CallRPC("node2", "offeraccept buyeralias3 " + offerguid + " 100 message"), runtime_error);
 	#ifdef ENABLE_DEBUGRPC
-		BOOST_CHECK_THROW(r = CallRPC("node2", "offeraccept_nocheck buyeralias3 " + offerguid + " 100 message"), runtime_error);
+		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept_nocheck buyeralias3 " + offerguid + " 100 message"));
+		const UniValue &arr = r.get_array();
+		string acceptguid = arr[1].get_str();
+		GenerateBlocks(5, "node2");
+		r = FindOfferAcceptFeedback("node2", offerguid, acceptguid, acceptTxid, true);
+		// ensure this accept is not found because its over  qty
+		BOOST_CHECK(r.isNull());
 	#endif
 
 	// perform an accept on negative quantity
@@ -574,7 +580,13 @@ BOOST_AUTO_TEST_CASE (generate_offerexpired)
 		BOOST_CHECK_EQUAL(find_value(r.get_obj(), "quantity").get_str(), "100");
 		// should fail: link to an expired offer
 		BOOST_CHECK_THROW(r = CallRPC("node2", "offerlink buyeralias4 " + offerguid + " 5 newdescription"), runtime_error);	
-		BOOST_CHECK_THROW(r = CallRPC("node2", "offerlink_nocheck buyeralias4 " + offerguid + " 5 newdescription"), runtime_error);	
+		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerlink_nocheck buyeralias4 " + offerguid + " 5 newdescription"));	
+		const UniValue &arr = r.get_array();
+		string linkofferguid = arr[1].get_str();
+		GenerateBlocks(5, "node2");
+		// ensure offer isn't linked
+		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offerinfo " + linkofferguid));
+		BOOST_CHECK_EQUAL(find_value(r.get_obj(), "offerlink").get_str(), "false");
 	#endif
 }
 
