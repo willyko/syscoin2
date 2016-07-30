@@ -1135,7 +1135,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
 			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 			// we assume previous tx still in mempool because it calls offeraccept within the checkinputs stage (not entering a block yet)
-			if (!theOfferAccept.vchLinkAccept.empty()))
+			if (!theOfferAccept.vchLinkAccept.empty())
 			{				
 				CTransaction acceptTx;
 				COffer theLinkedOfferAccept;
@@ -1163,7 +1163,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}
 			}
 			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-			if(!theOffer.accept.vchEscrow.empty()))
+			if(!theOffer.accept.vchEscrow.empty())
 			{		
 				vector<CEscrow> escrowVtxPos;
 				CEscrow escrow;
