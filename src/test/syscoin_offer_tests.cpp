@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE (generate_offeraccept)
 	#ifdef ENABLE_DEBUGRPC
 		BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept_nocheck buyeralias3 " + offerguid + " 100 message"));
 		const UniValue &arr = r.get_array();
-		string acceptguid = arr[1].get_str();
+		acceptguid = arr[1].get_str();
 		GenerateBlocks(5, "node2");
 		r = FindOfferAccept("node2", offerguid, acceptguid, true);
 		// ensure this accept is not found because its over  qty
