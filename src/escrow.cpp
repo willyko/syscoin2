@@ -202,6 +202,24 @@ bool GetTxOfEscrow(const vector<unsigned char> &vchEscrow,
 
     return true;
 }
+bool GetTxAndVtxOfEscrow(const vector<unsigned char> &vchEscrow,
+        CEscrow& txPos, CTransaction& tx, vector<CEscrow> &vtxPos) {
+    
+    if (!pescrowdb->ReadEscrow(vchEscrow, vtxPos) || vtxPos.empty())
+        return false;
+    txPos = vtxPos.back();
+    int nHeight = txPos.nHeight;
+    if ((nHeight + GetEscrowExpirationDepth()
+            < chainActive.Tip()->nHeight) && txPos.op == OP_ESCROW_COMPLETE) {
+        string escrow = stringFromVch(vchEscrow);
+        LogPrintf("GetTxOfEscrow(%s) : expired", escrow.c_str());
+        return false;
+    }
+    if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
+        return error("GetTxOfEscrow() : could not read tx from disk");
+
+    return true;
+}
 bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
@@ -439,10 +457,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					return error(retError.c_str());
 				}
 				if(theEscrow.op != OP_ESCROW_ACTIVATE)
-					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");
-				// make sure this offer is still valid
-				if (!GetTxOfOffer( theEscrow.vchOffer, dbOffer, txOffer))
-					return error("CheckEscrowInputs() : OP_ESCROW_ACTIVATE can't read offer");	
+					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");	
 			
 				break;
 			case OP_ESCROW_RELEASE:
@@ -724,18 +739,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					if (!pofferdb->WriteOffer(theEscrow.vchOffer, myVtxPos))
 						return error( "CheckEscrowInputs() : failed to write to offer to DB");					
 				}
-				else
-				{
-					if(fDebug)
-						LogPrintf("CheckEscrowInputs(): OP_ESCROW_ACTIVATE Transaction height for offer is expired");
-
-				}
-			}
-			else
-			{
-				if(fDebug)
-					LogPrintf("CheckEscrowInputs(): OP_ESCROW_ACTIVATE Trying to create an escrow with expired offer");
-
 			}
 		}
         // set the escrow's txn-dependent values
