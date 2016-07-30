@@ -3035,6 +3035,35 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				throw runtime_error("Trying to accept a linked offer but could not find parent offer, perhaps it is expired");
 			if (linkedOffer.bOnlyAcceptBTC)
 				throw runtime_error("Linked offer only accepts Bitcoins, linked offers currently only work with Syscoin payments");
+			if(linkedOffer.linkWhitelist.bExclusiveResell)
+			{
+				foundLinkedAffiliate = false;
+				// if offer is a linked offer get the root offer and ensure that the linked offer can accept the root offer (is still an affiliate of the root offer, remember affiliates can be removed by the root offer owner)
+				// go through the whitelist of root offer 
+				for(unsigned int i=0;i<linkedOffer.linkWhitelist.entries.size();i++) {
+					CTransaction txAlias;
+					
+					
+					vector<vector<unsigned char> > vvch;
+					COfferLinkWhitelistEntry& entry = linkedOffer.linkWhitelist.entries[i];
+					// make sure this alias is still valid
+					if (GetTxOfAlias(entry.aliasLinkVchRand, theAlias, txAlias))
+					{
+						// the alias used by the linked offer should be the same one on the root offer affiliate list
+						if (theAlias.vchPubKey == theOffer.vchPubKey) 
+						{
+							
+							foundLinkedAffiliate = true;
+							break;
+											
+						}		
+					}
+				}
+				if(!foundLinkedAffiliate)
+					throw runtime_error("Linked offer is not an affiliate of the merchant offer. The merchant offer is exclusive which means only affiliates can resell this offer. The offer you are trying to accept is linked to the merchant offer but is not an affiliate anymore. Please contact the owner of this offer for more information.");
+
+			}
+			
 		}
 	}
 	// if not escrow accept then make sure you can't buy your own offer
@@ -3069,16 +3098,13 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			// if escrow has a whitelist alias attached (the alias used to buy with escrow), use that to get the offerlinkwhitelist entry, else check the seller's whitelist to see if we own any aliases from his whitelist
 			// if not escrow then ensure the discount applies to the alias thats passed in
 			if (IsSyscoinTxMine(txAlias, "alias") && ((theAlias.vchPubKey == alias.vchPubKey && vchEscrowWhitelistAlias.empty()) || vchEscrowWhitelistAlias == entry.aliasLinkVchRand)) 
-			{
-				// find the entry with the biggest discount, for buyers convenience
-				if(entry.nDiscountPct >= foundAlias.nDiscountPct || foundAlias.nDiscountPct == 0)
-				{
-					wtxAliasIn = pwalletMain->GetWalletTx(txAlias.GetHash());		
-					foundAlias = entry;		
-					vchWhitelistAlias = entry.aliasLinkVchRand;
-					CPubKey currentKey(theAlias.vchPubKey);
-					scriptPubKeyAliasOrig = GetScriptForDestination(currentKey.GetID());
-				}				
+			{		
+				wtxAliasIn = pwalletMain->GetWalletTx(txAlias.GetHash());		
+				foundAlias = entry;		
+				vchWhitelistAlias = entry.aliasLinkVchRand;
+				CPubKey currentKey(theAlias.vchPubKey);
+				scriptPubKeyAliasOrig = GetScriptForDestination(currentKey.GetID());
+				break;
 			}		
 		}
 	}
