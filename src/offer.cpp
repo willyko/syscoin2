@@ -1138,7 +1138,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if (!theOfferAccept.vchLinkAccept.empty())
 			{				
 				CTransaction acceptTx;
-				COffer theLinkedOfferAccept;
+				COfferAccept theLinkedOfferAccept;
 				COffer offer;
 				bool skipFeedback = true;
 				if (!GetTxOfOfferAccept(theOfferAccept.vchLinkOffer, theOfferAccept.vchLinkAccept, offer, theLinkedOfferAccept, acceptTx, skipFeedback))
@@ -1153,9 +1153,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept with this identifier");
 					return true;
 				}
-				heightToCheckAgainst = theLinkedOfferAccept.accept.nAcceptHeight;
+				heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
 				linkAccept = true;
-				if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.accept.vchBuyerKey)
+				if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.vchBuyerKey)
 				{
 					if(fDebug)
 						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: linked accept buyer must match the buyer of the reselling offer");
