@@ -2979,6 +2979,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// ensure both accepts have the escrow information
 		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		txAccept.vchLinkAccept = linkOffer.accept.vchAcceptRand;
+		txAccept.vchLinkOffer = linkOffer.vchOffer;
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;
@@ -3386,6 +3387,7 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		// ensure both accepts have the escrow information
 		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		txAccept.vchLinkAccept = linkOffer.accept.vchAcceptRand;
+		txAccept.vchLinkOffer = linkOffer.vchOffer;
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;

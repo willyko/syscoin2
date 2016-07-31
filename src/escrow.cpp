@@ -692,7 +692,11 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				
 			}
 			else
+			{
+				if(fDebug)
+					LogPrintf("CheckEscrowInputs(): Escrow not found and trying to update, skipping...");
 				return true;
+			}
 					
 		}
 		else
@@ -751,7 +755,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 		theEscrow.nHeight = nHeight;
 		PutToEscrowList(vtxPos, theEscrow);
         // write escrow  
-
+		
         if (!pescrowdb->WriteEscrow(vvchArgs[0], vtxPos))
             return error( "CheckEscrowInputs() : failed to write to escrow DB");
 		

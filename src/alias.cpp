@@ -944,7 +944,11 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}
 			}
 			else
+			{
+				if(fDebug)
+					LogPrintf("CheckEscrowInputs(): Alias not found and trying to update, skipping...");
 				return true;
+			}
 		}
 	
 		if(op == OP_ALIAS_ACTIVATE)
