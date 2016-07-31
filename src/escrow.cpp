@@ -436,6 +436,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					return error("CheckEscrowInputs() : an escrow offer accept using an alias must attach the alias as an input");
 				if(IsAliasOp(prevAliasOp) && vvchPrevAliasArgs[0] != theEscrow.vchWhitelistAlias)
 					return error("CheckEscrowInputs() : escrow alias guid and alias input guid mismatch");
+				if(theEscrow.op != OP_ESCROW_ACTIVATE)
+					return error("CheckEscrowInputs():  OP_ESCROW_ACTIVATE invalid op, should be escrow activate");
 				if(!theEscrow.buyerFeedback.IsNull() || !theEscrow.sellerFeedback.IsNull() || !theEscrow.arbiterFeedback.IsNull())
 				{
 					return error("CheckEscrowInputs() :cannot leave feedback in activate tx");
@@ -478,6 +480,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					return error("CheckEscrowInputs() : escrow complete status too large");
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckEscrowInputs() : escrow input guid mismatch");
+				if(theEscrow.op != OP_ESCROW_COMPLETE)
+					return error("CheckEscrowInputs():  OP_ESCROW_COMPLETE invalid op, should be escrow complete");
 				if(vvchArgs.size() > 1 && vvchArgs[1] == vchFromString("1"))
 				{
 					if(prevOp != OP_ESCROW_COMPLETE && prevOp != OP_ESCROW_REFUND)
@@ -512,7 +516,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					if(prevOp != OP_ESCROW_REFUND)
 						return error("CheckEscrowInputs() :  can only complete refund on a refunded escrow");
 					if(theEscrow.op != OP_ESCROW_COMPLETE)
-						return error("CheckEscrowInputs() :  invalid op, should be escrow complete");
+						return error("CheckEscrowInputs() :  OP_ESCROW_REFUND invalid op, should be escrow complete");
 
 				}
 				else
@@ -520,7 +524,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					if(prevOp != OP_ESCROW_ACTIVATE)
 						return error("CheckEscrowInputs() : can only refund an activated escrow");
 					if(theEscrow.op != OP_ESCROW_REFUND)
-						return error("CheckEscrowInputs() :  invalid op, should be escrow refund");
+						return error("CheckEscrowInputs() : OP_ESCROW_REFUND invalid op, should be escrow refund");
 				}
 				// Check input
 				if(!theEscrow.buyerFeedback.IsNull() || !theEscrow.sellerFeedback.IsNull() || !theEscrow.arbiterFeedback.IsNull())
@@ -741,8 +745,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			}
 		}
         // set the escrow's txn-dependent values
-		if(op == OP_ESCROW_COMPLETE)
-			theEscrow.op = op;
 		theEscrow.txHash = tx.GetHash();
 		theEscrow.nHeight = nHeight;
 		PutToEscrowList(vtxPos, theEscrow);
