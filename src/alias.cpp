@@ -111,20 +111,7 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	{
 		if(alias.vchName == vchFromString("SYS_RATES") || alias.vchName == vchFromString("SYS_BAN") || alias.vchName == vchFromString("SYS_CATEGORY"))
 			return false;
-		vector<CAliasIndex> vtxPos;
-		if (paliasdb->ReadAlias(alias.vchName, vtxPos))
-		{
-			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
-			{
-				if(!alias.vchGUID.empty() && vtxPos.back().vchGUID != alias.vchGUID)
-					nHeight = alias.nHeight + GetAliasExpirationDepth();
-				else
-					nHeight = vtxPos.back().nHeight + GetAliasExpirationDepth();
-				return true;	
-			}		
-		}
-		else if(IsSys21Fork(alias.nHeight))
+		if(IsSys21Fork(alias.nHeight))
 		{
 			nHeight = alias.nHeight + GetAliasExpirationDepth();
 			return true;
@@ -132,17 +119,7 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	}
 	else if(offer.UnserializeFromData(vchData))
 	{
-		vector<COffer> vtxPos;
-		if (pofferdb->ReadOffer(offer.vchOffer, vtxPos))
-		{
-			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
-			{
-				nHeight = vtxPos.back().nHeight + GetOfferExpirationDepth();
-				return true;	
-			}		
-		}
-		else if(IsSys21Fork(offer.nHeight))
+		if(IsSys21Fork(offer.nHeight))
 		{
 			nHeight = offer.nHeight + GetOfferExpirationDepth();
 			return true;
@@ -150,17 +127,7 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	}
 	else if(cert.UnserializeFromData(vchData))
 	{
-		vector<CCert> vtxPos;
-		if (pcertdb->ReadCert(cert.vchCert, vtxPos))
-		{
-			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
-			{
-				nHeight = vtxPos.back().nHeight + GetCertExpirationDepth();
-				return true;	
-			}		
-		}
-		else if(IsSys21Fork(cert.nHeight))
+		if(IsSys21Fork(cert.nHeight))
 		{
 			nHeight = cert.nHeight + GetCertExpirationDepth();
 			return true;
@@ -168,22 +135,7 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	}
 	else if(escrow.UnserializeFromData(vchData))
 	{
-		vector<CEscrow> vtxPos;
-		if (pescrowdb->ReadEscrow(escrow.vchEscrow, vtxPos))
-		{
-			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
-			{
-				// if escrow is not refunded or complete don't prune otherwise escrow gets stuck (coins are still safe, just a GUI thing)
-				// by setting to chainheight + a number we effectively tell it not to prune ever unless its complete
-				if(vtxPos.back().op != OP_ESCROW_COMPLETE)
-					nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
-				else
-					nHeight = vtxPos.back().nHeight + GetEscrowExpirationDepth();
-				return true;	
-			}		
-		}
-		else if(IsSys21Fork(escrow.nHeight))
+		if(IsSys21Fork(escrow.nHeight))
 		{
 			if(escrow.op != OP_ESCROW_COMPLETE)
 				nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
@@ -194,17 +146,7 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	}
 	else if(message.UnserializeFromData(vchData))
 	{
-		vector<CMessage> vtxPos;
-		if (pmessagedb->ReadMessage(message.vchMessage, vtxPos))
-		{
-			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
-			{
-				nHeight = vtxPos.back().nHeight + GetMessageExpirationDepth();
-				return true;	
-			}		
-		}
-		else if(IsSys21Fork(message.nHeight))
+		if(IsSys21Fork(message.nHeight))
 		{
 			nHeight = message.nHeight + GetMessageExpirationDepth();
 			return true;
@@ -845,7 +787,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		switch (op) {
 			case OP_ALIAS_ACTIVATE:
 				if (paliasdb->ExistsAlias(vvchArgs[0])) {
-					if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos)){						
+					if (paliasdb->ReadAlias(vvchArgs[0], vtxPos)){						
 						if (!vtxPos.empty())
 						{
 							if((vtxPos.back().nHeight + GetAliasExpirationDepth()) >= nHeight)
@@ -869,13 +811,6 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				// Check GUID
 				if (vvchArgs.size() > 1 && vvchPrevArgs[1] != vvchArgs[1])
 					return error("CheckAliasInputs() : aliasupdate GUID mismatch");
-				if(vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_CATEGORY") && !theAlias.IsNull())
-				{
-					if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos) || vtxPos.empty())
-						return error("CheckAliasInputs() : failed to read from alias DB");
-					if(vvchArgs.size() > 1 && vtxPos.back().vchGUID != vvchArgs[1])
-						return error("CheckAliasInputs() : aliasupdate vchGUID mismatch")	;
-				}
 				break;
 		default:
 			return error(
@@ -887,10 +822,10 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	if (!fJustCheck ) {
 		if(vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_CATEGORY"))
 		{
-			if(!theAlias.IsNull() && (theAlias.nHeight + GetAliasExpirationDepth()) < nHeight)
+			if(!theAlias.IsNull() && ((theAlias.nHeight + GetAliasExpirationDepth()) < nHeight) || theAlias.nHeight >= nHeight)
 			{
 				if(fDebug)
-					LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired, skipping...");
+					LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired or too far in the future, skipping...");
 				return true;
 			}
 		}
@@ -956,8 +891,6 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			theAlias.nRating = 0;
 			theAlias.nRatingCount = 0;
 		}
-		if(vvchArgs.size() > 1)
-			theAlias.vchGUID = vvchArgs[1];
 		theAlias.nHeight = nHeight;
 		theAlias.txHash = tx.GetHash();
 		PutToAliasList(vtxPos, theAlias);
@@ -1340,8 +1273,8 @@ bool DecodeAliasScript(const CScript& script, int& op,
 
 	pc--;
 
-	if ((op == OP_ALIAS_ACTIVATE && vvch.size() <= 2)
-			|| (op == OP_ALIAS_UPDATE && vvch.size() <= 2))
+	if ((op == OP_ALIAS_ACTIVATE && vvch.size() < 2)
+			|| (op == OP_ALIAS_UPDATE && vvch.size() < 2))
 		return true;
 	return false;
 }
@@ -1429,16 +1362,13 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 		throw runtime_error("there are pending operations on that alias");
 	}
 	
-	int64_t rand = GetRand(std::numeric_limits<int64_t>::max());
-	vector<unsigned char> vchRand = CScriptNum(rand).getvch();
-    vector<unsigned char> vchRandAlias = vchFromValue(HexStr(vchRand));
 
 	CPubKey newDefaultKey;
 	pwalletMain->GetKeyFromPool(newDefaultKey);
 	CScript scriptPubKeyOrig;
 	scriptPubKeyOrig = GetScriptForDestination(newDefaultKey.GetID());
 	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_ACTIVATE) << vchName << vchRandAlias << OP_2DROP << OP_DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_ACTIVATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 	std::vector<unsigned char> vchPubKey(newDefaultKey.begin(), newDefaultKey.end());
 
@@ -1456,7 +1386,6 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 
     // build alias
     CAliasIndex newAlias;
-	newAlias.vchGUID = vchRandAlias;
 	newAlias.vchName = vchName;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchPubKey;
@@ -1576,7 +1505,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	CPubKey currentKey(vchPubKeyByte);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << copyAlias.vchGUID << OP_2DROP << OP_DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName < OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
     vector<CRecipient> vecSend;
