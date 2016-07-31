@@ -1265,14 +1265,6 @@ SyscoinTestingSetup::SyscoinTestingSetup()
 SyscoinTestingSetup::~SyscoinTestingSetup()
 {
 	StopNodes();
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node1/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node1/regtest"));
-	MilliSleep(1000);
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node2/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node2/regtest"));
-	MilliSleep(1000);
-	if(boost::filesystem::exists(boost::filesystem::system_complete("node3/regtest")))
-		boost::filesystem::remove_all(boost::filesystem::system_complete("node3/regtest"));
 }
 SyscoinMainNetSetup::SyscoinMainNetSetup()
 {
