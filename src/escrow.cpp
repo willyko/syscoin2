@@ -457,9 +457,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				{
 					retError = string("CheckEscrowInputs(): ") + retError;
 					return error(retError.c_str());
-				}
-				if(theEscrow.op != OP_ESCROW_ACTIVATE)
-					return error("CheckEscrowInputs() :  invalid op, should be escrow activate");	
+				}	
 			
 				break;
 			case OP_ESCROW_RELEASE:
@@ -473,7 +471,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					return error("CheckEscrowInputs() :cannot leave feedback in release tx");
 				}
 				if(theEscrow.op != OP_ESCROW_RELEASE)
-					return error("CheckEscrowInputs() :  invalid op, should be escrow release");
+					return error("CheckEscrowInputs() : OP_ESCROW_RELEASE invalid op, should be escrow release");
 				break;
 			case OP_ESCROW_COMPLETE:
 				// Check input
@@ -745,6 +743,9 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				}
 			}
 		}
+		// if this is a null transaction its assumed to the the OP_ESCROW_COMPLETE null tx's sent by offeraccept, we need to set the op here because a null tx doesn't have data and thus cant set the op (op is needed for pruning)
+		if(op == OP_ESCROW_COMPLETE)
+			theEscrow.op = OP_ESCROW_COMPLETE;
         // set the escrow's txn-dependent values
 		theEscrow.txHash = tx.GetHash();
 		theEscrow.nHeight = nHeight;
