@@ -832,7 +832,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		if(op != OP_OFFER_ACTIVATE) {
 			// save serialized offer for later use
 			serializedOffer = theOffer;
-
+			CTransaction offerTx;
 			// load the offer data from the DB
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
 				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos))	
