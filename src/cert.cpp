@@ -249,7 +249,6 @@ bool GetTxOfCert(const vector<unsigned char> &vchCert,
 
 bool GetTxAndVtxOfCert(const vector<unsigned char> &vchCert,
         CCert& txPos, CTransaction& tx,  vector<CCert> &vtxPos, bool skipExpiresCheck) {
-    vector<CCert> vtxPos;
     if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
         return false;
     txPos = vtxPos.back();
