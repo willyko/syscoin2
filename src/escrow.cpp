@@ -374,8 +374,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
     theEscrow.UnserializeFromTx(tx);
     COffer theOffer;
 	string retError = "";
-    
-	if(theEscrow.IsNull() && op != OP_ESCROW_COMPLETE && vvchArgs.size() == 1)
+	if(theEscrow.IsNull())
 		return true;
     if (vvchArgs[0].size() > MAX_NAME_LENGTH)
         return error("escrow tx GUID too big");
@@ -483,7 +482,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 				{
 					if(prevOp != OP_ESCROW_COMPLETE && prevOp != OP_ESCROW_REFUND)
 						return error("CheckEscrowInputs() : can only leave feedback for a completed escrow");
-					if(!theEscrow.IsNull() && theEscrow.buyerFeedback.IsNull() && theEscrow.sellerFeedback.IsNull() && theEscrow.arbiterFeedback.IsNull())
+					if(theEscrow.buyerFeedback.IsNull() && theEscrow.sellerFeedback.IsNull() && theEscrow.arbiterFeedback.IsNull())
 					{
 						return error("CheckEscrowInputs() :cannot leave empty feedback");
 					}
