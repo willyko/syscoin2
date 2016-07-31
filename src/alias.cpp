@@ -1505,7 +1505,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 	CPubKey currentKey(vchPubKeyByte);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
 	CScript scriptPubKey;
-	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName < OP_2DROP;
+	scriptPubKey << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchName << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
     vector<CRecipient> vecSend;
