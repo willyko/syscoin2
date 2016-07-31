@@ -246,6 +246,26 @@ bool GetTxOfCert(const vector<unsigned char> &vchCert,
 
     return true;
 }
+
+bool GetTxAndVtxOfCert(const vector<unsigned char> &vchCert,
+        CCert& txPos, CTransaction& tx,  vector<CCert> &vtxPos, bool skipExpiresCheck) {
+    vector<CCert> vtxPos;
+    if (!pcertdb->ReadCert(vchCert, vtxPos) || vtxPos.empty())
+        return false;
+    txPos = vtxPos.back();
+    int nHeight = txPos.nHeight;
+    if (!skipExpiresCheck && (nHeight + GetCertExpirationDepth()
+            < chainActive.Tip()->nHeight)) {
+        string cert = stringFromVch(vchCert);
+        LogPrintf("GetTxOfCert(%s) : expired", cert.c_str());
+        return false;
+    }
+
+    if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
+        return error("GetTxOfCert() : could not read tx from disk");
+
+    return true;
+}
 bool DecodeAndParseCertTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
@@ -440,25 +460,23 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 		if(op != OP_CERT_ACTIVATE) 
 		{
 			// if not an certnew, load the cert data from the DB
-			
+			CTransaction certTx;
+			CCert dbCert;
 			if (pcertdb->ExistsCert(vvchArgs[0])) {
-				if (!pcertdb->ReadCert(vvchArgs[0], vtxPos))
-					return error(
-							"CheckCertInputs() : failed to read from cert DB");
-			}
-			if(!vtxPos.empty())
-			{
-				if((vtxPos.back().nHeight + GetCertExpirationDepth()) < nHeight)
+				if(!GetTxAndVtxOfCert(vvchArgs[0], dbCert, certTx, vtxPos))	
 				{
 					if(fDebug)
-						LogPrintf("CheckCertInputs(): Trying to update an expired service");
+						LogPrintf("CheckCertInputs() : failed to read from cert DB");
 					return true;
 				}
+			}
+
+			if(!vtxPos.empty())
+			{
 				if(theCert.IsNull())
 					theCert = vtxPos.back();
 				else
 				{
-					const CCert& dbCert = vtxPos.back();
 					if(theCert.vchData.empty())
 						theCert.vchData = dbCert.vchData;
 					if(theCert.vchTitle.empty())

@@ -356,9 +356,9 @@ bool CheckMessageInputs(const CTransaction &tx, int op, int nOut, const vector<v
 		}
 		vector<CMessage> vtxPos;
 		if (pmessagedb->ExistsMessage(vvchArgs[0])) {
-			if (!pmessagedb->ReadMessage(vvchArgs[0], vtxPos))
-				return error(
-						"CheckMessageInputs() : failed to read from message DB");
+			if(fDebug)
+				LogPrintf("CheckMessageInputs() : message already exists with this guid");
+			return true;
 		}      
         // set the message's txn-dependent values
 		theMessage.txHash = tx.GetHash();

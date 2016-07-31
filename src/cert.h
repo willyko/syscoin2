@@ -130,5 +130,7 @@ public:
 };
 bool GetTxOfCert(const std::vector<unsigned char> &vchCert,
         CCert& txPos, CTransaction& tx, bool skipExpiresCheck=false);
+bool GetTxAndVtxOfCert(const std::vector<unsigned char> &vchCert,
+					   CCert& txPos, CTransaction& tx, std::vector<CCert> &vtxPos, bool skipExpiresCheck=false);
 void PutToCertList(std::vector<CCert> &certList, CCert& index);
 #endif // CERT_H

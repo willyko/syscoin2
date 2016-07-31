@@ -191,6 +191,8 @@ bool GetTxOfEscrow(const vector<unsigned char> &vchEscrow,
         return false;
     txPos = vtxPos.back();
     int nHeight = txPos.nHeight;
+	// if escrow is refunded or claimed and its expired
+	// if not refunded or claimed it cannot expire
     if ((nHeight + GetEscrowExpirationDepth()
             < chainActive.Tip()->nHeight) && txPos.op == OP_ESCROW_COMPLETE) {
         string escrow = stringFromVch(vchEscrow);
@@ -209,6 +211,8 @@ bool GetTxAndVtxOfEscrow(const vector<unsigned char> &vchEscrow,
         return false;
     txPos = vtxPos.back();
     int nHeight = txPos.nHeight;
+	// if escrow is refunded or claimed and its expired
+	// if not refunded or claimed it cannot expire
     if ((nHeight + GetEscrowExpirationDepth()
             < chainActive.Tip()->nHeight) && txPos.op == OP_ESCROW_COMPLETE) {
         string escrow = stringFromVch(vchEscrow);
@@ -220,6 +224,7 @@ bool GetTxAndVtxOfEscrow(const vector<unsigned char> &vchEscrow,
 
     return true;
 }
+
 bool DecodeAndParseEscrowTx(const CTransaction& tx, int& op, int& nOut,
 		vector<vector<unsigned char> >& vvch)
 {
@@ -554,22 +559,18 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 		{
 			// save serialized escrow for later use
 			CEscrow serializedEscrow = theEscrow;
+			CTransaction escrowTx;
 			if (pescrowdb->ExistsEscrow(vvchArgs[0])) {
-				if (!pescrowdb->ReadEscrow(vvchArgs[0], vtxPos))
-					return error(
-							"CheckEscrowInputs() : failed to read from escrow DB");
+				if(!GetTxAndVtxOfEscrow(vvchArgs[0], theEscrow, escrowTx, vtxPos))	
+				{
+					if(fDebug)
+						LogPrintf("CheckEscrowInputs() : failed to read from escrow DB");
+					return true;
+				}
 			}
 			// make sure we have found this escrow in db
 			if(!vtxPos.empty())
 			{
-				// if escrow is refunded or claimed and its expired
-				// if not refunded or claimed it cannot expire
-				if(vtxPos.back().op == OP_ESCROW_COMPLETE && (vtxPos.back().nHeight + GetEscrowExpirationDepth()) < nHeight)
-				{
-					if(fDebug)
-						LogPrintf("CheckEscrowInputs(): Trying to update an expired service");
-					return true;
-				}
 				theEscrow = vtxPos.back();					
 				// these are the only settings allowed to change outside of activate
 				if(!serializedEscrow.rawTx.empty())

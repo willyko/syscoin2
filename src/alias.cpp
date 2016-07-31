@@ -786,21 +786,6 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	{
 		switch (op) {
 			case OP_ALIAS_ACTIVATE:
-				if (paliasdb->ExistsAlias(vvchArgs[0])) {
-					if (paliasdb->ReadAlias(vvchArgs[0], vtxPos)){						
-						if (!vtxPos.empty())
-						{
-							if((vtxPos.back().nHeight + GetAliasExpirationDepth()) >= nHeight)
-							{
-								return error("CheckAliasInputs(): Trying to renew an alias that isn't expired");
-							}
-							if(vvchArgs[0] == vchFromString("SYS_BAN") || vvchArgs[0] == vchFromString("SYS_RATES") || vvchArgs[0] == vchFromString("SYS_CATEGORY"))
-							{
-								return error("CheckAliasInputs(): Can't recreate system aliases");
-							}				
-						}					
-					}
-				}
 				break;
 			case OP_ALIAS_UPDATE:
 				if (!IsAliasOp(prevOp))
@@ -830,31 +815,24 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 		}
 		bool update = false;
+		CAliasIndex dbAlias;
 		// get the alias from the DB
 		if (paliasdb->ExistsAlias(vvchArgs[0])) {
-			if (!paliasdb->ReadAlias(vvchArgs[0], vtxPos))
-				return error(
-						"CheckAliasInputs() : failed to read from alias DB");
+			if(!GetTxAndVtxOfAlias(vvchArgs[0], dbAlias, aliasTx, vtxPos))	
+			{
+				if(fDebug)
+					LogPrintf("CheckAliasInputs() : failed to read from alias DB");
+				return true;
+			}
 		}
 		if(op != OP_ALIAS_ACTIVATE)
 		{
 			if(!vtxPos.empty())
 			{
-				if(vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_CATEGORY"))
-				{
-					if((vtxPos.back().nHeight + GetAliasExpirationDepth()) < nHeight)
-					{
-						if(fDebug)
-							LogPrintf("CheckAliasInputs(): Trying to update an expired service");
-						return true;
-					}
-				}
 				update = true;
 				if(theAlias.IsNull())
 					theAlias = vtxPos.back();
 				else
-				{
-					const CAliasIndex& dbAlias = vtxPos.back();
 					if(theAlias.vchPublicValue.empty())
 						theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 					if(theAlias.vchPrivateValue.empty())
@@ -865,7 +843,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					theAlias.nRatingCount = dbAlias.nRatingCount;
 				}
 				// if transfer
-				if(vtxPos.back().vchPubKey != theAlias.vchPubKey)
+				if(dbAlias.vchPubKey != theAlias.vchPubKey)
 				{
 					update = false;
 					CPubKey xferKey  = CPubKey(theAlias.vchPubKey);	
@@ -873,21 +851,28 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					// make sure xfer to pubkey doesn't point to an alias already, otherwise don't assign pubkey to alias
 					if (paliasdb->ExistsAddress(vchFromString(myAddress.ToString())))
 					{
-						theAlias.vchPubKey = vtxPos.back().vchPubKey;
-						LogPrintf("CheckAliasInputs() : Warning, Cannot transfer an alias that points to another alias. Pubkey was not updated");
+						theAlias.vchPubKey = dbAlias.vchPubKey;
+						if(fDebug)
+							LogPrintf("CheckAliasInputs() : Warning, Cannot transfer an alias that points to another alias. Pubkey was not updated");
 					}
 				}
 			}
 			else
 			{
 				if(fDebug)
-					LogPrintf("CheckEscrowInputs(): Alias not found and trying to update, skipping...");
+					LogPrintf("CheckAliasInputs(): Alias not found and trying to update, skipping...");
 				return true;
 			}
 		}
 	
 		if(op == OP_ALIAS_ACTIVATE)
 		{
+			if(!vtxPos.empty())
+			{
+				if(fDebug)
+					LogPrintf("CheckAliasInputs(): Trying to renew an alias that isn't expired");
+				return true;
+			}
 			theAlias.nRating = 0;
 			theAlias.nRatingCount = 0;
 		}
@@ -1103,7 +1088,27 @@ bool GetTxOfAlias(const vector<unsigned char> &vchName,
 
 	return true;
 }
+bool GetTxAndVtxOfAlias(const vector<unsigned char> &vchName, 
+						CAliasIndex& txPos, CTransaction& tx, std::vector<CAliasIndex> vtxPos,bool skipExpiresCheck) {
+	if (!paliasdb->ReadAlias(vchName, vtxPos) || vtxPos.empty())
+		return false;
+	txPos = vtxPos.back();
+	int nHeight = txPos.nHeight;
+	if(vchName != vchFromString("SYS_RATES") && vchName != vchFromString("SYS_BAN") && vchName != vchFromString("SYS_CATEGORY"))
+	{
+		if (!skipExpiresCheck && (nHeight + GetAliasExpirationDepth()
+				< chainActive.Tip()->nHeight)) {
+			string name = stringFromVch(vchName);
+			LogPrintf("GetTxOfAlias(%s) : expired", name.c_str());
+			return false;
+		}
+	}
 
+	if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))
+		return error("GetTxOfAlias() : could not read tx from disk");
+
+	return true;
+}
 void GetAddressFromAlias(const std::string& strAlias, std::string& strAddress, unsigned char& safetyLevel, bool& safeSearch, int64_t& nHeight) {
 	try
 	{

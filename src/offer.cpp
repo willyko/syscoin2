@@ -835,15 +835,13 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 
 			// load the offer data from the DB
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
-				if (!pofferdb->ReadOffer(vvchArgs[0], vtxPos))
-					return error(
-							"CheckOfferInputs() : failed to read from offer DB");
-			}
-			// get the latest offer from the db
-			if(!vtxPos.empty())
-				theOffer = vtxPos.back();
-
-			
+				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos))	
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs() : failed to read from offer DB");
+					return true;
+				}
+			}			
 		}
 
 		// If update, we make the serialized offer the master
@@ -881,13 +879,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}
 			}
 
-			// cannot update expired offers
-			if((theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs(): Trying to update an expired service");
-				return true;
-			}
 			serializedOffer.offerLinks = theOffer.offerLinks;
 			serializedOffer.vchLinkOffer = theOffer.vchLinkOffer;
 			// btc setting cannot change on update
