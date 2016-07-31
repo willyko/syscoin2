@@ -778,8 +778,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	}
 	if (vvchArgs[0].size() > MAX_NAME_LENGTH)
 		return error("alias name too long");
-    if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-        return error("alias hex guid too long");
+
 	vector<CAliasIndex> vtxPos;
 	string retError = "";
 	if(fJustCheck)
