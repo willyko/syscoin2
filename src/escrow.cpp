@@ -374,7 +374,8 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
     theEscrow.UnserializeFromTx(tx);
     COffer theOffer;
 	string retError = "";
-	if(theEscrow.IsNull())
+	// null usually when pruned or when accept is done (in which case we skip this return and continue on so future feedbacks can be done)
+	if(theEscrow.IsNull() && !(op == OP_ESCROW_COMPLETE && vvchArgs.size() == 1))
 		return true;
     if (vvchArgs[0].size() > MAX_NAME_LENGTH)
         return error("escrow tx GUID too big");
@@ -480,7 +481,7 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 					return error("CheckEscrowInputs() : escrow complete status too large");
 				if (vvchPrevArgs[0] != vvchArgs[0])
 					return error("CheckEscrowInputs() : escrow input guid mismatch");
-				if(theEscrow.op != OP_ESCROW_COMPLETE)
+				if(!theEscrow.IsNull() && theEscrow.op != OP_ESCROW_COMPLETE)
 					return error("CheckEscrowInputs():  OP_ESCROW_COMPLETE invalid op, should be escrow complete");
 				if(vvchArgs.size() > 1 && vvchArgs[1] == vchFromString("1"))
 				{
