@@ -816,6 +816,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		}
 		bool update = false;
 		CAliasIndex dbAlias;
+		CTransaction aliasTx;
 		// get the alias from the DB
 		if (paliasdb->ExistsAlias(vvchArgs[0])) {
 			if(!GetTxAndVtxOfAlias(vvchArgs[0], dbAlias, aliasTx, vtxPos))	
@@ -833,6 +834,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				if(theAlias.IsNull())
 					theAlias = vtxPos.back();
 				else
+				{
 					if(theAlias.vchPublicValue.empty())
 						theAlias.vchPublicValue = dbAlias.vchPublicValue;	
 					if(theAlias.vchPrivateValue.empty())
@@ -864,8 +866,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return true;
 			}
 		}
-	
-		if(op == OP_ALIAS_ACTIVATE)
+		else
 		{
 			if(!vtxPos.empty())
 			{
