@@ -348,10 +348,10 @@ bool CheckMessageInputs(const CTransaction &tx, int op, int nOut, const vector<v
 
 
     if (!fJustCheck ) {
-		if((theMessage.nHeight + GetMessageExpirationDepth()) < nHeight)
+		if(((theMessage.nHeight + GetMessageExpirationDepth()) < nHeight) || theEscrow.nHeight >= nHeight)
 		{
 			if(fDebug)
-				LogPrintf("CheckMessageInputs(): Trying to make a message transaction that is expired, skipping...");
+				LogPrintf("CheckMessageInputs(): Trying to make a message transaction that is expired or too far in the future, skipping...");
 			return true;
 		}
 		vector<CMessage> vtxPos;
@@ -433,7 +433,7 @@ UniValue messagenew(const UniValue& params, bool fHelp) {
 		throw runtime_error("Invalid sending public key");
 	}
 	scriptPubKeyAliasOrig = GetScriptForDestination(FromPubKey.GetID());
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchFromString(strFromAddress) <<  alias.vchGUID << OP_2DROP << OP_DROP;
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchFromString(strFromAddress) << OP_2DROP;
 	scriptPubKeyAlias += scriptPubKeyAliasOrig;		
 
 

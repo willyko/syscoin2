@@ -822,10 +822,10 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	
 
 	if (!fJustCheck ) {
-		if((theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
+		if(((theOffer.nHeight + GetOfferExpirationDepth()) < nHeight) || theOffer.nHeight >= nHeight)
 		{
 			if(fDebug)
-				LogPrintf("CheckOfferInputs(): Trying to make an offer transaction that is expired, skipping...");
+				LogPrintf("CheckOfferInputs(): Trying to make an offer transaction that is expired or too far in the future, skipping...");
 			return true;
 		}
 		COffer serializedOffer;
@@ -1906,7 +1906,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 				scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
 				if(commissionInteger <= -foundEntry.nDiscountPct)
 						throw runtime_error(strprintf("You cannot re-sell at a lower price than the discount you received as an affiliate (current discount received: %d%%)", foundEntry.nDiscountPct));
-				scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << foundEntry.aliasLinkVchRand <<  theAlias.vchGUID << OP_2DROP << OP_DROP;
+				scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << foundEntry.aliasLinkVchRand << OP_2DROP;
 				scriptPubKeyAlias += scriptPubKeyAliasOrig;			
 			}
 		}
@@ -2059,7 +2059,7 @@ UniValue offerlink_nocheck(const UniValue& params, bool fHelp) {
 				scriptPubKeyAliasOrig = GetScriptForDestination(currentAliasKey.GetID());
 				
 			}
-			scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << foundEntry.aliasLinkVchRand <<  theAlias.vchGUID << OP_2DROP << OP_DROP;
+			scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << foundEntry.aliasLinkVchRand << OP_2DROP;
 			scriptPubKeyAlias += scriptPubKeyAliasOrig;
 		}
 		
@@ -3132,7 +3132,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		}
 	}
 
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchWhitelistAlias <<  theAlias.vchGUID << OP_2DROP << OP_DROP;
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchWhitelistAlias << OP_2DROP;
 	scriptPubKeyAlias += scriptPubKeyAliasOrig;
 
 	// if this is an accept for a linked offer, the offer is set to exclusive mode and you dont have an alias in the whitelist, you cannot accept this offer
@@ -3487,7 +3487,7 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		}
 	}
 
-	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchWhitelistAlias <<  theAlias.vchGUID << OP_2DROP << OP_DROP;
+	scriptPubKeyAlias << CScript::EncodeOP_N(OP_ALIAS_UPDATE) << vchWhitelistAlias << OP_2DROP;
 	scriptPubKeyAlias += scriptPubKeyAliasOrig;
 
 
