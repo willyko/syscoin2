@@ -404,7 +404,8 @@ BOOST_AUTO_TEST_CASE (generate_offerupdate_editcurrency)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "offeraccept buyeraliascurrency " + offerguid + " 10 message"));
 	const UniValue &arr = r.get_array();
 	acceptguid = arr[1].get_str();
-	GenerateBlocks(5);
+	GenerateBlocks(2);
+	GenerateBlocks(3);
 	GenerateBlocks(5, "node2");
 	acceptRet = FindOfferAccept("node2", offerguid, acceptguid);
 	nTotal = AmountFromValue(find_value(acceptRet, "systotal"));
