@@ -704,6 +704,8 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");	
+			if ( theOffer.vchoffer != vvchArgs[0])
+				return error("CheckOfferInputs() : offer input and offer guid mismatch");	
 			if(!theOffer.vchLinkOffer.empty())
 			{
 				if (theOffer.vchLinkAlias.empty() && IsSys21Fork(nHeight))
@@ -713,11 +715,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				{
 					if(theOffer.vchLinkAlias != vvchPrevAliasArgs[0])
 						return error("CheckOfferInputs() OP_OFFER_ACTIVATE: alias link and alias input mismatch");
-					CSyscoinAddress aliasAddress(stringFromVch(vvchPrevAliasArgs[0]));
-					CPubKey OfferPubKey(theOffer.vchPubKey);
-					CSyscoinAddress offerAddress(OfferPubKey.GetID());
-					if (aliasAddress.ToString() != offerAddress.ToString())
-						return error("CheckOfferInputs() : alias input and offer alias mismatch");	
 				}	
 
 				if(theOffer.nCommission > 255)
@@ -774,41 +771,37 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				break;
 			}
 
-			if(IsOfferOp(prevOp))
-				theOfferAccept.nQty = boost::lexical_cast<unsigned int>(stringFromVch(vvchPrevArgs[3]));
-			else
-				theOfferAccept.nQty = boost::lexical_cast<unsigned int>(stringFromVch(vvchArgs[3]));
 			if (theOfferAccept.IsNull())
-				return error("OP_OFFER_ACCEPT null accept object");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT null accept object");
 			if (IsSys21Fork(nHeight) && IsOfferOp(prevOp) && !theOfferAccept.feedback.IsNull() && vvchPrevArgs[1] != theOfferAccept.vchLinkAccept && vvchPrevArgs[0] != theOfferAccept.vchLinkOffer)
-				return error("OP_OFFER_ACCEPT prev offer input and link accept guid mismatch");	
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT prev offer input and link accept guid mismatch");	
 			if (IsEscrowOp(prevEscrowOp) && IsAliasOp(prevAliasOp))
-				return error("OP_OFFER_ACCEPT Cannot have both alias and escrow inputs to an accept");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT Cannot have both alias and escrow inputs to an accept");
 			if (IsEscrowOp(prevEscrowOp) && !theOfferAccept.txBTCId.IsNull())
-				return error("OP_OFFER_ACCEPT can't use BTC for escrow transactions");	
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT can't use BTC for escrow transactions");	
 			if (IsEscrowOp(prevEscrowOp) && theOfferAccept.vchEscrow != vvchPrevEscrowArgs[0])
-				return error("OP_OFFER_ACCEPT escrow guid mismatch");	
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT escrow guid mismatch");	
 			if (IsAliasOp(prevAliasOp) && theOffer.vchLinkAlias != vvchPrevAliasArgs[0])
-				return error("OP_OFFER_ACCEPT whitelist alias guid mismatch");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT whitelist alias guid mismatch");
 			if (vvchArgs[1].size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offeraccept tx with guid too big");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT offeraccept tx with guid too big");
 			if(prevOp == OP_OFFER_ACCEPT)
 			{
 				if(!theOfferAccept.txBTCId.IsNull())
-					return error("OP_OFFER_ACCEPT can't accept a linked offer with btc");
+					return error("CheckOfferInputs() :OP_OFFER_ACCEPT can't accept a linked offer with btc");
 			}
 
 
 			if (theOfferAccept.vchAcceptRand.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offer accept hex guid too long");
+				return error("OCheckOfferInputs() :P_OFFER_ACCEPT offer accept hex guid too long");
 			if (theOfferAccept.vchLinkAccept.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offer link accept hex guid too long");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT offer link accept hex guid too long");
 			if (theOfferAccept.vchLinkOffer.size() > MAX_NAME_LENGTH)
-				return error("OP_OFFER_ACCEPT offer link hex guid too long");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT offer link hex guid too long");
 			if (vvchArgs[2].size() > MAX_ENCRYPTED_VALUE_LENGTH)
-				return error("OP_OFFER_ACCEPT message field too big");
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT message field too big");
 			if (IsEscrowOp(prevEscrowOp) && IsOfferOp(prevOp))
-				return error("OP_OFFER_ACCEPT offer accept cannot attach both escrow and offer inputs at the same time");	
+				return error("CheckOfferInputs() :OP_OFFER_ACCEPT offer accept cannot attach both escrow and offer inputs at the same time");	
 			break;
 
 		default:
@@ -951,7 +944,18 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}			
 			}
 
-				
+			if(!theOffer.vchLinkAlias.empty())
+			{
+				CSyscoinAddress aliasAddress(stringFromVch(theOffer.vchLinkAlias));
+				CPubKey OfferPubKey(theOffer.vchPubKey);
+				CSyscoinAddress offerAddress(OfferPubKey.GetID());
+				if (aliasAddress.ToString() != offerAddress.ToString())
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE alias input and offer alias mismatch");
+					return true;
+				}
+			}
 			// if this is a linked offer activate, then add it to the parent offerLinks list
 			if(!theOffer.vchLinkOffer.empty())
 			{
@@ -1079,7 +1083,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			// if its not a special feedback output for the buyer then we decrease qty accordingly
 			else
 			{
-				theOfferAccept.nQty = boost::lexical_cast<unsigned int>(stringFromVch(vvchArgs[3]));
 				if(!theOffer.vchCert.empty())
 					theOfferAccept.nQty = 1;
 
@@ -1139,7 +1142,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");	
 					return true;
 				}	
-			
+				theOfferAccept.nQty = theLinkedOfferAccept.nQty;
 				heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
 				linkAccept = true;
 				if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.vchBuyerKey)
