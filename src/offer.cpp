@@ -1832,7 +1832,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	COffer linkOffer;
 	if (!GetTxOfOffer( vchLinkOffer, linkOffer, tx) || vchLinkOffer.empty())
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 
 	if(!linkOffer.vchLinkOffer.empty())
 	{
@@ -2159,7 +2159,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	COffer theOffer;
 	if (!GetTxOfOffer( vchOffer, theOffer, tx))
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
@@ -2238,7 +2238,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	COffer theOffer;
 	if (!GetTxOfOffer( vchOffer, theOffer, tx))
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
@@ -2312,7 +2312,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	COffer theOffer;
 	if (!GetTxOfOffer( vchOffer, theOffer, tx))
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
@@ -2370,7 +2370,7 @@ UniValue offerwhitelist(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	COffer theOffer;
 	if (!GetTxOfOffer( vchOffer, theOffer, tx))
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 	
 	for(unsigned int i=0;i<theOffer.linkWhitelist.entries.size();i++) {
 		CTransaction txAlias;
@@ -2489,7 +2489,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	CTransaction tx, linktx;
 	COffer theOffer, linkOffer;
 	if (!GetTxOfOffer( vchOffer, theOffer, tx))
-		throw runtime_error("could not find an offer with this name");
+		throw runtime_error("could not find an offer with this guid");
 
 	CPubKey currentKey(theOffer.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(currentKey.GetID());
