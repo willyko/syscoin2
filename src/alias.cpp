@@ -821,7 +821,14 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if(!GetTxAndVtxOfAlias(vvchArgs[0], dbAlias, aliasTx, vtxPos))	
 			{
 				if(op == OP_ALIAS_ACTIVATE)
-					vtxPos.clear();
+				{
+					if(!vtxPos.empty())
+					{
+						if(fDebug)
+							LogPrintf("CheckAliasInputs(): Trying to renew an alias that isn't expired");
+						return true;
+					}
+				}
 				else
 				{
 					if(fDebug)
@@ -872,12 +879,6 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		}
 		else
 		{
-			if(!vtxPos.empty())
-			{
-				if(fDebug)
-					LogPrintf("CheckAliasInputs(): Trying to renew an alias that isn't expired");
-				return true;
-			}
 			theAlias.nRating = 0;
 			theAlias.nRatingCount = 0;
 		}
