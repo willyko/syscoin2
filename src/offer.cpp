@@ -414,7 +414,6 @@ bool GetTxAndVtxOfOffer(const vector<unsigned char> &vchOffer,
 		string offer = stringFromVch(vchOffer);
 		if(fDebug)
 			LogPrintf("GetTxOfOffer(%s) : expired", offer.c_str());
-		vtxPos.clear();
 		return false;
 	}
 
@@ -824,8 +823,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			CTransaction offerTx;
 			// load the offer data from the DB
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
-				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos, op == OP_OFFER_ACCEPT))	
+				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos))	
 				{
+					// we expire any offer other than offer accepts related to escrow
 					if(op != OP_OFFER_ACCEPT || serializedOffer.accept.vchEscrow.empty())
 					{
 						if(fDebug)
