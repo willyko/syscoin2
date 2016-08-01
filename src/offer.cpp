@@ -704,7 +704,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : you must own a cert you wish to sell");
 			if (IsCertOp(prevCertOp) && !theOffer.vchCert.empty() && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");	
-			if ( theOffer.vchoffer != vvchArgs[0])
+			if ( theOffer.vchOffer != vvchArgs[0])
 				return error("CheckOfferInputs() : offer input and offer guid mismatch");	
 			if(!theOffer.vchLinkOffer.empty())
 			{
