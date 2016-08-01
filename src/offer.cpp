@@ -419,6 +419,7 @@ bool GetTxAndVtxOfOffer(const vector<unsigned char> &vchOffer,
 		string offer = stringFromVch(vchOffer);
 		if(fDebug)
 			LogPrintf("GetTxOfOffer(%s) : expired", offer.c_str());
+		vtxPos.clear();
 		return false;
 	}
 

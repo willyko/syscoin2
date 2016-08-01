@@ -217,6 +217,7 @@ bool GetTxAndVtxOfEscrow(const vector<unsigned char> &vchEscrow,
             < chainActive.Tip()->nHeight) && txPos.op == OP_ESCROW_COMPLETE) {
         string escrow = stringFromVch(vchEscrow);
         LogPrintf("GetTxOfEscrow(%s) : expired", escrow.c_str());
+		vtxPos.clear();
         return false;
     }
     if (!GetSyscoinTransaction(nHeight, txPos.txHash, tx, Params().GetConsensus()))

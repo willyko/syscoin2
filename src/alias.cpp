@@ -1106,6 +1106,7 @@ bool GetTxAndVtxOfAlias(const vector<unsigned char> &vchName,
 				< chainActive.Tip()->nHeight)) {
 			string name = stringFromVch(vchName);
 			LogPrintf("GetTxOfAlias(%s) : expired", name.c_str());
+			vtxPos.clear();
 			return false;
 		}
 	}
@@ -1361,9 +1362,8 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	CAliasIndex theAlias;
 	if (GetTxOfAlias(vchName, theAlias, tx)) {
-		error("aliasactivate() : this alias is already active with tx %s",
+		throw runtime_error("this alias is already active with tx %s",
 				tx.GetHash().GetHex().c_str());
-		throw runtime_error("this alias is already active");
 	}
 
 	EnsureWalletIsUnlocked();

@@ -257,6 +257,7 @@ bool GetTxAndVtxOfCert(const vector<unsigned char> &vchCert,
             < chainActive.Tip()->nHeight)) {
         string cert = stringFromVch(vchCert);
         LogPrintf("GetTxOfCert(%s) : expired", cert.c_str());
+		vtxPos.clear();
         return false;
     }
 
