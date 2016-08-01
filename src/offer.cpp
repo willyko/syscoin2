@@ -1102,162 +1102,163 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						theOffer.nQty = 0;
 					
 				}
-			}
-			if(theOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(theOffer.sCategory), "wanted"))
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: Cannot purchase a wanted offer");
-				return true;
-			}
-			if(!theOffer.vchLinkOffer.empty())
-			{
-				if(!GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, linkedTx))
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
-					return true;
-				}
-				// make sure that linked offer exists in root offerlinks (offers that are linked to the root offer)
-				if(std::find(linkOffer.offerLinks.begin(), linkOffer.offerLinks.end(), vvchArgs[0]) == linkOffer.offerLinks.end())
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer does not exist in the root offerLinks table, are you sure you are allowed to link to the offer and take payments?");
-					return true;
-				}					
-			}
 			
-			// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
-			heightToCheckAgainst = theOfferAccept.nAcceptHeight;
-			// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
-			// we assume previous tx still in mempool because it calls offeraccept within the checkinputs stage (not entering a block yet)
-			if (!theOfferAccept.vchLinkAccept.empty())
-			{				
-				CTransaction acceptTx;
-				COfferAccept theLinkedOfferAccept;
-				COffer offer;
-				bool skipFeedback = true;
-				if (!GetTxOfOfferAccept(theOfferAccept.vchLinkOffer, theOfferAccept.vchLinkAccept, offer, theLinkedOfferAccept, acceptTx, skipFeedback))
+				if(theOffer.sCategory.size() > 0 && boost::algorithm::ends_with(stringFromVch(theOffer.sCategory), "wanted"))
 				{
 					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");	
-					return true;
-				}	
-				theOfferAccept.nQty = theLinkedOfferAccept.nQty;
-				heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
-				linkAccept = true;
-				if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.vchBuyerKey)
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: linked accept buyer must match the buyer of the reselling offer");
+						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: Cannot purchase a wanted offer");
 					return true;
 				}
-			}
-			// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
-			if(!theOffer.accept.vchEscrow.empty())
-			{		
-				vector<CEscrow> escrowVtxPos;
-				CEscrow escrow;
-				CTransaction escrowTx;
-				if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+				if(!theOffer.vchLinkOffer.empty())
 				{
-					// we want the initial funding escrow transaction height as when to calculate this offer accept price
-					CEscrow fundingEscrow = escrowVtxPos.front();
-					if(fundingEscrow.vchOffer != vvchArgs[0])
+					if(!GetTxOfOffer( theOffer.vchLinkOffer, linkOffer, linkedTx))
 					{
 						if(fDebug)
-							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: escrow guid does not match the guid of the offer you are accepting");	
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not get linked offer");
 						return true;
 					}
-					// override height if funding escrow was before the accept that the buyer did, to index into sysrates
-					if(heightToCheckAgainst > fundingEscrow.nHeight || !linkAccept){
-						escrowAccept = true;
-						heightToCheckAgainst = fundingEscrow.nHeight;
-					}
-					// if an alias is attached to the escrow, meaning the buyer has an alias that may be in the seller's whitelist, get the alias guid here
-					if(!escrowVtxPos.back().vchWhitelistAlias.empty())
-						vchWhitelistAlias = escrowVtxPos.back().vchWhitelistAlias;	
+					// make sure that linked offer exists in root offerlinks (offers that are linked to the root offer)
+					if(std::find(linkOffer.offerLinks.begin(), linkOffer.offerLinks.end(), vvchArgs[0]) == linkOffer.offerLinks.end())
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer does not exist in the root offerLinks table, are you sure you are allowed to link to the offer and take payments?");
+						return true;
+					}					
 				}
-				else
+				
+				// find the payment from the tx outputs (make sure right amount of coins were paid for this offer accept), the payment amount found has to be exact	
+				heightToCheckAgainst = theOfferAccept.nAcceptHeight;
+				// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
+				// we assume previous tx still in mempool because it calls offeraccept within the checkinputs stage (not entering a block yet)
+				if (!theOfferAccept.vchLinkAccept.empty())
+				{				
+					CTransaction acceptTx;
+					COfferAccept theLinkedOfferAccept;
+					COffer offer;
+					bool skipFeedback = true;
+					if (!GetTxOfOfferAccept(theOfferAccept.vchLinkOffer, theOfferAccept.vchLinkAccept, offer, theLinkedOfferAccept, acceptTx, skipFeedback))
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");	
+						return true;
+					}	
+					theOfferAccept.nQty = theLinkedOfferAccept.nQty;
+					heightToCheckAgainst = theLinkedOfferAccept.nAcceptHeight;
+					linkAccept = true;
+					if(theOfferAccept.vchBuyerKey != theLinkedOfferAccept.vchBuyerKey)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: linked accept buyer must match the buyer of the reselling offer");
+						return true;
+					}
+				}
+				// if this accept was done via an escrow release, we get the height from escrow and use that to lookup the price at the time
+				if(!theOffer.accept.vchEscrow.empty())
+				{		
+					vector<CEscrow> escrowVtxPos;
+					CEscrow escrow;
+					CTransaction escrowTx;
+					if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+					{
+						// we want the initial funding escrow transaction height as when to calculate this offer accept price
+						CEscrow fundingEscrow = escrowVtxPos.front();
+						if(fundingEscrow.vchOffer != vvchArgs[0])
+						{
+							if(fDebug)
+								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: escrow guid does not match the guid of the offer you are accepting");	
+							return true;
+						}
+						// override height if funding escrow was before the accept that the buyer did, to index into sysrates
+						if(heightToCheckAgainst > fundingEscrow.nHeight || !linkAccept){
+							escrowAccept = true;
+							heightToCheckAgainst = fundingEscrow.nHeight;
+						}
+						// if an alias is attached to the escrow, meaning the buyer has an alias that may be in the seller's whitelist, get the alias guid here
+						if(!escrowVtxPos.back().vchWhitelistAlias.empty())
+							vchWhitelistAlias = escrowVtxPos.back().vchWhitelistAlias;	
+					}
+					else
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cant find escrow linked to this offer accept");
+						return true;
+					}
+				}
+				// the height really shouldnt change cause we set it correctly in offeraccept
+				if(heightToCheckAgainst != theOfferAccept.nAcceptHeight)
 				{
 					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: cant find escrow linked to this offer accept");
+						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height heightToCheckAgainst %s vs theOfferAccept.nAcceptHeight %s", heightToCheckAgainst, theOfferAccept.nAcceptHeight);	
 					return true;
 				}
-			}
-			// the height really shouldnt change cause we set it correctly in offeraccept
-			if(heightToCheckAgainst != theOfferAccept.nAcceptHeight)
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height heightToCheckAgainst %s vs theOfferAccept.nAcceptHeight %s", heightToCheckAgainst, theOfferAccept.nAcceptHeight);	
-				return true;
-			}
-			// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
-			// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
-			if(!linkAccept && !escrowAccept)
-			{
+				// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
+				// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
+				if(!linkAccept && !escrowAccept)
+				{
+					if(nHeight < heightToCheckAgainst)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: nHeight can't be less than  heightToCheckAgainst, heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
+						return true;
+					}
+				}
+				myPriceOffer.nHeight = heightToCheckAgainst;
+				myPriceOffer.GetOfferFromList(vtxPos);
+				if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
 				if(nHeight < heightToCheckAgainst)
 				{
 					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: nHeight can't be less than  heightToCheckAgainst, heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
-					return true;
-				}
-			}
-			myPriceOffer.nHeight = heightToCheckAgainst;
-			myPriceOffer.GetOfferFromList(vtxPos);
-			if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-			if(nHeight < heightToCheckAgainst)
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");	
-				return true;
-			}
-
-			// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
-			if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
-			{
-	
-				// if there is no escrow being used here, vchWhitelistAlias should be empty so if the buyer uses an alias for a discount or a exclusive whitelist buy, then get the guid
-				if(!serializedOffer.vchLinkAlias.empty() && vchWhitelistAlias.empty())
-					vchWhitelistAlias = serializedOffer.vchLinkAlias;
-				
-				// try to get the whitelist entry here from the sellers whitelist, apply the discount with GetPrice()
-				myPriceOffer.linkWhitelist.GetLinkEntryByHash(vchWhitelistAlias, entry);	
-
-				float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
-				if(priceAtTimeOfAccept != theOfferAccept.nPrice)
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str());
+						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");	
 					return true;
 				}
 
-				int precision = 2;
-				// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
-				CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
-				if(!FindOfferAcceptPayment(tx, nPrice))
+				// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
+				if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
 				{
-					nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst+1, precision)*theOfferAccept.nQty;
+		
+					// if there is no escrow being used here, vchWhitelistAlias should be empty so if the buyer uses an alias for a discount or a exclusive whitelist buy, then get the guid
+					if(!serializedOffer.vchLinkAlias.empty() && vchWhitelistAlias.empty())
+						vchWhitelistAlias = serializedOffer.vchLinkAlias;
+					
+					// try to get the whitelist entry here from the sellers whitelist, apply the discount with GetPrice()
+					myPriceOffer.linkWhitelist.GetLinkEntryByHash(vchWhitelistAlias, entry);	
+
+					float priceAtTimeOfAccept = myPriceOffer.GetPrice(entry);
+					if(priceAtTimeOfAccept != theOfferAccept.nPrice)
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: offer accept does not specify the correct payment amount priceAtTimeOfAccept %f%s vs theOfferAccept.nPrice %f%s", priceAtTimeOfAccept, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), theOfferAccept.nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str());
+						return true;
+					}
+
+					int precision = 2;
+					// lookup the price of the offer in syscoin based on pegged alias at the block # when accept/escrow was made
+					CAmount nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst, precision)*theOfferAccept.nQty;
 					if(!FindOfferAcceptPayment(tx, nPrice))
 					{
-						nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst-1, precision)*theOfferAccept.nQty;
+						nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst+1, precision)*theOfferAccept.nQty;
 						if(!FindOfferAcceptPayment(tx, nPrice))
 						{
-							if(fDebug)
-								LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld, height %d\n", nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue, heightToCheckAgainst-1);	
-							return true;
+							nPrice = convertCurrencyCodeToSyscoin(myPriceOffer.vchAliasPeg, myPriceOffer.sCurrencyCode, priceAtTimeOfAccept, heightToCheckAgainst-1, precision)*theOfferAccept.nQty;
+							if(!FindOfferAcceptPayment(tx, nPrice))
+							{
+								if(fDebug)
+									LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: this offer accept does not pay enough according to the offer price %ld, currency %s, value found %ld, height %d\n", nPrice, stringFromVch(myPriceOffer.sCurrencyCode).c_str(), tx.vout[nOut].nValue, heightToCheckAgainst-1);	
+								return true;
+							}
 						}
-					}
-				}												
-			}	
-			// if not escrow check qty to see if enough, escrow creation already deducts qty
-			if(!theOffer.accept.vchEscrow.empty())
-			{
-				if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
+					}												
+				}	
+				// if not escrow check qty to see if enough, escrow creation already deducts qty
+				if(!theOffer.accept.vchEscrow.empty())
 				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);	
-					return true;
-				}					
+					if(theOfferAccept.nQty <= 0 || (theOffer.nQty != -1 && theOfferAccept.nQty > theOffer.nQty) || (!linkOffer.IsNull() && theOfferAccept.nQty > linkOffer.nQty && linkOffer.nQty != -1))
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: txn %s rejected because desired qty %u is more than available qty %u\n", tx.GetHash().GetHex().c_str(), theOfferAccept.nQty, theOffer.nQty);	
+						return true;
+					}					
+				}
 			}
 
 			theOfferAccept.nHeight = nHeight;
