@@ -1362,8 +1362,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	CTransaction tx;
 	CAliasIndex theAlias;
 	if (GetTxOfAlias(vchName, theAlias, tx)) {
-		throw runtime_error("this alias is already active with tx %s",
-				tx.GetHash().GetHex().c_str());
+		throw runtime_error("this alias is already active");
 	}
 
 	EnsureWalletIsUnlocked();
