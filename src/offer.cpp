@@ -407,13 +407,8 @@ bool GetTxAndVtxOfOffer(const vector<unsigned char> &vchOffer,
 	if (!pofferdb->ReadOffer(vchOffer, vtxPos) || vtxPos.empty())
 		return false;
 	int nHeight = vtxPos.back().nHeight;
-	txPos.nHeight = nHeight;
-	if(!txPos.GetOfferFromList(vtxPos))
-	{
-		if(fDebug)
-			LogPrintf("GetTxOfOffer() : cannot find offer from this offer position");
-		return false;
-	}
+	txPos = vtxPos.back();
+	
 	if (!skipExpiresCheck && (nHeight + GetOfferExpirationDepth()
 			< chainActive.Tip()->nHeight)) {
 		string offer = stringFromVch(vchOffer);
