@@ -877,6 +877,7 @@ BOOST_AUTO_TEST_CASE (generate_offerpruning)
 		BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expired").get_int(), 1);	
 
 		StartNode("node3");
+		MilliSleep(2500);
 		BOOST_CHECK_NO_THROW(CallRPC("node3", "generate 5"));
 		MilliSleep(2500);
 		// node3 shouldn't find the service at all (meaning node3 doesn't sync the data)
