@@ -829,11 +829,14 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			CTransaction offerTx;
 			// load the offer data from the DB
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
-				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos))	
+				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos, op == OP_OFFER_ACCEPT))	
 				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() : failed to read from offer DB");
-					return true;
+					if(op != OP_OFFER_ACCEPT || serializedOffer.accept.vchEscrow.empty())
+					{
+						if(fDebug)
+							LogPrintf("CheckOfferInputs() : failed to read from offer DB");
+						return true;
+					}
 				}
 			}			
 		}
@@ -1030,14 +1033,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs(): Trying to sell an expired certificate");
 					theOffer.vchCert.clear();	
 				}
-			}
-
-			// cannot accept expired offers that aren't related to escrow
-			if(theOfferAccept.vchEscrow.empty() && (theOffer.nHeight + GetOfferExpirationDepth()) < nHeight)
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs(): Trying to accept an expired offer");
-				return true;
 			}			
 			if(vvchArgs.size() >= 5)
 			{
