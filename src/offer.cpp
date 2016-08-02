@@ -740,8 +740,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			if (IsCertOp(prevCertOp) && theOffer.vchCert != vvchPrevCertArgs[0])
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
-				return error("CheckOfferInputs() : you must own the cert offer you wish to update");	
-	
+				return error("CheckOfferInputs() : you must own the cert offer you wish to update");		
 			// check for valid alias peg
 			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
 			{
@@ -869,6 +868,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 
 			serializedOffer.offerLinks = theOffer.offerLinks;
 			serializedOffer.vchLinkOffer = theOffer.vchLinkOffer;
+			serializedOffer.vchOffer = theOffer.vchOffer;
 			// btc setting cannot change on update
 			serializedOffer.bOnlyAcceptBTC = theOffer.bOnlyAcceptBTC;
 			// cannot edit safety level
