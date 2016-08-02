@@ -693,6 +693,7 @@ BOOST_AUTO_TEST_CASE (generate_aliasexpired)
 		BOOST_CHECK_NO_THROW(CallRPC("node1","generate 10"));
 		MilliSleep(2500);
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "certupdate " + certgoodguid + " newdata privdata 0"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES aliasexpire " + offerguid + " category title 100 0.05 description"));
 		// expire the escrow
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 55"));
 		MilliSleep(2500);
@@ -706,7 +707,10 @@ BOOST_AUTO_TEST_CASE (generate_aliasexpired)
 		BOOST_CHECK_NO_THROW(CallRPC("node3", "escrowinfo " + escrowguid));
 		// and node2
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "escrowinfo " + escrowguid));
-		// able to release and claim release on escrow with expired aliases and expired escrow (not complete or refunded)
+		// not able to release and claim release on escrow with expired aliases and expired escrow (not complete or refunded)
+		BOOST_CHECK_THROW(CallRPC("node2", "escrowrelease " + escrowguid), runtime_error);
+		AliasNew("node2", "aliasexpirenode2", "somedata");
+		// able to release and claim release on escrow with non-expired aliases and expired escrow (not complete or refunded)
 		EscrowRelease("node2", escrowguid);	 
 		EscrowClaimRelease("node1", escrowguid); 
 
