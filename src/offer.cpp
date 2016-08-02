@@ -2944,7 +2944,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 			throw runtime_error("offer accept passed into the function is not actually an offer accept");
 		int op, nOut;
 		vector<vector<unsigned char> > vvch;
-		if (!DecodeOfferTx(wtxOfferIn, op, nOut, vvch) 
+		if (!DecodeOfferTx(*wtxOfferIn, op, nOut, vvch) 
     		|| op != OP_OFFER_ACCEPT)
 			throw runtime_error("Could not decode linked offer accept tx");
 				
@@ -3359,7 +3359,7 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		COffer linkOffer(*wtxOfferIn);
 		int op, nOut;
 		vector<vector<unsigned char> > vvch;
-		DecodeOfferTx(wtxOfferIn, op, nOut, vvch);
+		DecodeOfferTx(*wtxOfferIn, op, nOut, vvch);
     		
 		// ensure both accepts have the escrow information
 		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
