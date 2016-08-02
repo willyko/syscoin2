@@ -1226,18 +1226,6 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to find escrow transaction");
 
-	// ensure that all is ok before trying to do the offer accept
-	UniValue arrayAcceptParams(UniValue::VARR);
-	arrayAcceptParams.push_back(stringFromVch(vchEscrow));
-	arrayAcceptParams.push_back("1");
-	try
-	{
-		tableRPC.execute("escrowcomplete", arrayAcceptParams);
-	}
-	catch (UniValue& objError)
-	{
-		throw runtime_error(find_value(objError, "message").get_str());
-	}
 
 	CPubKey arbiterKey(escrow.vchArbiterKey);
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
@@ -1325,6 +1313,19 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE)) {
 		throw runtime_error("there are pending operations on that escrow");
 	}
+	// ensure that all is ok before trying to do the offer accept
+	UniValue arrayAcceptParams(UniValue::VARR);
+	arrayAcceptParams.push_back(stringFromVch(vchEscrow));
+	arrayAcceptParams.push_back("1");
+	try
+	{
+		tableRPC.execute("escrowcomplete", arrayAcceptParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+
 	// create a raw tx that sends escrow amount to seller and collateral to buyer
     // inputs buyer txHash
 	UniValue arrayCreateParams(UniValue::VARR);
