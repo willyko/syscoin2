@@ -2942,11 +2942,16 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		COffer linkOffer(*wtxOfferIn);
 		if(linkOffer.accept.IsNull())
 			throw runtime_error("offer accept passed into the function is not actually an offer accept");
-		
+		int op, nOut;
+		vector<vector<unsigned char> > vvch;
+		if (!DecodeOfferTx(wtxOfferIn, op, nOut, vvch) 
+    		|| op != OP_OFFER_ACCEPT)
+			throw runtime_error("Could not decode linked offer accept tx");
+				
 		// ensure both accepts have the escrow information
 		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		txAccept.vchLinkAccept = linkOffer.accept.vchAcceptRand;
-		txAccept.vchLinkOffer = linkOffer.vchOffer;
+		txAccept.vchLinkOffer = vvch[0];
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;
@@ -3352,10 +3357,14 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		if (wtxOfferIn == NULL)
 			throw runtime_error("this offer accept is not in your wallet");	
 		COffer linkOffer(*wtxOfferIn);
+		int op, nOut;
+		vector<vector<unsigned char> > vvch;
+		DecodeOfferTx(wtxOfferIn, op, nOut, vvch);
+    		
 		// ensure both accepts have the escrow information
 		txAccept.vchEscrow = linkOffer.accept.vchEscrow;
 		txAccept.vchLinkAccept = linkOffer.accept.vchAcceptRand;
-		txAccept.vchLinkOffer = linkOffer.vchOffer;
+		txAccept.vchLinkOffer = vvch[0];
 		nHeight = linkOffer.accept.nAcceptHeight;
 		nQty = linkOffer.accept.nQty;
 		vchAccept = linkOffer.accept.vchAcceptRand;
