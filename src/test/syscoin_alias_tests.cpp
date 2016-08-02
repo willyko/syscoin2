@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE (generate_aliasprunewithoffer)
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew aliasprunewithoffer somedata"));
 	BOOST_CHECK_NO_THROW(r = CallRPC("node1", "aliasnew aliasprunewithoffer1 somedata"));
 	BOOST_CHECK_NO_THROW(r = CallRPC("node2", "aliasnew aliasprunewithoffer2 somedata"));
-	BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 40"));
+	BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 25"));
 	MilliSleep(2500);
 	BOOST_CHECK_NO_THROW(CallRPC("node2", "generate 10"));
 	MilliSleep(2500);
