@@ -1678,29 +1678,32 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	CWalletTx wtx;
 	CTransaction tx;
 	CEscrow escrow;
-    if (!GetTxOfEscrow( vchEscrow, 
-		escrow, tx))
-        throw runtime_error("could not find a escrow with this key");
-	uint256 hash;
-    vector<vector<unsigned char> > vvch;
-    int op, nOut;
-    if (!DecodeEscrowTx(tx, op, nOut, vvch) 
-    	|| !IsEscrowOp(op) 
-    	|| (op != OP_ESCROW_RELEASE))
-        throw runtime_error("Can only complete an escrow that has been released to you");
-	const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
-	if (wtxIn == NULL)
-		throw runtime_error("this escrow is not in your wallet");
-	
-      	// check for existing escrow 's
-	if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
-		throw runtime_error("there are pending operations on that escrow");
+	if(justCheck != "1")
+		{
+		if (!GetTxOfEscrow( vchEscrow, 
+			escrow, tx))
+			throw runtime_error("could not find a escrow with this key");
+		uint256 hash;
+		vector<vector<unsigned char> > vvch;
+		int op, nOut;
+		if (!DecodeEscrowTx(tx, op, nOut, vvch) 
+    		|| !IsEscrowOp(op) 
+    		|| (op != OP_ESCROW_RELEASE))
+			throw runtime_error("Can only complete an escrow that has been released to you");
+		const CWalletTx *wtxIn = pwalletMain->GetWalletTx(tx.GetHash());
+		if (wtxIn == NULL)
+			throw runtime_error("this escrow is not in your wallet");
+		
+      		// check for existing escrow 's
+		if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
+			throw runtime_error("there are pending operations on that escrow");
+		}
+		CPubKey buyerKey(escrow.vchBuyerKey);
+		CSyscoinAddress buyerAddress(buyerKey.GetID());
+		buyerAddress = CSyscoinAddress(buyerAddress.ToString());
+		if(!buyerAddress.IsValid() || !buyerAddress.isAlias )
+			throw runtime_error("Buyer address is invalid!");
 	}
-	CPubKey buyerKey(escrow.vchBuyerKey);
-	CSyscoinAddress buyerAddress(buyerKey.GetID());
-	buyerAddress = CSyscoinAddress(buyerAddress.ToString());
-	if(!buyerAddress.IsValid() || !buyerAddress.isAlias )
-		throw runtime_error("Buyer address is invalid!");
 
 	UniValue acceptParams(UniValue::VARR);
 	acceptParams.push_back(buyerAddress.aliasName);
