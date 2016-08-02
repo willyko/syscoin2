@@ -1697,8 +1697,8 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
       		// check for existing escrow 's
 		if (ExistsInMempool(vchEscrow, OP_ESCROW_ACTIVATE) || ExistsInMempool(vchEscrow, OP_ESCROW_RELEASE) || ExistsInMempool(vchEscrow, OP_ESCROW_REFUND) || ExistsInMempool(vchEscrow, OP_ESCROW_COMPLETE) ) {
 			throw runtime_error("there are pending operations on that escrow");
+			}
 	}
-		}
 	CPubKey buyerKey(escrow.vchBuyerKey);
 	CSyscoinAddress buyerAddress(buyerKey.GetID());
 	buyerAddress = CSyscoinAddress(buyerAddress.ToString());
@@ -1731,11 +1731,21 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	const string &acceptGUID = arr[1].get_str();
 	const CWalletTx *wtxAcceptIn;
 	wtxAcceptIn = pwalletMain->GetWalletTx(acceptTxHash);
-	if (justCheck != "1" && wtxAcceptIn == NULL)
-		throw runtime_error("offer accept is not in your wallet");
-	UniValue ret(UniValue::VARR);
-	ret.push_back(wtxAcceptIn->GetHash().GetHex());
-	return ret;
+	if(justCheck != "1")
+	{
+		if (wtxAcceptIn == NULL)
+			throw runtime_error("offer accept is not in your wallet");
+		UniValue ret(UniValue::VARR);
+		ret.push_back(wtxAcceptIn->GetHash().GetHex());
+		return ret;
+	}
+	else
+	{
+		UniValue ret(UniValue::VARR);
+		ret.push_back("1");
+		return ret;
+	}
+	
 }
 UniValue escrowrefund(const UniValue& params, bool fHelp) {
     if (fHelp || params.size() != 1)
