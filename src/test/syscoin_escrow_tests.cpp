@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		printf("Running generate_escrowpruning...\n");
 		AliasNew("node1", "selleraliasprune", "changeddata2");
 		AliasNew("node2", "buyeraliasprune", "changeddata2");
-		string offerguid = OfferNew("node1", "SYS_RATES", "category", "title", "100", "0.05", "description", "USD");
+		string offerguid = OfferNew("node1", "selleraliasprune", "category", "title", "100", "0.05", "description", "USD");
 		// stop node3
 		StopNode("node3");
 		// create a new service
