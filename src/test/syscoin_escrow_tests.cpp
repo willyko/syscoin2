@@ -242,8 +242,10 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate selleraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate buyeraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES SYS_RATES " + offerguid + " category title 100 0.05 description"));
-		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 55"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 5"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "generate 5"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 50"));
+		
 		MilliSleep(2500);
 		// stop and start node1
 		StopNode("node1");
@@ -260,8 +262,9 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate selleraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate buyeraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES SYS_RATES " + offerguid + " category title 100 0.05 description"));
-		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 55"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 5"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "generate 5"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 50"));
 		// give some time to propogate the new blocks across other 2 nodes
 		MilliSleep(2500);
 		// ensure you can still update because escrow hasn't been completed yet
@@ -276,8 +279,9 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate selleraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate buyeraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES SYS_RATES " + offerguid + " category title 100 0.05 description"));
-		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 55"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 5"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "generate 5"));
+		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 50"));
 		MilliSleep(5000);
 		// now it should be expired, try to leave feedback it shouldn't let you
 		BOOST_CHECK_THROW(CallRPC("node2",  "escrowfeedback " + guid1 + " 1 2 3 4"), runtime_error);
