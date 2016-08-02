@@ -1125,7 +1125,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					if (!GetTxOfOfferAccept(theOfferAccept.vchLinkOffer, theOfferAccept.vchLinkAccept, offer, theLinkedOfferAccept, acceptTx, skipFeedback))
 					{
 						if(fDebug)
-							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk");	
+							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: could not find a linked offer accept from mempool or disk theOfferAccept.vchLinkOffer %s theOfferAccept.vchLinkAccept %s", stringFromVch(theOfferAccept.vchLinkOffer).c_str(), stringFromVch(theOfferAccept.vchLinkAccept).c_str());	
 						return true;
 					}	
 					theOfferAccept.nQty = theLinkedOfferAccept.nQty;
