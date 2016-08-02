@@ -1670,7 +1670,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
                         + HelpRequiringPassphrase());
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
-	string justCheck = params[1].get_str();
+	string justCheck = params.size()>=2?params[1].get_str():"0";
 
 	EnsureWalletIsUnlocked();
 
