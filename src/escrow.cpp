@@ -1731,7 +1731,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	const string &acceptGUID = arr[1].get_str();
 	const CWalletTx *wtxAcceptIn;
 	wtxAcceptIn = pwalletMain->GetWalletTx(acceptTxHash);
-	if (wtxAcceptIn == NULL)
+	if (justCheck != "1" && wtxAcceptIn == NULL)
 		throw runtime_error("offer accept is not in your wallet");
 	UniValue ret(UniValue::VARR);
 	ret.push_back(wtxAcceptIn->GetHash().GetHex());
