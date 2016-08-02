@@ -1226,6 +1226,19 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to find escrow transaction");
 
+	// ensure that all is ok before trying to do the offer accept
+	UniValue arrayAcceptParams(UniValue::VARR);
+	arrayAcceptParams.push_back(stringFromVch(vchEscrow));
+	arrayAcceptParams.push_back("1");
+	try
+	{
+		res = tableRPC.execute("escrowcomplete", arrayAcceptParams);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+
 	CPubKey arbiterKey(escrow.vchArbiterKey);
 	CSyscoinAddress arbiterAddress(arbiterKey.GetID());
 	if(!arbiterAddress.IsValid())
@@ -1423,6 +1436,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 
 
 	EnsureWalletIsUnlocked();
+
     // look for a transaction with this key
     CTransaction tx;
 	CEscrow escrow;
@@ -1435,6 +1449,20 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
     CTransaction fundingTx;
 	if (!GetSyscoinTransaction(vtxPos.front().nHeight, escrow.escrowInputTxHash, fundingTx, Params().GetConsensus()))
 		throw runtime_error("failed to find escrow transaction");
+
+	// make sure you can actually accept it before going through claim
+	UniValue arrayAcceptParamsCheck(UniValue::VARR);
+	arrayAcceptParamsCheck.push_back(stringFromVch(vchEscrow));
+	arrayAcceptParamsCheck.push_back("1");
+	try
+	{
+		res = tableRPC.execute("escrowcomplete", arrayAcceptParamsCheck);
+	}
+	catch (UniValue& objError)
+	{
+		throw runtime_error(find_value(objError, "message").get_str());
+	}
+
 
  	int nOutMultiSig = 0;
 	CScript redeemScriptPubKey = CScript(escrow.vchRedeemScript.begin(), escrow.vchRedeemScript.end());
@@ -1635,13 +1663,14 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	
 }
 UniValue escrowcomplete(const UniValue& params, bool fHelp) {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size()  < 1 || params.size() > 2)
         throw runtime_error(
-		"escrowcomplete <escrow guid>\n"
+		"escrowcomplete <escrow guid> [justcheck]\n"
                          "Accepts an offer that's in escrow, to complete the escrow process.\n"
                         + HelpRequiringPassphrase());
     // gather & validate inputs
     vector<unsigned char> vchEscrow = vchFromValue(params[0]);
+	string justCheck = params[1].get_str();
 
 	EnsureWalletIsUnlocked();
 
@@ -1681,6 +1710,7 @@ UniValue escrowcomplete(const UniValue& params, bool fHelp) {
 	acceptParams.push_back("");
 	acceptParams.push_back("");
 	acceptParams.push_back(tx.GetHash().GetHex());
+	acceptParams.push_back(justCheck);
 
 	UniValue res;
 	try

@@ -801,7 +801,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		default:
 			return error( "CheckOfferInputs() : offer transaction has unknown op");
 		}
-		if(!IsEscrowOp(prevEscrowOp) && (retError = CheckForAliasExpiry(theOffer.vchPubKey, nHeight)) != "")
+		if((retError = CheckForAliasExpiry(theOffer.vchPubKey, nHeight)) != "")
 		{
 			retError = string("CheckOfferInputs(): ") + retError;
 			return error(retError.c_str());
@@ -824,14 +824,10 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			// load the offer data from the DB
 			if (pofferdb->ExistsOffer(vvchArgs[0])) {
 				if(!GetTxAndVtxOfOffer(vvchArgs[0], theOffer, offerTx, vtxPos))	
-				{
-					// we expire any offer other than offer accepts related to escrow
-					if(op != OP_OFFER_ACCEPT || serializedOffer.accept.vchEscrow.empty())
-					{
-						if(fDebug)
-							LogPrintf("CheckOfferInputs() : failed to read from offer DB");
-						return true;
-					}
+				{				
+					if(fDebug)
+						LogPrintf("CheckOfferInputs() : failed to read from offer DB");
+					return true;				
 				}
 			}			
 		}
@@ -1181,26 +1177,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: height mismatch with calculated height heightToCheckAgainst %s vs theOfferAccept.nAcceptHeight %s", heightToCheckAgainst, theOfferAccept.nAcceptHeight);	
 					return true;
 				}
-				// if this is a normal accept, make sure height passed into accept is only a few blocks away, giving some buffer to get into mempool for most of network
-				// if its a linked accept or escrow, it can be a long time before the time of the buy and time of accept, above check catches that.
-				if(!linkAccept && !escrowAccept)
-				{
-					if(nHeight < heightToCheckAgainst)
-					{
-						if(fDebug)
-							LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: nHeight can't be less than  heightToCheckAgainst, heightToCheckAgainst %d vs nHeight %d", heightToCheckAgainst, nHeight);
-						return true;
-					}
-				}
+	
 				myPriceOffer.nHeight = heightToCheckAgainst;
 				myPriceOffer.GetOfferFromList(vtxPos);
-				if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" && !theOfferAccept.txBTCId.IsNull())
-				if(nHeight < heightToCheckAgainst)
-				{
-					if(fDebug)
-						LogPrintf("CheckOfferInputs() OP_OFFER_ACCEPT: can't accept an offer for BTC that isn't specified in BTC by owner");	
-					return true;
-				}
 
 				// check that user pays enough in syscoin if the currency of the offer is not bitcoin or there is no bitcoin transaction ID associated with this accept
 				if(stringFromVch(myPriceOffer.sCurrencyCode) != "BTC" || theOfferAccept.txBTCId.IsNull())
@@ -2876,8 +2855,8 @@ bool CreateLinkedOfferAcceptRecipients(vector<CRecipient> &vecSend, const CAmoun
 }
 
 UniValue offeraccept(const UniValue& params, bool fHelp) {
-	if (fHelp || 1 > params.size() || params.size() > 7)
-		throw runtime_error("offeraccept <alias> <guid> [quantity] [message] [BTC TxId] [linkedacceptguidtxhash] [escrowTxHash]\n"
+	if (fHelp || 1 > params.size() || params.size() > 8)
+		throw runtime_error("offeraccept <alias> <guid> [quantity] [message] [BTC TxId] [linkedacceptguidtxhash] [escrowTxHash] [justcheck]\n"
 				"Accept&Pay for a confirmed offer.\n"
 				"<alias> An alias of the buyer.\n"
 				"<guid> guidkey from offer.\n"
@@ -2886,6 +2865,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 				"<BTC TxId> If you have paid in Bitcoin and the offer is in Bitcoin, enter the transaction ID here. Default is empty.\n"
 				"<linkedacceptguidtxhash> transaction id of the linking offer accept. For internal use only, leave blank\n"
 				"<escrowTxHash> If this offer accept is done by an escrow release. For internal use only, leave blank\n"
+				"<justcheck> Do not send transaction. For validation only. For internal use only, leave blank\n"
 				+ HelpRequiringPassphrase());
 	CSyscoinAddress refundAddr;	
 	vector<unsigned char> vchAlias = vchFromValue(params[0]);
@@ -2895,6 +2875,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	vector<unsigned char> vchLinkOfferAcceptTxHash = vchFromValue(params.size()>= 6? params[5]:"");
 	vector<unsigned char> vchMessage = vchFromValue(params.size()>=4?params[3]:"");
 	vector<unsigned char> vchEscrowTxHash = vchFromValue(params.size()>=7?params[6]:"");
+	string justCheck = params.size()>=8?params[7].get_str():"0";
 	int64_t nHeight = chainActive.Tip()->nHeight;
 	unsigned int nQty = 1;
 	if (params.size() >= 3) {
@@ -2917,7 +2898,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	CAliasIndex alias;
 	CTransaction aliastx;
-	if (!GetTxOfAlias(vchAlias, alias, aliastx) && vchEscrowTxHash.empty())
+	if (!GetTxOfAlias(vchAlias, alias, aliastx)))
 		throw runtime_error("could not find an alias with this name");
     if (vchEscrowTxHash.empty())
 	{
@@ -2946,7 +2927,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 	CTransaction tx;
 	vector<COffer> vtxPos;
-	if (!GetTxAndVtxOfOffer( vchOffer, theOffer, tx, vtxPos) && vchEscrowTxHash.empty())
+	if (!GetTxAndVtxOfOffer( vchOffer, theOffer, tx, vtxPos)))
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
@@ -2994,30 +2975,29 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
-		if (pescrowdb->ExistsEscrow(escrowVvch[0])) {
-			if (pescrowdb->ReadEscrow(escrowVvch[0], escrowVtxPos) && !escrowVtxPos.empty())
-			{	
-				CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
-				// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
-				CEscrow fundingEscrow = escrowVtxPos.front();
-				vchEscrowWhitelistAlias = fundingEscrow.vchWhitelistAlias;
-				// update height if it is bigger than escrow creation height, we want earlier of two, linked height or escrow creation to index into sysrates check
-				if(nHeight > fundingEscrow.nHeight)
-					nHeight = fundingEscrow.nHeight;
-				CPubKey sellerEscrowKey(fundingEscrow.vchSellerKey);
-				scriptPubKeyEscrowSellerDestination = GetScriptForDestination(sellerEscrowKey.GetID());
-				CPubKey buyerEscrowKey(fundingEscrow.vchBuyerKey);
-				scriptPubKeyEscrowBuyerDestination = GetScriptForDestination(buyerEscrowKey.GetID());
-				CPubKey arbiterEscrowKey(fundingEscrow.vchArbiterKey);
-				scriptPubKeyEscrowArbiterDestination = GetScriptForDestination(arbiterEscrowKey.GetID());
-				scriptPubKeyEscrowBuyer << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowBuyer += scriptPubKeyEscrowBuyerDestination;
-				scriptPubKeyEscrowSeller << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowSeller += scriptPubKeyEscrowSellerDestination;
-				scriptPubKeyEscrowArbiter << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowArbiter += scriptPubKeyEscrowArbiterDestination;
-				txAccept.vchEscrow = escrowVvch[0]; 
-			}
+		CTransaction escrowTx;
+		if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+		{
+			CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
+			// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
+			CEscrow fundingEscrow = escrowVtxPos.front();
+			vchEscrowWhitelistAlias = fundingEscrow.vchWhitelistAlias;
+			// update height if it is bigger than escrow creation height, we want earlier of two, linked height or escrow creation to index into sysrates check
+			if(nHeight > fundingEscrow.nHeight)
+				nHeight = fundingEscrow.nHeight;
+			CPubKey sellerEscrowKey(fundingEscrow.vchSellerKey);
+			scriptPubKeyEscrowSellerDestination = GetScriptForDestination(sellerEscrowKey.GetID());
+			CPubKey buyerEscrowKey(fundingEscrow.vchBuyerKey);
+			scriptPubKeyEscrowBuyerDestination = GetScriptForDestination(buyerEscrowKey.GetID());
+			CPubKey arbiterEscrowKey(fundingEscrow.vchArbiterKey);
+			scriptPubKeyEscrowArbiterDestination = GetScriptForDestination(arbiterEscrowKey.GetID());
+			scriptPubKeyEscrowBuyer << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowBuyer += scriptPubKeyEscrowBuyerDestination;
+			scriptPubKeyEscrowSeller << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowSeller += scriptPubKeyEscrowSellerDestination;
+			scriptPubKeyEscrowArbiter << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowArbiter += scriptPubKeyEscrowArbiterDestination;
+			txAccept.vchEscrow = escrowVvch[0]; 		
 		}	
 	}
 
@@ -3293,10 +3273,12 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	CreateFeeRecipient(scriptData, data, fee);
 	vecSend.push_back(fee);
 	const CWalletTx * wtxInCert=NULL;
-	// if making a purchase and we are using an alias from the whitelist of the offer, we may need to prove that we own that alias so in that case we attach an input from the alias
-	// if purchasing an escrow, we adjust the height to figure out pricing of the accept so we may also attach escrow inputs to the tx
-	SendMoneySyscoin(vecSend, recipientBuyer.nAmount+acceptRecipient.nAmount+paymentRecipient.nAmount+fee.nAmount+escrowBuyerRecipient.nAmount+escrowArbiterRecipient.nAmount+escrowSellerRecipient.nAmount+aliasRecipient.nAmount, false, wtx, wtxOfferIn, wtxInCert, wtxAliasIn, wtxEscrowIn);
-	
+	if(justCheck != "!")
+	{
+		// if making a purchase and we are using an alias from the whitelist of the offer, we may need to prove that we own that alias so in that case we attach an input from the alias
+		// if purchasing an escrow, we adjust the height to figure out pricing of the accept so we may also attach escrow inputs to the tx
+		SendMoneySyscoin(vecSend, recipientBuyer.nAmount+acceptRecipient.nAmount+paymentRecipient.nAmount+fee.nAmount+escrowBuyerRecipient.nAmount+escrowArbiterRecipient.nAmount+escrowSellerRecipient.nAmount+aliasRecipient.nAmount, false, wtx, wtxOfferIn, wtxInCert, wtxAliasIn, wtxEscrowIn);
+	}
 	UniValue res(UniValue::VARR);
 	res.push_back(wtx.GetHash().GetHex());
 	res.push_back(stringFromVch(vchAccept));
@@ -3397,29 +3379,29 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		// if we want to accept an escrow release or we are accepting a linked offer from an escrow release. Override heightToCheckAgainst if using escrow since escrow can take a long time.
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
-		if (pescrowdb->ExistsEscrow(escrowVvch[0])) {
-			if (pescrowdb->ReadEscrow(escrowVvch[0], escrowVtxPos) && !escrowVtxPos.empty())
-			{	
-				CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
-				// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
-				CEscrow fundingEscrow = escrowVtxPos.front();
-				vchEscrowWhitelistAlias = fundingEscrow.vchWhitelistAlias;
-				// update height if it is bigger than escrow creation height, we want earlier of two, linked heifht or escrow creation to index into sysrates check
-				if(nHeight > fundingEscrow.nHeight)
-					nHeight = fundingEscrow.nHeight;
-				CPubKey sellerEscrowKey(fundingEscrow.vchSellerKey);
-				scriptPubKeyEscrowSellerDestination = GetScriptForDestination(sellerEscrowKey.GetID());
-				CPubKey buyerEscrowKey(fundingEscrow.vchBuyerKey);
-				scriptPubKeyEscrowBuyerDestination = GetScriptForDestination(buyerEscrowKey.GetID());
-				CPubKey arbiterEscrowKey(fundingEscrow.vchArbiterKey);
-				scriptPubKeyEscrowArbiterDestination = GetScriptForDestination(arbiterEscrowKey.GetID());
-				scriptPubKeyEscrowBuyer << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowBuyer += scriptPubKeyEscrowBuyerDestination;
-				scriptPubKeyEscrowSeller << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowSeller += scriptPubKeyEscrowSellerDestination;
-				scriptPubKeyEscrowArbiter << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
-				scriptPubKeyEscrowArbiter += scriptPubKeyEscrowArbiterDestination;
-			}
+		CTransaction escrowTx;
+		if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+		{	
+			CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
+			// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
+			CEscrow fundingEscrow = escrowVtxPos.front();
+			vchEscrowWhitelistAlias = fundingEscrow.vchWhitelistAlias;
+			// update height if it is bigger than escrow creation height, we want earlier of two, linked heifht or escrow creation to index into sysrates check
+			if(nHeight > fundingEscrow.nHeight)
+				nHeight = fundingEscrow.nHeight;
+			CPubKey sellerEscrowKey(fundingEscrow.vchSellerKey);
+			scriptPubKeyEscrowSellerDestination = GetScriptForDestination(sellerEscrowKey.GetID());
+			CPubKey buyerEscrowKey(fundingEscrow.vchBuyerKey);
+			scriptPubKeyEscrowBuyerDestination = GetScriptForDestination(buyerEscrowKey.GetID());
+			CPubKey arbiterEscrowKey(fundingEscrow.vchArbiterKey);
+			scriptPubKeyEscrowArbiterDestination = GetScriptForDestination(arbiterEscrowKey.GetID());
+			scriptPubKeyEscrowBuyer << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowBuyer += scriptPubKeyEscrowBuyerDestination;
+			scriptPubKeyEscrowSeller << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowSeller += scriptPubKeyEscrowSellerDestination;
+			scriptPubKeyEscrowArbiter << CScript::EncodeOP_N(OP_ESCROW_COMPLETE) << escrowVvch[0] << OP_2DROP;
+			scriptPubKeyEscrowArbiter += scriptPubKeyEscrowArbiterDestination;	
+			txAccept.vchEscrow = escrowVvch[0]; 
 		}	
 	}
 
