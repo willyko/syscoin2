@@ -1232,7 +1232,7 @@ UniValue escrowrelease(const UniValue& params, bool fHelp) {
 	arrayAcceptParams.push_back("1");
 	try
 	{
-		res = tableRPC.execute("escrowcomplete", arrayAcceptParams);
+		tableRPC.execute("escrowcomplete", arrayAcceptParams);
 	}
 	catch (UniValue& objError)
 	{
@@ -1456,7 +1456,7 @@ UniValue escrowclaimrelease(const UniValue& params, bool fHelp) {
 	arrayAcceptParamsCheck.push_back("1");
 	try
 	{
-		res = tableRPC.execute("escrowcomplete", arrayAcceptParamsCheck);
+		tableRPC.execute("escrowcomplete", arrayAcceptParamsCheck);
 	}
 	catch (UniValue& objError)
 	{
