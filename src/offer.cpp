@@ -2976,7 +2976,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
 		CTransaction escrowTx;
-		if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+		if (GetTxAndVtxOfEscrow( escrowVvch[0], escrow, escrowTx, escrowVtxPos))
 		{
 			CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
 			// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
@@ -3380,7 +3380,7 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 		// get escrow activation
 		vector<CEscrow> escrowVtxPos;
 		CTransaction escrowTx;
-		if (GetTxAndVtxOfEscrow( theOffer.accept.vchEscrow, escrow, escrowTx, escrowVtxPos))
+		if (GetTxAndVtxOfEscrow( escrowVvch[0], escrow, escrowTx, escrowVtxPos))
 		{	
 			CScript scriptPubKeyEscrowBuyerDestination, scriptPubKeyEscrowSellerDestination, scriptPubKeyEscrowArbiterDestination;
 			// we want the initial funding escrow transaction height as when to calculate this offer accept price from convertCurrencyCodeToSyscoin()
