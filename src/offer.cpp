@@ -2898,7 +2898,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 
 	CAliasIndex alias;
 	CTransaction aliastx;
-	if (!GetTxOfAlias(vchAlias, alias, aliastx)))
+	if (!GetTxOfAlias(vchAlias, alias, aliastx))
 		throw runtime_error("could not find an alias with this name");
     if (vchEscrowTxHash.empty())
 	{
@@ -2927,7 +2927,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	// if this is a linked offer accept, set the height to the first height so sys_rates price will match what it was at the time of the original accept
 	CTransaction tx;
 	vector<COffer> vtxPos;
-	if (!GetTxAndVtxOfOffer( vchOffer, theOffer, tx, vtxPos)))
+	if (!GetTxAndVtxOfOffer( vchOffer, theOffer, tx, vtxPos))
 	{
 		throw runtime_error("could not find an offer with this identifier");
 	}
