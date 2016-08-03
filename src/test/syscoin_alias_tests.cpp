@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE (generate_aliasexpiredbuyback)
 		GenerateBlocks(110);
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasnew aliasexpirebuyback data1"));
 		GenerateBlocks(5);
-		BOOST_CHECK_THROW(CallRPC("node1", "aliasnew aliasexpirebuyback data2", runtime_error));
+		BOOST_CHECK_THROW(CallRPC("node1", "aliasnew aliasexpirebuyback data2"), runtime_error);
 		MilliSleep(2500);
 		GenerateBlocks(5);
 		
