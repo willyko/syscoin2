@@ -213,7 +213,8 @@ BOOST_AUTO_TEST_CASE (generate_aliasexpiredbuyback)
 		AliasNew("node1", "aliasexpirebuyback", "somedata", "data");
 		GenerateBlocks(110);
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasnew aliasexpirebuyback data1"));
-		GenerateBlocks(5);
+		GenerateBlocks(5,"node2");
+		MilliSleep(2500);
 		BOOST_CHECK_THROW(CallRPC("node1", "aliasnew aliasexpirebuyback data2"), runtime_error);
 		MilliSleep(2500);
 		GenerateBlocks(5);
