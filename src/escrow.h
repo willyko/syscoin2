@@ -106,6 +106,7 @@ public:
     uint256 txHash;
 	uint256 escrowInputTxHash;
     uint64_t nHeight;
+    uint64_t nCreationHeight;
 	unsigned int nQty;
 	unsigned int op;
 	int64_t nPricePerUnit;
@@ -155,6 +156,7 @@ public:
 			READWRITE(sellerFeedback);	
 			READWRITE(arbiterFeedback);	
 			READWRITE(VARINT(op));
+			READWRITE(VARINT(nCreationHeight));
 		}
 	}
 
@@ -172,6 +174,7 @@ public:
 		&& a.txHash == b.txHash
 		&& a.escrowInputTxHash == b.escrowInputTxHash
 		&& a.nHeight == b.nHeight
+		&& a.nCreationHeight == b.nCreationHeight
 		&& a.nQty == b.nQty
 		&& a.nPricePerUnit == b.nPricePerUnit
 		&& a.buyerFeedback == b.buyerFeedback
@@ -195,6 +198,7 @@ public:
 		txHash = b.txHash;
 		escrowInputTxHash = b.escrowInputTxHash;
 		nHeight = b.nHeight;
+		nCreationHeight = b.nCreationHeight;
 		nQty = b.nQty;
 		nPricePerUnit = b.nPricePerUnit;
 		buyerFeedback = b.buyerFeedback;
@@ -209,8 +213,8 @@ public:
         return !(a == b);
     }
 
-    void SetNull() { op = 0; vchEscrow.clear(); buyerFeedback.SetNull();sellerFeedback.SetNull();arbiterFeedback.SetNull(); nHeight = 0; txHash.SetNull(); escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); vchWhitelistAlias.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
-    bool IsNull() const { return (op == 0 && vchEscrow.empty() && txHash.IsNull() && escrowInputTxHash.IsNull() && buyerFeedback.IsNull() && sellerFeedback.IsNull() && arbiterFeedback.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0 && vchBuyerKey.empty() && vchArbiterKey.empty() && vchSellerKey.empty()); }
+    void SetNull() { op = 0; vchEscrow.clear(); buyerFeedback.SetNull();sellerFeedback.SetNull();arbiterFeedback.SetNull(); nHeight = 0; nCreationHeight = 0; txHash.SetNull(); escrowInputTxHash.SetNull(); nQty = 0; nPricePerUnit = 0; vchBuyerKey.clear(); vchArbiterKey.clear(); vchSellerKey.clear(); vchRedeemScript.clear(); vchOffer.clear(); vchWhitelistAlias.clear(); rawTx.clear(); vchOfferAcceptLink.clear(); vchPaymentMessage.clear();}
+    bool IsNull() const { return (nCreationHeight == 0 && op == 0 && vchEscrow.empty() && txHash.IsNull() && escrowInputTxHash.IsNull() && buyerFeedback.IsNull() && sellerFeedback.IsNull() && arbiterFeedback.IsNull() && nHeight == 0 && nQty == 0 && nPricePerUnit == 0 && vchBuyerKey.empty() && vchArbiterKey.empty() && vchSellerKey.empty()); }
     bool UnserializeFromTx(const CTransaction &tx);
 	bool UnserializeFromData(const std::vector<unsigned char> &vchData);
 	const std::vector<unsigned char> Serialize();

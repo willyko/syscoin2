@@ -720,14 +720,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: markup must be greator than 0!");
 				}	
 			}
-			else
-			{
-				// check for valid alias peg
-				if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
-				{
-					return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
-				}
-			}
 			
 			break;
 		case OP_OFFER_UPDATE:
@@ -741,11 +733,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");		
-			// check for valid alias peg
-			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
-			{
-				return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg));
-			}
 			
 			break;
 		case OP_OFFER_ACCEPT:
@@ -809,7 +796,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	
 
 	if (!fJustCheck ) {
-		if(((theOffer.nHeight + GetOfferExpirationDepth()) < nHeight) || theOffer.nHeight >= nHeight)
+		if((theOffer.nHeight != theOffer.nCreationHeight || (theOffer.nHeight + GetOfferExpirationDepth()) < nHeight) || theOffer.nHeight >= nHeight)
 		{
 			if(fDebug)
 				LogPrintf("CheckOfferInputs(): Trying to make an offer transaction that is expired or too far in the future, skipping...");
@@ -835,6 +822,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		// but first we assign fields from the DB since
 		// they are not shipped in an update txn to keep size down
 		if(op == OP_OFFER_UPDATE) {
+
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
 			{
@@ -904,7 +892,13 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 			if(!theOffer.vchCert.empty())						
 				theOffer.nQty = 1;
-			
+			// check for valid alias peg
+			if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+			{
+				if(fDebug)
+					LogPrintf("CheckOfferInputs() : OP_OFFER_UPDATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
+				return true;
+			}			
 		}
 		else if(op == OP_OFFER_ACTIVATE)
 		{
@@ -949,6 +943,13 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE alias input and offer alias mismatch");
 					return true;
 				}
+			}
+			// check for valid alias peg
+			if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+			{
+				if(fDebug)
+					LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
+				return true;
 			}
 			// if this is a linked offer activate, then add it to the parent offerLinks list
 			if(!theOffer.vchLinkOffer.empty())
@@ -1301,7 +1302,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}			
 			}
 		}
-		
 		theOffer.nHeight = nHeight;
 		theOffer.txHash = tx.GetHash();
 		theOffer.PutToOfferList(vtxPos);
@@ -1545,6 +1545,7 @@ UniValue offernew(const UniValue& params, bool fHelp) {
 	newOffer.sDescription = vchDesc;
 	newOffer.nQty = nQty;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
+	newOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	newOffer.SetPrice(price);
 	newOffer.vchCert = vchCert;
 	newOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
@@ -1733,6 +1734,7 @@ UniValue offernew_nocheck(const UniValue& params, bool fHelp) {
 	newOffer.sDescription = vchDesc;
 	newOffer.nQty = nQty;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
+	newOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	newOffer.SetPrice(price);
 	newOffer.vchCert = vchCert;
 	newOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
@@ -1915,7 +1917,7 @@ UniValue offerlink(const UniValue& params, bool fHelp) {
 	// need this for inputs check if root offer is in exclusive mode
 	newOffer.vchLinkAlias = vchAlias;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
-	
+	newOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	//create offeractivate txn keys
 	CPubKey aliasKey(alias.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(aliasKey.GetID());
@@ -2060,7 +2062,7 @@ UniValue offerlink_nocheck(const UniValue& params, bool fHelp) {
 	// need this for inputs check if root offer is in exclusive mode
 	newOffer.vchLinkAlias = vchAlias;
 	newOffer.nHeight = chainActive.Tip()->nHeight;
-	
+	newOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	//create offeractivate txn keys
 	CPubKey aliasKey(alias.vchPubKey);
 	scriptPubKeyOrig = GetScriptForDestination(aliasKey.GetID());
@@ -2169,7 +2171,7 @@ UniValue offeraddwhitelist(const UniValue& params, bool fHelp) {
 	theOffer.ClearOffer();
 	theOffer.linkWhitelist.PutWhitelistEntry(entry);
 	theOffer.nHeight = chainActive.Tip()->nHeight;
-
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	vector<CRecipient> vecSend;
 	CRecipient recipient;
 	CreateRecipient(scriptPubKey, recipient);
@@ -2244,6 +2246,7 @@ UniValue offerremovewhitelist(const UniValue& params, bool fHelp) {
 		throw runtime_error("this alias entry was not found on affiliate list");
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
 	scriptPubKey += scriptPubKeyOrig;
 
@@ -2309,6 +2312,7 @@ UniValue offerclearwhitelist(const UniValue& params, bool fHelp) {
 
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	// create OFFERUPDATE txn keys
 	CScript scriptPubKey;
 	scriptPubKey << CScript::EncodeOP_N(OP_OFFER_UPDATE) << vchOffer << OP_2DROP;
@@ -2523,6 +2527,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	CAmount nRate;
 	vector<string> rateList;
 	// get precision & check for valid alias peg
@@ -2582,6 +2587,7 @@ UniValue offerupdate(const UniValue& params, bool fHelp) {
 	if(nQty != -1 && (nQty-memPoolQty) < 0)
 		throw runtime_error("not enough remaining quantity to fulfill this offerupdate");
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
 	if(params.size() >= 12 && params[11].get_str().size() > 0)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
@@ -2726,6 +2732,7 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	COffer offerCopy = theOffer;
 	theOffer.ClearOffer();
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	CAmount nRate;
 	vector<string> rateList;
 	// get precision & check for valid alias peg
@@ -2777,8 +2784,6 @@ UniValue offerupdate_nocheck(const UniValue& params, bool fHelp) {
 	if (params.size() >= 10)
 		theOffer.bPrivate = bPrivate;
 	unsigned int memPoolQty = QtyOfPendingAcceptsInMempool(vchOffer);
-
-	theOffer.nHeight = chainActive.Tip()->nHeight;
 	theOffer.SetPrice(price);
 	if(params.size() >= 12 && params[11].get_str().size() > 0)
 		theOffer.linkWhitelist.bExclusiveResell = bExclusiveResell;
@@ -3271,6 +3276,7 @@ UniValue offeraccept(const UniValue& params, bool fHelp) {
 	if(!vchWhitelistAlias.empty())
 		theOffer.vchLinkAlias = vchWhitelistAlias;
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
@@ -3581,6 +3587,7 @@ UniValue offeraccept_nocheck(const UniValue& params, bool fHelp) {
 	if(!vchWhitelistAlias.empty())
 		theOffer.vchLinkAlias = vchWhitelistAlias;
 	theOffer.nHeight = chainActive.Tip()->nHeight;
+	theOffer.nCreationHeight = chainActive.Tip()->nHeight;
 	const vector<unsigned char> &data = theOffer.Serialize();
 	CScript scriptData;
 	scriptData << OP_RETURN << data;
@@ -3802,7 +3809,7 @@ UniValue offeracceptfeedback(const UniValue& params, bool fHelp) {
 		throw runtime_error("You must be either the buyer or seller to leave feedback on this offer purchase");
 	}
 	offer.nHeight = chainActive.Tip()->nHeight;
-
+	offer.nCreationHeight = chainActive.Tip()->nHeight;
 
 	const vector<unsigned char> &data = offer.Serialize();
 	CScript scriptData;

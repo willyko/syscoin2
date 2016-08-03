@@ -116,18 +116,18 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (paliasdb->ReadAlias(alias.vchName, vtxPos))
 		{
 			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
+			if(IsSys21Fork(vtxPos.front().nCreationHeight))
 			{
 				if(!alias.vchGUID.empty() && vtxPos.back().vchGUID != alias.vchGUID)
-					nHeight = alias.nHeight + GetAliasExpirationDepth();
+					nHeight = alias.nCreationHeight + GetAliasExpirationDepth();
 				else
-					nHeight = vtxPos.back().nHeight + GetAliasExpirationDepth();
+					nHeight = vtxPos.back().nCreationHeight + GetAliasExpirationDepth();
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(alias.nHeight))
+		else if(IsSys21Fork(alias.nCreationHeight))
 		{
-			nHeight = alias.nHeight +  GetAliasExpirationDepth();
+			nHeight = alias.nCreationHeight +  GetAliasExpirationDepth();
 			return true;
 		}
 	}
@@ -137,15 +137,15 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (pofferdb->ReadOffer(offer.vchOffer, vtxPos))
 		{
 			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
+			if(IsSys21Fork(vtxPos.front().nCreationHeight))
 			{
-				nHeight = vtxPos.back().nHeight + GetOfferExpirationDepth();
+				nHeight = vtxPos.back().nCreationHeight + GetOfferExpirationDepth();
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(offer.nHeight))
+		else if(IsSys21Fork(offer.nCreationHeight))
 		{
-			nHeight = offer.nHeight +  GetOfferExpirationDepth();
+			nHeight = offer.nCreationHeight +  GetOfferExpirationDepth();
 			return true;
 		}
 	}
@@ -155,15 +155,15 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (pcertdb->ReadCert(cert.vchCert, vtxPos))
 		{
 			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
+			if(IsSys21Fork(vtxPos.front().nCreationHeight))
 			{
-				nHeight = vtxPos.back().nHeight + GetCertExpirationDepth();
+				nHeight = vtxPos.back().nCreationHeight + GetCertExpirationDepth();
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(cert.nHeight))
+		else if(IsSys21Fork(cert.nCreationHeight))
 		{
-			nHeight = cert.nHeight + GetCertExpirationDepth();
+			nHeight = cert.nCreationHeight + GetCertExpirationDepth();
 			return true;
 		}
 	}
@@ -173,21 +173,21 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (pescrowdb->ReadEscrow(escrow.vchEscrow, vtxPos))
 		{
 			// if escrow is not refunded or complete don't prune otherwise escrow gets stuck (coins are still safe, just a GUI thing)
-			if(IsSys21Fork(vtxPos.front().nHeight))
+			if(IsSys21Fork(vtxPos.front().nCreationHeight))
 			{
 				if(vtxPos.back().op != OP_ESCROW_COMPLETE)
 					nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
 				else
-					nHeight = vtxPos.back().nHeight + GetEscrowExpirationDepth();
+					nHeight = vtxPos.back().nCreationHeight + GetEscrowExpirationDepth();
 				return true;	
 			}			
 		}
-		else if(IsSys21Fork(escrow.nHeight))
+		else if(IsSys21Fork(escrow.nCreationHeight))
 		{
 			if(escrow.op != OP_ESCROW_COMPLETE)
 				nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
 			else
-				nHeight = escrow.nHeight + GetEscrowExpirationDepth();
+				nHeight = escrow.nCreationHeight + GetEscrowExpirationDepth();
 			return true;
 		}
 	}
@@ -197,15 +197,15 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (pmessagedb->ReadMessage(message.vchMessage, vtxPos))
 		{
 			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
-			if(IsSys21Fork(vtxPos.front().nHeight))
+			if(IsSys21Fork(vtxPos.front().nCreationHeight))
 			{
-				nHeight = vtxPos.back().nHeight + GetMessageExpirationDepth();
+				nHeight = vtxPos.back().nCreationHeight + GetMessageExpirationDepth();
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(message.nHeight))
+		else if(IsSys21Fork(message.nCreationHeight))
 		{
-			nHeight = message.nHeight +  GetEscrowExpirationDepth();
+			nHeight = message.nCreationHeight +  GetEscrowExpirationDepth();
 			return true;
 		}
 	}
@@ -863,7 +863,7 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 	if (!fJustCheck ) {
 		if(vvchArgs[0] != vchFromString("SYS_RATES") && vvchArgs[0] != vchFromString("SYS_BAN") && vvchArgs[0] != vchFromString("SYS_CATEGORY"))
 		{
-			if(!theAlias.IsNull() && ((theAlias.nHeight + GetAliasExpirationDepth()) < nHeight) || theAlias.nHeight >= nHeight)
+			if(!theAlias.IsNull() && (theAlias.nHeight != theAlias.nCreationHeight || (theAlias.nHeight + GetAliasExpirationDepth()) < nHeight) || theAlias.nHeight >= nHeight)
 			{
 				if(fDebug)
 					LogPrintf("CheckAliasInputs(): Trying to make an alias transaction that is expired or too far in the future, skipping...");
@@ -1470,6 +1470,7 @@ UniValue aliasnew(const UniValue& params, bool fHelp) {
 	newAlias.vchGUID = vchRandAlias;
 	newAlias.vchName = vchName;
 	newAlias.nHeight = chainActive.Tip()->nHeight;
+	newAlias.nCreationHeight = chainActive.Tip()->nHeight;
 	newAlias.vchPubKey = vchPubKey;
 	newAlias.vchPublicValue = vchPublicValue;
 	newAlias.vchPrivateValue = vchPrivateValue;
@@ -1575,7 +1576,7 @@ UniValue aliasupdate(const UniValue& params, bool fHelp) {
 
 	CAliasIndex copyAlias = theAlias;
 	theAlias.ClearAlias();
-
+	theAlias.nCreationHeight = chainActive.Tip()->nHeight;
 	theAlias.nHeight = chainActive.Tip()->nHeight;
 	if(copyAlias.vchPublicValue != vchPublicValue)
 		theAlias.vchPublicValue = vchPublicValue;
