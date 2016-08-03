@@ -124,9 +124,11 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 			}		
 		}
 		// if the reciever doesn't have the data and the sender sent it, means it shouldn't be pruned
-		else 
-			return false;
-		
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		{
+			nHeight = chainActive.Tip()->nHeight +  GetAliasExpirationDepth();
+			return true;
+		}
 	}
 	else if(offer.UnserializeFromData(vchData))
 	{
@@ -140,8 +142,11 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else 
-			return false;
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		{
+			nHeight = chainActive.Tip()->nHeight +  GetOfferExpirationDepth();
+			return true;
+		}
 	}
 	else if(cert.UnserializeFromData(vchData))
 	{
@@ -155,8 +160,11 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else 
-			return false;
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		{
+			nHeight = chainActive.Tip()->nHeight +  GetCertExpirationDepth();
+			return true;
+		}
 	}
 	else if(escrow.UnserializeFromData(vchData))
 	{
@@ -170,8 +178,11 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}			
 		}
-		else 
-			return false;
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		{
+			nHeight = chainActive.Tip()->nHeight +  GetEscrowExpirationDepth();
+			return true;
+		}
 	}
 	else if(message.UnserializeFromData(vchData))
 	{
@@ -185,8 +196,11 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else 
-			return false;
+		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		{
+			nHeight = chainActive.Tip()->nHeight +  GetMessageExpirationDepth();
+			return true;
+		}
 	}
 
 	return false;
