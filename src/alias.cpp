@@ -93,6 +93,7 @@ bool IsSys21Fork(const uint64_t& nHeight)
 		return false;
 	return true;
 }
+// if its in SYS2.1 fork (returns true) then we look at nHeight for when to prune
 bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 {
 	vector<unsigned char> vchData;
@@ -111,46 +112,81 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 	{
 		if(alias.vchName == vchFromString("SYS_RATES") || alias.vchName == vchFromString("SYS_BAN") || alias.vchName == vchFromString("SYS_CATEGORY"))
 			return false;
-		if(IsSys21Fork(alias.nHeight))
+		vector<CAliasIndex> vtxPos;
+		// the only time you prune is when you have the data in the db and you know when it should expire
+		if (paliasdb->ReadAlias(alias.vchName, vtxPos))
 		{
-			nHeight = alias.nHeight + GetAliasExpirationDepth();
-			return true;
+			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
+			if(IsSys21Fork(vtxPos.front().nHeight))
+			{
+				nHeight = vtxPos.back().nHeight + GetAliasExpirationDepth();
+				return true;	
+			}		
 		}
+		// if the reciever doesn't have the data and the sender sent it, means it shouldn't be pruned
+		else 
+			return false;
+		
 	}
 	else if(offer.UnserializeFromData(vchData))
 	{
-		if(IsSys21Fork(offer.nHeight))
+		vector<COffer> vtxPos;
+		if (pofferdb->ReadOffer(offer.vchOffer, vtxPos))
 		{
-			nHeight = offer.nHeight + GetOfferExpirationDepth();
-			return true;
+			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
+			if(IsSys21Fork(vtxPos.front().nHeight))
+			{
+				nHeight = vtxPos.back().nHeight + GetOfferExpirationDepth();
+				return true;	
+			}		
 		}
+		else 
+			return false;
 	}
 	else if(cert.UnserializeFromData(vchData))
 	{
-		if(IsSys21Fork(cert.nHeight))
+		vector<CCert> vtxPos;
+		if (pcertdb->ReadCert(cert.vchCert, vtxPos))
 		{
-			nHeight = cert.nHeight + GetCertExpirationDepth();
-			return true;
+			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
+			if(IsSys21Fork(vtxPos.front().nHeight))
+			{
+				nHeight = vtxPos.back().nHeight + GetCertExpirationDepth();
+				return true;	
+			}		
 		}
+		else 
+			return false;
 	}
 	else if(escrow.UnserializeFromData(vchData))
 	{
-		if(IsSys21Fork(escrow.nHeight))
+		vector<CEscrow> vtxPos;
+		if (pescrowdb->ReadEscrow(escrow.vchEscrow, vtxPos))
 		{
-			if(escrow.op != OP_ESCROW_COMPLETE)
-				nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
-			else
-				nHeight = escrow.nHeight + GetEscrowExpirationDepth();
-			return true;
+			// if escrow is not refunded or complete don't prune otherwise escrow gets stuck (coins are still safe, just a GUI thing)
+			if(IsSys21Fork(vtxPos.front().nHeight) && vtxPos.back().op != OP_ESCROW_COMPLETE)
+			{
+				nHeight = vtxPos.back().nHeight + GetEscrowExpirationDepth();
+				return true;	
+			}			
 		}
+		else 
+			return false;
 	}
 	else if(message.UnserializeFromData(vchData))
 	{
-		if(IsSys21Fork(message.nHeight))
+		vector<CMessage> vtxPos;
+		if (pmessagedb->ReadMessage(message.vchMessage, vtxPos))
 		{
-			nHeight = message.nHeight + GetMessageExpirationDepth();
-			return true;
+			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
+			if(IsSys21Fork(vtxPos.front().nHeight))
+			{
+				nHeight = vtxPos.back().nHeight + GetMessageExpirationDepth();
+				return true;	
+			}		
 		}
+		else 
+			return false;
 	}
 
 	return false;
