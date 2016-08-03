@@ -944,13 +944,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					return true;
 				}
 			}
-			// check for valid alias peg
-			if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
-				return true;
-			}
 			// if this is a linked offer activate, then add it to the parent offerLinks list
 			if(!theOffer.vchLinkOffer.empty())
 			{
@@ -1010,6 +1003,16 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					if(fDebug)
 						LogPrintf("CheckOfferInputs(): OP_OFFER_ACTIVATE Linked offer is expired");
 					theOffer.vchLinkOffer.clear();	
+				}
+			}
+			else
+			{
+				// check for valid alias peg
+				if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+				{
+					if(fDebug)
+						LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
+					return true;
 				}
 			}
 		}
