@@ -113,7 +113,6 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if(alias.vchName == vchFromString("SYS_RATES") || alias.vchName == vchFromString("SYS_BAN") || alias.vchName == vchFromString("SYS_CATEGORY"))
 			return false;
 		vector<CAliasIndex> vtxPos;
-		// the only time you prune is when you have the data in the db and you know when it should expire
 		if (paliasdb->ReadAlias(alias.vchName, vtxPos))
 		{
 			// have to check the first tx in the service because if it was created before the fork, the chain has hashed the data, so we can't prune it
@@ -123,10 +122,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		// if the reciever doesn't have the data and the sender sent it, means it shouldn't be pruned
-		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		else if(IsSys21Fork(alias.nHeight))
 		{
-			nHeight = chainActive.Tip()->nHeight +  GetAliasExpirationDepth();
+			nHeight = alias.nHeight +  GetAliasExpirationDepth();
 			return true;
 		}
 	}
@@ -142,9 +140,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		else if(IsSys21Fork(offer.nHeight))
 		{
-			nHeight = chainActive.Tip()->nHeight +  GetOfferExpirationDepth();
+			nHeight = offer.nHeight +  GetOfferExpirationDepth();
 			return true;
 		}
 	}
@@ -160,9 +158,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		else if(IsSys21Fork(cert.nHeight))
 		{
-			nHeight = chainActive.Tip()->nHeight +  GetCertExpirationDepth();
+			nHeight = cert.nHeight + GetCertExpirationDepth();
 			return true;
 		}
 	}
@@ -172,15 +170,21 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 		if (pescrowdb->ReadEscrow(escrow.vchEscrow, vtxPos))
 		{
 			// if escrow is not refunded or complete don't prune otherwise escrow gets stuck (coins are still safe, just a GUI thing)
-			if(IsSys21Fork(vtxPos.front().nHeight) && vtxPos.back().op != OP_ESCROW_COMPLETE)
+			if(IsSys21Fork(vtxPos.front().nHeight))
 			{
-				nHeight = vtxPos.back().nHeight + GetEscrowExpirationDepth();
+				if(vtxPos.back().op != OP_ESCROW_COMPLETE)
+					nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
+				else
+					nHeight = vtxPos.back().nHeight + GetEscrowExpirationDepth();
 				return true;	
 			}			
 		}
-		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		else if(IsSys21Fork(escrow.nHeight))
 		{
-			nHeight = chainActive.Tip()->nHeight +  GetEscrowExpirationDepth();
+			if(escrow.op != OP_ESCROW_COMPLETE)
+				nHeight = chainActive.Tip()->nHeight + GetEscrowExpirationDepth();
+			else
+				nHeight = escrow.nHeight + GetEscrowExpirationDepth();
 			return true;
 		}
 	}
@@ -196,9 +200,9 @@ bool IsInSys21Fork(const CScript& scriptPubKey, uint64_t &nHeight)
 				return true;	
 			}		
 		}
-		else if(IsSys21Fork(chainActive.Tip()->nHeight))
+		else if(IsSys21Fork(message.nHeight))
 		{
-			nHeight = chainActive.Tip()->nHeight +  GetMessageExpirationDepth();
+			nHeight = message.nHeight +  GetEscrowExpirationDepth();
 			return true;
 		}
 	}
