@@ -720,6 +720,14 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					return error("CheckOfferInputs() OP_OFFER_ACTIVATE: markup must be greator than 0!");
 				}	
 			}
+			else
+			{
+				// check for valid alias peg
+				if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+				{
+					return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
+				}
+			}
 			
 			break;
 		case OP_OFFER_UPDATE:
@@ -733,6 +741,11 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				return error("CheckOfferInputs() : cert input and offer cert guid mismatch");
 			if (!theOffer.vchCert.empty() && !IsCertOp(prevCertOp))
 				return error("CheckOfferInputs() : you must own the cert offer you wish to update");		
+			// check for valid alias peg
+			if(!theOffer.vchAliasPeg.empty() && getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
+			{
+				return error("CheckOfferInputs() : could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg));
+			}
 			
 			break;
 		case OP_OFFER_ACCEPT:
@@ -822,7 +835,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		// but first we assign fields from the DB since
 		// they are not shipped in an update txn to keep size down
 		if(op == OP_OFFER_UPDATE) {
-
 			// if we are selling a cert ensure it exists and pubkey's match (to ensure it doesnt get transferred prior to accepting by user)
 			if(!theOffer.vchCert.empty())
 			{
@@ -892,13 +904,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 			if(!theOffer.vchCert.empty())						
 				theOffer.nQty = 1;
-			// check for valid alias peg
-			if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() : OP_OFFER_UPDATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
-				return true;
-			}			
+			
 		}
 		else if(op == OP_OFFER_ACTIVATE)
 		{
@@ -943,13 +949,6 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 						LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE alias input and offer alias mismatch");
 					return true;
 				}
-			}
-			// check for valid alias peg
-			if(getCurrencyToSYSFromAlias(theOffer.vchAliasPeg, theOffer.sCurrencyCode, nRate, theOffer.nHeight, rateList,precision) != "")
-			{
-				if(fDebug)
-					LogPrintf("CheckOfferInputs() : OP_OFFER_ACTIVATE could not find currency %s in the %s alias!\n", stringFromVch(theOffer.sCurrencyCode).c_str(), stringFromVch(theOffer.vchAliasPeg).c_str());
-				return true;
 			}
 			// if this is a linked offer activate, then add it to the parent offerLinks list
 			if(!theOffer.vchLinkOffer.empty())
@@ -1041,9 +1040,9 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 					return true;
 				}
 				// ensure we don't add same feedback twice (feedback in db should be older than current height)
-				if(theOfferAccept.feedback.nHeight < serializedOffer.nHeight)
+				if(theOfferAccept.feedback.nHeight < nHeight)
 				{
-					theOfferAccept.feedback.nHeight = serializedOffer.nHeight;
+					theOfferAccept.feedback.nHeight = nHeight;
 					theOfferAccept.feedback.txHash = tx.GetHash();
 				}
 				else
@@ -1231,7 +1230,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 				}
 			}
 
-			theOfferAccept.nHeight = serializedOffer.nHeight;
+			theOfferAccept.nHeight = nHeight;
 			theOfferAccept.vchAcceptRand = vvchArgs[1];
 			theOfferAccept.txHash = tx.GetHash();
 			theOffer.accept = theOfferAccept;
@@ -1303,6 +1302,7 @@ bool CheckOfferInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 			}
 		}
 		
+		theOffer.nHeight = nHeight;
 		theOffer.txHash = tx.GetHash();
 		theOffer.PutToOfferList(vtxPos);
 		// write offer

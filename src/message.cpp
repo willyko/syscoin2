@@ -362,6 +362,7 @@ bool CheckMessageInputs(const CTransaction &tx, int op, int nOut, const vector<v
 		}      
         // set the message's txn-dependent values
 		theMessage.txHash = tx.GetHash();
+		theMessage.nHeight = nHeight;
 		PutToMessageList(vtxPos, theMessage);
         // write message  
 
