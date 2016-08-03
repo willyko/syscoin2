@@ -617,20 +617,20 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 						// ensure we don't add same feedback twice (feedback in db should be older than current height)
 						// ensure feedback is valid
 						// ensure you aren't leaving feedback for yourself
-						if(!serializedEscrow.buyerFeedback.IsNull()  && serializedEscrow.buyerFeedback.nFeedbackUser != BUYER && theEscrow.buyerFeedback.nHeight < nHeight)
+						if(!serializedEscrow.buyerFeedback.IsNull()  && serializedEscrow.buyerFeedback.nFeedbackUser != BUYER && theEscrow.buyerFeedback.nHeight < serializedEscrow.nHeight)
 						{
 							theEscrow.buyerFeedback = serializedEscrow.buyerFeedback;
-							theEscrow.buyerFeedback.nHeight = nHeight;
+							theEscrow.buyerFeedback.nHeight = serializedEscrow.nHeight;
 							theEscrow.buyerFeedback.txHash = tx.GetHash();
 							count++;
 						}
 						else
 							theEscrow.buyerFeedback.SetNull();
 
-						if(!serializedEscrow.sellerFeedback.IsNull() && serializedEscrow.sellerFeedback.nFeedbackUser != SELLER && theEscrow.sellerFeedback.nHeight < nHeight)
+						if(!serializedEscrow.sellerFeedback.IsNull() && serializedEscrow.sellerFeedback.nFeedbackUser != SELLER && theEscrow.sellerFeedback.nHeight < serializedEscrow.nHeight)
 						{
 							theEscrow.sellerFeedback = serializedEscrow.sellerFeedback;
-							theEscrow.sellerFeedback.nHeight = nHeight;
+							theEscrow.sellerFeedback.nHeight = serializedEscrow.nHeight;
 							theEscrow.sellerFeedback.txHash = tx.GetHash();
 							count++;
 						}
@@ -638,10 +638,10 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 							theEscrow.sellerFeedback.SetNull();
 
 
-						if(!serializedEscrow.arbiterFeedback.IsNull() && serializedEscrow.arbiterFeedback.nFeedbackUser != ARBITER && theEscrow.arbiterFeedback.nHeight < nHeight)
+						if(!serializedEscrow.arbiterFeedback.IsNull() && serializedEscrow.arbiterFeedback.nFeedbackUser != ARBITER && theEscrow.arbiterFeedback.nHeight < serializedEscrow.nHeight)
 						{
 							theEscrow.arbiterFeedback = serializedEscrow.arbiterFeedback;
-							theEscrow.arbiterFeedback.nHeight = nHeight;
+							theEscrow.arbiterFeedback.nHeight = serializedEscrow.nHeight;
 							theEscrow.arbiterFeedback.txHash = tx.GetHash();
 							count++;
 						}
@@ -753,7 +753,6 @@ bool CheckEscrowInputs(const CTransaction &tx, int op, int nOut, const vector<ve
 			theEscrow.op = OP_ESCROW_COMPLETE;
         // set the escrow's txn-dependent values
 		theEscrow.txHash = tx.GetHash();
-		theEscrow.nHeight = nHeight;
 		PutToEscrowList(vtxPos, theEscrow);
         // write escrow  
 		

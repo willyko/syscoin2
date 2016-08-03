@@ -524,7 +524,6 @@ bool CheckCertInputs(const CTransaction &tx, int op, int nOut, const vector<vect
 			}
 		}
         // set the cert's txn-dependent values
-		theCert.nHeight = nHeight;
 		theCert.txHash = tx.GetHash();
 		PutToCertList(vtxPos, theCert);
         // write cert  

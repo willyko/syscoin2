@@ -950,7 +950,6 @@ bool CheckAliasInputs(const CTransaction &tx, int op, int nOut, const vector<vec
 		}
 		if(vvchArgs.size() > 1)
  			theAlias.vchGUID = vvchArgs[1];
-		theAlias.nHeight = nHeight;
 		theAlias.txHash = tx.GetHash();
 		PutToAliasList(vtxPos, theAlias);
 		CPubKey PubKey(theAlias.vchPubKey);
