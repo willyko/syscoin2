@@ -310,7 +310,8 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "offerupdate SYS_RATES selleraliasprune " + offerguid + " category title 100 0.05 description"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 5"));	
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 40"));
-		MilliSleep(5000);
+		MilliSleep(2500);
+		BOOST_CHECK_NO_THROW(CallRPC("node2", "generate 5"));
 		// now it should be expired, try to leave feedback it shouldn't let you
 		BOOST_CHECK_THROW(CallRPC("node2",  "escrowfeedback " + guid1 + " 1 2 3 4"), runtime_error);
 		// and it should say its expired
