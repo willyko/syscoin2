@@ -296,6 +296,7 @@ BOOST_AUTO_TEST_CASE (generate_escrowpruning)
 		BOOST_CHECK_NO_THROW(CallRPC("node1",  "escrowfeedback " + guid1 + " 1 2 3 4"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 5"));
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "generate 45"));
+		MilliSleep(2500);
 		// ensure dependent services don't expire
 		BOOST_CHECK_NO_THROW(CallRPC("node1", "aliasupdate selleraliasprune data"));
 		BOOST_CHECK_NO_THROW(CallRPC("node2", "aliasupdate buyeraliasprune data"));
