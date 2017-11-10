@@ -1383,6 +1383,67 @@ std::string GetOfferTypeString(const uint32_t &offerType)
 	}
 	return boost::algorithm::join(types, "+");
 }
+UniValue offerstat(const UniValue& params, bool fHelp) {
+	if (fHelp || params.size() > 0)
+		throw runtime_error(
+				"offerstat \n"
+				"Lists accepted offers and displays stats\n");
+
+	vector<unsigned char> vchOffer;
+	UniValue oRes(UniValue::VARR);
+	int total_offer_count = 0;
+	int private_count = 0;
+	int safe_count = 0;
+	int accept_count =0;
+
+	vector<COffer> offerScan;
+	if (!pofferdb->ScanOffers(vchOffer, "", false, "", 1000000, offerScan))
+		throw runtime_error("SYSCOIN_OFFER_RPC_ERROR ERRCODE: 1596 - " + _("Scan failed"));
+
+	BOOST_FOREACH(const COffer &txOffer, offerScan) {
+		total_offer_count++;
+		vector<CAliasIndex> vtxAliasPos;
+		if(txOffer.safeSearch) 
+			safe_count++;
+		if(txOffer.bPrivate)
+			private_count++;
+		if(!txOffer.accept.IsNull()) {
+			accept_count++;
+			if(!paliasdb->ReadAlias(txOffer.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
+				continue;
+			const CAliasIndex& alias = vtxAliasPos.back();
+
+			UniValue oOffer(UniValue::VOBJ);
+			if(BuildOfferJson(txOffer, alias, oOffer))
+				oRes.push_back(oOffer);
+		}
+	}
+	UniValue oList(UniValue::VOBJ);
+	oList.push_back(Pair("total_offer", total_offer_count));
+	oList.push_back(Pair("total_accepted_offer", accept_count));
+	oList.push_back(Pair("total_private_offer", private_count));
+	oList.push_back(Pair("total_safe_offer", safe_count));
+	oRes.push_back(oList);
+
+	//return oRes;
+	return oRes;
+}
+bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca, COffer &offer) {
+	if(offerList.empty())
+		return false;
+	for(std::vector<COffer>::reverse_iterator it = offerList.rbegin(); it != offerList.rend(); ++it) {
+		const COffer& myoffer = *it;
+		// skip null states
+		if(myoffer.accept.IsNull())
+			continue;
+        if(myoffer.accept.vchAcceptRand == ca.vchAcceptRand) {
+            ca = myoffer.accept;
+			offer = myoffer;
+			return true;
+        }
+    }
+	return false;
+}
 std::string GetPaymentOptionsString(const uint64_t &paymentOptions)
 {
 	vector<std::string> currencies;
