@@ -3014,6 +3014,7 @@ extern UniValue aliasinfo(const UniValue& params, bool fHelp);
 extern UniValue aliasbalance(const UniValue& params, bool fHelp);
 extern UniValue aliashistory(const UniValue& params, bool fHelp);
 extern UniValue aliasfilter(const UniValue& params, bool fHelp);
+extern UniValue aliasstat(const UniValue& params, bool fHelp);
 extern UniValue aliaspay(const UniValue& params, bool fHelp);
 extern UniValue generatepublickey(const UniValue& params, bool fHelp);
 extern UniValue syscoinsignrawtransaction(const UniValue& params, bool fHelp);
@@ -3036,6 +3037,7 @@ extern UniValue offeracceptlist(const UniValue& params, bool fHelp);
 extern UniValue offeracceptcount(const UniValue& params, bool fHelp);
 extern UniValue offerhistory(const UniValue& params, bool fHelp);
 extern UniValue offerfilter(const UniValue& params, bool fHelp);
+extern UniValue offerstat(const UniValue& params, bool fHelp);
 
 extern UniValue certupdate(const UniValue& params, bool fHelp);
 extern UniValue certnew(const UniValue& params, bool fHelp);
@@ -3060,6 +3062,7 @@ extern UniValue escrowhistory(const UniValue& params, bool fHelp);
 extern UniValue escrowfilter(const UniValue& params, bool fHelp);
 extern UniValue escrowfeedback(const UniValue& params, bool fHelp);
 extern UniValue escrowacknowledge(const UniValue& params, bool fHelp);
+extern UniValue escrowstat(const UniValue& params, bool fHelp);
 
 extern UniValue messagenew(const UniValue& params, bool fHelp);
 extern UniValue messageinfo(const UniValue& params, bool fHelp);
@@ -3131,6 +3134,7 @@ static const CRPCCommand commands[] =
 	{ "wallet", "aliasbalance",      &aliasbalance,         false },
     { "wallet", "aliashistory",      &aliashistory,      false },
     { "wallet", "aliasfilter",       &aliasfilter,       false },
+    { "wallet", "aliasstat",         &aliasstat,         false },
 	{ "wallet", "aliaspay",       &aliaspay,       false },
 	{ "wallet", "generatepublickey", &generatepublickey, false },
 	{ "wallet", "syscoinsignrawtransaction",		 &syscoinsignrawtransaction,	false },
@@ -3154,6 +3158,7 @@ static const CRPCCommand commands[] =
     { "wallet", "offerinfo",            &offerinfo,            false },
     { "wallet", "offerhistory",         &offerhistory,         false },
     { "wallet", "offerfilter",          &offerfilter,          false },
+    { "wallet", "offerstat",          &offerstat,          false },
 
 	// use the blockchain as a certificate issuance platform
 	{ "wallet", "certnew",         &certnew,     false },
@@ -3181,6 +3186,7 @@ static const CRPCCommand commands[] =
 	{ "wallet", "escrowfilter",      &escrowfilter,  false },
 	{ "wallet", "escrowfeedback",      &escrowfeedback,  false },
 	{ "wallet", "escrowacknowledge",      &escrowacknowledge,  false },
+	{ "wallet", "escrowstat",     &escrowstat, false},
 
 	// use the blockchain for encrypted messaging
 	{ "wallet", "messagenew",         &messagenew,     false },

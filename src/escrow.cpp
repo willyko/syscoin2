@@ -3917,6 +3917,80 @@ UniValue escrowfilter(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
+UniValue escrowstat(const UniValue& params, bool fHelp) {
+	if (fHelp || params.size() > 0)
+		throw runtime_error(
+				"escrowstat [[[[[regexp]] from=0]}\n"
+						"escrowfilter 36000 0 0 stat # display stats (number of escrows) on active escrows\n");
+
+	vector<unsigned char> vchEscrow;
+	string strRegexp;
+	int total_escrow_count = 0;
+	int count_OP_ESCROW_COMPLETE = 0;
+	UniValue oRes(UniValue::VARR);
+
+	vector<pair<CEscrow, CEscrow> > escrowScan;
+	vector<string> aliases;
+	if (!pescrowdb->ScanEscrows(vchEscrow, "", aliases, aliases, aliases, 100000, escrowScan))
+		throw runtime_error("SYSCOIN_ESCROW_RPC_ERROR: ERRCODE: 4607 - " + _("Scan failed"));
+
+
+	pair<CEscrow, CEscrow> pairScan;
+	BOOST_FOREACH(pairScan, escrowScan) {
+		total_escrow_count++;
+		/* TODO: fix this parse error and print out all escrow objects
+		UniValue oEscrow(UniValue::VOBJ);
+		if(BuildEscrowJson(pairScan.first, pairScan.second, oEscrow))
+			oRes.push_back(oEscrow);
+			*/
+	
+	/* TODO: take this escrowinfo code and turn into stats*/
+	/*bool escrowRelease = false;
+	bool escrowRefund = false;
+	if(escrow.op == OP_ESCROW_COMPLETE)
+	{
+		count_OP_ESCROW_COMPLETE++;
+		for(unsigned int i = vtxPos.size() - 1; i >= 0;i--)
+		{
+			if(vtxPos[i].op == OP_ESCROW_RELEASE)
+			{
+				escrowRelease = true;
+				break;
+			}
+			else if(vtxPos[i].op == OP_ESCROW_REFUND)
+			{
+				escrowRefund = true;
+				break;
+			}
+		}
+	}
+	string status = "unknown";
+	if(escrow.op == OP_ESCROW_ACTIVATE)
+		status = "in escrow";
+	else if(escrow.op == OP_ESCROW_RELEASE && vvch[1] == vchFromString("0"))
+		status = "escrow released";
+	else if(escrow.op == OP_ESCROW_RELEASE && vvch[1] == vchFromString("1"))
+		status = "escrow release complete";
+	else if(escrow.op == OP_ESCROW_COMPLETE && escrowRelease)
+		status = "escrow release complete";
+	else if(escrow.op == OP_ESCROW_REFUND && vvch[1] == vchFromString("0"))
+		status = "escrow refunded";
+	else if(escrow.op == OP_ESCROW_REFUND && vvch[1] == vchFromString("1"))
+		status = "escrow refund complete";
+	else if(escrow.op == OP_ESCROW_COMPLETE && escrowRefund)
+		status = "escrow refund complete";
+	if(escrow.bPaymentAck)
+		status += " (acknowledged)";
+*/
+/* end escrowinfo */
+	}
+	
+	UniValue oList(UniValue::VOBJ);
+	oList.push_back(Pair("total_escrow", total_escrow_count));
+	oRes.push_back(oList);
+	
+	return oRes;
+}
 void EscrowTxToJSON(const int op, const std::vector<unsigned char> &vchData, const std::vector<unsigned char> &vchHash, UniValue &entry)
 {
 	
