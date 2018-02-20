@@ -3428,6 +3428,66 @@ UniValue escrowinfo(const UniValue& params, bool fHelp) {
 		throw runtime_error("SYSCOIN_ESCROW_RPC_ERROR: ERRCODE: 4605 - " + _("Could not find this escrow"));
     return oEscrow;
 }
+bool BuildEscrowSimplifiedJson(const CEscrow &escrow, const CEscrow &firstEscrow, UniValue& oEscrow)
+{
+	vector<CEscrow> vtxPos;
+	if (!pescrowdb->ReadEscrow(escrow.vchEscrow, vtxPos) || vtxPos.empty())
+		  return false;
+	CTransaction tx;
+	if (!GetSyscoinTransaction(escrow.nHeight, escrow.txHash, tx, Params().GetConsensus()))
+		 return false;
+        vector<vector<unsigned char> > vvch;
+        int op, nOut;
+        if (!DecodeEscrowTx(tx, op, nOut, vvch) )
+          	  return false;
+	CTransaction offertx;
+	COffer offer, linkOffer;
+	vector<COffer> offerVtxPos;
+	GetTxAndVtxOfOffer(escrow.vchOffer, offer, offertx, offerVtxPos, true);
+	offer.nHeight = firstEscrow.nAcceptHeight;
+	offer.GetOfferFromList(offerVtxPos);
+        string sHeight = strprintf("%llu", escrow.nHeight);
+
+	string opName = escrowFromOp(escrow.op);
+	CEscrow escrowOp(tx);
+	if(escrowOp.bPaymentAck)
+		opName += "("+_("acknowledged")+")";
+	else if(!escrowOp.feedback.empty())
+		opName += "("+_("feedback")+")";
+	oEscrow.push_back(Pair("escrowtype", opName));
+        oEscrow.push_back(Pair("escrow", stringFromVch(escrow.vchEscrow)));
+
+	string sTime;
+	CBlockIndex *pindex = chainActive[escrow.nHeight];
+	if (pindex) {
+		sTime = strprintf("%llu", pindex->nTime);
+	}
+	float avgBuyerRating, avgSellerRating, avgArbiterRating;
+	vector<CFeedback> buyerFeedBacks, sellerFeedBacks, arbiterFeedBacks;
+	GetFeedback(buyerFeedBacks, avgBuyerRating, FEEDBACKBUYER, escrow.feedback);
+	GetFeedback(sellerFeedBacks, avgSellerRating, FEEDBACKSELLER, escrow.feedback);
+	GetFeedback(arbiterFeedBacks, avgArbiterRating, FEEDBACKARBITER, escrow.feedback);
+
+	CAliasIndex theSellerAlias;
+	CTransaction aliastx;
+	bool isExpired = false;
+	vector<CAliasIndex> aliasVtxPos;
+	if(GetTxAndVtxOfAlias(escrow.vchSellerAlias, theSellerAlias, aliastx, aliasVtxPos, isExpired, true))
+	{
+		theSellerAlias.nHeight = firstEscrow.nHeight;
+		theSellerAlias.GetAliasFromList(aliasVtxPos);
+	}
+	oEscrow.push_back(Pair("time", sTime));
+	oEscrow.push_back(Pair("seller", stringFromVch(escrow.vchSellerAlias)));
+	oEscrow.push_back(Pair("arbiter", stringFromVch(escrow.vchArbiterAlias)));
+	oEscrow.push_back(Pair("buyer", stringFromVch(escrow.vchBuyerAlias)));
+	oEscrow.push_back(Pair("offer", stringFromVch(escrow.vchOffer)));
+	oEscrow.push_back(Pair("offerlink_seller", stringFromVch(escrow.vchLinkSellerAlias)));
+	oEscrow.push_back(Pair("offertitle", stringFromVch(offer.sTitle)));
+	oEscrow.push_back(Pair("quantity", strprintf("%d", escrow.nQty)));
+
+	return true;
+}
 bool BuildEscrowJson(const CEscrow &escrow, const CEscrow &firstEscrow, UniValue& oEscrow)
 {
 	vector<CEscrow> vtxPos;
@@ -3551,12 +3611,13 @@ bool BuildEscrowJson(const CEscrow &escrow, const CEscrow &firstEscrow, UniValue
 	string strRedeemTxId = "";
 	if(!escrow.redeemTxId.IsNull())
 		strRedeemTxId = escrow.redeemTxId.GetHex();
-    oEscrow.push_back(Pair("paymentoption", (int)escrow.nPaymentOption));
-    oEscrow.push_back(Pair("paymentoption_display", GetPaymentOptionsString(escrow.nPaymentOption)));
+        oEscrow.push_back(Pair("paymentoption", (int)escrow.nPaymentOption));
+        oEscrow.push_back(Pair("paymentoption_display", GetPaymentOptionsString(escrow.nPaymentOption)));
 	oEscrow.push_back(Pair("redeem_txid", strRedeemTxId));
-    oEscrow.push_back(Pair("txid", escrow.txHash.GetHex()));
-    oEscrow.push_back(Pair("height", sHeight));
-	oEscrow.push_back(Pair("pay_message", stringFromVch(escrow.vchPaymentMessage)));
+        oEscrow.push_back(Pair("txid", escrow.txHash.GetHex()));
+        oEscrow.push_back(Pair("height", sHeight));
+	// This line breaks escrowlist
+	//oEscrow.push_back(Pair("pay_message", stringFromVch(escrow.vchPaymentMessage)));
 
 	int64_t expired_time = GetEscrowExpiration(escrow);
 	int expired = 0;
@@ -3568,7 +3629,7 @@ bool BuildEscrowJson(const CEscrow &escrow, const CEscrow &firstEscrow, UniValue
 	bool escrowRefund = false;
 	if(escrow.op == OP_ESCROW_COMPLETE)
 	{
-		for(unsigned int i = vtxPos.size() - 1; i >= 0;i--)
+		for(int i = vtxPos.size() - 1; i >= 0;i--)
 		{
 			if(vtxPos[i].op == OP_ESCROW_RELEASE)
 			{
@@ -3937,52 +3998,11 @@ UniValue escrowstat(const UniValue& params, bool fHelp) {
 
 	pair<CEscrow, CEscrow> pairScan;
 	BOOST_FOREACH(pairScan, escrowScan) {
-		total_escrow_count++;
-		/* TODO: fix this parse error and print out all escrow objects
 		UniValue oEscrow(UniValue::VOBJ);
-		if(BuildEscrowJson(pairScan.first, pairScan.second, oEscrow))
+		if(BuildEscrowSimplifiedJson(pairScan.first, pairScan.second, oEscrow)) {
 			oRes.push_back(oEscrow);
-			*/
-	
-	/* TODO: take this escrowinfo code and turn into stats*/
-	/*bool escrowRelease = false;
-	bool escrowRefund = false;
-	if(escrow.op == OP_ESCROW_COMPLETE)
-	{
-		count_OP_ESCROW_COMPLETE++;
-		for(unsigned int i = vtxPos.size() - 1; i >= 0;i--)
-		{
-			if(vtxPos[i].op == OP_ESCROW_RELEASE)
-			{
-				escrowRelease = true;
-				break;
-			}
-			else if(vtxPos[i].op == OP_ESCROW_REFUND)
-			{
-				escrowRefund = true;
-				break;
-			}
+			total_escrow_count++;
 		}
-	}
-	string status = "unknown";
-	if(escrow.op == OP_ESCROW_ACTIVATE)
-		status = "in escrow";
-	else if(escrow.op == OP_ESCROW_RELEASE && vvch[1] == vchFromString("0"))
-		status = "escrow released";
-	else if(escrow.op == OP_ESCROW_RELEASE && vvch[1] == vchFromString("1"))
-		status = "escrow release complete";
-	else if(escrow.op == OP_ESCROW_COMPLETE && escrowRelease)
-		status = "escrow release complete";
-	else if(escrow.op == OP_ESCROW_REFUND && vvch[1] == vchFromString("0"))
-		status = "escrow refunded";
-	else if(escrow.op == OP_ESCROW_REFUND && vvch[1] == vchFromString("1"))
-		status = "escrow refund complete";
-	else if(escrow.op == OP_ESCROW_COMPLETE && escrowRefund)
-		status = "escrow refund complete";
-	if(escrow.bPaymentAck)
-		status += " (acknowledged)";
-*/
-/* end escrowinfo */
 	}
 	
 	UniValue oList(UniValue::VOBJ);
