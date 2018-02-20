@@ -2992,44 +2992,34 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 			"Provide alias statistics in current blockchain.\n");
 
 	UniValue oRes(UniValue::VARR);
+	vector<unsigned char> vchAlias;
 	map<vector<unsigned char>, int> vNamesI;
 	uint256 hash;
 	CTransaction tx;
-	int found = 0;
-	cout << "going into foreach loop " << endl;
-	BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex) {
-		cout << "test: " << found << endl;
-		// get txn hash, read txn index
-		//hash = item.second.GetHash();
-		//const CWalletTx &wtx = item.second;
-		const CBlockIndex* pindex = item.second;
-		// skip non-syscoin txns
-/*
-		if (wtx.nVersion != SYSCOIN_TX_VERSION)
-			continue;
+	int total_alias_count = 0;
+	int total_alias_safe = 0;
+	int total_alias_accept_xfer = 0;
 
-		vector<CAliasIndex> vtxPos;
-		CAliasIndex alias(wtx);
-		if (alias.IsNull())
-			continue;
+	vector<CAliasIndex> nameScan;
+	if (!paliasdb->ScanNames(vchAlias, "", false, 1000000, nameScan))
+		throw runtime_error("SYSCOIN_ALIAS_RPC_ERROR: ERRCODE: 5538 - " + _("Scan failed"));
 
-		if (!paliasdb->ReadAlias(alias.vchAlias, vtxPos) || vtxPos.empty())
-		{
-			continue;
+	BOOST_FOREACH(const CAliasIndex &alias, nameScan) {
+		total_alias_count++;
+		if (alias.safeSearch) {
+			total_alias_safe++;
 		}
-		const CAliasIndex &theAlias = vtxPos.back();
-*/
-		//if (!IsMyAlias(theAlias))
-		//	continue;
-		// get last active name only
-	//	if (vNamesI.find(theAlias.vchAlias) != vNamesI.end() && (theAlias.nHeight <= vNamesI[theAlias.vchAlias] || vNamesI[theAlias.vchAlias] < 0))
-	//		continue;
-//		UniValue oName(UniValue::VOBJ);
-//		vNamesI[theAlias.vchAlias] = theAlias.nHeight;
-		found++;
+		if (alias.acceptCertTransfers) {
+			total_alias_accept_xfer++;
+		}
 	}
-	return found;
+	UniValue oList(UniValue::VOBJ);
+	oList.push_back(Pair("total_aliases", total_alias_count));
+	oList.push_back(Pair("total_alias_with_safe_on", total_alias_safe));
+	oRes.push_back(oList);
+	return oRes;
 }
+
 void GetPrivateKeysFromScript(const CScript& script, vector<string> &strKeys)
 {
     vector<CTxDestination> addrs;

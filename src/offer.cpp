@@ -4071,6 +4071,13 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
+
+/**
+ * [offerstat description]
+ * @param  params [description]
+ * @param  fHelp [description]
+ * @return       [description]
+ */
 UniValue offerstat(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() > 0)
 		throw runtime_error(
@@ -4097,6 +4104,7 @@ UniValue offerstat(const UniValue& params, bool fHelp) {
 			private_count++;
 		if(!txOffer.accept.IsNull()) {
 			accept_count++;
+			/*
 			if(!paliasdb->ReadAlias(txOffer.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
 				continue;
 			const CAliasIndex& alias = vtxAliasPos.back();
@@ -4104,6 +4112,7 @@ UniValue offerstat(const UniValue& params, bool fHelp) {
 			UniValue oOffer(UniValue::VOBJ);
 			if(BuildOfferJson(txOffer, alias, oOffer))
 				oRes.push_back(oOffer);
+				*/
 		}
 	}
 	UniValue oList(UniValue::VOBJ);
