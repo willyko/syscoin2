@@ -3192,6 +3192,7 @@ static const CRPCCommand commands[] =
 	{ "wallet", "certinfo",              &certinfo,          false },
 	{ "wallet", "certhistory",     &certhistory, false },
 	{ "wallet", "certfilter",      &certfilter,  false },
+	{ "wallet", "certstat",       &certstat, false },
 
 	// use the blockchain for escrow linked to offers
 	{ "wallet", "generateescrowmultisig",         &generateescrowmultisig,     false },

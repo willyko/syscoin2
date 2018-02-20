@@ -841,6 +841,48 @@ bool BuildCertIndexerJson(const CCert& cert, UniValue& oCert)
 	oCert.push_back(Pair("expires_on", GetCertExpiration(cert)));
 	return true;
 }
+
+/**
+ * [certstat description]
+ * @param params [description]
+ * @param fHelp [description]
+ * @return [description]
+*/
+UniValue certstat(const UniValue& params, bool fHelp) {
+	if (fHelp || params.size() > 0)
+		throw runtime_error(
+				"certstat \n"
+				"Count certs\n");
+	vector<unsigned char> vchCert;
+	UniValue oRes(UniValue::VARR);
+	int total_cert_count = 0;
+	
+	vector<CCert> certScan;
+	vector<string> aliases;
+
+        if (!pcertdb->ScanCerts(vchCert, "", aliases, false, "", 10000000, certScan))
+		throw runtime_error("SYSCOIN_CERTIFICATE_RPC_ERROR: ERRCODE: 2520 - " + _("Scan failed"));
+  
+	BOOST_FOREACH(const CCert &txCert, certScan) {
+		vector<CAliasIndex> vtxAliasPos;
+		if(!paliasdb->ReadAlias(txCert.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
+			continue;
+		const CAliasIndex& alias = vtxAliasPos.back();
+		UniValue oCert(UniValue::VOBJ);
+		if(BuildCertJson(txCert, alias, oCert)) {
+			total_cert_count++;
+			//oRes.push_back(oCert);
+		}
+	}
+
+	UniValue oList(UniValue::VOBJ);
+	oList.push_back(Pair("total_certificates", total_cert_count));
+	oRes.push_back(oList);
+
+	return oRes;
+}
+
+
 void CertTxToJSON(const int op, const std::vector<unsigned char> &vchData, const std::vector<unsigned char> &vchHash, UniValue &entry)
 {
 	string opName = certFromOp(op);
