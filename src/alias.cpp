@@ -2757,7 +2757,8 @@ bool BuildAliasJson(const CAliasIndex& alias, const int pending, UniValue& oName
 		return false;
 	oName.push_back(Pair("name", stringFromVch(alias.vchAlias)));
 	oName.push_back(Pair("value", stringFromVch(alias.vchPublicValue)));
-	oName.push_back(Pair("privatevalue", stringFromVch(alias.vchPrivateValue)));
+	//this breaks (try aliasinfo on keyare)
+        //oName.push_back(Pair("privatevalue", stringFromVch(alias.vchPrivateValue)));
 	oName.push_back(Pair("password", stringFromVch(alias.vchPassword)));
 
 
@@ -2831,6 +2832,7 @@ bool BuildAliasJson(const CAliasIndex& alias, const int pending, UniValue& oName
 		expired = 0;
 		expired_time = -1;
 	}
+
 	oName.push_back(Pair("expires_in", expires_in));
 	oName.push_back(Pair("expires_on", expired_time));
 	oName.push_back(Pair("expired", expired));
@@ -2845,6 +2847,7 @@ bool BuildAliasJson(const CAliasIndex& alias, const int pending, UniValue& oName
 	msInfo.push_back(Pair("reqsigners", msAliases));
 	msInfo.push_back(Pair("redeemscript", HexStr(alias.multiSigInfo.vchRedeemScript)));
 	oName.push_back(Pair("multisiginfo", msInfo));
+
 	return true;
 }
 /**
