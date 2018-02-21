@@ -2180,12 +2180,9 @@ UniValue aliaspay_helper(const string strFromAddress, vector<CRecipient> &vecSen
 	paramsFund.push_back(paramObj);
 	paramsFund.push_back(fUseInstantSend);
 
-<<<<<<< HEAD
 	JSONRPCRequest request;
 	request.params = paramsFund;
 	return syscointxfund(request);
-=======
-	return oRes;
 }
 
 /**
@@ -2228,24 +2225,6 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 	return oRes;
 }
 
-void GetPrivateKeysFromScript(const CScript& script, vector<string> &strKeys)
-{
-    vector<CTxDestination> addrs;
-    int nRequired;
-	txnouttype whichType;
-    ExtractDestinations(script, whichType, addrs, nRequired);
-	BOOST_FOREACH(const CTxDestination& txDest, addrs) {
-		CSyscoinAddress address(txDest);
-		CKeyID keyID;
-		if (!address.GetKeyID(keyID))
-			continue;
-		CKey vchSecret;
-		if (!pwalletMain->GetKey(keyID, vchSecret))
-			continue;
-		strKeys.push_back(CSyscoinSecret(vchSecret).ToString());
-	}
->>>>>>> added offerstat and escrowstat
-}
 UniValue aliaspay(const JSONRPCRequest& request) {
 	const UniValue &params = request.params;
     if (request.fHelp || params.size() < 2 || params.size() > 4)
