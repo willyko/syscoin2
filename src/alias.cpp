@@ -3002,6 +3002,7 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 	int total_alias_count = 0;
 	int total_alias_safe = 0;
 	int total_alias_accept_xfer = 0;
+	CAmount total_sys_on_alias = 0;
 
 	vector<CAliasIndex> nameScan;
 	if (!paliasdb->ScanNames(vchAlias, "", false, 1000000, nameScan))
@@ -3015,10 +3016,22 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 		if (alias.acceptCertTransfers) {
 			total_alias_accept_xfer++;
 		}
+	        UniValue balanceParams(UniValue::VARR);
+	        balanceParams.push_back(stringFromVch(alias.vchAlias));
+	        const UniValue &resBalance = tableRPC.execute("aliasbalance", balanceParams);
+	        CAmount nAliasBalance = AmountFromValue(resBalance);
+	        total_sys_on_alias += nAliasBalance;
+		if (nAliasBalance >= ((CAmount)100000 * COIN)) {
+			UniValue oAlias(UniValue::VOBJ);
+			oAlias.push_back(Pair("alias_name", stringFromVch(alias.vchAlias)));
+			oAlias.push_back(Pair("alias_balance", nAliasBalance / COIN));
+			oRes.push_back(oAlias);	
+		}
 	}
 	UniValue oList(UniValue::VOBJ);
 	oList.push_back(Pair("total_aliases", total_alias_count));
 	oList.push_back(Pair("total_alias_with_safe_on", total_alias_safe));
+	oList.push_back(Pair("total_syscoin_on_aliases", total_sys_on_alias / COIN));
 	oRes.push_back(oList);
 	return oRes;
 }
