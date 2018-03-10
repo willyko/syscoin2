@@ -216,6 +216,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
 	{ "assetupdate", 4, "interest_rate" },
 	{ "assetinfo", 1, "getinputs" },
 	{ "assetsend", 2, "inputs" }
+    { "aliasstat", 0}
 };
 
 class CRPCConvertTable

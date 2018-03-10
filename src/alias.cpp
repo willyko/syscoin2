@@ -2192,9 +2192,11 @@ UniValue aliaspay_helper(const string strFromAddress, vector<CRecipient> &vecSen
  * @return        [description]
  */
 UniValue aliasstat(const UniValue& params, bool fHelp) {
-	if (fHelp || 0 < params.size())
-		throw runtime_error("aliasstat\n"
-			"Provide alias statistics in current blockchain.\n");
+	if (fHelp || 1 < params.size())
+		throw runtime_error("aliasstat [mode]\n"
+			"Provide alias statistics in current blockchain.\n"
+			"1: Show summary only. \n"
+			"2: Dump all data.\n");
 
 	UniValue oRes(UniValue::VARR);
 	vector<unsigned char> vchAlias;
@@ -2204,7 +2206,13 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 	int total_alias_count = 0;
 	int total_alias_safe = 0;
 	int total_alias_accept_xfer = 0;
+	int mode = 0;
 	CAmount total_sys_on_alias = 0;
+
+	if (params.size() >= 1) {
+		mode = params[0].get_int();
+printf("mode set %i\n", mode);
+	}
 
 	vector<CAliasIndex> nameScan;
 	if (!paliasdb->ScanNames(vchAlias, "", false, 1000000, nameScan))
