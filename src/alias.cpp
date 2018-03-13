@@ -2994,7 +2994,8 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 		throw runtime_error("aliasstat [mode]\n"
 			"Provide alias statistics in current blockchain.\n"
 			"1: Show summary only. \n"
-			"2: Dump all data.\n");
+			"2: Dump all data.\n"
+			"3: Dump aliases data above 100k sys holding\n");
 
 	UniValue oRes(UniValue::VARR);
 	vector<unsigned char> vchAlias;
@@ -3009,7 +3010,11 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 
 	if (params.size() >= 1) {
 		mode = params[0].get_int();
-printf("mode set %i\n", mode);
+		if (mode <= 0 || mode > 3) {
+			throw runtime_error("aliasstat <mode> \n"
+					"invalid mode\n"); 
+		}
+		printf("mode set %i\n", mode);
 	}
 
 	vector<CAliasIndex> nameScan;
@@ -3018,29 +3023,45 @@ printf("mode set %i\n", mode);
 
 	BOOST_FOREACH(const CAliasIndex &alias, nameScan) {
 		total_alias_count++;
-		if (alias.safeSearch) {
+			if (alias.safeSearch) {
 			total_alias_safe++;
 		}
 		if (alias.acceptCertTransfers) {
 			total_alias_accept_xfer++;
 		}
-	        UniValue balanceParams(UniValue::VARR);
-	        balanceParams.push_back(stringFromVch(alias.vchAlias));
-	        const UniValue &resBalance = tableRPC.execute("aliasbalance", balanceParams);
-	        CAmount nAliasBalance = AmountFromValue(resBalance);
-	        total_sys_on_alias += nAliasBalance;
-		if (nAliasBalance >= ((CAmount)100000 * COIN)) {
+       		UniValue balanceParams(UniValue::VARR);
+        	balanceParams.push_back(stringFromVch(alias.vchAlias));
+        	const UniValue &resBalance = tableRPC.execute("aliasbalance", balanceParams);
+        	CAmount nAliasBalance = AmountFromValue(resBalance);
+        	total_sys_on_alias += nAliasBalance;
+		if (mode == 3 && nAliasBalance >= ((CAmount)100000 * COIN)) {
 			UniValue oAlias(UniValue::VOBJ);
 			oAlias.push_back(Pair("alias_name", stringFromVch(alias.vchAlias)));
 			oAlias.push_back(Pair("alias_balance", nAliasBalance / COIN));
 			oRes.push_back(oAlias);	
 		}
+		if (mode == 2) {
+			UniValue oAlias(UniValue::VOBJ);
+			oAlias.push_back(Pair("vchAlias",  stringFromVch(alias.vchAlias)));
+			oAlias.push_back(Pair("nExpireTime", alias.nExpireTime));
+			oAlias.push_back(Pair("vchPublicValue", HexStr(alias.vchPublicValue)));
+			oAlias.push_back(Pair("vchPrivateValue", HexStr(alias.vchPrivateValue)));
+			oAlias.push_back(Pair("vchEncryptionPrivateKey", HexStr(alias.vchEncryptionPrivateKey)));
+			oAlias.push_back(Pair("vchEncryptionPublicKey", HexStr(alias.vchEncryptionPublicKey)));
+			oAlias.push_back(Pair("vchPubKey", HexStr(alias.vchPubKey)));
+			oAlias.push_back(Pair("Address", CSyscoinAddress(CPubKey(alias.vchPubKey).GetID(), CChainParams::ADDRESS_OLDSYS).ToString())));
+
+			oRes.push_back(oAlias);	
+		}
+
 	}
-	UniValue oList(UniValue::VOBJ);
-	oList.push_back(Pair("total_aliases", total_alias_count));
-	oList.push_back(Pair("total_alias_with_safe_on", total_alias_safe));
-	oList.push_back(Pair("total_syscoin_on_aliases", total_sys_on_alias / COIN));
-	oRes.push_back(oList);
+	if (mode == 1) {
+		UniValue oList(UniValue::VOBJ);
+		oList.push_back(Pair("total_aliases", total_alias_count));
+		oList.push_back(Pair("total_alias_with_safe_on", total_alias_safe));
+		oList.push_back(Pair("total_syscoin_on_aliases", total_sys_on_alias / COIN));
+		oRes.push_back(oList);
+	}
 	return oRes;
 }
 
