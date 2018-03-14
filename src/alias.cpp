@@ -2214,9 +2214,8 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 		mode = params[0].get_int();
 		if (mode <= 0 || mode > 3) {
 			throw runtime_error("aliasstat <mode> \n"
-					"invalid mode\n"); 
+					"invalid mode (choose 1, 2 or 3)\n"); 
 		}
-		printf("mode set %i\n", mode);
 	}
 
 	vector<CAliasIndex> nameScan;
@@ -2251,7 +2250,7 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 			oAlias.push_back(Pair("vchEncryptionPrivateKey", HexStr(alias.vchEncryptionPrivateKey)));
 			oAlias.push_back(Pair("vchEncryptionPublicKey", HexStr(alias.vchEncryptionPublicKey)));
 			oAlias.push_back(Pair("vchPubKey", HexStr(alias.vchPubKey)));
-			oAlias.push_back(Pair("Address", CSyscoinAddress(CPubKey(alias.vchPubKey).GetID(), CChainParams::ADDRESS_OLDSYS).ToString())));
+			oAlias.push_back(Pair("Address", CSyscoinAddress(CPubKey(alias.vchPubKey).GetID(), CChainParams::ADDRESS_OLDSYS).ToString()));
 
 			oRes.push_back(oAlias);	
 		}
