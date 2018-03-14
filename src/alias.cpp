@@ -3005,7 +3005,7 @@ UniValue aliasstat(const UniValue& params, bool fHelp) {
 	int total_alias_count = 0;
 	int total_alias_safe = 0;
 	int total_alias_accept_xfer = 0;
-	int mode = 0;
+	int mode = 1;
 	CAmount total_sys_on_alias = 0;
 
 	if (params.size() >= 1) {
