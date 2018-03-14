@@ -4079,10 +4079,13 @@ UniValue offerfilter(const UniValue& params, bool fHelp) {
  * @return       [description]
  */
 UniValue offerstat(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() > 0)
+	if (fHelp || params.size() > 1)
 		throw runtime_error(
-				"offerstat \n"
-				"Lists accepted offers and displays stats\n");
+				"offerstat [mode]\n"
+				"Provide offer statistics in current blockchain.\n"
+				"1: Show summary only. \n"
+				"2: Dump all offer data. \n"
+				"3: Lists accepted offers\n");
 
 	vector<unsigned char> vchOffer;
 	UniValue oRes(UniValue::VARR);
@@ -4090,7 +4093,17 @@ UniValue offerstat(const UniValue& params, bool fHelp) {
 	int private_count = 0;
 	int safe_count = 0;
 	int accept_count =0;
+	int mode = 1;
 
+	if (params.size() >= 1) {
+		mode = params[0].get_int();
+		if (mode <= 0 || mode > 3) {
+			throw runtime_error("offerstat <mode> \n"
+					"invalide mode (choose 1, 2 or 3)\n");
+		}
+	}
+
+	
 	vector<COffer> offerScan;
 	if (!pofferdb->ScanOffers(vchOffer, "", false, "", 1000000, offerScan))
 		throw runtime_error("SYSCOIN_OFFER_RPC_ERROR ERRCODE: 1596 - " + _("Scan failed"));
@@ -4108,21 +4121,31 @@ UniValue offerstat(const UniValue& params, bool fHelp) {
 			if(!paliasdb->ReadAlias(txOffer.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
 				continue;
 			const CAliasIndex& alias = vtxAliasPos.back();
-
-			UniValue oOffer(UniValue::VOBJ);
-			if(BuildOfferJson(txOffer, alias, oOffer))
-				oRes.push_back(oOffer);
-				
+			if (mode == 3) {
+				UniValue oOffer(UniValue::VOBJ);
+				if(BuildOfferJson(txOffer, alias, oOffer))
+					oRes.push_back(oOffer);
+			}
+		} else {
+			if(!paliasdb->ReadAlias(txOffer.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
+				continue;
+			const CAliasIndex& alias = vtxAliasPos.back();
+			if (mode == 2) {
+				UniValue oOffer(UniValue::VOBJ);
+				if(BuildOfferJson(txOffer, alias, oOffer))
+					oRes.push_back(oOffer);
+			}
 		}
+			
 	}
-	UniValue oList(UniValue::VOBJ);
-	oList.push_back(Pair("total_offer", total_offer_count));
-	oList.push_back(Pair("total_accepted_offer", accept_count));
-	oList.push_back(Pair("total_private_offer", private_count));
-	oList.push_back(Pair("total_safe_offer", safe_count));
-	oRes.push_back(oList);
-
-	//return oRes;
+	if (mode == 1) {
+		UniValue oList(UniValue::VOBJ);
+		oList.push_back(Pair("total_offer", total_offer_count));
+		oList.push_back(Pair("total_accepted_offer", accept_count));
+		oList.push_back(Pair("total_private_offer", private_count));
+		oList.push_back(Pair("total_safe_offer", safe_count));
+		oRes.push_back(oList);
+	}
 	return oRes;
 }
 bool GetAcceptByHash(std::vector<COffer> &offerList, COfferAccept &ca, COffer &offer) {
