@@ -1357,14 +1357,25 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
 UniValue certstat(const UniValue& params, bool fHelp) {
 	if (fHelp || params.size() > 0)
 		throw runtime_error(
-				"certstat \n"
-				"Count certs\n");
+				"certstat [mode]\n"
+				"Count certs\n"
+				"1: Show summary only. \n"
+				"2: Dump all certificate data. \n");
 	vector<unsigned char> vchCert;
 	UniValue oRes(UniValue::VARR);
 	int total_cert_count = 0;
+	int mode = 1;
 	
 	vector<CCert> certScan;
 	vector<string> aliases;
+
+	if (params.size() >= 1) {
+		mode = params[0].get_int();
+		if (mode <= 0 || mode > 2) {
+			throw runtime_error("certstat <mode> \n"
+					"invalide mode (choose 1 or 2) \n");
+		}
+	}
 
         if (!pcertdb->ScanCerts(vchCert, "", aliases, false, "", 10000000, certScan))
 		throw runtime_error("SYSCOIN_CERTIFICATE_RPC_ERROR: ERRCODE: 2520 - " + _("Scan failed"));
@@ -1377,14 +1388,17 @@ UniValue certstat(const UniValue& params, bool fHelp) {
 		UniValue oCert(UniValue::VOBJ);
 		if(BuildCertJson(txCert, alias, oCert)) {
 			total_cert_count++;
-			//oRes.push_back(oCert);
+			if (mode == 2) {
+				oRes.push_back(oCert);
+			}
 		}
 	}
 
-	UniValue oList(UniValue::VOBJ);
-	oList.push_back(Pair("total_certificates", total_cert_count));
-	oRes.push_back(oList);
-
+	if (mode == 1) {
+		UniValue oList(UniValue::VOBJ);
+		oList.push_back(Pair("total_certificates", total_cert_count));
+		oRes.push_back(oList);
+	}
 	return oRes;
 }
 
