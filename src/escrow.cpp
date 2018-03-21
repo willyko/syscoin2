@@ -2431,7 +2431,7 @@ bool BuildEscrowIndexerJson(const COffer& theOffer, const CEscrow &escrow, UniVa
  * @return [description]
 */
 UniValue escrowstat(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() > 0)
+	if (fHelp || params.size() > 1)
 		throw runtime_error(
 				"escrowstat [mode]\n"
 				"Count escrows\n"
