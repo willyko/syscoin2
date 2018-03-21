@@ -1355,7 +1355,7 @@ UniValue certfilter(const UniValue& params, bool fHelp) {
  * @return [description]
 */
 UniValue certstat(const UniValue& params, bool fHelp) {
-	if (fHelp || params.size() > 0)
+	if (fHelp || params.size() > 1)
 		throw runtime_error(
 				"certstat [mode]\n"
 				"Count certs\n"
