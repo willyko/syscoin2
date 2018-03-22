@@ -1384,14 +1384,28 @@ UniValue certstat(const UniValue& params, bool fHelp) {
 		vector<CAliasIndex> vtxAliasPos;
 		if(!paliasdb->ReadAlias(txCert.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
 			continue;
+		/*
 		const CAliasIndex& alias = vtxAliasPos.back();
 		UniValue oCert(UniValue::VOBJ);
 		if(BuildCertJson(txCert, alias, oCert)) {
+
 			total_cert_count++;
 			if (mode == 2) {
+				//UniValue oCertData(UniValue::VOBJ);
 				oRes.push_back(oCert);
 			}
 		}
+		*/
+		total_cert_count++;
+		if (mode == 2) {
+			UniValue oCert(UniValue::VOBJ);
+			oCert.push_back(Pair("vchAlias", stringFromVch(txCert.vchAlias)));
+			oCert.push_back(Pair("vchTitle", stringFromVch(txCert.vchTitle)));
+			oCert.push_back(Pair("vchPubData", HexStr(txCert.vchPubData)));
+			oCert.push_back(Pair("sCategory", stringFromVch(txCert.sCategory)));
+			oRes.push_back(oCert);
+		}
+		
 	}
 
 	if (mode == 1) {
@@ -1441,7 +1455,7 @@ void CertTxToJSON(const int op, const std::vector<unsigned char> &vchData, const
 	if(!cert.vchData.empty() && cert.vchData != dbCert.vchData)
 		dataValue = stringFromVch(cert.vchData);
 
-	entry.push_back(Pair("data", dataValue));
+	entry.push_back(Pair("data", HexStr(dataValue)));
 
 	string dataPubValue = noDifferentStr;
 	if(!cert.vchPubData.empty() && cert.vchPubData != dbCert.vchPubData)
