@@ -897,6 +897,7 @@ UniValue certstat(const UniValue& params, bool fHelp) {
 			oCert.push_back(Pair("vchTitle", stringFromVch(txCert.vchTitle)));
 			oCert.push_back(Pair("vchPubData", HexStr(txCert.vchPubData)));
 			oCert.push_back(Pair("sCategory", stringFromVch(txCert.sCategory)));
+			oCert.push_back(Pair("vchCert", stringFromVch(txCert.vchCert)));
 			oRes.push_back(oCert);
 		}
 		
