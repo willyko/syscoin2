@@ -911,6 +911,74 @@ UniValue certstat(const UniValue& params, bool fHelp) {
 	return oRes;
 }
 
+/**
+ * [certstat description]
+ * @param params [description]
+ * @param fHelp [description]
+ * @return [description]
+*/
+UniValue certstat(const UniValue& params, bool fHelp) {
+	if (fHelp || params.size() > 1)
+		throw runtime_error(
+				"certstat [mode]\n"
+				"Count certs\n"
+				"1: Show summary only. \n"
+				"2: Dump all certificate data. \n");
+	vector<unsigned char> vchCert;
+	UniValue oRes(UniValue::VARR);
+	int total_cert_count = 0;
+	int mode = 1;
+	
+	vector<CCert> certScan;
+	vector<string> aliases;
+
+	if (params.size() >= 1) {
+		mode = params[0].get_int();
+		if (mode <= 0 || mode > 2) {
+			throw runtime_error("certstat <mode> \n"
+					"invalide mode (choose 1 or 2) \n");
+		}
+	}
+
+        if (!pcertdb->ScanCerts(vchCert, "", aliases, false, "", 10000000, certScan))
+		throw runtime_error("SYSCOIN_CERTIFICATE_RPC_ERROR: ERRCODE: 2520 - " + _("Scan failed"));
+  
+	BOOST_FOREACH(const CCert &txCert, certScan) {
+		vector<CAliasIndex> vtxAliasPos;
+		if(!paliasdb->ReadAlias(txCert.vchAlias, vtxAliasPos) || vtxAliasPos.empty())
+			continue;
+		/*
+		const CAliasIndex& alias = vtxAliasPos.back();
+		UniValue oCert(UniValue::VOBJ);
+		if(BuildCertJson(txCert, alias, oCert)) {
+
+			total_cert_count++;
+			if (mode == 2) {
+				//UniValue oCertData(UniValue::VOBJ);
+				oRes.push_back(oCert);
+			}
+		}
+		*/
+		total_cert_count++;
+		if (mode == 2) {
+			UniValue oCert(UniValue::VOBJ);
+			oCert.push_back(Pair("vchAlias", stringFromVch(txCert.vchAlias)));
+			oCert.push_back(Pair("vchTitle", stringFromVch(txCert.vchTitle)));
+			oCert.push_back(Pair("vchPubData", HexStr(txCert.vchPubData)));
+			oCert.push_back(Pair("sCategory", stringFromVch(txCert.sCategory)));
+			oCert.push_back(Pair("vchCert", stringFromVch(txCert.vchCert)));
+			oRes.push_back(oCert);
+		}
+		
+	}
+
+	if (mode == 1) {
+		UniValue oList(UniValue::VOBJ);
+		oList.push_back(Pair("total_certificates", total_cert_count));
+		oRes.push_back(oList);
+	}
+	return oRes;
+}
 
 void CertTxToJSON(const int op, const std::vector<unsigned char> &vchData, const std::vector<unsigned char> &vchHash, UniValue &entry)
 {

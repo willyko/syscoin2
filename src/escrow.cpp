@@ -2479,6 +2479,62 @@ UniValue escrowstat(const UniValue& params, bool fHelp) {
 
 	return oRes;
 }
+
+/**
+ * [escrowstat description]
+ * @param params [description]
+ * @param fHelp [description]
+ * @return [description]
+*/
+UniValue escrowstat(const UniValue& params, bool fHelp) {
+	if (fHelp || params.size() > 1)
+		throw runtime_error(
+				"escrowstat [mode]\n"
+				"Count escrows\n"
+				"1: Show summary only. \n"
+				"2: Dump all escrow data. \n");
+
+	vector<unsigned char> vchEscrow;
+	string strRegexp;
+	int total_escrow_count = 0;
+	int count_OP_ESCROW_COMPLETE = 0;
+	int mode = 1;
+	UniValue oRes(UniValue::VARR);
+
+	vector<pair<CEscrow, CEscrow> > escrowScan;
+	vector<string> aliases;
+
+	if (params.size() >= 1) {
+		mode = params[0].get_int();
+		if (mode <= 0 || mode > 2) {
+			throw runtime_error("escrowstat <mode> \n"
+					"invalid mode (choose 1 or 2) \n");
+		}
+	}
+
+	if (!pescrowdb->ScanEscrows(vchEscrow, "", aliases, aliases, aliases, 100000, escrowScan))
+		throw runtime_error("SYSCOIN_ESCROW_RPC_ERROR: ERRCODE: 4607 - " + _("Scan failed"));
+
+
+	pair<CEscrow, CEscrow> pairScan;
+	BOOST_FOREACH(pairScan, escrowScan) {
+		UniValue oEscrow(UniValue::VOBJ);
+		if(BuildEscrowSimplifiedJson(pairScan.first, pairScan.second, oEscrow)) {
+			if (mode == 2) {
+				oRes.push_back(oEscrow);
+			}
+			total_escrow_count++;
+		}
+	}
+	
+	if (mode == 1) {
+		UniValue oList(UniValue::VOBJ);
+		oList.push_back(Pair("total_escrow", total_escrow_count));
+		oRes.push_back(oList);
+	}	
+
+	return oRes;
+}
 void EscrowTxToJSON(const int op, const std::vector<unsigned char> &vchData, const std::vector<unsigned char> &vchHash, UniValue &entry)
 {
 	
